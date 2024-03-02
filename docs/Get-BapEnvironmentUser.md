@@ -35,8 +35,8 @@ This will fetch all oridinary users from the environment.
 Sample output:
 Email                          Name                           AppId                Systemuserid
 -----                          ----                           -----                ------------
-SYSTEM                                              5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
-INTEGRATION                                         baabe592-2860-4d1a-9365-e95317372498
+SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
+INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
 aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
 ade@temp.com                   Alex Denver                                         39309a5c-7676-4c8a-b702-719fb92c5151
 
@@ -51,8 +51,8 @@ It will include the ones with the ApplicationId property filled.
 Sample output:
 Email                          Name                           AppId                Systemuserid
 -----                          ----                           -----                ------------
-SYSTEM                                              5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
-INTEGRATION                                         baabe592-2860-4d1a-9365-e95317372498
+SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
+INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
 aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
 AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-… c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
 

@@ -49,7 +49,6 @@
 		, 'Get-BapEnvironmentApplicationUser'
 
 		, 'Get-BapEnvironmentD365App'
-		, 'Get-BapEnvironmentDetails'
 		
 		, 'Get-BapEnvironmentUser'
 		
