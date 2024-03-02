@@ -1,0 +1,11 @@
+﻿TOPIC
+	about_d365bap.tools
+	
+SHORT DESCRIPTION
+	Explains how to use the d365bap.tools powershell module
+	
+LONG DESCRIPTION
+	<Insert Content here>
+
+KEYWORDS
+	d365bap.tools
