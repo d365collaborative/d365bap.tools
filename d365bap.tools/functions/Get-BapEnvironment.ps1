@@ -50,6 +50,7 @@
 #>
 function Get-BapEnvironment {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [string] $EnvironmentId = "*",
 

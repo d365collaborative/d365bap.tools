@@ -106,8 +106,8 @@ function Compare-BapEnvironmentD365App {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $appsSourceEnvironment = Get-BapEnvironmentD365App -EnvironmentId $SourceEnvironmentId -InstallState Installed
-        $appsDestinationEnvironment = Get-BapEnvironmentD365App -EnvironmentId $DestinationEnvironmentId
+        $appsSourceEnvironment = Get-BapEnvironmentD365App -EnvironmentId $SourceEnvironmentId -InstallState Installed -$GeoRegion $GeoRegion
+        $appsDestinationEnvironment = Get-BapEnvironmentD365App -EnvironmentId $DestinationEnvironmentId -$GeoRegion $GeoRegion
     }
     
     process {

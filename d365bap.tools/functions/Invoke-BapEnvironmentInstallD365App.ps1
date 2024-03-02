@@ -86,8 +86,6 @@ function Invoke-BapEnvironmentInstallD365App {
     )
     
     begin {
-        $tenantId = (Get-AzContext).Tenant.Id
-        
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
         $envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
 
