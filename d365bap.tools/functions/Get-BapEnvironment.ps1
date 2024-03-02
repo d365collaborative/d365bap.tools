@@ -39,6 +39,12 @@
         ---------                            -------------   -----------          ---------- ------------------
         eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati…
         
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -AsExcelOutput
+        
+        This will query for ALL available environments.
+        Will output all details into an Excel file, that will auto open on your machine.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

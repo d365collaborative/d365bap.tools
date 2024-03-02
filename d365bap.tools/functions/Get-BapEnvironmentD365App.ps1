@@ -127,6 +127,13 @@
         It will persist the PackageIds for each D365 App, into an array.
         It will invoke the installation process using the Invoke-BapEnvironmentInstallD365App cmdlet.
         
+    .EXAMPLE
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+        
+        This will query the environment for ALL available D365 Apps.
+        It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
+        Will output all details into an Excel file, that will auto open on your machine.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
