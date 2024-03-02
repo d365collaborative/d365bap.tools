@@ -57,7 +57,7 @@
         
         This will fetch all oridinary users from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

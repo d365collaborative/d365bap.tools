@@ -57,6 +57,15 @@ ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.10
 6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             0.0.0.0             Azure Syna…
 7523d261-f1be-46e7-8e68-f3de16eeabbb DualWriteCoreAnchor            1.0.24022.4         1.0.24011.1         Dual-write…
 
+### EXAMPLE 3
+```
+Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -AsExcelOutput
+```
+
+This will get all installed D365 Apps from the Source Environment.
+It will iterate over all of them, and validate against the Destination Environment.
+Will output all details into an Excel file, that will auto open on your machine.
+
 ## PARAMETERS
 
 ### -SourceEnvironmentId

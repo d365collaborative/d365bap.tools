@@ -75,7 +75,7 @@
         It will iterate over all of them, and validate against the Destination Environment.
         It will exclude those with ApplicationId filled.
         Will output all details into an Excel file, that will auto open on your machine.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

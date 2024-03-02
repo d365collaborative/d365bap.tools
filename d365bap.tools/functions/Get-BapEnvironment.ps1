@@ -44,7 +44,7 @@
         
         This will query for ALL available environments.
         Will output all details into an Excel file, that will auto open on your machine.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

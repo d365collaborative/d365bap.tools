@@ -56,6 +56,14 @@ INTEGRATION                                                                     
 aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
 AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-… c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
 
+### EXAMPLE 3
+```
+Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+```
+
+This will fetch all oridinary users from the environment.
+Will output all details into an Excel file, that will auto open on your machine.
+
 ## PARAMETERS
 
 ### -EnvironmentId

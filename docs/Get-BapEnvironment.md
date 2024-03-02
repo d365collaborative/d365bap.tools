@@ -50,6 +50,14 @@ PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEn
 ---------                            -------------   -----------          ---------- ------------------
 eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati…
 
+### EXAMPLE 3
+```
+Get-BapEnvironment -AsExcelOutput
+```
+
+This will query for ALL available environments.
+Will output all details into an Excel file, that will auto open on your machine.
+
 ## PARAMETERS
 
 ### -EnvironmentId

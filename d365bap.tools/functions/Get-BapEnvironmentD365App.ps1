@@ -133,7 +133,7 @@
         This will query the environment for ALL available D365 Apps.
         It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
         Will output all details into an Excel file, that will auto open on your machine.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
