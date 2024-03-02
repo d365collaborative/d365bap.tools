@@ -14,6 +14,9 @@
     .EXAMPLE
         PS C:\> Get-EnvironmentLanguage -BaseUri 'https://temp-test.crm4.dynamics.com'
         
+        This will fetch all languages from the environment.
+        Uses the WebAPI / OData endpoint.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
