@@ -1,12 +1,12 @@
 ﻿
 <#
     .SYNOPSIS
-        Get Virutal Entity
+        Get Virtual Entity from environment
         
     .DESCRIPTION
         Enables the user to query against the Virtual Entities from the D365FO environment
         
-        This will help determine which Virtual Entities are already enabled / visible and their state
+        This will help determine which Virtual Entities are already enabled / visible and their state, as they are seeing from the Dataverse environment
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
@@ -79,6 +79,16 @@
         DimAttributeRetailStoreEntity  False     False                 00002893-0000-0000-0f03-005001000000
         DimAttributeRetailTerminalEnt… False     False                 00002893-0000-0000-6e07-005001000000
         EcoResRetailProductEntity      False     False                 00002893-0000-0000-ae06-005001000000
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironmentVirtualEntity -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Name AccountantEntity
+        
+        This will fetch the specific virtual entity from the environment.
+        
+        Sample output:
+        EntityName                     IsVisible ChangeTrackingEnabled EntityGuid
+        ----------                     --------- --------------------- ----------
+        AccountantEntity               False     False                 00002893-0000-0000-0003-005001000000
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
