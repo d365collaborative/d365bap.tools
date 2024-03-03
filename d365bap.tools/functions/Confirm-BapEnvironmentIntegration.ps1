@@ -68,6 +68,8 @@ function Confirm-BapEnvironmentIntegration {
     }
     
     process {
+        if (Test-PSFFunctionInterrupt) { return }
+
         $resValidate = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/RetrieveFinanceAndOperationsIntegrationDetails') -Headers $headersWebApi
 
         $temp = $resValidate | Select-PSFObject -TypeName "D365Bap.Tools.Environment.Integration" -ExcludeProperty "@odata.context" -Property "Id as LinkedAppLcsEnvId",

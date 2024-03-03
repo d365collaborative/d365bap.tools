@@ -124,6 +124,8 @@ function Get-BapEnvironmentVirtualEntity {
     }
     
     process {
+        if (Test-PSFFunctionInterrupt) { return }
+        
         $localUri = $($baseUri + '/api/data/v9.2/mserp_financeandoperationsentities')
 
         [System.Collections.Generic.List[System.String]]$filters = @()

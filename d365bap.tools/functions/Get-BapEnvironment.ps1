@@ -67,7 +67,6 @@ function Get-BapEnvironment {
     }
     
     process {
-        
         $resCol = @(
             foreach ($envObj in $resEnvs) {
                 if (-not ($envObj.Name -like $EnvironmentId)) { continue }
