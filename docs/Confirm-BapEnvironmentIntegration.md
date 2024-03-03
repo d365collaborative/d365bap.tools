@@ -5,53 +5,52 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-BapEnvironmentApplicationUser
+# Confirm-BapEnvironmentIntegration
 
 ## SYNOPSIS
-Get application users from environment
+Test the integration status
 
 ## SYNTAX
 
 ```
-Get-BapEnvironmentApplicationUser [-EnvironmentId] <String> [-AsExcelOutput] [<CommonParameters>]
+Confirm-BapEnvironmentIntegration [-EnvironmentId] <String> [-AsExcelOutput] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to fetch all application users from the environment
+Invokes the validation of the PowerPlatform integration, from the Dataverse perspective
 
-Utilizes the built-in "applicationusers" OData entity
+If it returns an output, the Dataverse is fully connected to the D365FO environment
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-BapEnvironmentApplicationUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+Confirm-BapEnvironmentIntegration -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
 ```
 
-This will fetch all ApplicationUsers from the environment.
+This will invoke the validation from the Dataverse environment.
+It will only output details if the environment is fully connected and working.
 
 Sample output:
-AppId                                AppName                        ApplicationUserId                    SolutionId
------                                -------                        -----------------                    ----------
-b6e52ceb-f771-41ff-bd99-917523b28eaf AIBuilder_StructuredML_Prod_C… 3bafba76-60bf-413d-a4c4-5c49ccabfb12 bf85e0c8-aa47…
-21ceaf7c-054c-43f6-8b14-ef6d04b90a21 AIBuilderProd                  560c9a6c-4535-4066-a415-480d1493cf98 bf85e0c8-aa47…
-c76313fd-5c6f-4f1f-9869-c884fa7fe226 AppDeploymentOrchestration     d88a3535-ebf0-4b2b-ad23-90e686660a64 99aee001-009e…
-29494271-7e38-4433-8bf8-06d335299a17 AriaMdlExporter                8bf8862f-5036-42b0-a4f8-1b638db7896b 99aee001-009e…
+LinkedAppLcsEnvId                    LinkedAppLcsEnvUri                                 IsUnifiedDatabase TenantId
+-----------------                    ------------------                                 ----------------- --------
+0e52661c-0225-4621-b1b4-804712cf6d9a https://new-test.sandbox.operations.eu.dynamics.c… False             8ccb796b-37b…
 
 ### EXAMPLE 2
 ```
-Get-BapEnvironmentApplicationUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+Confirm-BapEnvironmentIntegration -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
 ```
 
-This will fetch all ApplicationUsers from the environment.
+This will invoke the validation from the Dataverse environment.
+It will only output details if the environment is fully connected and working.
 Will output all details into an Excel file, that will auto open on your machine.
+
+The excel file will be empty if the integration isn't working.
 
 ## PARAMETERS
 
 ### -EnvironmentId
 The id of the environment that you want to work against
-
-This can be obtained from the Get-BapEnvironment cmdlet
 
 ```yaml
 Type: String
@@ -89,7 +88,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-### System.Object[]
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 
