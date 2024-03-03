@@ -4,7 +4,7 @@
         Get D365 App from the environment
         
     .DESCRIPTION
-        This enables the user to analyze and validate the current D365 Apps and their state, on a given environment
+        Enables the user to analyze and validate the current D365 Apps and their state, on a given environment
         
         It can show all available D365 Apps - including their InstallState
         

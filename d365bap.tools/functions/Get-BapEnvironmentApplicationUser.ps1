@@ -71,6 +71,8 @@ function Get-BapEnvironmentApplicationUser {
     }
     
     process {
+        if (Test-PSFFunctionInterrupt) { return }
+
         $resAppUsers = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/applicationusers') -Headers $headersWebApi
         $resCol = @(
             foreach ($appUsrObj in  $($resAppUsers.value | Sort-Object -Property applicationname)) {

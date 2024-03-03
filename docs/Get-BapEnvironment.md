@@ -17,7 +17,7 @@ Get-BapEnvironment [[-EnvironmentId] <String>] [-AsExcelOutput] [<CommonParamete
 ```
 
 ## DESCRIPTION
-This enables the user to query and validate all environments that are available from inside PPAC
+Enables the user to query and validate all environments that are available from inside PPAC
 
 It utilizes the "https://api.bap.microsoft.com" REST API
 

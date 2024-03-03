@@ -4,7 +4,7 @@
         Get environment info
         
     .DESCRIPTION
-        This enables the user to query and validate all environments that are available from inside PPAC
+        Enables the user to query and validate all environments that are available from inside PPAC
         
         It utilizes the "https://api.bap.microsoft.com" REST API
         
@@ -67,7 +67,6 @@ function Get-BapEnvironment {
     }
     
     process {
-        
         $resCol = @(
             foreach ($envObj in $resEnvs) {
                 if (-not ($envObj.Name -like $EnvironmentId)) { continue }
@@ -104,6 +103,7 @@ function Get-BapEnvironment {
                 @{Name = "LinkedMetaPpacOrgId"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.resourceId } },
                 @{Name = "LinkedMetaPpacUniqueId"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.uniqueName } },
                 @{Name = "LinkedMetaPpacEnvUri"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
+                @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
                 @{Name = "LinkedMetaPpacEnvLanguage"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.baseLanguage } },
                 @{Name = "PpacClusterIsland"; Expression = { $envObj.Properties.cluster.uriSuffix } },
                 "*"

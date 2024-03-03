@@ -4,7 +4,7 @@
         Compare environment D365 Apps
         
     .DESCRIPTION
-        This enables the user to compare 2 x environments, with one as a source and the other as a destination
+        Enables the user to compare 2 x environments, with one as a source and the other as a destination
         
         It will only look for installed D365 Apps on the source, and use this as a baseline against the destination
         

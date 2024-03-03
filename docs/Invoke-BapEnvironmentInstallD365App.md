@@ -17,7 +17,7 @@ Invoke-BapEnvironmentInstallD365App [-EnvironmentId] <String> [-PackageId] <Stri
 ```
 
 ## DESCRIPTION
-This enables the invocation of the installation process against the PowerPlatform API (https://api.powerplatform.com)
+Enables the invocation of the installation process against the PowerPlatform API (https://api.powerplatform.com)
 
 The cmdlet will keep requesting the status of all invoked installations, until they all have a NON "Running" state
 

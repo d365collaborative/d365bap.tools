@@ -58,6 +58,16 @@ Depending on which PowerShell console (v5 / v7+) - you will have different sign-
 Login-AzAccount -UseDeviceAuthentication -TenantId abd...
 ```
 
+## Learn interactively
+
+We have implemented a **Jupyter Notebook** to help you learn interactively about the different cmdlets / functions available in the module. The notebook is located inside the **'notebooks'** folder in this repository. Click this link [**notebooks**](/learning/notebooks/get-started.ipynb) to jump straight inside.
+
+While the notebook is already helpful in itself, its interactive nature will help you learn on another level. To do that, open the notebook in Visual Studio Code with the [Polyglot](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode) extension installed.
+
+The repository also contains a [devcontainer](.devcontainer/devcontainer.json) that has everything installed to run the notebook. The easiest way to get started is to use GitHub Codespaces. Click the button below to start a new Codespace with the repository.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/d365collaborative/d365bap.tools)
+
 ## Getting help
 
 [The wiki](https://github.com/d365collaborative/d365bap.tools/wiki) contains more details about installation and also guides to help you with some common tasks. It also contains documentation for all the module's commands. Expand the wiki's `Pages` control at the top of the content sidebar to view and search the list of command documentation pages.
