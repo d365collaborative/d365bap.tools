@@ -66,7 +66,7 @@ While the notebook is already helpful in itself, its interactive nature will hel
 
 The repository also contains a [devcontainer](.devcontainer/devcontainer.json) that has everything installed to run the notebook. The easiest way to get started is to use GitHub Codespaces. Click the button below to start a new Codespace with the repository.
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.dev/d365collaborative/d365bap.tools)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/d365collaborative/d365bap.tools)
 
 ## Getting help
 
