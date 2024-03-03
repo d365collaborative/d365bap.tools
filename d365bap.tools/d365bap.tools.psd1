@@ -60,6 +60,8 @@
 		, 'Invoke-BapEnvironmentInstallD365App'
 
 		, 'Set-BapEnvironmentVirtualEntity'
+
+		, 'Update-BapEnvironmentVirtualEntityMetadata'
 	)
 	
 	# Cmdlets to export from this module
