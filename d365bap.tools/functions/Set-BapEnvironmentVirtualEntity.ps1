@@ -70,6 +70,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Set-BapEnvironmentVirtualEntity {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [parameter (mandatory = $true)]
@@ -142,7 +143,6 @@ function Set-BapEnvironmentVirtualEntity {
         if (Test-PSFFunctionInterrupt) { return }
 
         $localUri = $($baseUri + '/XRMServices/2011/Organization.svc/web?SDKClientVersion=9.2.49.3165' -f $entity.EntityGuid)
-        $tempObj = [ordered]@{}
 
         # Base payload for updating the virtual entity configuration
         $body = @'
@@ -208,6 +208,9 @@ function Set-BapEnvironmentVirtualEntity {
         $headersWebApi.SOAPAction = "http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/Execute"
         Invoke-RestMethod -Method Post -Uri $localUri -Headers $headersWebApi -Body $body -ContentType "text/xml; charset=utf-8" > $null
         
+        # We are asking to fast for the meta data to be updated
+        Start-Sleep -Seconds 10
+
         Get-BapEnvironmentVirtualEntity -EnvironmentId $EnvironmentId -Name $Name
     }
     

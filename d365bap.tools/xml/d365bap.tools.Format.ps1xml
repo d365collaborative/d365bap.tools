@@ -389,5 +389,51 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		<View>
+			<Name>D365Bap.Tools.Compare.VirtualEntity</Name>
+			<ViewSelectedBy>
+				<TypeName>D365Bap.Tools.Compare.VirtualEntity</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Width>30</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>15</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>27</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>11</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>17</Width>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>EntityName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>SourceIsVisible</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>SourceChangeTrackingEnabled</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>DestinationIsVisible</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>DestinationChangeTrackingEnabled</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
 	</ViewDefinitions>
 </Configuration>
