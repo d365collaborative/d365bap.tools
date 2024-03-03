@@ -53,6 +53,8 @@
 		, 'Get-BapEnvironmentD365App'
 		
 		, 'Get-BapEnvironmentUser'
+
+		, 'Get-BapEnvironmentVirtualEntity'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 	)

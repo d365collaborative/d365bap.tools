@@ -349,5 +349,45 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		<View>
+			<Name>D365Bap.Tools.VirtualEntity</Name>
+			<ViewSelectedBy>
+				<TypeName>D365Bap.Tools.VirtualEntity</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Width>30</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>9</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>21</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>36</Width>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>EntityName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>IsVisible</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>ChangeTrackingEnabled</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>EntityGuid</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
 	</ViewDefinitions>
 </Configuration>
