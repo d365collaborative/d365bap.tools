@@ -24,6 +24,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Update-BapEnvironmentVirtualEntityMetadata {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [parameter (mandatory = $true)]
