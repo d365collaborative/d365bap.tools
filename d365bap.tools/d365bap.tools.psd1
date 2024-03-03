@@ -45,6 +45,8 @@
 		'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
 		
+		, 'Confirm-BapEnvironmentIntegration'
+		
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentApplicationUser'
 
