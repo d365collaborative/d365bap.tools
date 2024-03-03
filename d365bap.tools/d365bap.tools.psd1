@@ -44,6 +44,7 @@
 	FunctionsToExport = @(
 		'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
+		, 'Compare-BapEnvironmentVirtualEntity'
 		
 		, 'Confirm-BapEnvironmentIntegration'
 		
