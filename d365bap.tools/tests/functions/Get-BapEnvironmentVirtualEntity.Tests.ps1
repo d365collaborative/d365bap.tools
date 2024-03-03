@@ -24,6 +24,19 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
+		It 'Should have the expected parameter Name' {
+			$parameter = (Get-Command Get-BapEnvironmentVirtualEntity).Parameters['Name']
+			$parameter.Name | Should -Be 'Name'
+			$parameter.ParameterType.ToString() | Should -Be System.String
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be 1
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
 		It 'Should have the expected parameter VisibleOnly' {
 			$parameter = (Get-Command Get-BapEnvironmentVirtualEntity).Parameters['VisibleOnly']
 			$parameter.Name | Should -Be 'VisibleOnly'
@@ -55,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -VisibleOnly -AsExcelOutput
+		__AllParameterSets -EnvironmentId -Name -VisibleOnly -AsExcelOutput
 		#>
 	}
 

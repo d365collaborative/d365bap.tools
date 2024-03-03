@@ -13,7 +13,8 @@ Get Virutal Entity
 ## SYNTAX
 
 ```
-Get-BapEnvironmentVirtualEntity [-EnvironmentId] <String> [-VisibleOnly] [-AsExcelOutput] [<CommonParameters>]
+Get-BapEnvironmentVirtualEntity [-EnvironmentId] <String> [[-Name] <String>] [-VisibleOnly] [-AsExcelOutput]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -60,6 +61,22 @@ Get-BapEnvironmentVirtualEntity -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c7
 This will fetch all virtual entities from the environment.
 Will output all details into an Excel file, that will auto open on your machine.
 
+### EXAMPLE 4
+```
+Get-BapEnvironmentVirtualEntity -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Name "Retail*"
+```
+
+This will fetch all virtual entities that contains the "Retail" text in the name, from the environment.
+
+Sample output:
+EntityName                     IsVisible ChangeTrackingEnabled EntityGuid
+----------                     --------- --------------------- ----------
+CustHierarchyRetailChannelEnt… False     False                 00002893-0000-0000-e314-005001000000
+DimAttributeRetailChannelEnti… False     False                 00002893-0000-0000-0804-005001000000
+DimAttributeRetailStoreEntity  False     False                 00002893-0000-0000-0f03-005001000000
+DimAttributeRetailTerminalEnt… False     False                 00002893-0000-0000-6e07-005001000000
+EcoResRetailProductEntity      False     False                 00002893-0000-0000-ae06-005001000000
+
 ## PARAMETERS
 
 ### -EnvironmentId
@@ -73,6 +90,40 @@ Aliases:
 Required: True
 Position: 1
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Name
+The name of the virtual entity that you are looking for
+
+The parameter supports wildcards, but will resolve them into a strategy that matches best practice from Microsoft documentation
+
+It means that you can only have a single search phrase.
+E.g.
+* -Name "*Retail"
+* -Name "Retail*"
+* -Name "*Retail*"
+
+Multiple search phrases are not going to produce an output, as it will be striped into an invalid search string.
+E.g.
+!
+-Name "*Retail*Entity*" -\> "RetailEntity"
+!
+-Name "Retail*Entity" -\> "RetailEntity"
+!
+-Name "*Retail*Entity" -\> "RetailEntity"
+!
+-Name "Retail*Entity*" -\> "RetailEntity"
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
