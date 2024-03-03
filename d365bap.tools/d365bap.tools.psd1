@@ -44,6 +44,7 @@
 	FunctionsToExport = @(
 		'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
+		, 'Compare-BapEnvironmentVirtualEntity'
 		
 		, 'Confirm-BapEnvironmentIntegration'
 		
@@ -57,6 +58,10 @@
 		, 'Get-BapEnvironmentVirtualEntity'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
+
+		, 'Set-BapEnvironmentVirtualEntity'
+
+		, 'Update-BapEnvironmentVirtualEntityMetadata'
 	)
 	
 	# Cmdlets to export from this module

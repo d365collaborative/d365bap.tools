@@ -94,6 +94,8 @@ function Get-BapEnvironmentUser {
     }
     
     process {
+        if (Test-PSFFunctionInterrupt) { return }
+        
         $resUsers = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/systemusers?$select=fullname,internalemailaddress,applicationid&$expand=user_settings($select=uilanguageid)') -Headers $headersWebApi
 
         $resCol = @(
