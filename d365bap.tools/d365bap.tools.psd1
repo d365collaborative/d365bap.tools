@@ -45,12 +45,16 @@
 		'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
 		
+		, 'Confirm-BapEnvironmentIntegration'
+		
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentApplicationUser'
 
 		, 'Get-BapEnvironmentD365App'
 		
 		, 'Get-BapEnvironmentUser'
+
+		, 'Get-BapEnvironmentVirtualEntity'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 	)
