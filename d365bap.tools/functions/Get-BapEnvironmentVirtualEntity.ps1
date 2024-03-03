@@ -81,6 +81,13 @@ function Get-BapEnvironmentVirtualEntity {
         $headersWebApi = @{
             "Authorization" = "Bearer $($tokenWebApi.Token)"
         }
+
+        # Fetch all meta data - for all entities in the environment
+        $entitiesMetaRaw = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/entities') -Headers $headersWebApi
+        $templateMeta = $entitiesMetaRaw.value[0]
+
+        # Filter down to only those who are connected to Virtual Entities
+        $entitiesMeta = $entitiesMetaRaw.value | Where-Object { -not [System.String]::IsNullOrEmpty($_.externalname) }
     }
     
     process {
@@ -93,6 +100,22 @@ function Get-BapEnvironmentVirtualEntity {
 
         $resCol = @(
             foreach ($virEntity in $($resEntities.value | Sort-Object -Property mserp_physicalname)) {
+
+                $tempMeta = $entitiesMeta | Where-Object externalname -eq $virEntity.mserp_physicalname | Select-Object -First 1
+
+                if ($null -ne $tempMeta) {
+                    # Work against the meta data found
+                    foreach ($prop in $tempMeta.PsObject.Properties) {
+                        $virEntity | Add-Member -MemberType NoteProperty -Name "meta_$($prop.Name)" -Value $prop.Value
+                    }
+                }
+                else {
+                    # Create empty properties for those who doesn't have meta data available
+                    foreach ($prop in $templateMeta.PsObject.Properties) {
+                        $virEntity | Add-Member -MemberType NoteProperty -Name "meta_$($prop.Name)" -Value $null
+                    }
+                }
+
                 $virEntity | Select-PSFObject -TypeName "D365Bap.Tools.VirtualEntity" -Property "mserp_physicalname as EntityName",
                 "mserp_hasbeengenerated as IsVisible",
                 "mserp_changetrackingenabled as ChangeTrackingEnabled",

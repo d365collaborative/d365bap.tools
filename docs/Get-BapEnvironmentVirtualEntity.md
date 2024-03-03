@@ -78,7 +78,7 @@ Accept wildcard characters: False
 ```
 
 ### -VisibleOnly
-{{ Fill VisibleOnly Description }}
+Instruct the cmdlet to only output those virtual entities that are enabled / visible
 
 ```yaml
 Type: SwitchParameter
