@@ -116,11 +116,12 @@ function Compare-BapEnvironmentD365App {
         $resCol = @(foreach ($sourceApp in $($appsSourceEnvironment | Sort-Object -Property ApplicationName )) {
                 $destinationApp = $appsDestinationEnvironment | Where-Object PackageId -eq $sourceApp.PackageId | Select-Object -First 1
         
+                $sourceVersion = if ($sourceApp.InstalledVersion -eq "N/A") { [System.Version]"0.0.0.0" } else { [System.Version]$sourceApp.InstalledVersion }
                 $tmp = [Ordered]@{
                     PackageId          = $sourceApp.PackageId
                     PackageName        = $sourceApp.PackageName
                     AppName            = $sourceApp.AppName
-                    SourceVersion      = [System.Version]$sourceApp.InstalledVersion
+                    SourceVersion      = $sourceVersion
                     DestinationVersion = "Missing"
                 }
         
