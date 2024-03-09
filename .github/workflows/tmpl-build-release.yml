@@ -47,8 +47,7 @@ jobs:
     
     - name: Get version
       run: |
-        tree
-        $publishDir = Get-Item -Path $env:GITHUB_WORKSPACE -Name publish -ItemType Directory
+        $publishDir = Get-Item -Path publish -ItemType Directory
         [version]$version = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\d365bap.tools\d365bap.tools.psd1").ModuleVersion
         $githubReleaseVersion = "$($version.Major).$($version.Minor).$($version.Build)"
         "VERSION=$githubReleaseVersion" >> $env:GITHUB_ENV
