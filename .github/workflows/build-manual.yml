@@ -3,9 +3,12 @@ on:
     inputs:
       skippublish:
         description: "Determines if the publishing to the PowerShell Gallery is skipped"
-        default: false
+        default: $True
         required: false
-        type: boolean
+        type: choice
+        options:
+          - $False
+          - $True
 
 jobs:
   call-tmpl-build-release:

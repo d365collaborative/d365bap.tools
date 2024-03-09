@@ -10,14 +10,14 @@ on:
     inputs:
       autoversion:
         description: "Determines if the module's build version number is automatically incremented"
-        default: true
+        default: $True
         required: false
-        type: boolean
+        type: string
       skippublish:
         description: "Determines if the publishing to the PowerShell Gallery is skipped"
-        default: false
+        default: $False
         required: false
-        type: boolean
+        type: string
     secrets:
       apikey:
         description: "Key for the PowerShell Gallery API"
