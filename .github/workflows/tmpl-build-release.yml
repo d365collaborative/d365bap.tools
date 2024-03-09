@@ -1,0 +1,41 @@
+# Template for a reusable workflow to build and release a PowerShell module.
+# The template expects the following PowerShell scripts in the build folder of the repository root
+# that do the actual validated build and release:
+# - vsts-prerequisities.ps1
+# - vsts-validate.ps1
+# - vsts-build.ps1
+
+on:
+  workflow_call:
+    inputs:
+      autoversion:
+        description: "Determines if the module's build version number is automatically incremented"
+        default: true
+        required: false
+        type: boolean
+      skippublish:
+        description: "Determines if the publishing to the PowerShell Gallery is skipped"
+        default: false
+        required: false
+        type: boolean
+    secrets:
+      apikey:
+        description: "Key for the PowerShell Gallery API"
+        required: true
+
+jobs:
+  build-and-release:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Prerequisites
+      run: .\build\vsts-prerequisites.ps1
+      shell: powershell
+    - name: Validate
+      run: .\build\vsts-validate.ps1
+      shell: powershell
+    - name: Build
+      run: .\build\vsts-build.ps1 -ApiKey ${{ secrets.apikey }} -AutoVersion:${{ inputs.autoversion }} -SkipPublish:${{ inputs.skippublish }}
+      shell: powershell
