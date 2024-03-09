@@ -9,9 +9,9 @@ on:
 
 jobs:
   call-tmpl-build-release:
-    uses: ./.github/workflow/tmpl-build-release.yml
-      with:
-        autoversion: true
-        skippublish: ${{ inputs.skippublish }}
-      secrets:
-        apikey: $env:APIKEY
+    uses: ./.github/workflows/tmpl-build-release.yml
+    with:
+      autoversion: true
+      skippublish: ${{ inputs.skippublish }}
+    secrets:
+      apikey: $env:APIKEY
