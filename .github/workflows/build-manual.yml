@@ -14,7 +14,6 @@ jobs:
   call-tmpl-build-release:
     uses: ./.github/workflows/tmpl-build-release.yml
     with:
-      autoversion: true
       skippublish: ${{ inputs.skippublish }}
     secrets:
       apikey: $env:APIKEY
