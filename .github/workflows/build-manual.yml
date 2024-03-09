@@ -1,0 +1,17 @@
+on:
+  workflow_dispatch:
+    inputs:
+      skippublish:
+        description: "Determines if the publishing to the PowerShell Gallery is skipped"
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  call-tmpl-build-release:
+    uses: ./.github/workflow/tmpl-build-release.yml
+      with:
+        autoversion: true
+        skippublish: ${{ inputs.skippublish }}
+      secrets:
+        apikey: $env:APIKEY
