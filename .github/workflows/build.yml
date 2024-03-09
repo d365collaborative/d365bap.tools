@@ -11,4 +11,4 @@ jobs:
       skippublish: $False
       skipghrelease: $False
     secrets:
-      apikey: $env:APIKEY
+      apikey: ${{ secrets.ApiKey }}
