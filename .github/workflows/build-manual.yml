@@ -25,4 +25,4 @@ jobs:
       skippublish: ${{ inputs.skippublish }}
       skipghrelease: ${{ inputs.skipghrelease }}
     secrets:
-      apikey: $env:APIKEY
+      apikey: ${{ secrets.ApiKey }}
