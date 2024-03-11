@@ -5,20 +5,10 @@
       - main
 
 jobs:
-  build:
-
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Install Prerequisites
-      run: .\build\vsts-prerequisites.ps1
-      shell: powershell
-    - name: Validate
-      run: .\build\vsts-validate.ps1
-      shell: powershell
-    - name: Build
-      run: .\build\vsts-build.ps1 -ApiKey $env:APIKEY -AutoVersion
-      shell: powershell
-      env:
-        APIKEY: ${{ secrets.ApiKey }}
+  call-tmpl-build-release:
+    uses: ./.github/workflows/tmpl-build-release.yml
+    with:
+      skippublish: $False
+      skipghrelease: $False
+    secrets:
+      apikey: ${{ secrets.ApiKey }}
