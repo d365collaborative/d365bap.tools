@@ -48,10 +48,14 @@
 		
 		, 'Confirm-BapEnvironmentIntegration'
 		
+		, 'Export-BapEnvironmentSolution'
+
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentApplicationUser'
 
 		, 'Get-BapEnvironmentD365App'
+		
+		, 'Get-BapEnvironmentSolution'
 		
 		, 'Get-BapEnvironmentUser'
 
