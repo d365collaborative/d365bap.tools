@@ -11,18 +11,22 @@ on:
           - $True
       skipghrelease:
         description: "Determines if creation of a GitHub release is skipped"
-        default: $False
+        default: false
         required: false
-        type: choice
-        options:
-          - $False
-          - $True
+        type: boolean
+      skipValidation:
+        description: "Determines if the module validation is skipped"
+        default: false
+        required: false
+        type: boolean
 
 jobs:
   call-tmpl-build-release:
     uses: fh-inway/d365.psmodule-alm/.github/workflows/tmpl-build-release.yml@main
     with:
+      module: 'd365bap.tools'
       skippublish: ${{ inputs.skippublish }}
       skipghrelease: ${{ inputs.skipghrelease }}
+      skipValidation: ${{ inputs.skipValidation }}
     secrets:
       apikey: ${{ secrets.ApiKey }}
