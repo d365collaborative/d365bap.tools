@@ -55,6 +55,7 @@
 
 		, 'Get-BapEnvironmentD365App'
 		
+		, 'Get-BapEnvironmentSecurityRole'
 		, 'Get-BapEnvironmentSolution'
 		
 		, 'Get-BapEnvironmentUser'
@@ -63,6 +64,7 @@
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 
+		, 'Set-BapEnvironmentLinkEnterprisePolicy'
 		, 'Set-BapEnvironmentVirtualEntity'
 
 		, 'Update-BapEnvironmentVirtualEntityMetadata'

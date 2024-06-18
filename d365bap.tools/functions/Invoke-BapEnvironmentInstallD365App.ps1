@@ -72,6 +72,32 @@
         Succeeded 02/03/2024 13.42.07 02/03/2024 13.44.48                     5c80df7f-d89e-42bd-abeb-98e577ae49f4
         Succeeded 02/03/2024 13.42.09 02/03/2024 13.48.26                     6885e0f4-639f-4ebc-b21e-49ce5d5e920d
         
+    .EXAMPLE
+        PS C:\> $apps = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly)
+        PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $apps.PackageId
+        
+        This will find all D365 Apps that has a pending update available.
+        It will gather the Ids into an array.
+        It will run the cmdlet and have it get the status of the installation progress until all D365 Apps have been fully installed.
+        
+        Sample output (Install initialized):
+        status  createdDateTime     lastActionDateTime  error statusMessage operationId
+        ------  ---------------     ------------------  ----- ------------- -----------
+        Running 02/03/2024 13.42.07 02/03/2024 13.42.16                     5c80df7f-d89e-42bd-abeb-98e577ae49f4
+        Running 02/03/2024 13.42.09 02/03/2024 13.42.12                     6885e0f4-639f-4ebc-b21e-49ce5d5e920d
+        
+        Sample output (Partly succeeded installation):
+        status    createdDateTime     lastActionDateTime  error statusMessage operationId
+        ------    ---------------     ------------------  ----- ------------- -----------
+        Succeeded 02/03/2024 13.42.07 02/03/2024 13.44.48                     5c80df7f-d89e-42bd-abeb-98e577ae49f4
+        Running   02/03/2024 13.42.09 02/03/2024 13.45.55                     6885e0f4-639f-4ebc-b21e-49ce5d5e920d
+        
+        Sample output (Completely succeeded installation):
+        status    createdDateTime     lastActionDateTime  error statusMessage operationId
+        ------    ---------------     ------------------  ----- ------------- -----------
+        Succeeded 02/03/2024 13.42.07 02/03/2024 13.44.48                     5c80df7f-d89e-42bd-abeb-98e577ae49f4
+        Succeeded 02/03/2024 13.42.09 02/03/2024 13.48.26                     6885e0f4-639f-4ebc-b21e-49ce5d5e920d
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -111,6 +137,7 @@ function Invoke-BapEnvironmentInstallD365App {
         
         [System.Collections.Generic.List[System.Object]] $arrInstallStarted = @()
         [System.Collections.Generic.List[System.Object]] $arrStatus = @()
+        [System.Collections.Generic.List[System.Object]] $arrFailedStarts = @()
 
         $headersPowerApi."Content-Type" = "application/json;charset=utf-8"
 
@@ -124,11 +151,24 @@ function Invoke-BapEnvironmentInstallD365App {
             }
 
             $body = $appToBeInstalled | ConvertTo-Json
-            $resIntall = Invoke-RestMethod -Method Post -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/applicationPackages/$($appToBeInstalled.uniqueName)/install?api-version=2022-03-01-preview" -Headers $headersPowerApi -Body $body
 
-            $arrInstallStarted.Add($resIntall)
+            try {
+                $resIntall = Invoke-RestMethod -Method Post -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/applicationPackages/$($appToBeInstalled.uniqueName)/install?api-version=2022-03-01-preview" -Headers $headersPowerApi -Body $body
+
+                $arrInstallStarted.Add($resIntall)
+            }
+            catch {
+                $arrFailedStarts.Add($appToBeInstalled)
+            }
         }
 
+        if ($arrFailedStarts.Count -gt 0) {
+            $messageString = "The following packages <c='em'>failed to start</c>:"
+            Write-PSFMessage -Level Host -Message $messageString
+                
+            $arrFailedStarts.ToArray()
+        }
+        
         do {
             $tokenPowerApi = Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/"
             $headersPowerApi = @{
