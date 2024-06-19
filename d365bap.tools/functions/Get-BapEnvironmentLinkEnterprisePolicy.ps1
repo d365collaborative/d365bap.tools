@@ -41,6 +41,7 @@
 #>
 function Get-BapEnvironmentLinkEnterprisePolicy {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [parameter (mandatory = $true)]
         [string] $EnvironmentId,
