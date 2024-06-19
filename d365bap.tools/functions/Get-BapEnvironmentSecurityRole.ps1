@@ -80,8 +80,6 @@ function Get-BapEnvironmentSecurityRole {
         $headersWebApi = @{
             "Authorization" = "Bearer $($tokenWebApi.Token)"
         }
-
-        $languages = @(Get-EnvironmentLanguage -BaseUri $baseUri)
     }
     
     process {

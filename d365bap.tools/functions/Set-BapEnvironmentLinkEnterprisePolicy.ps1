@@ -25,6 +25,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Set-BapEnvironmentLinkEnterprisePolicy {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [parameter (mandatory = $true)]
