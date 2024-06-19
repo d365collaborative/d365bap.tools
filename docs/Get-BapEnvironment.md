@@ -63,6 +63,8 @@ Will output all details into an Excel file, that will auto open on your machine.
 ### -EnvironmentId
 The id of the environment that you want to work against
 
+Default value is "*" - which translates into all available environments
+
 ```yaml
 Type: String
 Parameter Sets: (All)

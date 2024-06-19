@@ -11,6 +11,8 @@
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
         
+        Default value is "*" - which translates into all available environments
+        
     .PARAMETER AsExcelOutput
         Instruct the cmdlet to output all details directly to an Excel file
         
