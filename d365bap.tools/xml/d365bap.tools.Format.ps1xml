@@ -492,10 +492,13 @@
 						<Width>36</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>30</Width>
+						<Width>40</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>30</Width>
+						<Width>9</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>12</Width>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
@@ -508,7 +511,10 @@
 								<PropertyName>Name</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>ModifiedOn</PropertyName>
+								<PropertyName>IsManaged</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>RoleType</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>

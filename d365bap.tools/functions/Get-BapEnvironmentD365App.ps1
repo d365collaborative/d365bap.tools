@@ -171,18 +171,23 @@ function Get-BapEnvironmentD365App {
         if (Test-PSFFunctionInterrupt) { return }
 
         # First we will fetch ALL available apps for the environment
-        $tokenPowerApi = Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/"
+        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+        $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
+        
         $headersPowerApi = @{
-            "Authorization" = "Bearer $($tokenPowerApi.Token)"
+            "Authorization" = "Bearer $($tokenPowerApiValue)"
         }
         
-        $appsAvailable = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/applicationPackages?api-version=2022-03-01-preview" -Headers $headersPowerApi | Select-Object -ExpandProperty Value
+        $appsAvailable = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" -Headers $headersPowerApi | Select-Object -ExpandProperty Value
 
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
-        $tokenAdminApi = Get-AzAccessToken -ResourceUrl "065d9450-1e87-434e-ac2f-69af271549ed"
+        
+        $secureTokenAdminApi = (Get-AzAccessToken -ResourceUrl "065d9450-1e87-434e-ac2f-69af271549ed" -AsSecureString).Token
+        $tokenAdminApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenAdminApi
+
         $headersAdminApi = @{
-            "Authorization" = "Bearer $($tokenAdminApi.Token)"
+            "Authorization" = "Bearer $($tokenAdminApiValue)"
         }
 
         $appsEnvironment = Invoke-RestMethod -Method Get -Uri "https://api.admin.powerplatform.microsoft.com/api/AppManagement/InstancePackages/instanceId/$tenantId`?instanceUrl=$uriSourceEncoded`&geoType=$GeoRegion" -Headers $headersAdminApi

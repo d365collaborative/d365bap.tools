@@ -50,7 +50,7 @@
         SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
         INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
         aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
-        AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-… c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
+        AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-â€¦ c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
         
     .EXAMPLE
         PS C:\> Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
@@ -85,12 +85,13 @@ function Get-BapEnvironmentUser {
         if (Test-PSFFunctionInterrupt) { return }
 
         $baseUri = $envObj.LinkedMetaPpacEnvUri
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $baseUri
-        $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
-        }
+        
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
-        $languages = @(Get-EnvironmentLanguage -BaseUri $baseUri)
+        $headersWebApi = @{
+            "Authorization" = "Bearer $($tokenWebApiValue)"
+        }
     }
     
     process {

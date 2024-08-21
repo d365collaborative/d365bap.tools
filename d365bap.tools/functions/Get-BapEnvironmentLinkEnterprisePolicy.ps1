@@ -61,9 +61,11 @@ function Get-BapEnvironmentLinkEnterprisePolicy {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $tokenBap = Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/"
+        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
+        $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
+
         $headers = @{
-            "Authorization" = "Bearer $($tokenBap.Token)"
+            "Authorization" = "Bearer $($tokenBapValue)"
         }
     }
     

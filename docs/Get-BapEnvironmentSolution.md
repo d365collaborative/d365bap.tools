@@ -34,7 +34,7 @@ Sample output:
 
 SolutionId                           Name                           IsManaged SystemName           Description
 ----------                           ----                           --------- ----------           -----------
-fd140aae-4df4-11dd-bd17-0019b9312238 Active Solution                False     Active               Placeholder solutio…
+fd140aae-4df4-11dd-bd17-0019b9312238 Active Solution                False     Active               Placeholder solutioâ€¦
 
 ### EXAMPLE 2
 ```
@@ -49,10 +49,10 @@ Sample output:
 SolutionId                           Name                           IsManaged SystemName           Description
 ----------                           ----                           --------- ----------           -----------
 169edc7d-5f1e-4ee4-8b5c-135b3ba82ea3 Access Team                    True      AccessTeam           Access Team solution
-fd140aae-4df4-11dd-bd17-0019b9312238 Active Solution                False     Active               Placeholder solutio…
-458c32fb-4476-4431-97cb-49cfd069c31d Activities                     True      msdynce_Activities   Dynamics 365 worklo…
-7553bb8a-fc5e-424c-9698-113958c28c98 Activities Patch               True      msdynce_ActivitiesP… Patch for Dynamics …
-3ac10775-0808-42e0-bd23-83b6c714972f ActivitiesInfra Solution Anch… True      msft_ActivitiesInfr… ActivitiesInfra Sol…
+fd140aae-4df4-11dd-bd17-0019b9312238 Active Solution                False     Active               Placeholder solutioâ€¦
+458c32fb-4476-4431-97cb-49cfd069c31d Activities                     True      msdynce_Activities   Dynamics 365 workloâ€¦
+7553bb8a-fc5e-424c-9698-113958c28c98 Activities Patch               True      msdynce_ActivitiesPâ€¦ Patch for Dynamics â€¦
+3ac10775-0808-42e0-bd23-83b6c714972f ActivitiesInfra Solution Anchâ€¦ True      msft_ActivitiesInfrâ€¦ ActivitiesInfra Solâ€¦
 
 ### EXAMPLE 3
 ```
@@ -67,10 +67,10 @@ Sample output:
 SolutionId                           Name                           IsManaged SystemName           Description
 ----------                           ----                           --------- ----------           -----------
 169edc7d-5f1e-4ee4-8b5c-135b3ba82ea3 Access Team                    True      AccessTeam           Access Team solution
-fd140aae-4df4-11dd-bd17-0019b9312238 Active Solution                False     Active               Placeholder solutio…
-458c32fb-4476-4431-97cb-49cfd069c31d Activities                     True      msdynce_Activities   Dynamics 365 worklo…
-7553bb8a-fc5e-424c-9698-113958c28c98 Activities Patch               True      msdynce_ActivitiesP… Patch for Dynamics …
-3ac10775-0808-42e0-bd23-83b6c714972f ActivitiesInfra Solution Anch… True      msft_ActivitiesInfr… ActivitiesInfra Sol…
+fd140aae-4df4-11dd-bd17-0019b9312238 Active Solution                False     Active               Placeholder solutioâ€¦
+458c32fb-4476-4431-97cb-49cfd069c31d Activities                     True      msdynce_Activities   Dynamics 365 workloâ€¦
+7553bb8a-fc5e-424c-9698-113958c28c98 Activities Patch               True      msdynce_ActivitiesPâ€¦ Patch for Dynamics â€¦
+3ac10775-0808-42e0-bd23-83b6c714972f ActivitiesInfra Solution Anchâ€¦ True      msft_ActivitiesInfrâ€¦ ActivitiesInfra Solâ€¦
 
 ### EXAMPLE 4
 ```
@@ -85,7 +85,7 @@ Sample output:
 
 SolutionId                           Name                           IsManaged SystemName           Description
 ----------                           ----                           --------- ----------           -----------
-3ac10775-0808-42e0-bd23-83b6c714972f ActivitiesInfra Solution Anch… True      msft_ActivitiesInfr… ActivitiesInfra Sol…
+3ac10775-0808-42e0-bd23-83b6c714972f ActivitiesInfra Solution Anchâ€¦ True      msft_ActivitiesInfrâ€¦ ActivitiesInfra Solâ€¦
 
 ### EXAMPLE 5
 ```

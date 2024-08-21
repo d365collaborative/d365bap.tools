@@ -34,7 +34,7 @@ It will only output details if the environment is fully connected and working.
 Sample output:
 LinkedAppLcsEnvId                    LinkedAppLcsEnvUri                                 IsUnifiedDatabase TenantId
 -----------------                    ------------------                                 ----------------- --------
-0e52661c-0225-4621-b1b4-804712cf6d9a https://new-test.sandbox.operations.eu.dynamics.c… False             8ccb796b-37b…
+0e52661c-0225-4621-b1b4-804712cf6d9a https://new-test.sandbox.operations.eu.dynamics.câ€¦ False             8ccb796b-37bâ€¦
 
 ### EXAMPLE 2
 ```

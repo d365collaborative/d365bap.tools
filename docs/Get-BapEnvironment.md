@@ -33,10 +33,10 @@ This will query for ALL available environments.
 Sample output:
 PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
 ---------                            -------------   -----------          ---------- ------------------
-32c6b196-ef52-4c43-93cf-6ecba51e6aa1 europe          new-uat              Sandbox    https://new-uat.sandbox.operatio…
-eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati…
-d45936a7-0408-4b79-94d1-19e4c6e5a52e europe          new-golden           Sandbox    https://new-golden.sandbox.opera…
-Default-e210bc90-e54b-4544-a9b8-b1f… europe          New Customer         Default
+32c6b196-ef52-4c43-93cf-6ecba51e6aa1 europe          new-uat              Sandbox    https://new-uat.sandbox.operatioâ€¦
+eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operatiâ€¦
+d45936a7-0408-4b79-94d1-19e4c6e5a52e europe          new-golden           Sandbox    https://new-golden.sandbox.operaâ€¦
+Default-e210bc90-e54b-4544-a9b8-b1fâ€¦ europe          New Customer         Default
 
 ### EXAMPLE 2
 ```
@@ -48,7 +48,7 @@ This will query for the specific environment.
 Sample output:
 PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
 ---------                            -------------   -----------          ---------- ------------------
-eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati…
+eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operatiâ€¦
 
 ### EXAMPLE 3
 ```

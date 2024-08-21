@@ -38,10 +38,10 @@
         Sample output:
         PackageId                            PackageName                    SourceVersion       DestinationVersion  AppName
         ---------                            -----------                    -------------       ------------------  -------
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24012.1005      Agent Prod…
-        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24012.1013     appprofile…
-        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             0.0.0.0             Azure Syna…
-        42cc1442-194f-462b-a325-ce5b5f18c02d msdyn_EmailAddressValidation   1.0.0.4             1.0.0.4             Data Valid…
+        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24012.1005      Agent Prodâ€¦
+        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24012.1013     appprofileâ€¦
+        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             0.0.0.0             Azure Synaâ€¦
+        42cc1442-194f-462b-a325-ce5b5f18c02d msdyn_EmailAddressValidation   1.0.0.4             1.0.0.4             Data Validâ€¦
         
     .EXAMPLE
         PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -ShowDiffOnly
@@ -53,10 +53,10 @@
         Sample output:
         PackageId                            PackageName                    SourceVersion       DestinationVersion  AppName
         ---------                            -----------                    -------------       ------------------  -------
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24012.1005      Agent Prod…
-        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24012.1013     appprofile…
-        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             0.0.0.0             Azure Syna…
-        7523d261-f1be-46e7-8e68-f3de16eeabbb DualWriteCoreAnchor            1.0.24022.4         1.0.24011.1         Dual-write…
+        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24012.1005      Agent Prodâ€¦
+        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24012.1013     appprofileâ€¦
+        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             0.0.0.0             Azure Synaâ€¦
+        7523d261-f1be-46e7-8e68-f3de16eeabbb DualWriteCoreAnchor            1.0.24022.4         1.0.24011.1         Dual-writeâ€¦
         
     .EXAMPLE
         PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -AsExcelOutput

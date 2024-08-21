@@ -25,7 +25,7 @@
         Sample output:
         LinkedAppLcsEnvId                    LinkedAppLcsEnvUri                                 IsUnifiedDatabase TenantId
         -----------------                    ------------------                                 ----------------- --------
-        0e52661c-0225-4621-b1b4-804712cf6d9a https://new-test.sandbox.operations.eu.dynamics.c… False             8ccb796b-37b…
+        0e52661c-0225-4621-b1b4-804712cf6d9a https://new-test.sandbox.operations.eu.dynamics.câ€¦ False             8ccb796b-37bâ€¦
         
     .EXAMPLE
         PS C:\> Confirm-BapEnvironmentIntegration -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
@@ -61,9 +61,12 @@ function Confirm-BapEnvironmentIntegration {
         if (Test-PSFFunctionInterrupt) { return }
 
         $baseUri = $envObj.LinkedMetaPpacEnvUri
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $baseUri
+        
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
         $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
+            "Authorization" = "Bearer $($tokenWebApiValue)"
         }
     }
     

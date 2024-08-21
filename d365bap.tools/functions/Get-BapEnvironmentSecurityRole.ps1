@@ -16,6 +16,11 @@
         
         Default value is "*" - which translates into all available Security Roles
         
+    .PARAMETER IncludeAll
+        Instruct the cmdlet to output all security roles, regardless of their type
+        
+        This will output all security roles, including the ones that are tied to Business Units, which at first glance might seem like duplicates
+        
     .PARAMETER AsExcelOutput
         Instruct the cmdlet to output all details directly to an Excel file
         
@@ -24,24 +29,71 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
         
-        This will list all Security Roles from the Dataverse environment.
+        This will list all Security Roles from the Dataverse environment, by the EnvironmentId (guid).
+        It will only list the Security Roles that are tied to the Environment.
         
         Sample output:
-        Id                                   Name                           ModifiedOn
-        --                                   ----                           ----------
-        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realti… 03/02/2023 10.11.13
-        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realti… 03/02/2023 10.11.14
-        d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin         17/08/2023 07.06.15
+        Id                                   Name                                     IsManaged RoleType
+        --                                   ----                                     --------- --------
+        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Name "Environment*"
+        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat*
         
-        This will list all Security Roles, which matches the "Environment*" pattern, from the Dataverse environment.
+        This will list all Security Roles from the Dataverse environment, by the EnvironmentId (Name/Wildcard).
+        It will only list the Security Roles that are tied to the Environment.
         
         Sample output:
-        Id                                   Name                           ModifiedOn
-        --                                   ----                           ----------
-        d58407f2-48d5-e711-a82c-000d3a37c848 Environment Maker              15/06/2024 21.12.56
+        Id                                   Name                                     IsManaged RoleType
+        --                                   ----                                     --------- --------
+        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Name "*Administrator*"
+        
+        This will list all Security Roles, which matches the "*Administrator*" pattern, from the Dataverse environment.
+        It will only list the Security Roles that are tied to the Environment.
+        
+        Sample output:
+        Id                                   Name                                     IsManaged RoleType
+        --                                   ----                                     --------- --------
+        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        4758a2be-ccd8-ea11-a813-000d3a579805 App Profile Manager Administrator        True      Environment
+        470a750f-d810-4ee7-a64a-ec002965c1ec Copilot for Service Administrator        True      Environment
+        5e4a9faa-b260-e611-8106-00155db8820b IoT - Administrator                      True      Environment
+        947229e9-e868-45cf-a361-5635eaf35ee2 Microsoft Copilot Administrator          True      Environment
+        f7f90019-dc14-e911-816a-000d3a069ebd Omnichannel administrator                True      Environment
+        6beb51c1-0eda-e911-a81c-000d3af75d63 Productivity tools administrator         True      Environment
+        ebbb3fcb-fcd7-4bf8-9a48-7b5a9878e79e Sales Copilot Administrator              True      Environment
+        abce3b01-5697-4973-9d7d-fca48ca84445 Survey Services Administrator(Deprecateâ€¦ True      Environment
+        63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "System Administrator"
+        
+        This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
+        It will only list the Security Roles that are tied to the Environment.
+        
+        Sample output:
+        Id                                   Name                                     IsManaged RoleType
+        --                                   ----                                     --------- --------
+        63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "System Administrator" -IncludeAll
+        
+        This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
+        It will only list the Security Roles that are tied to the Environment.
+        
+        Sample output:
+        Id                                   Name                                     IsManaged RoleType
+        --                                   ----                                     --------- --------
+        0cdbad8e-72e7-406c-ae38-8c4406caea59 System Administrator                     False     BusinessUnit
+        63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
         
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
@@ -60,6 +112,8 @@ function Get-BapEnvironmentSecurityRole {
 
         [string] $Name = "*",
 
+        [switch] $IncludeAll,
+
         [switch] $AsExcelOutput
     )
     
@@ -72,31 +126,55 @@ function Get-BapEnvironmentSecurityRole {
             Write-PSFMessage -Level Host -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
-        
+
         if (Test-PSFFunctionInterrupt) { return }
 
         $baseUri = $envObj.LinkedMetaPpacEnvUri
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $baseUri
+
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
         $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
+            "Authorization" = "Bearer $($tokenWebApiValue)"
         }
+
+        $searchById = Test-Guid -InputObject $Name
     }
     
     process {
         if (Test-PSFFunctionInterrupt) { return }
-        
-        $resRoles = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/roles') -Headers $headersWebApi
 
-        $resCol = @(
-            foreach ($roleObj in  $($resRoles.value | Sort-Object -Property name)) {
-                if (-not ($roleObj.Name -like $Name)) { continue }
-                
-                $roleObj | Select-PSFObject -TypeName "D365Bap.Tools.Role" -ExcludeProperty "@odata.etag" -Property "roleid as Id", *
+        $resRoles = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/roles?$expand=businessunitid($select=businessunitid,_parentbusinessunitid_value)') -Headers $headersWebApi
+
+        [System.Collections.Generic.List[System.Object]] $resCol = @()
+
+        foreach ($roleObj in  $($resRoles.value | Sort-Object -Property name)) {
+            if ($searchById) {
+                if (-not ($roleObj.roleid -like $Name)) { continue }
             }
-        )
+            else {
+                if (-not ($roleObj.Name -like $Name)) { continue }
+            }
+                
+            $tmp = $roleObj | Select-PSFObject -TypeName "D365Bap.Tools.Role" `
+                -ExcludeProperty "@odata.etag" `
+                -Property "roleid as Id", *,
+            @{Name = "RoleType"; Expression = {
+                    if ($null -eq $_.businessunitid._parentbusinessunitid_value) {
+                        "Environment"
+                    }
+                    else {
+                        "BusinessUnit"
+                    }
+                }
+            }
 
-        if (-not $IncludeAppIds) {
-            $resCol = $resCol | Where-Object applicationid -eq $null
+            if ($IncludeAll) {
+                $resCol.Add($tmp)
+            }
+            elseif ($tmp.RoleType -eq "Environment") {
+                $resCol.Add($tmp)
+            }
         }
 
         if ($AsExcelOutput) {

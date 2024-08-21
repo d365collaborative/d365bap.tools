@@ -71,10 +71,10 @@ This will fetch all virtual entities that contains the "Retail" text in the name
 Sample output:
 EntityName                     IsVisible ChangeTrackingEnabled EntityGuid
 ----------                     --------- --------------------- ----------
-CustHierarchyRetailChannelEnt… False     False                 00002893-0000-0000-e314-005001000000
-DimAttributeRetailChannelEnti… False     False                 00002893-0000-0000-0804-005001000000
+CustHierarchyRetailChannelEntâ€¦ False     False                 00002893-0000-0000-e314-005001000000
+DimAttributeRetailChannelEntiâ€¦ False     False                 00002893-0000-0000-0804-005001000000
 DimAttributeRetailStoreEntity  False     False                 00002893-0000-0000-0f03-005001000000
-DimAttributeRetailTerminalEnt… False     False                 00002893-0000-0000-6e07-005001000000
+DimAttributeRetailTerminalEntâ€¦ False     False                 00002893-0000-0000-6e07-005001000000
 EcoResRetailProductEntity      False     False                 00002893-0000-0000-ae06-005001000000
 
 ### EXAMPLE 5

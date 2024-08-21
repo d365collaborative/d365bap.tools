@@ -35,8 +35,8 @@
         Sample output:
         Email                          Name                           AppId                SourceId        DestinationId
         -----                          ----                           -----                --------        -------------
-        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-… 5aaac0ec-a91…
-        ade@temp.com                   Alex Denver                                         39309a5c-7676-… 1d521227-43b…
+        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-â€¦ 5aaac0ec-a91â€¦
+        ade@temp.com                   Alex Denver                                         39309a5c-7676-â€¦ 1d521227-43bâ€¦
         
     .EXAMPLE
         PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -IncludeAppIds
@@ -48,10 +48,10 @@
         Sample output:
         Email                          Name                           AppId                SourceId        DestinationId
         -----                          ----                           -----                --------        -------------
-        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-… 5aaac0ec-a91…
-        ade@temp.com                   Alex Denver                                         39309a5c-7676-… 1d521227-43b…
-        AIBuilder_StructuredML_Prod_C… AIBuilder_StructuredML_Prod_C… ff8a1ad8-a415-45c1-… 95dc9ca2-8185-… 328db0cc-14c…
-        AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-… c96f82b8-320f-… 1831f4dc-4c5…
+        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-â€¦ 5aaac0ec-a91â€¦
+        ade@temp.com                   Alex Denver                                         39309a5c-7676-â€¦ 1d521227-43bâ€¦
+        AIBuilder_StructuredML_Prod_Câ€¦ AIBuilder_StructuredML_Prod_Câ€¦ ff8a1ad8-a415-45c1-â€¦ 95dc9ca2-8185-â€¦ 328db0cc-14câ€¦
+        AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-â€¦ c96f82b8-320f-â€¦ 1831f4dc-4c5â€¦
         
     .EXAMPLE
         PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -IncludeAppIds -ShowDiffOnly
@@ -64,9 +64,9 @@
         Sample output:
         Email                          Name                           AppId                SourceId        DestinationId
         -----                          ----                           -----                --------        -------------
-        d365-scm-operationdataservice… d365-scm-operationdataservice… 986556ed-a409-4339-… 5e077e6a-a0c9-… Missing
-        d365-scm-operationdataservice… d365-scm-operationdataservice… 14e80222-1878-455d-… 183ec023-9ccb-… Missing
-        def@temp.com                   Dustin Effect                                       01e37132-0a44-… Missing
+        d365-scm-operationdataserviceâ€¦ d365-scm-operationdataserviceâ€¦ 986556ed-a409-4339-â€¦ 5e077e6a-a0c9-â€¦ Missing
+        d365-scm-operationdataserviceâ€¦ d365-scm-operationdataserviceâ€¦ 14e80222-1878-455d-â€¦ 183ec023-9ccb-â€¦ Missing
+        def@temp.com                   Dustin Effect                                       01e37132-0a44-â€¦ Missing
         
     .EXAMPLE
         PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -AsExcelOutput
