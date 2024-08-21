@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get Virtual Entity from environment

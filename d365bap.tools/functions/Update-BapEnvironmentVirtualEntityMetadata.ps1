@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Update the meta data for an Virtual Entity in an environment

@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get application users from environment

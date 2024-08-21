@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get PowerPlatform / Dataverse Solution from the environment

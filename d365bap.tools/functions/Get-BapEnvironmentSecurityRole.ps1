@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get Security Roles from environment
