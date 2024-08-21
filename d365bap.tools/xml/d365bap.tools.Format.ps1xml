@@ -115,7 +115,7 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>PpacEnvId</PropertyName>
+								<PropertyName>PpacEnvironmentId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>PpacEnvRegion</PropertyName>

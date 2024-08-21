@@ -24,7 +24,7 @@
         This will query for ALL available environments.
         
         Sample output:
-        PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
+        PpacEnvironmentId                    PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
         ---------                            -------------   -----------          ---------- ------------------
         32c6b196-ef52-4c43-93cf-6ecba51e6aa1 europe          new-uat              Sandbox    https://new-uat.sandbox.operatioâ€¦
         eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operatiâ€¦
@@ -37,10 +37,20 @@
         This will query for the specific environment.
         
         Sample output:
-        PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
+        PpacEnvironmentId                    PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
         ---------                            -------------   -----------          ---------- ------------------
         eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operatiâ€¦
         
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -EnvironmentId *test*
+        
+        This will query for the specific environment, using a wildcard search.
+        
+        Sample output:
+        PpacEnvironmentId                    PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
+        ---------                            -------------   -----------          ---------- ------------------
+        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operatiâ€¦
+
     .EXAMPLE
         PS C:\> Get-BapEnvironment -AsExcelOutput
         
@@ -104,7 +114,8 @@ function Get-BapEnvironment {
                 
                 }
 
-            ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.Environment" -Property "Id as PpacEnvId",
+            ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.Environment" `
+                    -Property "Id as PpacEnvironmentId",
                 "Region as PpacEnvRegion",
                 "prop_tenantId as TenantId",
                 "prop_azureRegion as AzureRegion",
