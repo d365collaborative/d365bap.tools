@@ -114,7 +114,7 @@ function Get-BapEnvironment {
                 
                 }
 
-            ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.Environment" `
+            ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
                     -Property "Id as PpacEnvironmentId",
                 "Region as PpacEnvRegion",
                 "prop_tenantId as TenantId",

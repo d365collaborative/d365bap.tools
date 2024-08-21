@@ -86,9 +86,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Environment</Name>
+			<Name>D365Bap.Tools.PpacEnvironment</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Environment</TypeName>
+				<TypeName>D365Bap.Tools.PpacEnvironment</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
