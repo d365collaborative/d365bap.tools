@@ -12,6 +12,8 @@
     .EXAMPLE
         PS C:\> Test-Guid -InputObject "3363e9e1-00d8-45a1-9c0c-b93ee03f8c13"
         
+        This will validate the input string and return $true if the input string is a valid GUID
+        
     .NOTES
         Uses .NET method [guid]::TryParse()
         
