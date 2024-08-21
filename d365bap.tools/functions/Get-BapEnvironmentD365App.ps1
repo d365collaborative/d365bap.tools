@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get D365 App from the environment

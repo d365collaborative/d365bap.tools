@@ -3,7 +3,7 @@
 	RootModule        = 'd365bap.tools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion     = '0.0.20'
+	ModuleVersion     = '0.0.10'
 	
 	# ID used to uniquely identify this module
 	GUID              = 'adfc3aa2-1269-4648-a3d6-0342d5ef00bf'
@@ -58,6 +58,7 @@
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		
 		, 'Get-BapEnvironmentSecurityRole'
+		, 'Get-BapEnvironmentSecurityRoleMember'
 		, 'Get-BapEnvironmentSolution'
 		
 		, 'Get-BapEnvironmentUser'

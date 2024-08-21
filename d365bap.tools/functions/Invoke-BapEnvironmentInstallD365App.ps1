@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Invoke the installation of a D365 App in a given environment

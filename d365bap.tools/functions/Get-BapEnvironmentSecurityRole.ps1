@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get Security Roles from environment
@@ -35,8 +35,8 @@
         Sample output:
         Id                                   Name                                     IsManaged RoleType
         --                                   ----                                     --------- --------
-        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
-        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature  True      Environment
+        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature  True      Environment
         d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
         
     .EXAMPLE
@@ -48,8 +48,8 @@
         Sample output:
         Id                                   Name                                     IsManaged RoleType
         --                                   ----                                     --------- --------
-        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
-        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature  True      Environment
+        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature  True      Environment
         d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
         
     .EXAMPLE
@@ -61,7 +61,7 @@
         Sample output:
         Id                                   Name                                     IsManaged RoleType
         --                                   ----                                     --------- --------
-        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Featureâ€¦ True      Environment
+        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature  True      Environment
         4758a2be-ccd8-ea11-a813-000d3a579805 App Profile Manager Administrator        True      Environment
         470a750f-d810-4ee7-a64a-ec002965c1ec Copilot for Service Administrator        True      Environment
         5e4a9faa-b260-e611-8106-00155db8820b IoT - Administrator                      True      Environment
@@ -69,7 +69,7 @@
         f7f90019-dc14-e911-816a-000d3a069ebd Omnichannel administrator                True      Environment
         6beb51c1-0eda-e911-a81c-000d3af75d63 Productivity tools administrator         True      Environment
         ebbb3fcb-fcd7-4bf8-9a48-7b5a9878e79e Sales Copilot Administrator              True      Environment
-        abce3b01-5697-4973-9d7d-fca48ca84445 Survey Services Administrator(Deprecateâ€¦ True      Environment
+        abce3b01-5697-4973-9d7d-fca48ca84445 Survey Services Administrator(Deprecat   True      Environment
         63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
         
     .EXAMPLE
@@ -106,6 +106,7 @@
 #>
 function Get-BapEnvironmentSecurityRole {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [parameter (mandatory = $true)]
         [string] $EnvironmentId,

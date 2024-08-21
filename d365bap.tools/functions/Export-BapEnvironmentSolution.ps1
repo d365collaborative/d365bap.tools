@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Export PowerPlatform / Dataverse Solution from the environment

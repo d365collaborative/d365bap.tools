@@ -216,7 +216,7 @@
 								<PropertyName>AppId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>Systemuserid</PropertyName>
+								<PropertyName>SystemUserId</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>

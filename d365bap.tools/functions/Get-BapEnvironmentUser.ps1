@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get users from environment
@@ -103,10 +103,14 @@ function Get-BapEnvironmentUser {
             foreach ($usrObj in  $($resUsers.value | Sort-Object -Property internalemailaddress)) {
                 
                 $usrObj | Add-Member -MemberType NoteProperty -Name "lang" -Value $($languages | Where-Object { ($_.localeid -eq $usrObj.user_settings[0].uilanguageid) -or ($_.BaseLocaleId -eq $usrObj.user_settings[0].uilanguageid) } | Select-Object -First 1 -ExpandProperty code)
-                $usrObj | Select-PSFObject -TypeName "D365Bap.Tools.User" -ExcludeProperty "@odata.etag" -Property "internalemailaddress as Email",
+                $usrObj | Select-PSFObject -TypeName "D365Bap.Tools.User" `
+                    -ExcludeProperty "@odata.etag" `
+                    -Property "systemuserid as Id",
+                "internalemailaddress as Email",
                 "fullname as Name",
                 "applicationid as AppId",
                 "lang as Language",
+                "azureactivedirectoryobjectid as EntraIdObjectId",
                 *
             }
         )
