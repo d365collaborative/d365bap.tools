@@ -24,12 +24,12 @@
         This will fetch all ApplicationUsers from the environment.
         
         Sample output:
-        AppId                                AppName                        ApplicationUserId                    SolutionId
+        PpacAppId                            PpacAppName                    PpacApplicationUserId                SolutionId
         -----                                -------                        -----------------                    ----------
-        b6e52ceb-f771-41ff-bd99-917523b28eaf AIBuilder_StructuredML_Prod_Câ€¦ 3bafba76-60bf-413d-a4c4-5c49ccabfb12 bf85e0c8-aa47â€¦
-        21ceaf7c-054c-43f6-8b14-ef6d04b90a21 AIBuilderProd                  560c9a6c-4535-4066-a415-480d1493cf98 bf85e0c8-aa47â€¦
-        c76313fd-5c6f-4f1f-9869-c884fa7fe226 AppDeploymentOrchestration     d88a3535-ebf0-4b2b-ad23-90e686660a64 99aee001-009eâ€¦
-        29494271-7e38-4433-8bf8-06d335299a17 AriaMdlExporter                8bf8862f-5036-42b0-a4f8-1b638db7896b 99aee001-009eâ€¦
+        b6e52ceb-f771-41ff-bd99-917523b28eaf AIBuilder_StructuredML_Prod_C  3bafba76-60bf-413d-a4c4-5c49ccabfb12 bf85e0c8-aa47
+        21ceaf7c-054c-43f6-8b14-ef6d04b90a21 AIBuilderProd                  560c9a6c-4535-4066-a415-480d1493cf98 bf85e0c8-aa47
+        c76313fd-5c6f-4f1f-9869-c884fa7fe226 AppDeploymentOrchestration     d88a3535-ebf0-4b2b-ad23-90e686660a64 99aee001-009e
+        29494271-7e38-4433-8bf8-06d335299a17 AriaMdlExporter                8bf8862f-5036-42b0-a4f8-1b638db7896b 99aee001-009e
         
     .EXAMPLE
         PS C:\> Get-BapEnvironmentApplicationUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
@@ -46,6 +46,8 @@ function Get-BapEnvironmentApplicationUser {
     param (
         [parameter (mandatory = $true)]
         [string] $EnvironmentId,
+
+        [switch] $IncludePpacApplications,
 
         [switch] $AsExcelOutput
     )
@@ -75,14 +77,34 @@ function Get-BapEnvironmentApplicationUser {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $resAppUsers = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/applicationusers') -Headers $headersWebApi
-        $resCol = @(
-            foreach ($appUsrObj in  $($resAppUsers.value | Sort-Object -Property applicationname)) {
-                $appUsrObj | Select-PSFObject -TypeName "D365Bap.Tools.AppUser" -ExcludeProperty "@odata.etag" -Property "applicationid as AppId",
-                "applicationname as AppName",
-                *
+        $resSystemUsers = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/systemusers?$filter=applicationid ne null&$expand=systemuserroles_association($select=name,roleid),businessunitid($select=name,businessunitid),teammembership_association($select=name,teamid)') -Headers $headersWebApi
+
+        [System.Collections.Generic.List[System.Object]] $resCol = @()
+        
+        foreach ($appUsrObj in  $($resSystemUsers.value | Sort-Object -Property fullname -Descending)) {
+            $tmp = $appUsrObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacApplicationUser" `
+                -ExcludeProperty "@odata.etag" `
+                -Property "systemuserid as PpacSystemUserId",
+            "fullname as PpacApplicationName",
+            @{Name = "PpacApplicationUserId"; Expression = { $_.applicationid } },
+            @{Name = "State"; Expression = { if (-not $_.isdisabled) { "Active" } else { "Inactive" } } },
+            @{Name = "StateIsActive"; Expression = { -not $_.isdisabled } },
+            "applicationid as EntraIdClientId",
+            "azureactivedirectoryobjectid as EntraIdObjectId",
+            *
+
+            if (-not $IncludePpacApplications) {
+                if ($tmp.EntraIdObjectId) {
+                    $resCol.Add($tmp)
+                }
+                elseif (-not ($tmp.internalemailaddress -like '*@onmicrosoft.com')) {
+                    $resCol.Add($tmp)
+                }
             }
-        )
+            else {
+                $resCol.Add($tmp)
+            }
+        }
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel

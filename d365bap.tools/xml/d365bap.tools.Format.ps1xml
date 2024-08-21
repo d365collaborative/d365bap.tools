@@ -270,9 +270,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.AppUser</Name>
+			<Name>D365Bap.Tools.PpacApplicationUser</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.AppUser</TypeName>
+				<TypeName>D365Bap.Tools.PpacApplicationUser</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -286,23 +286,23 @@
 						<Width>36</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>36</Width>
+						<Width>8</Width>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>AppId</PropertyName>
+								<PropertyName>PpacSystemUserId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>AppName</PropertyName>
+								<PropertyName>PpacApplicationName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>ApplicationUserId</PropertyName>
+								<PropertyName>PpacApplicationUserId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>SolutionId</PropertyName>
+								<PropertyName>State</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
