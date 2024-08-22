@@ -110,7 +110,7 @@ function Get-BapEnvironmentUser {
                 "fullname as Name",
                 "applicationid as AppId",
                 "lang as Language",
-                "azureactivedirectoryobjectid as EntraIdObjectId",
+                "azureactivedirectoryobjectid as EntraObjectId",
                 *
             }
         )

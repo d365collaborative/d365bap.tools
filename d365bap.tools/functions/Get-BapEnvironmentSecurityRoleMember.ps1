@@ -158,7 +158,7 @@ function Get-BapEnvironmentSecurityRoleMember {
             "internalemailaddress as Email",
             "fullname as Name",
             "applicationid as AppId",
-            "azureactivedirectoryobjectid as EntraIdObjectId",
+            "azureactivedirectoryobjectid as EntraObjectId",
             @{Name = "NameSortable"; Expression = { $_.fullname.Replace("# ", "") } },
             *
         )

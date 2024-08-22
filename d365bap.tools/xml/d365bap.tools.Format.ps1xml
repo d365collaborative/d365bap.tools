@@ -28,29 +28,23 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Package</Name>
+			<Name>D365Bap.Tools.PpacD365App</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Package</TypeName>
+				<TypeName>D365Bap.Tools.PpacD365App</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
 					<TableColumnHeader>
-						<Width>36</Width>
-					</TableColumnHeader>
-					<TableColumnHeader>
 						<Width>30</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>19</Width>
+						<Width>30</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>19</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>15</Width>
-					</TableColumnHeader>
-					<TableColumnHeader>
-						<Width>30</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>15</Width>
@@ -60,13 +54,10 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>PackageId</PropertyName>
+								<PropertyName>PpacD365AppName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PackageName</PropertyName>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>AvailableVersion</PropertyName>
+								<PropertyName>PpacPackageName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>InstalledVersion</PropertyName>
@@ -75,10 +66,7 @@
 								<PropertyName>UpdateAvailable</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>AppName</PropertyName>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>InstallState</PropertyName>
+								<PropertyName>Status</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -115,7 +103,7 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>PpacEnvironmentId</PropertyName>
+								<PropertyName>PpacEnvId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>PpacEnvRegion</PropertyName>
@@ -296,10 +284,10 @@
 								<PropertyName>PpacSystemUserId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PpacApplicationName</PropertyName>
+								<PropertyName>PpacAppName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PpacApplicationUserId</PropertyName>
+								<PropertyName>PpacAppId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>State</PropertyName>
