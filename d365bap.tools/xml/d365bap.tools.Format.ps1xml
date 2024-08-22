@@ -470,9 +470,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Role</Name>
+			<Name>D365Bap.Tools.PpacRole</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Role</TypeName>
+				<TypeName>D365Bap.Tools.PpacRole</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -493,7 +493,7 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>Id</PropertyName>
+								<PropertyName>PpacRoleId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Name</PropertyName>
@@ -502,7 +502,7 @@
 								<PropertyName>IsManaged</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>RoleType</PropertyName>
+								<PropertyName>PpacRoleType</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
