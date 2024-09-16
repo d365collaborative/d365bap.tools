@@ -57,6 +57,8 @@
 
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		
+		, 'Get-BapEnvironmentPowerApp'
+
 		, 'Get-BapEnvironmentSecurityRole'
 		, 'Get-BapEnvironmentSecurityRoleMember'
 		, 'Get-BapEnvironmentSolution'

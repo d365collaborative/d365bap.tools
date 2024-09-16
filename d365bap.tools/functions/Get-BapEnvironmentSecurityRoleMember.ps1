@@ -32,7 +32,7 @@
         
         Wildcard search is supported
         
-    .PARAMETER IncludeAppIds
+    .PARAMETER IncludePpacApplications
         Instruct the cmdlet to include all users that are members of the security role
         
         Simply includes those who has the ApplicationId property filled
@@ -76,7 +76,7 @@
         d365admin@contoso.com          # D365Admin                                         58879b65-65ca-45f7-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -IncludeAppIds
+        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -IncludePpacApplications
         
         This will fetch all users that are members of the security role 'System Administrator' from the environment.
         It will include the ones with the ApplicationId property filled.
@@ -107,9 +107,10 @@ function Get-BapEnvironmentSecurityRoleMember {
         [parameter (mandatory = $true)]
         [string] $SecurityRoleId,
 
+        [Alias("Email")]
         [string] $UserId = "*",
 
-        [switch] $IncludeAppIds,
+        [switch] $IncludePpacApplications,
 
         [switch] $AsExcelOutput
     )
@@ -149,15 +150,18 @@ function Get-BapEnvironmentSecurityRoleMember {
     process {
         if (Test-PSFFunctionInterrupt) { return }
         
-        $resRoleObj = Invoke-RestMethod -Method Get -Uri $($baseUri + "/api/data/v9.2/roles($($secRoleObj.Id))?`$expand=systemuserroles_association") -Headers $headersWebApi
+        $resRoleObj = Invoke-RestMethod -Method Get -Uri $($baseUri + "/api/data/v9.2/roles($($secRoleObj.PpacRoleId))?`$expand=systemuserroles_association") -Headers $headersWebApi
         
+        # $resRoleObj.systemuserroles_association | ConvertTo-Json -Depth 10 | Set-Clipboard
+        # return
+
         $resCol = @(
-            $resRoleObj.systemuserroles_association | Select-PSFObject -TypeName "D365Bap.Tools.User" `
+            $resRoleObj.systemuserroles_association | Select-PSFObject -TypeName "D365Bap.Tools.PpacUser" `
                 -ExcludeProperty "@odata.etag" `
-                -Property "systemuserid as Id",
+                -Property "systemuserid as PpacSystemUserId",
             "internalemailaddress as Email",
             "fullname as Name",
-            "applicationid as AppId",
+            "applicationid as PpacAppId",
             "azureactivedirectoryobjectid as EntraObjectId",
             @{Name = "NameSortable"; Expression = { $_.fullname.Replace("# ", "") } },
             *
@@ -165,15 +169,15 @@ function Get-BapEnvironmentSecurityRoleMember {
 
         $resCol = $resCol | Sort-Object -Property NameSortable
          
-        if (-not $IncludeAppIds) {
-            $resCol = $resCol | Where-Object applicationid -eq $null
+        if (-not $IncludePpacApplications) {
+            $resCol = $resCol | Where-Object PpacAppId -eq $null
         }
 
         if ($UserId.Contains("@")) {
             $resCol = $resCol | Where-Object Email -like $UserId
         }
         else {
-            $resCol = $resCol | Where-Object Id -like $UserId
+            $resCol = $resCol | Where-Object PpacSystemUserId -like $UserId
         }
 
         if ($AsExcelOutput) {

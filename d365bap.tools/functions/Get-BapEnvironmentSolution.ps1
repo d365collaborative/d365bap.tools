@@ -143,7 +143,7 @@ function Get-BapEnvironmentSolution {
             foreach ($solObj in  $($resSolutions.value | Sort-Object -Property friendlyname)) {
                 if ((-not [System.String]::IsNullOrEmpty($SolutionId)) -and $solObj.SolutionId -ne $SolutionId) { continue }
                 
-                $solObj | Select-PSFObject -TypeName "D365Bap.Tools.Solution" -Property "uniquename as SystemName",
+                $solObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacSolution" -Property "uniquename as SystemName",
                 "friendlyname as Name",
                 *
             }

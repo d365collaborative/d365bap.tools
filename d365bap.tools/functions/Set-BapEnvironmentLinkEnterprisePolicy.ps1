@@ -51,7 +51,7 @@ function Set-BapEnvironmentLinkEnterprisePolicy {
         $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
-        $headers = @{
+        $headersBapApi = @{
             "Authorization" = "Bearer $($tokenBapValue)"
         }
     }
@@ -64,7 +64,7 @@ function Set-BapEnvironmentLinkEnterprisePolicy {
         # 2019-10-01
         $uriLinkEnterprisePolicy = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/$EnvironmentId/enterprisePolicies/Identity/link?api-version=2023-06-01"
 
-        Invoke-RestMethod -Method Post -Uri $uriLinkEnterprisePolicy -Headers $headers -Body $body -ContentType "application/json" > $null
+        Invoke-RestMethod -Method Post -Uri $uriLinkEnterprisePolicy -Headers $headersBapApi -Body $body -ContentType "application/json" > $null
     }
     
     end {

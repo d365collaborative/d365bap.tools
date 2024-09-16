@@ -149,9 +149,12 @@
         It will filter the output to only containing those who have an update available.
         
         Sample output:
-        PackageId                            PackageName                    AvailableVersion    InstalledVersion    UpdateAvailable
-        ---------                            -----------                    ----------------    ----------------    ---------------
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24019.1005      True
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        Business Copilot AI            msdyn_BusinessCopilotAIAnchor  1.0.0.23            True            Installed
+        Dual-write core solution       DualWriteCoreAnchor            1.0.24062.2         True            Installed
+        Dynamics 365 ChannelExperienc… msdyn_ChannelExperienceAppsAn… 1.0.24074.1004      True            Installed
+        Dynamics 365 ContextualHelp    msdyn_ContextualHelpAnchor     1.0.0.22            True            Installed
         
     .EXAMPLE
         PS C:\> $appIds = @(Get-BapEnvironmentD365App -EnvironmentId *test* -UpdatesOnly | Select-Object -ExpandProperty PpacD365AppId)
@@ -236,6 +239,7 @@ function Get-BapEnvironmentD365App {
         $resCol = @(
             foreach ($appObj in $($appsAvailable | Sort-Object -Property ApplicationName)) {
                 if ((-not ($appObj.ApplicationName -like $Name -or $appObj.ApplicationName -eq $Name)) -and (-not ($appObj.UniqueName -like $Name -or $appObj.UniqueName -eq $Name))) { continue }
+                
                 if ($Status -ne "All" -and $appObj.state -ne $Status) { continue }
             
                 $appObj | Add-Member -MemberType NoteProperty -Name CurrentVersion -Value "N/A"

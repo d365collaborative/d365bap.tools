@@ -14,7 +14,7 @@ Get users/members from security role
 
 ```
 Get-BapEnvironmentSecurityRoleMember [-EnvironmentId] <String> [-SecurityRoleId] <String> [[-UserId] <String>]
- [-IncludeAppIds] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-IncludePpacApplications] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -67,7 +67,7 @@ d365admin@contoso.com          # D365Admin                                      
 
 ### EXAMPLE 4
 ```
-Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -IncludeAppIds
+Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -IncludePpacApplications
 ```
 
 This will fetch all users that are members of the security role 'System Administrator' from the environment.
@@ -136,7 +136,7 @@ Wildcard search is supported
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: Email
 
 Required: False
 Position: 3
@@ -145,7 +145,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IncludeAppIds
+### -IncludePpacApplications
 Instruct the cmdlet to include all users that are members of the security role
 
 Simply includes those who has the ApplicationId property filled

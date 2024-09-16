@@ -26,20 +26,20 @@
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
         
     .EXAMPLE
-        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1
+        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test*
         
         This will get all system users from the Source Environment.
         It will iterate over all of them, and validate against the Destination Environment.
         It will exclude those with ApplicationId filled.
         
         Sample output:
-        Email                          Name                           AppId                SourceId        DestinationId
-        -----                          ----                           -----                --------        -------------
-        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-â€¦ 5aaac0ec-a91â€¦
-        ade@temp.com                   Alex Denver                                         39309a5c-7676-â€¦ 1d521227-43bâ€¦
+        Email                          Name                           PpacAppId            SourceId        DestinationId
+        -----                          ----                           ---------            --------        -------------
+        aba@temp.com                   Austin Baker                                        f85bcd69-ef7... 5aaac0ec-a...
+        ade@temp.com                   Alex Denver                                         39309a5c-767... 1d521227-4...
         
     .EXAMPLE
-        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -IncludeAppIds
+        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -IncludeAppIds
         
         This will get all system users from the Source Environment.
         It will iterate over all of them, and validate against the Destination Environment.
@@ -48,13 +48,13 @@
         Sample output:
         Email                          Name                           AppId                SourceId        DestinationId
         -----                          ----                           -----                --------        -------------
-        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-â€¦ 5aaac0ec-a91â€¦
-        ade@temp.com                   Alex Denver                                         39309a5c-7676-â€¦ 1d521227-43bâ€¦
-        AIBuilder_StructuredML_Prod_Câ€¦ AIBuilder_StructuredML_Prod_Câ€¦ ff8a1ad8-a415-45c1-â€¦ 95dc9ca2-8185-â€¦ 328db0cc-14câ€¦
-        AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-â€¦ c96f82b8-320f-â€¦ 1831f4dc-4c5â€¦
+        aba@temp.com                   Austin Baker                                        f85bcd69-ef7... 5aaac0ec-a...
+        ade@temp.com                   Alex Denver                                         39309a5c-767... 1d521227-4...
+        AIBuilder_StructuredML_Prod... # AIBuilder_StructuredML_Pr... be5f0473-6b57-40f... 4d86d7d3-cb5... 9a2a59ac-6...
+        AIBuilderProd@onmicrosoft.c... # AIBuilderProd                ef32e2a3-262a-44e... 4386d7d3-cb5... 902a59ac-6...
         
     .EXAMPLE
-        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -IncludeAppIds -ShowDiffOnly
+        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -IncludeAppIds -ShowDiffOnly
         
         This will get all system users from the Source Environment.
         It will iterate over all of them, and validate against the Destination Environment.
@@ -64,12 +64,12 @@
         Sample output:
         Email                          Name                           AppId                SourceId        DestinationId
         -----                          ----                           -----                --------        -------------
-        d365-scm-operationdataserviceâ€¦ d365-scm-operationdataserviceâ€¦ 986556ed-a409-4339-â€¦ 5e077e6a-a0c9-â€¦ Missing
-        d365-scm-operationdataserviceâ€¦ d365-scm-operationdataserviceâ€¦ 14e80222-1878-455d-â€¦ 183ec023-9ccb-â€¦ Missing
-        def@temp.com                   Dustin Effect                                       01e37132-0a44-â€¦ Missing
+        d365-scm-operationdataservi... d365-scm-operationdataservi... 986556ed-a409-433... 5e077e6a-a0c... Missing
+        d365-scm-operationdataservi... d365-scm-operationdataservi... 14e80222-1878-455... 183ec023-9cc... Missing
+        def@temp.com                   Dustin Effect                                       01e37132-0a4... Missing
         
     .EXAMPLE
-        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -AsExcelOutput
+        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -AsExcelOutput
         
         This will get all system users from the Source Environment.
         It will iterate over all of them, and validate against the Destination Environment.
@@ -130,18 +130,21 @@ function Compare-BapEnvironmentUser {
                 $destinationUser = $usersDestinationEnvironment | Where-Object Email -eq $sourceUser.Email | Select-Object -First 1
         
                 $tmp = [Ordered]@{
-                    Email         = $sourceUser.Email
-                    Name          = $sourceUser.Name
-                    AppId         = $sourceUser.AppId
-                    SourceId      = $sourceUser.systemuserid
-                    DestinationId = "Missing"
+                    Email                       = $sourceUser.Email
+                    Name                        = $sourceUser.Name
+                    PpacAppId                   = $sourceUser.PpacAppId
+                    SourceId                    = $sourceUser.PpacSystemUserId
+                    SourcePpacSystemUserId      = $sourceUser.PpacSystemUserId
+                    DestinationId               = "Missing"
+                    DestinationPpacSystemUserId = "Missing"
                 }
         
                 if (-not ($null -eq $destinationUser)) {
-                    $tmp.DestinationId = $destinationUser.systemuserid
+                    $tmp.DestinationId = $destinationUser.PpacSystemUserId
+                    $tmp.DestinationPpacSystemUserId = $destinationUser.PpacSystemUserId
                 }
         
-                ([PSCustomObject]$tmp) | Select-PSFObject -TypeName "D365Bap.Tools.Compare.User"
+                ([PSCustomObject]$tmp) | Select-PSFObject -TypeName "D365Bap.Tools.Compare.PpacUser"
             }
         )
 
@@ -150,7 +153,7 @@ function Compare-BapEnvironmentUser {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion SourceVersion, DestinationVersion
+            $resCol | Export-Excel
             return
         }
 

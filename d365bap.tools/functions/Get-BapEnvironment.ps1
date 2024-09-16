@@ -73,11 +73,11 @@ function Get-BapEnvironment {
         $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
-        $headers = @{
+        $headersBapApi = @{
             "Authorization" = "Bearer $($tokenBapValue)"
         }
         
-        $resEnvs = Invoke-RestMethod -Method Get -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" -Headers $headers | Select-Object -ExpandProperty Value
+        $resEnvs = Invoke-RestMethod -Method Get -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" -Headers $headersBapApi | Select-Object -ExpandProperty Value
 
         $searchById = Test-Guid -InputObject $EnvironmentId
     }
@@ -111,7 +111,11 @@ function Get-BapEnvironment {
                     else {
                         $res."prop_$($prop.Name)" = $prop.Value
                     }
-                
+                }
+
+                foreach ($endPoint in $($res.prop_runtimeEndpoints.Split("`r`n")) ) {
+                    $keyValue = $endPoint.Replace("microsoft.", "").split("=")
+                    $res."Api.$($keyValue[0])" = $keyValue[1]
                 }
 
             ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `

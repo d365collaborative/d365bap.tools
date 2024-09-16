@@ -28,14 +28,14 @@ Allows the user to include all users, based on those who has the ApplicationId p
 
 ### EXAMPLE 1
 ```
-Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+Get-BapEnvironmentUser -EnvironmentId *uat*
 ```
 
 This will fetch all oridinary users from the environment.
 
 Sample output:
-Email                          Name                           AppId                Systemuserid
------                          ----                           -----                ------------
+Email                          Name                           PpacAppId            PpacSystemUserId
+-----                          ----                           ---------            ----------------
 SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
 INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
 aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
@@ -43,23 +43,24 @@ ade@temp.com                   Alex Denver                                      
 
 ### EXAMPLE 2
 ```
-Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+Get-BapEnvironmentUser -EnvironmentId *uat* -IncludeAppIds
 ```
 
 This will fetch all users from the environment.
 It will include the ones with the ApplicationId property filled.
 
 Sample output:
-Email                          Name                           AppId                Systemuserid
------                          ----                           -----                ------------
+Email                          Name                           PpacAppId            PpacSystemUserId
+-----                          ----                           ---------            ----------------
 SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
 INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
 aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
-AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-â€¦ c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
+AIBuilderProd@onmicrosoft.com  # AIBuilderProd                0a143f2d-2320-414...
+c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
 
 ### EXAMPLE 3
 ```
-Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+Get-BapEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
 ```
 
 This will fetch all oridinary users from the environment.

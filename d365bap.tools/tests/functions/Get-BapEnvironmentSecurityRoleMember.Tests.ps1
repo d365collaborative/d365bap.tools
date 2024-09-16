@@ -50,9 +50,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter IncludeAppIds' {
-			$parameter = (Get-Command Get-BapEnvironmentSecurityRoleMember).Parameters['IncludeAppIds']
-			$parameter.Name | Should -Be 'IncludeAppIds'
+		It 'Should have the expected parameter IncludePpacApplications' {
+			$parameter = (Get-Command Get-BapEnvironmentSecurityRoleMember).Parameters['IncludePpacApplications']
+			$parameter.Name | Should -Be 'IncludePpacApplications'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -SecurityRoleId
-		__AllParameterSets -EnvironmentId -SecurityRoleId -UserId -IncludeAppIds -AsExcelOutput
+		__AllParameterSets -EnvironmentId -SecurityRoleId -UserId -IncludePpacApplications -AsExcelOutput
 		#>
 	}
 

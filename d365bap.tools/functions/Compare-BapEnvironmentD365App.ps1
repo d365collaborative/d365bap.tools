@@ -30,36 +30,38 @@
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
         
     .EXAMPLE
-        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1
+        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test*
         
         This will get all installed D365 Apps from the Source Environment.
         It will iterate over all of them, and validate against the Destination Environment.
         
         Sample output:
-        PackageId                            PackageName                    SourceVersion       DestinationVersion  AppName
-        ---------                            -----------                    -------------       ------------------  -------
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24012.1005      Agent Prodâ€¦
-        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24012.1013     appprofileâ€¦
-        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             0.0.0.0             Azure Synaâ€¦
-        42cc1442-194f-462b-a325-ce5b5f18c02d msdyn_EmailAddressValidation   1.0.0.4             1.0.0.4             Data Validâ€¦
+        PpacD365AppName                      PpacPackageName                SourceVersion       DestinationVersion
+        ---------------                      ---------------                -------------       ------------------
+        Agent Productivity Tools             AgentProductivityToolsAnchor   9.2.24083.1006      9.2.24083.1006
+        appprofilemanager                    msdyn_AppProfileManagerAnchor  10.1.24083.1006     10.1.24083.1006
+        Business Copilot AI                  msdyn_BusinessCopilotAIAnchor  1.0.0.23            1.0.0.23
+        Copilot for finance and operations … msdyn_FnOCopilotAnchor         1.0.2748.3          1.0.2748.3
+        Copilot in Microsoft Dynamics 365 F… msdyn_FinanceAIAppAnchor       1.0.2755.2          1.0.2755.2
+        Copilot in Microsoft Dynamics 365 S… msdyn_SCMAIAppAnchor           1.0.2731.2          1.0.2731.2
         
     .EXAMPLE
-        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -ShowDiffOnly
+        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -ShowDiffOnly
         
         This will get all installed D365 Apps from the Source Environment.
         It will iterate over all of them, and validate against the Destination Environment.
         It will filter out results, to only include those where the DestinationVersions is different from the SourceVersion.
         
         Sample output:
-        PackageId                            PackageName                    SourceVersion       DestinationVersion  AppName
-        ---------                            -----------                    -------------       ------------------  -------
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24012.1005      Agent Prodâ€¦
-        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24012.1013     appprofileâ€¦
-        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             0.0.0.0             Azure Synaâ€¦
-        7523d261-f1be-46e7-8e68-f3de16eeabbb DualWriteCoreAnchor            1.0.24022.4         1.0.24011.1         Dual-writeâ€¦
+        PpacD365AppName                      PpacPackageName                SourceVersion       DestinationVersion
+        ---------------                      ---------------                -------------       ------------------
+        Dataverse Accelerator                DataverseAccelerator_Anchor    1.0.5.6             1.0.4.36
+        Dynamics 365 ChannelExperienceApps   msdyn_ChannelExperienceAppsAn… 1.0.24074.1004      1.0.24083.1004
+        Invoice Capture for Dynamics 365 Fi… msdyn_FnoInvoiceCaptureAnchor  1.7.0.1             Missing
+        OData v4 Data Provider               ODatav4DataProvider            9.1.0.203           9.1.0.226
         
     .EXAMPLE
-        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -AsExcelOutput
+        PS C:\> Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -AsExcelOutput
         
         This will get all installed D365 Apps from the Source Environment.
         It will iterate over all of them, and validate against the Destination Environment.
@@ -106,21 +108,21 @@ function Compare-BapEnvironmentD365App {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $appsSourceEnvironment = Get-BapEnvironmentD365App -EnvironmentId $SourceEnvironmentId -InstallState Installed -GeoRegion $GeoRegion
+        $appsSourceEnvironment = Get-BapEnvironmentD365App -EnvironmentId $SourceEnvironmentId -Status Installed -GeoRegion $GeoRegion
         $appsDestinationEnvironment = Get-BapEnvironmentD365App -EnvironmentId $DestinationEnvironmentId -GeoRegion $GeoRegion
     }
     
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $resCol = @(foreach ($sourceApp in $($appsSourceEnvironment | Sort-Object -Property ApplicationName )) {
-                $destinationApp = $appsDestinationEnvironment | Where-Object PackageId -eq $sourceApp.PackageId | Select-Object -First 1
+        $resCol = @(foreach ($sourceApp in $($appsSourceEnvironment | Sort-Object -Property PpacD365AppName )) {
+                $destinationApp = $appsDestinationEnvironment | Where-Object PpacD365AppId -eq $sourceApp.PpacD365AppId | Select-Object -First 1
         
                 $sourceVersion = if ($sourceApp.InstalledVersion -eq "N/A") { [System.Version]"0.0.0.0" } else { [System.Version]$sourceApp.InstalledVersion }
                 $tmp = [Ordered]@{
-                    PackageId          = $sourceApp.PackageId
-                    PackageName        = $sourceApp.PackageName
-                    AppName            = $sourceApp.AppName
+                    PpacD365AppId      = $sourceApp.PpacD365AppId
+                    PpacPackageName    = $sourceApp.PpacPackageName
+                    PpacD365AppName    = $sourceApp.PpacD365AppName
                     SourceVersion      = $sourceVersion
                     DestinationVersion = "Missing"
                 }
@@ -129,7 +131,7 @@ function Compare-BapEnvironmentD365App {
                     $tmp.DestinationVersion = if ($destinationApp.InstalledVersion -eq "N/A") { [System.Version]"0.0.0.0" }else { [System.Version]$destinationApp.InstalledVersion }
                 }
         
-                ([PSCustomObject]$tmp) | Select-PSFObject -TypeName "D365Bap.Tools.Compare.Package"
+                ([PSCustomObject]$tmp) | Select-PSFObject -TypeName "D365Bap.Tools.Compare.PpacD365App"
             }
         )
 
