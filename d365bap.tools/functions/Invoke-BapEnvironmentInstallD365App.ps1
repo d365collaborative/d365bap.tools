@@ -124,11 +124,13 @@ function Invoke-BapEnvironmentInstallD365App {
         if (Test-PSFFunctionInterrupt) { return }
 
         # First we will fetch ALL available apps for the environment
-        $tokenPowerApi = Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/"
-        $headersPowerApi = @{
-            "Authorization" = "Bearer $($tokenPowerApi.Token)"
-        }
+        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+        $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
         
+        $headersPowerApi = @{
+            "Authorization" = "Bearer $($tokenPowerApiValue)"
+        }
+
         $appsAvailable = Get-BapEnvironmentD365App -EnvironmentId $EnvironmentId
     }
     
@@ -170,9 +172,11 @@ function Invoke-BapEnvironmentInstallD365App {
         }
         
         do {
-            $tokenPowerApi = Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/"
+            $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+            $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
+        
             $headersPowerApi = @{
-                "Authorization" = "Bearer $($tokenPowerApi.Token)"
+                "Authorization" = "Bearer $($tokenPowerApiValue)"
             }
 
             Start-Sleep -Seconds 60

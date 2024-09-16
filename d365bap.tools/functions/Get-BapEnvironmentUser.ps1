@@ -26,34 +26,34 @@
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+        PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat*
         
         This will fetch all oridinary users from the environment.
         
         Sample output:
-        Email                          Name                           AppId                Systemuserid
-        -----                          ----                           -----                ------------
+        Email                          Name                           PpacAppId            PpacSystemUserId
+        -----                          ----                           ---------            ----------------
         SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
         INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
         aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
         ade@temp.com                   Alex Denver                                         39309a5c-7676-4c8a-b702-719fb92c5151
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+        PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat* -IncludeAppIds
         
         This will fetch all users from the environment.
         It will include the ones with the ApplicationId property filled.
         
         Sample output:
-        Email                          Name                           AppId                Systemuserid
-        -----                          ----                           -----                ------------
+        Email                          Name                           PpacAppId            PpacSystemUserId
+        -----                          ----                           ---------            ----------------
         SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
         INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
         aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
-        AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-… c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
+        AIBuilderProd@onmicrosoft.com  # AIBuilderProd                0a143f2d-2320-414... c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+        PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
         
         This will fetch all oridinary users from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
@@ -85,12 +85,13 @@ function Get-BapEnvironmentUser {
         if (Test-PSFFunctionInterrupt) { return }
 
         $baseUri = $envObj.LinkedMetaPpacEnvUri
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $baseUri
-        $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
-        }
+        
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
-        $languages = @(Get-EnvironmentLanguage -BaseUri $baseUri)
+        $headersWebApi = @{
+            "Authorization" = "Bearer $($tokenWebApiValue)"
+        }
     }
     
     process {
@@ -102,10 +103,14 @@ function Get-BapEnvironmentUser {
             foreach ($usrObj in  $($resUsers.value | Sort-Object -Property internalemailaddress)) {
                 
                 $usrObj | Add-Member -MemberType NoteProperty -Name "lang" -Value $($languages | Where-Object { ($_.localeid -eq $usrObj.user_settings[0].uilanguageid) -or ($_.BaseLocaleId -eq $usrObj.user_settings[0].uilanguageid) } | Select-Object -First 1 -ExpandProperty code)
-                $usrObj | Select-PSFObject -TypeName "D365Bap.Tools.User" -ExcludeProperty "@odata.etag" -Property "internalemailaddress as Email",
+                $usrObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacUser" `
+                    -ExcludeProperty "@odata.etag" `
+                    -Property "systemuserid as PpacSystemUserId",
+                "internalemailaddress as Email",
                 "fullname as Name",
-                "applicationid as AppId",
+                "applicationid as PpacAppId",
                 "lang as Language",
+                "azureactivedirectoryobjectid as EntraObjectId",
                 *
             }
         )

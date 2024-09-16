@@ -1,56 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-16"?>
 <Configuration>
 	<ViewDefinitions>
-		<!-- Foo.Bar -->
 		<View>
-			<Name>Foo.Bar</Name>
+			<Name>D365Bap.Tools.PpacD365App</Name>
 			<ViewSelectedBy>
-				<TypeName>Foo.Bar</TypeName>
-			</ViewSelectedBy>
-			<TableControl>
-				<AutoSize/>
-				<TableHeaders>
-					<TableColumnHeader/>
-					<TableColumnHeader/>
-				</TableHeaders>
-				<TableRowEntries>
-					<TableRowEntry>
-						<TableColumnItems>
-							<TableColumnItem>
-								<PropertyName>Foo</PropertyName>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>Bar</PropertyName>
-							</TableColumnItem>
-						</TableColumnItems>
-					</TableRowEntry>
-				</TableRowEntries>
-			</TableControl>
-		</View>
-		<View>
-			<Name>D365Bap.Tools.Package</Name>
-			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Package</TypeName>
+				<TypeName>D365Bap.Tools.PpacD365App</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
-					<TableColumnHeader>
-						<Width>36</Width>
-					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>30</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>19</Width>
+						<Width>30</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>19</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>15</Width>
-					</TableColumnHeader>
-					<TableColumnHeader>
-						<Width>30</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>15</Width>
@@ -60,13 +28,10 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>PackageId</PropertyName>
+								<PropertyName>PpacD365AppName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PackageName</PropertyName>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>AvailableVersion</PropertyName>
+								<PropertyName>PpacPackageName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>InstalledVersion</PropertyName>
@@ -75,10 +40,7 @@
 								<PropertyName>UpdateAvailable</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>AppName</PropertyName>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>InstallState</PropertyName>
+								<PropertyName>Status</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -86,9 +48,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Environment</Name>
+			<Name>D365Bap.Tools.PpacEnvironment</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Environment</TypeName>
+				<TypeName>D365Bap.Tools.PpacEnvironment</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -138,9 +100,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Compare.Package</Name>
+			<Name>D365Bap.Tools.Compare.PpacD365App</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Compare.Package</TypeName>
+				<TypeName>D365Bap.Tools.Compare.PpacD365App</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -156,18 +118,15 @@
 					<TableColumnHeader>
 						<Width>19</Width>
 					</TableColumnHeader>
-					<TableColumnHeader>
-						<Width>30</Width>
-					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>PackageId</PropertyName>
+								<PropertyName>PpacD365AppName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PackageName</PropertyName>
+								<PropertyName>PpacPackageName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>SourceVersion</PropertyName>
@@ -175,18 +134,15 @@
 							<TableColumnItem>
 								<PropertyName>DestinationVersion</PropertyName>
 							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>AppName</PropertyName>
-							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
 				</TableRowEntries>
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.User</Name>
+			<Name>D365Bap.Tools.PpacUser</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.User</TypeName>
+				<TypeName>D365Bap.Tools.PpacUser</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -213,10 +169,10 @@
 								<PropertyName>Name</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>AppId</PropertyName>
+								<PropertyName>PpacAppId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>Systemuserid</PropertyName>
+								<PropertyName>PpacSystemUserId</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -224,9 +180,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Compare.User</Name>
+			<Name>D365Bap.Tools.Compare.PpacUser</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Compare.User</TypeName>
+				<TypeName>D365Bap.Tools.Compare.PpacUser</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -256,7 +212,7 @@
 								<PropertyName>Name</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>AppId</PropertyName>
+								<PropertyName>PpacAppId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>SourceId</PropertyName>
@@ -270,9 +226,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.AppUser</Name>
+			<Name>D365Bap.Tools.PpacApplicationUser</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.AppUser</TypeName>
+				<TypeName>D365Bap.Tools.PpacApplicationUser</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -286,23 +242,23 @@
 						<Width>36</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>36</Width>
+						<Width>8</Width>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>AppId</PropertyName>
+								<PropertyName>PpacSystemUserId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>AppName</PropertyName>
+								<PropertyName>PpacAppName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>ApplicationUserId</PropertyName>
+								<PropertyName>PpacAppId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>SolutionId</PropertyName>
+								<PropertyName>State</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -436,9 +392,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Solution</Name>
+			<Name>D365Bap.Tools.PpacSolution</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Solution</TypeName>
+				<TypeName>D365Bap.Tools.PpacSolution</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -462,7 +418,7 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>SolutionId</PropertyName>
+								<PropertyName>PpacSolutionId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Name</PropertyName>
@@ -482,9 +438,9 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.Role</Name>
+			<Name>D365Bap.Tools.PpacRole</Name>
 			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.Role</TypeName>
+				<TypeName>D365Bap.Tools.PpacRole</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -492,23 +448,75 @@
 						<Width>36</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>30</Width>
+						<Width>40</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>30</Width>
+						<Width>9</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>12</Width>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>Id</PropertyName>
+								<PropertyName>PpacRoleId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Name</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>ModifiedOn</PropertyName>
+								<PropertyName>IsManaged</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>PpacRoleType</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
+		<View>
+			<Name>D365Bap.Tools.PpacPowerApp</Name>
+			<ViewSelectedBy>
+				<TypeName>D365Bap.Tools.PpacPowerApp</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Width>30</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>12</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>9</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>20</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>50</Width>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>PpacPowerAppName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>PowerAppType</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>IsManaged</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Owner</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Description</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>

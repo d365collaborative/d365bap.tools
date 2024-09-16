@@ -14,7 +14,7 @@ Compare the environment users
 
 ```
 Compare-BapEnvironmentUser [-SourceEnvironmentId] <String> [-DestinationEnvironmentId] <String> [-ShowDiffOnly]
- [-IncludeAppIds] [-AsExcelOutput] [<CommonParameters>]
+ [-IncludeAppIds] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -26,7 +26,7 @@ It will only look for users on the source, and use this as a baseline against th
 
 ### EXAMPLE 1
 ```
-Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1
+Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test*
 ```
 
 This will get all system users from the Source Environment.
@@ -34,14 +34,16 @@ It will iterate over all of them, and validate against the Destination Environme
 It will exclude those with ApplicationId filled.
 
 Sample output:
-Email                          Name                           AppId                SourceId        DestinationId
------                          ----                           -----                --------        -------------
-aba@temp.com                   Austin Baker                                        f85bcd69-ef72-… 5aaac0ec-a91…
-ade@temp.com                   Alex Denver                                         39309a5c-7676-… 1d521227-43b…
+Email                          Name                           PpacAppId            SourceId        DestinationId
+-----                          ----                           ---------            --------        -------------
+aba@temp.com                   Austin Baker                                        f85bcd69-ef7...
+5aaac0ec-a...
+ade@temp.com                   Alex Denver                                         39309a5c-767...
+1d521227-4...
 
 ### EXAMPLE 2
 ```
-Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -IncludeAppIds
+Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -IncludeAppIds
 ```
 
 This will get all system users from the Source Environment.
@@ -51,14 +53,23 @@ It will include those with ApplicationId filled.
 Sample output:
 Email                          Name                           AppId                SourceId        DestinationId
 -----                          ----                           -----                --------        -------------
-aba@temp.com                   Austin Baker                                        f85bcd69-ef72-… 5aaac0ec-a91…
-ade@temp.com                   Alex Denver                                         39309a5c-7676-… 1d521227-43b…
-AIBuilder_StructuredML_Prod_C… AIBuilder_StructuredML_Prod_C… ff8a1ad8-a415-45c1-… 95dc9ca2-8185-… 328db0cc-14c…
-AIBuilderProd@onmicrosoft.com  AIBuilderProd, #               0a143f2d-2320-4141-… c96f82b8-320f-… 1831f4dc-4c5…
+aba@temp.com                   Austin Baker                                        f85bcd69-ef7...
+5aaac0ec-a...
+ade@temp.com                   Alex Denver                                         39309a5c-767...
+1d521227-4...
+AIBuilder_StructuredML_Prod...
+# AIBuilder_StructuredML_Pr...
+be5f0473-6b57-40f...
+4d86d7d3-cb5...
+9a2a59ac-6...
+AIBuilderProd@onmicrosoft.c...
+# AIBuilderProd                ef32e2a3-262a-44e...
+4386d7d3-cb5...
+902a59ac-6...
 
 ### EXAMPLE 3
 ```
-Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -IncludeAppIds -ShowDiffOnly
+Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -IncludeAppIds -ShowDiffOnly
 ```
 
 This will get all system users from the Source Environment.
@@ -69,13 +80,22 @@ It will only output the users that is missing in the destionation environment.
 Sample output:
 Email                          Name                           AppId                SourceId        DestinationId
 -----                          ----                           -----                --------        -------------
-d365-scm-operationdataservice… d365-scm-operationdataservice… 986556ed-a409-4339-… 5e077e6a-a0c9-… Missing
-d365-scm-operationdataservice… d365-scm-operationdataservice… 14e80222-1878-455d-… 183ec023-9ccb-… Missing
-def@temp.com                   Dustin Effect                                       01e37132-0a44-… Missing
+d365-scm-operationdataservi...
+d365-scm-operationdataservi...
+986556ed-a409-433...
+5e077e6a-a0c...
+Missing
+d365-scm-operationdataservi...
+d365-scm-operationdataservi...
+14e80222-1878-455...
+183ec023-9cc...
+Missing
+def@temp.com                   Dustin Effect                                       01e37132-0a4...
+Missing
 
 ### EXAMPLE 4
 ```
-Compare-BapEnvironmentD365App -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -AsExcelOutput
+Compare-BapEnvironmentD365App -SourceEnvironmentId *uat* -DestinationEnvironmentId *test* -AsExcelOutput
 ```
 
 This will get all system users from the Source Environment.
@@ -158,6 +178,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

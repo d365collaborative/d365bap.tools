@@ -46,10 +46,13 @@ function Update-BapEnvironmentVirtualEntityMetadata {
         
         if (Test-PSFFunctionInterrupt) { return }
 
-        $baseUri = $envObj.LinkedMetaPpacEnvApiUri
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $baseUri
+        $baseUri = $envObj.LinkedMetaPpacEnvUri
+        
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
         $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
+            "Authorization" = "Bearer $($tokenWebApiValue)"
         }
 
         $entities = @(Get-BapEnvironmentVirtualEntity -EnvironmentId $EnvironmentId -Name $Name)

@@ -61,9 +61,11 @@ function Get-BapEnvironmentLinkEnterprisePolicy {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $tokenBap = Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/"
-        $headers = @{
-            "Authorization" = "Bearer $($tokenBap.Token)"
+        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
+        $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
+
+        $headersBapApi = @{
+            "Authorization" = "Bearer $($tokenBapValue)"
         }
     }
     
@@ -75,7 +77,7 @@ function Get-BapEnvironmentLinkEnterprisePolicy {
         # 2019-10-01
         $uriLinkEnterprisePolicy = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/$EnvironmentId`?api-version=2024-05-01"
 
-        $resObj = Invoke-RestMethod -Method Get -Uri $uriLinkEnterprisePolicy -Headers $headers -Body $body -ContentType "application/json"
+        $resObj = Invoke-RestMethod -Method Get -Uri $uriLinkEnterprisePolicy -Headers $headersBapApi -Body $body -ContentType "application/json"
 
         $resCol = @(
             if ($null -ne $resObj.properties.enterprisePolicies) {
