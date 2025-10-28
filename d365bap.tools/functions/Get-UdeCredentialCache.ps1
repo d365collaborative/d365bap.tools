@@ -12,7 +12,9 @@
         Defaults to the standard location in the user's AppData folder.
         
     .PARAMETER AsExcelOutput
-        Instructs the function to export the results to an Excel file.
+        Instruct the cmdlet to output all details directly to an Excel file.
+
+        Will include all properties, including those not shown by default in the console output.
         
     .EXAMPLE
         PS C:\> Get-UdeCredentialCache

@@ -11,6 +11,11 @@
         
         Defaults to CRMDeveloperToolKit which is the tool used by Visual Studio to communicate with Dynamics 365 / Power Platform environments.
         
+    .PARAMETER AsExcelOutput
+        Instruct the cmdlet to output all details directly to an Excel file.
+
+        Will include all properties, including those not shown by default in the console output.
+        
     .EXAMPLE
         PS C:\> Get-UdeConnection
         
