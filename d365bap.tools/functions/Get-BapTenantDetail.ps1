@@ -97,7 +97,7 @@ function Get-BapTenantDetail {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapTenantDetail"
             return
         }
 

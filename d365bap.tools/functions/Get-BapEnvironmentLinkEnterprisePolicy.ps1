@@ -98,7 +98,7 @@ function Get-BapEnvironmentLinkEnterprisePolicy {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentLinkEnterprisePolicy"
             return
         }
 

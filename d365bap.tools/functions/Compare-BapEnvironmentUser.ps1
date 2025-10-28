@@ -153,7 +153,7 @@ function Compare-BapEnvironmentUser {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Compare-BapEnvironmentUser"
             return
         }
 

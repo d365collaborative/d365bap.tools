@@ -140,7 +140,8 @@ function Compare-BapEnvironmentD365App {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion SourceVersion, DestinationVersion
+            $resCol | Export-Excel -WorksheetName "Compare-BapEnvironmentD365App" `
+                -NoNumberConversion SourceVersion, DestinationVersion
             return
         }
 

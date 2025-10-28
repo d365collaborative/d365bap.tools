@@ -15,7 +15,7 @@
         Instruct the cmdlet to output all details directly to an Excel file.
 
         Will include all properties, including those not shown by default in the console output.
-        
+
     .EXAMPLE
         PS C:\> Get-UdeConnection
         
@@ -55,23 +55,22 @@ function Get-UdeConnection {
             $props[$add.key] = $add.value
         }
 
-        $resCol = @(
-            [PSCustomObject]$props | Select-PSFObject -TypeName 'D365Bap.Tools.UdeConnection' `
-                "UserId as Upn",
-            @{Name = "ConnectionUri"; Expression = {
-                    $temp = [uri]$_.DirectConnectionUri;
-                    $temp.Scheme + "://" + $temp.Host
-                }
-            },
-            @{Name = "PpacEnvUri"; Expression = {
-                    $temp = [uri]$_.DirectConnectionUri;
-                    ($temp.Scheme + "://" + $temp.Host).Replace("api.", "")
-                }
-            },
-            *)
+        $resCol = [PSCustomObject]$props | Select-PSFObject -TypeName 'D365Bap.Tools.UdeConnection' `
+            "UserId as Upn",
+        @{Name = "ConnectionUri"; Expression = {
+                $temp = [uri]$_.DirectConnectionUri;
+                $temp.Scheme + "://" + $temp.Host
+            }
+        },
+        @{Name = "PpacEnvUri"; Expression = {
+                $temp = [uri]$_.DirectConnectionUri;
+                ($temp.Scheme + "://" + $temp.Host).Replace("api.", "")
+            }
+        },
+        *
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "UdeConnection"
             return
         }
 

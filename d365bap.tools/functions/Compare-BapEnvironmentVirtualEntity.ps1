@@ -134,7 +134,8 @@ function Compare-BapEnvironmentVirtualEntity {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion SourceVersion, DestinationVersion
+            $resCol | Export-Excel -WorksheetName "Compare-BapEnvironmentVirtualEntity" `
+                -NoNumberConversion SourceVersion, DestinationVersion
             return
         }
 

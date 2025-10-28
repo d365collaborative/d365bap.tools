@@ -89,7 +89,7 @@ function Confirm-BapEnvironmentIntegration {
         *
         
         if ($AsExcelOutput) {
-            $temp | Export-Excel
+            $temp | Export-Excel -WorksheetName "Confirm-BapEnvironmentIntegration"
             return
         }
 

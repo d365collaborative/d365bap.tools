@@ -120,7 +120,7 @@ function Get-BapEnvironmentUser {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentUser"
             return
         }
 

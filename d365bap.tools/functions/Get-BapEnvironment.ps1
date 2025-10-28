@@ -116,7 +116,7 @@ function Get-BapEnvironment {
                     $res."Api.$($keyValue[0])" = $keyValue[1]
                 }
 
-            ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
+                ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
                     -Property "Id as PpacEnvId",
                 "Region as PpacEnvRegion",
                 "prop_tenantId as TenantId",
@@ -141,7 +141,8 @@ function Get-BapEnvironment {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironment" `
+                -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
             return
         }
 

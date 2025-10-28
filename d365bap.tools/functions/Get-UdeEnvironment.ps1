@@ -154,7 +154,7 @@ function Get-UdeEnvironment {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-UdeEnvironment"
             return
         }
 

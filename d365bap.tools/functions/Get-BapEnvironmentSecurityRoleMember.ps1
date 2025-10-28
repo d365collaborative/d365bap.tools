@@ -181,7 +181,7 @@ function Get-BapEnvironmentSecurityRoleMember {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentSecurityRoleMember"
             return
         }
 

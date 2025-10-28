@@ -162,7 +162,7 @@ function Get-BapEnvironmentPowerApp {
         $resCol = @( $resColModelApps + $resColCanvasApps ) | Sort-Object -Property DisplayName
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentPowerApp"
             return
         }
 

@@ -90,7 +90,7 @@ function Get-UdeCredentialCache {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-UdeCredentialCache"
             return
         }
 

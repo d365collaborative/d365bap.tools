@@ -64,7 +64,7 @@ function Get-BapTenant {
     )
 
     begin {
-        $tenantDomains = @(Get-AzDomain)
+        $tenantDomains = @(Get-AzTenant)
     }
     
     process {
@@ -87,7 +87,7 @@ function Get-BapTenant {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapTenant"
             return
         }
 

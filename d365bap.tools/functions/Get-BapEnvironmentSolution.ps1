@@ -150,7 +150,7 @@ function Get-BapEnvironmentSolution {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentSolution"
             return
         }
 

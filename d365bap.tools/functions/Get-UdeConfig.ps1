@@ -18,7 +18,7 @@
         Instruct the cmdlet to output all details directly to an Excel file.
 
         Will include all properties, including those not shown by default in the console output.
-        
+
     .EXAMPLE
         PS C:\> Get-UdeConfig
         
@@ -85,7 +85,8 @@ function Get-UdeConfig {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion PackagesVersion, LocalPackages
+            $resCol | Export-Excel -WorksheetName "Get-UdeConfig" `
+                -NoNumberConversion PackagesVersion, LocalPackages
             return
         }
 
@@ -96,5 +97,3 @@ function Get-UdeConfig {
     end {
     }
 }
-
-# New-Item -ItemType SymbolicLink -Path 'C:\Users\MötzJensen\AppData\Local\Microsoft\Dynamics365\RuntimeSymLinks\es-feature-001\ZZZZ__CustomXppMetadata' -Target 'C:\UDE_GIT\Essence\es-feature-001'

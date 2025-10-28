@@ -139,7 +139,7 @@ function Get-BapEnvironmentApplicationUser {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentApplicationUser"
             return
         }
 

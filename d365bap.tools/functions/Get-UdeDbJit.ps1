@@ -152,7 +152,7 @@ function Get-UdeDbJit {
         )
         
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-UdeDbJit"
             return
         }
 
