@@ -13,7 +13,7 @@
         
     .PARAMETER AsExcelOutput
         Instruct the cmdlet to output all details directly to an Excel file.
-
+        
         Will include all properties, including those not shown by default in the console output.
         
     .EXAMPLE
