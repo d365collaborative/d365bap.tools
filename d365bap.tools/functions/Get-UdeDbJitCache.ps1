@@ -22,6 +22,7 @@
 #>
 function Get-UdeDbJitCache {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [Alias("Name")]
         [string] $Id = "*",

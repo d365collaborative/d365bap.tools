@@ -31,6 +31,7 @@
 #>
 function Get-UdeCredentialCache {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [string] $Path = "$env:APPDATA\Microsoft\CRMDeveloperToolKit",
 

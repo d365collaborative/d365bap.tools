@@ -39,6 +39,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Set-BapTenantDetail {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]

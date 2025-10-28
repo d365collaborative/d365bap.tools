@@ -139,24 +139,22 @@ function Get-UdeDbJit {
             -Headers $headers `
             -Body $payload
 
-        $resCol = @(
-            $resRequest | Select-PSFObject -TypeName "D365Bap.Tools.UdeDatabaseJit" `
-                -ExcludeProperty "@odata.context" `
-                -Property "servername as Server",
-            "databasename as Database",
-            "sqljitusername as Username",
-            "sqljitpassword as Password",
-            "sqljitexpiration as Expiration",
-            "sqljitrole as Role",
-            *
-        )
+        $resObj = $resRequest | Select-PSFObject -TypeName "D365Bap.Tools.UdeDatabaseJit" `
+            -ExcludeProperty "@odata.context" `
+            -Property "servername as Server",
+        "databasename as Database",
+        "sqljitusername as Username",
+        "sqljitpassword as Password",
+        "sqljitexpiration as Expiration",
+        "sqljitrole as Role",
+        *
         
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-UdeDbJit"
+            $resObj | Export-Excel -WorksheetName "Get-UdeDbJit"
             return
         }
 
-        $resCol
+        $resObj
     }
 
     end {

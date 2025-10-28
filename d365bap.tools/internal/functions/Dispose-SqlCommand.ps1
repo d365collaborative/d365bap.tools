@@ -18,6 +18,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Dispose-SqlCommand {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseApprovedVerbs", "")]
     [CmdletBinding()]
     param (
         [System.Data.SqlClient.SqlCommand] $InputObject

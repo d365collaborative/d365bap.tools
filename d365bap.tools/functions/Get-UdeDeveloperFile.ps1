@@ -36,6 +36,7 @@
 #>
 function Get-UdeDeveloperFile {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
 
         [Parameter (mandatory = $true)]
