@@ -1,68 +1,69 @@
-﻿<#
-.SYNOPSIS
-Gets UDE database JIT access information for a specified environment.
-
-.DESCRIPTION
-This function retrieves UDE database JIT access information for a specified environment.
-
-.PARAMETER EnvironmentId
-The ID of the environment to retrieve.
-
-Supports wildcard patterns.
-
-Can be either the environment name or the environment GUID.
-
-.PARAMETER WhitelistIp
-Ip address to whitelist for JIT database access.
-
-Defaults to 127.0.0.1 - which will cause the function to determine the public IP address of the machine running the command.
-
-.PARAMETER Role
-The role to assign for JIT database access.
-
-Can be either "Reader" or "Writer".
-
-Defaults to "Reader".
-
-.PARAMETER Reason
-The reason for requesting JIT database access.
-
-Defaults to "Administrative access via d365bap.tools".
-
-.EXAMPLE
-PS C:\> Get-UdeDbJit -EnvironmentId "env-123"
-
-This will retrieve the JIT database access information for the specified environment ID.
-It will whitelist the public IP address of the machine running the command.
-It will assign the "Reader" role.
-It will use the default reason.
-
-.EXAMPLE
-PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -WhitelistIp "85.168.174.10"
-
-This will retrieve the JIT database access information for the specified environment ID.
-It will whitelist the specified IP address "85.168.174.10".
-It will assign the "Reader" role.
-It will use the default reason.
-
-.EXAMPLE
-PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -Role "Writer"
-
-This will retrieve the JIT database access information for the specified environment ID.
-It will whitelist the public IP address of the machine running the command.
-It will assign the "Writer" role.
-It will use the default reason.
-
-.EXAMPLE
-PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -Reason "Needed for data migration"
-
-This will retrieve the JIT database access information for the specified environment ID.
-It will whitelist the public IP address of the machine running the command.
-It will assign the "Reader" role.
-It will use the specified reason "Needed for data migration".
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Gets UDE database JIT access information for a specified environment.
+        
+    .DESCRIPTION
+        This function retrieves UDE database JIT access information for a specified environment.
+        
+    .PARAMETER EnvironmentId
+        The ID of the environment to retrieve.
+        
+        Supports wildcard patterns.
+        
+        Can be either the environment name or the environment GUID.
+        
+    .PARAMETER WhitelistIp
+        Ip address to whitelist for JIT database access.
+        
+        Defaults to 127.0.0.1 - which will cause the function to determine the public IP address of the machine running the command.
+        
+    .PARAMETER Role
+        The role to assign for JIT database access.
+        
+        Can be either "Reader" or "Writer".
+        
+        Defaults to "Reader".
+        
+    .PARAMETER Reason
+        The reason for requesting JIT database access.
+        
+        Defaults to "Administrative access via d365bap.tools".
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDbJit -EnvironmentId "env-123"
+        
+        This will retrieve the JIT database access information for the specified environment ID.
+        It will whitelist the public IP address of the machine running the command.
+        It will assign the "Reader" role.
+        It will use the default reason.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -WhitelistIp "85.168.174.10"
+        
+        This will retrieve the JIT database access information for the specified environment ID.
+        It will whitelist the specified IP address "85.168.174.10".
+        It will assign the "Reader" role.
+        It will use the default reason.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -Role "Writer"
+        
+        This will retrieve the JIT database access information for the specified environment ID.
+        It will whitelist the public IP address of the machine running the command.
+        It will assign the "Writer" role.
+        It will use the default reason.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -Reason "Needed for data migration"
+        
+        This will retrieve the JIT database access information for the specified environment ID.
+        It will whitelist the public IP address of the machine running the command.
+        It will assign the "Reader" role.
+        It will use the specified reason "Needed for data migration".
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeDbJit {
     [CmdletBinding()]

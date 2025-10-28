@@ -1,22 +1,23 @@
-﻿<#
-.SYNOPSIS
-Retrieves the UDE connection information.
-
-.DESCRIPTION
-This function retrieves the connection information that is currently used by Visual Studio for the User Development Environment (UDE).
-
-.PARAMETER Path
-The path to the UDE configuration file.
-
-Defaults to CRMDeveloperToolKit which is the tool used by Visual Studio to communicate with Dynamics 365 / Power Platform environments.
-
-.EXAMPLE
-PS C:\> Get-UdeConnection
-
-This will retrieve the UDE connection information.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Retrieves the UDE connection information.
+        
+    .DESCRIPTION
+        This function retrieves the connection information that is currently used by Visual Studio for the User Development Environment (UDE).
+        
+    .PARAMETER Path
+        The path to the UDE configuration file.
+        
+        Defaults to CRMDeveloperToolKit which is the tool used by Visual Studio to communicate with Dynamics 365 / Power Platform environments.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeConnection
+        
+        This will retrieve the UDE connection information.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeConnection {
     [CmdletBinding()]

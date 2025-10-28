@@ -1,30 +1,31 @@
-﻿<#
-.SYNOPSIS
-Clears the cached credentials used by Visual Studio for connecting to Dynamics 365 / Power Platform environments.
-
-.DESCRIPTION
-Clears the cached credentials used by Visual Studio for connecting to Dynamics 365 / Power Platform environments by removing the credential cache directory located at %APPDATA%\Microsoft\CRMDeveloperToolKit.
-
-.PARAMETER Force
-Instructs the function to proceed with clearing the credential cache.
-
-Nothing happens unless this parameter is supplied.
-
-.EXAMPLE
-PS C:\> Clear-UdeCredentialCache
-
-This will prompt the user to make sure that they understand what will be removed/cleared.
-However, no action will be taken unless the -Force parameter is supplied.
-
-.EXAMPLE
-PS C:\> Clear-UdeCredentialCache -Force
-
-This will remove all Visual Studio cached credentials for connecting to Dynamics 365 / Power Platform environments.
-Force parameter is needed for the function to proceed.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
-
+﻿
+<#
+    .SYNOPSIS
+        Clears the cached credentials used by Visual Studio for connecting to Dynamics 365 / Power Platform environments.
+        
+    .DESCRIPTION
+        Clears the cached credentials used by Visual Studio for connecting to Dynamics 365 / Power Platform environments by removing the credential cache directory located at %APPDATA%\Microsoft\CRMDeveloperToolKit.
+        
+    .PARAMETER Force
+        Instructs the function to proceed with clearing the credential cache.
+        
+        Nothing happens unless this parameter is supplied.
+        
+    .EXAMPLE
+        PS C:\> Clear-UdeCredentialCache
+        
+        This will prompt the user to make sure that they understand what will be removed/cleared.
+        However, no action will be taken unless the -Force parameter is supplied.
+        
+    .EXAMPLE
+        PS C:\> Clear-UdeCredentialCache -Force
+        
+        This will remove all Visual Studio cached credentials for connecting to Dynamics 365 / Power Platform environments.
+        Force parameter is needed for the function to proceed.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+        
 #>
 function Clear-UdeCredentialCache {
     [CmdletBinding()]

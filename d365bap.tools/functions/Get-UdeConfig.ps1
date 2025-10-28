@@ -1,35 +1,36 @@
-﻿<#
-.SYNOPSIS
-Gets UDE configuration information.
-
-.DESCRIPTION
-Retrieves configuration settings for the User Development Environment (UDE).
-
-Is based on the details that the developer can see from within Visual Studio when working with UDE.
-
-.PARAMETER Name
-The name of the UDE configuration.
-
-.PARAMETER Active
-Instructs the function to only return the active UDE configuration.
-
-.EXAMPLE
-PS C:\> Get-UdeConfig
-
-This will retrieve all available UDE configurations.
-
-.EXAMPLE
-PS C:\> Get-UdeConfig -Name "ContosoUdeConfig"
-
-This will retrieve the UDE configuration with the name "ContosoUdeConfig".
-
-.EXAMPLE
-PS C:\> Get-UdeConfig -Active
-
-This will retrieve the currently active UDE configuration.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Gets UDE configuration information.
+        
+    .DESCRIPTION
+        Retrieves configuration settings for the User Development Environment (UDE).
+        
+        Is based on the details that the developer can see from within Visual Studio when working with UDE.
+        
+    .PARAMETER Name
+        The name of the UDE configuration.
+        
+    .PARAMETER Active
+        Instructs the function to only return the active UDE configuration.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeConfig
+        
+        This will retrieve all available UDE configurations.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeConfig -Name "ContosoUdeConfig"
+        
+        This will retrieve the UDE configuration with the name "ContosoUdeConfig".
+        
+    .EXAMPLE
+        PS C:\> Get-UdeConfig -Active
+        
+        This will retrieve the currently active UDE configuration.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeConfig {
     [CmdletBinding()]

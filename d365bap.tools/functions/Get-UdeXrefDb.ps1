@@ -1,27 +1,28 @@
-﻿<#
-.SYNOPSIS
-Gets UDE cross-reference databases.
-
-.DESCRIPTION
-This function retrieves UDE cross-reference databases.
-
-.PARAMETER Name
-The name of the database to retrieve.
-
-Supports wildcard patterns.
-
-.EXAMPLE
-PS C:\> Get-UdeXrefDb
-
-This will retrieve all available UDE cross-reference databases.
-
-.EXAMPLE
-PS C:\> Get-UdeXrefDb -Name "db-123*"
-
-This will retrieve the UDE cross-reference database with the specified name.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Gets UDE cross-reference databases.
+        
+    .DESCRIPTION
+        This function retrieves UDE cross-reference databases.
+        
+    .PARAMETER Name
+        The name of the database to retrieve.
+        
+        Supports wildcard patterns.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeXrefDb
+        
+        This will retrieve all available UDE cross-reference databases.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeXrefDb -Name "db-123*"
+        
+        This will retrieve the UDE cross-reference database with the specified name.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeXrefDb {
     [CmdletBinding()]

@@ -1,47 +1,48 @@
-﻿<#
-.SYNOPSIS
-Gets UDE environments.
-
-.DESCRIPTION
-This function retrieves UDE environments.
-
-.PARAMETER EnvironmentId
-The ID of the environment to retrieve.
-
-Supports wildcard patterns.
-
-Can be either the environment name or the environment GUID.
-
-.PARAMETER SkipVersionDetails
-Instructs the function to skip retrieving version details.
-
-Will result in faster execution.
-
-.PARAMETER AsExcelOutput
-Instructs the function to export the results to an Excel file.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironment
-
-This will retrieve all available UDE environments.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironment -EnvironmentId "env-123"
-
-This will retrieve the UDE environment with the specified environment ID.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironment -SkipVersionDetails
-
-This will retrieve all available UDE environments without version details.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironment -AsExcelOutput
-
-This will export the retrieved UDE environments to an Excel file.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Gets UDE environments.
+        
+    .DESCRIPTION
+        This function retrieves UDE environments.
+        
+    .PARAMETER EnvironmentId
+        The ID of the environment to retrieve.
+        
+        Supports wildcard patterns.
+        
+        Can be either the environment name or the environment GUID.
+        
+    .PARAMETER SkipVersionDetails
+        Instructs the function to skip retrieving version details.
+        
+        Will result in faster execution.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the function to export the results to an Excel file.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment
+        
+        This will retrieve all available UDE environments.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -EnvironmentId "env-123"
+        
+        This will retrieve the UDE environment with the specified environment ID.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -SkipVersionDetails
+        
+        This will retrieve all available UDE environments without version details.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -AsExcelOutput
+        
+        This will export the retrieved UDE environments to an Excel file.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeEnvironment {
     [CmdletBinding()]

@@ -1,60 +1,61 @@
-﻿<#
-.SYNOPSIS
-Gets detailed information about a BAP tenant.
-
-.DESCRIPTION
-This function retrieves detailed information about a BAP tenant stored in the local PSFramework configuration.
-
-.PARAMETER Id
-The id of the registered tenant.
-
-Used to have user defined name for tenants.
-
-.PARAMETER Upn
-The User Principal Name (UPN) of the user.
-
-.PARAMETER TenantId
-The unique identifier of the tenant.
-
-.PARAMETER FriendlyName
-The friendly name of the tenant.
-
-.PARAMETER AsExcelOutput
-Instructs the function to export the results to an Excel file.
-
-.EXAMPLE
-PS C:\> Get-BapTenantDetail
-
-This will retrieve all available BAP tenant details stored in the local PSFramework configuration.
-
-.EXAMPLE
-PS C:\> Get-BapTenantDetail -Id "Contoso"
-This will retrieve the BAP tenant detail for the specified tenant id.
-It will only return results where the tenant id matches "Contoso".
-
-.EXAMPLE
-PS C:\> Get-BapTenantDetail -Upn "user@contoso.com"
-This will retrieve the BAP tenant detail for the specified user principal name (UPN).
-It will only return results where the UPN matches "user@contoso.com".
-
-.EXAMPLE
-PS C:\> Get-BapTenantDetail -TenantId "12345678-90ab-cdef-1234-567890abcdef"
-This will retrieve the BAP tenant detail for the specified tenant id.
-It will only return results where the tenant id matches "12345678-90ab-cdef-1234-567890abcdef".
-
-.EXAMPLE
-PS C:\> Get-BapTenantDetail -FriendlyName "Contoso"
-This will retrieve the BAP tenant detail for the specified friendly name.
-It will only return results where the friendly name matches "Contoso".
-
-.EXAMPLE
-PS C:\> Get-BapTenantDetail -AsExcelOutput
-
-This will export the retrieved BAP tenant details to an Excel file.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
-
+﻿
+<#
+    .SYNOPSIS
+        Gets detailed information about a BAP tenant.
+        
+    .DESCRIPTION
+        This function retrieves detailed information about a BAP tenant stored in the local PSFramework configuration.
+        
+    .PARAMETER Id
+        The id of the registered tenant.
+        
+        Used to have user defined name for tenants.
+        
+    .PARAMETER Upn
+        The User Principal Name (UPN) of the user.
+        
+    .PARAMETER TenantId
+        The unique identifier of the tenant.
+        
+    .PARAMETER FriendlyName
+        The friendly name of the tenant.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the function to export the results to an Excel file.
+        
+    .EXAMPLE
+        PS C:\> Get-BapTenantDetail
+        
+        This will retrieve all available BAP tenant details stored in the local PSFramework configuration.
+        
+    .EXAMPLE
+        PS C:\> Get-BapTenantDetail -Id "Contoso"
+        This will retrieve the BAP tenant detail for the specified tenant id.
+        It will only return results where the tenant id matches "Contoso".
+        
+    .EXAMPLE
+        PS C:\> Get-BapTenantDetail -Upn "user@contoso.com"
+        This will retrieve the BAP tenant detail for the specified user principal name (UPN).
+        It will only return results where the UPN matches "user@contoso.com".
+        
+    .EXAMPLE
+        PS C:\> Get-BapTenantDetail -TenantId "12345678-90ab-cdef-1234-567890abcdef"
+        This will retrieve the BAP tenant detail for the specified tenant id.
+        It will only return results where the tenant id matches "12345678-90ab-cdef-1234-567890abcdef".
+        
+    .EXAMPLE
+        PS C:\> Get-BapTenantDetail -FriendlyName "Contoso"
+        This will retrieve the BAP tenant detail for the specified friendly name.
+        It will only return results where the friendly name matches "Contoso".
+        
+    .EXAMPLE
+        PS C:\> Get-BapTenantDetail -AsExcelOutput
+        
+        This will export the retrieved BAP tenant details to an Excel file.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+        
 #>
 function Get-BapTenantDetail {
     [CmdletBinding()]

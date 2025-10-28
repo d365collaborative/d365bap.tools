@@ -1,31 +1,32 @@
-﻿<#
-.SYNOPSIS
-Sets UDE configuration for a specific environment.
-
-.DESCRIPTION
-This function allows you to set the UDE configuration used in Visual Studio for a specific environment.
-
-.PARAMETER EnvironmentUri
-The URI of the environment to configure.
-
-.PARAMETER PackagesVersion
-The version of the packages to use.
-
-.PARAMETER Path
-The path to the custom source code to include in the UDE configuration.
-
-.PARAMETER FallbackPath
-The fallback path to use if the needed packages or XRef DB files are not referenced in any other UDE configuration.
-
-.EXAMPLE
-PS C:\> Set-UdeConfig -EnvironmentUri "https://env-123.cloud.dynamics.com" -PackagesVersion "10.0.2177.188" -Path "C:\CustomSourceCode"
-
-This will set the UDE configuration for the environment with the URI "https://env-123.cloud.dynamics.com".
-It will use the packages version "10.0.2177.188".
-It will include the custom source code from "C:\CustomSourceCode".
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Sets UDE configuration for a specific environment.
+        
+    .DESCRIPTION
+        This function allows you to set the UDE configuration used in Visual Studio for a specific environment.
+        
+    .PARAMETER EnvironmentUri
+        The URI of the environment to configure.
+        
+    .PARAMETER PackagesVersion
+        The version of the packages to use.
+        
+    .PARAMETER Path
+        The path to the custom source code to include in the UDE configuration.
+        
+    .PARAMETER FallbackPath
+        The fallback path to use if the needed packages or XRef DB files are not referenced in any other UDE configuration.
+        
+    .EXAMPLE
+        PS C:\> Set-UdeConfig -EnvironmentUri "https://env-123.cloud.dynamics.com" -PackagesVersion "10.0.2177.188" -Path "C:\CustomSourceCode"
+        
+        This will set the UDE configuration for the environment with the URI "https://env-123.cloud.dynamics.com".
+        It will use the packages version "10.0.2177.188".
+        It will include the custom source code from "C:\CustomSourceCode".
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Set-UdeConfig {
     [CmdletBinding()]

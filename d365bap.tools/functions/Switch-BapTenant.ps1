@@ -1,21 +1,22 @@
-﻿<#
-.SYNOPSIS
-Switches the current context to a specified BAP tenant.
-
-.DESCRIPTION
-This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
-
-.PARAMETER Id
-The ID of the BAP tenant to switch to.
-
-.EXAMPLE
-PS C:\> Switch-BapTenant -Id "Contoso"
-
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will ensure that the authentication token is valid, prompting for re-authentication if necessary.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Switches the current context to a specified BAP tenant.
+        
+    .DESCRIPTION
+        This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
+        
+    .PARAMETER Id
+        The ID of the BAP tenant to switch to.
+        
+    .EXAMPLE
+        PS C:\> Switch-BapTenant -Id "Contoso"
+        
+        This will switch the current context to the BAP tenant with the id "Contoso".
+        It will ensure that the authentication token is valid, prompting for re-authentication if necessary.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Switch-BapTenant {
     [CmdletBinding()]

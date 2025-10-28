@@ -1,20 +1,21 @@
-﻿<#
-.SYNOPSIS
-Sets the path to the AzCopy executable.
-
-.DESCRIPTION
-This function sets the path to the AzCopy executable, ensuring that it exists and is accessible.
-
-.PARAMETER Path
-The full path to the AzCopy executable.
-
-.EXAMPLE
-PS C:\> Set-BapAzCopyPath -Path "C:\temp\d365bap.tools\AzCopy\AzCopy.exe"
-
-This will set the path to the AzCopy executable.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Sets the path to the AzCopy executable.
+        
+    .DESCRIPTION
+        This function sets the path to the AzCopy executable, ensuring that it exists and is accessible.
+        
+    .PARAMETER Path
+        The full path to the AzCopy executable.
+        
+    .EXAMPLE
+        PS C:\> Set-BapAzCopyPath -Path "C:\temp\d365bap.tools\AzCopy\AzCopy.exe"
+        
+        This will set the path to the AzCopy executable.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Set-BapAzCopyPath {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]

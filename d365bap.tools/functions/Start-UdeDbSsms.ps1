@@ -1,30 +1,31 @@
-﻿<#
-.SYNOPSIS
-Starts SQL Server Management Studio (SSMS) with the specified JIT access credentials.
-
-.DESCRIPTION
-This function starts SQL Server Management Studio (SSMS) and connects to the specified database using the JIT access credentials stored in the local cache.
-
-.PARAMETER Id
-The unique identifier for the JIT access credentials.
-
-.PARAMETER Version
-The version of SSMS to use (20 or 21).
-
-.EXAMPLE
-PS C:\> Start-UdeDbSsms -Id "demo"
-
-This will start SSMS version 20 and connect to the database using the JIT access credentials for the ID "demo".
-
-.EXAMPLE
-PS C:\> Start-UdeDbSsms -Id "demo" -Version 21
-
-This will start SSMS version 21 and connect to the database using the JIT access credentials for the ID "demo".
-
-.NOTES
-You need to have persisted JIT credentials using Set-UdeDbJitCache before using this function.
-
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Starts SQL Server Management Studio (SSMS) with the specified JIT access credentials.
+        
+    .DESCRIPTION
+        This function starts SQL Server Management Studio (SSMS) and connects to the specified database using the JIT access credentials stored in the local cache.
+        
+    .PARAMETER Id
+        The unique identifier for the JIT access credentials.
+        
+    .PARAMETER Version
+        The version of SSMS to use (20 or 21).
+        
+    .EXAMPLE
+        PS C:\> Start-UdeDbSsms -Id "demo"
+        
+        This will start SSMS version 20 and connect to the database using the JIT access credentials for the ID "demo".
+        
+    .EXAMPLE
+        PS C:\> Start-UdeDbSsms -Id "demo" -Version 21
+        
+        This will start SSMS version 21 and connect to the database using the JIT access credentials for the ID "demo".
+        
+    .NOTES
+        You need to have persisted JIT credentials using Set-UdeDbJitCache before using this function.
+        
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Start-UdeDbSsms {
     param (

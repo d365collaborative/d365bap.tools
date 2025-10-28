@@ -1,30 +1,31 @@
-﻿<#
-.SYNOPSIS
-Gets UDE credential cache information.
-
-.DESCRIPTION
-This function retrieves cached UDE credentials stored in an encrypted file used by the CRM Developer Toolkit.
-
-.PARAMETER Path
-The path to the CRM Developer Toolkit folder.
-
-Defaults to the standard location in the user's AppData folder.
-
-.PARAMETER AsExcelOutput
-Instructs the function to export the results to an Excel file.
-
-.EXAMPLE
-PS C:\> Get-UdeCredentialCache
-
-This will retrieve the UDE credential cache information.
-
-.EXAMPLE
-PS C:\> Get-UdeCredentialCache -AsExcelOutput
-
-This will retrieve the UDE credential cache information and export it to an Excel file.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Gets UDE credential cache information.
+        
+    .DESCRIPTION
+        This function retrieves cached UDE credentials stored in an encrypted file used by the CRM Developer Toolkit.
+        
+    .PARAMETER Path
+        The path to the CRM Developer Toolkit folder.
+        
+        Defaults to the standard location in the user's AppData folder.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the function to export the results to an Excel file.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeCredentialCache
+        
+        This will retrieve the UDE credential cache information.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeCredentialCache -AsExcelOutput
+        
+        This will retrieve the UDE credential cache information and export it to an Excel file.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeCredentialCache {
     [CmdletBinding()]

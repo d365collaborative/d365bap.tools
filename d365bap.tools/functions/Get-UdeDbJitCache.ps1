@@ -1,23 +1,24 @@
-﻿<#
-.SYNOPSIS
-Retrieves UDE database JIT access credentials from the local cache.
-
-.DESCRIPTION
-This function retrieves UDE database JIT access credentials from the local cache.
-
-.PARAMETER Id
-The unique identifier for the JIT access credentials.
-
-.PARAMETER ShowPassword
-Instructs the function to include the password in the output.
-
-.EXAMPLE
-PS C:\> Get-UdeDbJitCache -Id "demo"
-
-This will retrieve the JIT database access credentials for the ID "demo".
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Retrieves UDE database JIT access credentials from the local cache.
+        
+    .DESCRIPTION
+        This function retrieves UDE database JIT access credentials from the local cache.
+        
+    .PARAMETER Id
+        The unique identifier for the JIT access credentials.
+        
+    .PARAMETER ShowPassword
+        Instructs the function to include the password in the output.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDbJitCache -Id "demo"
+        
+        This will retrieve the JIT database access credentials for the ID "demo".
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeDbJitCache {
     [CmdletBinding()]

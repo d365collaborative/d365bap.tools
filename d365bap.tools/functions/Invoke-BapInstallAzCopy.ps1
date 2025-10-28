@@ -1,25 +1,26 @@
-﻿<#
-.SYNOPSIS
-Installs AzCopy by downloading it from the official Microsoft URL.
-
-.DESCRIPTION
-This function downloads and installs AzCopy, a command-line tool for copying data to and from Azure storage.
-
-.PARAMETER Url
-The URL to download AzCopy from. Defaults to the official Microsoft URL.
-
-.PARAMETER Path
-The local path where AzCopy will be installed.
-
-Defaults to "C:\temp\d365bap.tools\AzCopy\AzCopy.exe".
-
-.EXAMPLE
-PS C:\> Invoke-BapInstallAzCopy
-
-This will download and install AzCopy to the default path.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Installs AzCopy by downloading it from the official Microsoft URL.
+        
+    .DESCRIPTION
+        This function downloads and installs AzCopy, a command-line tool for copying data to and from Azure storage.
+        
+    .PARAMETER Url
+        The URL to download AzCopy from. Defaults to the official Microsoft URL.
+        
+    .PARAMETER Path
+        The local path where AzCopy will be installed.
+        
+        Defaults to "C:\temp\d365bap.tools\AzCopy\AzCopy.exe".
+        
+    .EXAMPLE
+        PS C:\> Invoke-BapInstallAzCopy
+        
+        This will download and install AzCopy to the default path.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Invoke-BapInstallAzCopy {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]

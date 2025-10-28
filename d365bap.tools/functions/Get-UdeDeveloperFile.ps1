@@ -1,37 +1,38 @@
-﻿<#
-.SYNOPSIS
-Gets UDE developer files for a specified environment.
-
-.DESCRIPTION
-This function retrieves UDE developer files for a specified environment.
-
-.PARAMETER EnvironmentId
-The ID of the environment to retrieve.
-
-Supports wildcard patterns.
-
-Can be either the environment name or the environment GUID.
-
-.PARAMETER Path
-The path to the directory where the developer files will be saved.
-
-Defaults to "C:\Temp\d365bap.tools\UdeDeveloperFiles".
-
-.PARAMETER Download
-Instructs the function to download the developer files to the specified path.
-
-.EXAMPLE
-PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123"
-
-This will retrieve the UDE developer files for the specified environment ID without downloading them.
-
-.EXAMPLE
-PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123" -Download
-
-This will download the UDE developer files for the specified environment ID to the default path.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Gets UDE developer files for a specified environment.
+        
+    .DESCRIPTION
+        This function retrieves UDE developer files for a specified environment.
+        
+    .PARAMETER EnvironmentId
+        The ID of the environment to retrieve.
+        
+        Supports wildcard patterns.
+        
+        Can be either the environment name or the environment GUID.
+        
+    .PARAMETER Path
+        The path to the directory where the developer files will be saved.
+        
+        Defaults to "C:\Temp\d365bap.tools\UdeDeveloperFiles".
+        
+    .PARAMETER Download
+        Instructs the function to download the developer files to the specified path.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123"
+        
+        This will retrieve the UDE developer files for the specified environment ID without downloading them.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123" -Download
+        
+        This will download the UDE developer files for the specified environment ID to the default path.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeDeveloperFile {
     [CmdletBinding()]

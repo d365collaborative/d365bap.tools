@@ -1,3 +1,17 @@
+﻿
+<#
+    .SYNOPSIS
+        Gets a configured SqlCommand object for local SQL Server LocalDB access.
+        
+    .DESCRIPTION
+        This function creates and configures a SqlCommand object for use with a local SQL Server LocalDB instance.
+        
+    .EXAMPLE
+        PS C:\> $sqlCommand = Get-SqlCommand
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+#>
 function Get-SqlCommand {
     [CmdletBinding()]
     param (

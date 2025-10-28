@@ -1,60 +1,61 @@
-﻿<#
-.SYNOPSIS
-Sets UDE database JIT access credentials in the local cache.
-
-.DESCRIPTION
-This function sets UDE database JIT access credentials in the local cache for later retrieval.
-
-Handles storing the credentials securely using the TUN.CredentialManager module.
-Made to have SSMS able to retrieve the password when connecting.
-
-.PARAMETER Id
-The unique identifier for the JIT access credentials.
-
-.PARAMETER Server
-The SQL Server instance name.
-
-.PARAMETER Database
-The database name.
-
-.PARAMETER Username
-The username for the JIT access credentials.
-
-.PARAMETER Password
-The password for the JIT access credentials.
-
-.PARAMETER Expiration
-The expiration date and time for the JIT access credentials.
-
-.PARAMETER Role
-The role assigned for JIT database access. Can be either "Reader" or "Writer".
-
-Defaults to "Reader".
-
-.PARAMETER EnvironmentId
-The ID of the environment to retrieve.
-
-Supports wildcard patterns.
-
-Can be either the environment name or the environment GUID.
-
-.EXAMPLE
-PS C:\> Set-UdeDbJitCache -Id "demo" -Server "myserver.database.windows.net" -Database "mydatabase" -Username "myuser" -Password "mypassword"
-
-This will set the JIT database access credentials in the local cache for the specified ID.
-It will store the server, database, username, and password securely using the TUN.CredentialManager module.
-
-.EXAMPLE
-PS C:\> Get-UdeDbJit -EnvironmentId "env-123" | Set-UdeDbJitCache -Id "demo" -EnvironmentId "env-123"
-
-This will retrieve the JIT database access information for the specified environment ID using Get-UdeDbJit.
-It will then set the JIT database access credentials in the local cache for the ID "demo".
-It will store the server, database, username, and password securely using the TUN.CredentialManager module.
-It will store the expiration and role as provided by Get-UdeDbJit.
-It will also associate the environment details with the cached credentials.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Sets UDE database JIT access credentials in the local cache.
+        
+    .DESCRIPTION
+        This function sets UDE database JIT access credentials in the local cache for later retrieval.
+        
+        Handles storing the credentials securely using the TUN.CredentialManager module.
+        Made to have SSMS able to retrieve the password when connecting.
+        
+    .PARAMETER Id
+        The unique identifier for the JIT access credentials.
+        
+    .PARAMETER Server
+        The SQL Server instance name.
+        
+    .PARAMETER Database
+        The database name.
+        
+    .PARAMETER Username
+        The username for the JIT access credentials.
+        
+    .PARAMETER Password
+        The password for the JIT access credentials.
+        
+    .PARAMETER Expiration
+        The expiration date and time for the JIT access credentials.
+        
+    .PARAMETER Role
+        The role assigned for JIT database access. Can be either "Reader" or "Writer".
+        
+        Defaults to "Reader".
+        
+    .PARAMETER EnvironmentId
+        The ID of the environment to retrieve.
+        
+        Supports wildcard patterns.
+        
+        Can be either the environment name or the environment GUID.
+        
+    .EXAMPLE
+        PS C:\> Set-UdeDbJitCache -Id "demo" -Server "myserver.database.windows.net" -Database "mydatabase" -Username "myuser" -Password "mypassword"
+        
+        This will set the JIT database access credentials in the local cache for the specified ID.
+        It will store the server, database, username, and password securely using the TUN.CredentialManager module.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" | Set-UdeDbJitCache -Id "demo" -EnvironmentId "env-123"
+        
+        This will retrieve the JIT database access information for the specified environment ID using Get-UdeDbJit.
+        It will then set the JIT database access credentials in the local cache for the ID "demo".
+        It will store the server, database, username, and password securely using the TUN.CredentialManager module.
+        It will store the expiration and role as provided by Get-UdeDbJit.
+        It will also associate the environment details with the cached credentials.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Set-UdeDbJitCache {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
