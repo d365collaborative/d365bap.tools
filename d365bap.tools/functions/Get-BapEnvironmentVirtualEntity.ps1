@@ -74,10 +74,10 @@
         Sample output:
         EntityName                     IsVisible ChangeTrackingEnabled EntityGuid
         ----------                     --------- --------------------- ----------
-        CustHierarchyRetailChannelEnt… False     False                 00002893-0000-0000-e314-005001000000
-        DimAttributeRetailChannelEnti… False     False                 00002893-0000-0000-0804-005001000000
+        CustHierarchyRetailChannelEntâ€¦ False     False                 00002893-0000-0000-e314-005001000000
+        DimAttributeRetailChannelEntiâ€¦ False     False                 00002893-0000-0000-0804-005001000000
         DimAttributeRetailStoreEntity  False     False                 00002893-0000-0000-0f03-005001000000
-        DimAttributeRetailTerminalEnt… False     False                 00002893-0000-0000-6e07-005001000000
+        DimAttributeRetailTerminalEntâ€¦ False     False                 00002893-0000-0000-6e07-005001000000
         EcoResRetailProductEntity      False     False                 00002893-0000-0000-ae06-005001000000
         
     .EXAMPLE
@@ -97,7 +97,7 @@ function Get-BapEnvironmentVirtualEntity {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Name = "*",
@@ -120,9 +120,12 @@ function Get-BapEnvironmentVirtualEntity {
         if (Test-PSFFunctionInterrupt) { return }
 
         $baseUri = $envObj.LinkedMetaPpacEnvUri
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $baseUri
+        
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
         $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
+            "Authorization" = "Bearer $($tokenWebApiValue)"
         }
 
         # Fetch all meta data - for all entities in the environment
@@ -191,7 +194,7 @@ function Get-BapEnvironmentVirtualEntity {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentVirtualEntity"
             return
         }
 

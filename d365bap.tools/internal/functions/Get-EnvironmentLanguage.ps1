@@ -23,14 +23,16 @@
 function Get-EnvironmentLanguage {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $BaseUri
     )
 
     begin {
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $BaseUri
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
         $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
+            "Authorization" = "Bearer $($tokenWebApiValue)"
         }
 
         $resOrg = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/organizations?$select=organizationid,orgdborgsettings,languagecode,localeid,name') -Headers $headersWebApi | Select-Object -ExpandProperty value | Select-Object -First 1

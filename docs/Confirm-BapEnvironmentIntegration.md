@@ -13,7 +13,8 @@ Test the integration status
 ## SYNTAX
 
 ```
-Confirm-BapEnvironmentIntegration [-EnvironmentId] <String> [-AsExcelOutput] [<CommonParameters>]
+Confirm-BapEnvironmentIntegration [-EnvironmentId] <String> [-AsExcelOutput]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -25,7 +26,7 @@ If it returns an output, the Dataverse is fully connected to the D365FO environm
 
 ### EXAMPLE 1
 ```
-Confirm-BapEnvironmentIntegration -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+Confirm-BapEnvironmentIntegration -EnvironmentId *uat*
 ```
 
 This will invoke the validation from the Dataverse environment.
@@ -34,11 +35,12 @@ It will only output details if the environment is fully connected and working.
 Sample output:
 LinkedAppLcsEnvId                    LinkedAppLcsEnvUri                                 IsUnifiedDatabase TenantId
 -----------------                    ------------------                                 ----------------- --------
-0e52661c-0225-4621-b1b4-804712cf6d9a https://new-test.sandbox.operations.eu.dynamics.c… False             8ccb796b-37b…
+0e52661c-0225-4621-b1b4-804712cf6d9a https://new-test.sandbox.operations.eu.dynamics...
+False             8ccb796b-7...
 
 ### EXAMPLE 2
 ```
-Confirm-BapEnvironmentIntegration -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+Confirm-BapEnvironmentIntegration -EnvironmentId *uat* -AsExcelOutput
 ```
 
 This will invoke the validation from the Dataverse environment.
@@ -77,6 +79,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

@@ -17,14 +17,16 @@
         
         This can be obtained from the Get-BapEnvironment cmdlet
         
+        Wildcard is supported
+        
     .PARAMETER Name
-        Name of the D365 App / Package that you are looking for
+        Name of the D365 App that you are looking for
         
         It supports wildcard searching, which is validated against the following properties:
-        * AppName / ApplicationName
-        * PackageName / UniqueName
+        * PpacD365AppName / AppName / ApplicationName
+        * PpacPackageName / PackageName / UniqueName
         
-    .PARAMETER InstallState
+    .PARAMETER Status
         Instruct the cmdlet which install states that you want to have included in the output
         
         The default value is: "All"
@@ -32,6 +34,7 @@
         Valid values:
         * "All"
         * "Installed"
+        * "InstallFailed"
         * "None"
         
     .PARAMETER GeoRegion
@@ -40,6 +43,9 @@
         The default value is: "Emea"
         
         This is mandatory field from the API specification, we don't have the full list of values at the time of writing
+        
+    .PARAMETER IncludeAll
+        Instruction to include all D365 Apps in the output, regardless of their install state
         
     .PARAMETER UpdatesOnly
         Instruct the cmdlet to only output D365 Apps that has an update available
@@ -55,72 +61,104 @@
         PS C:\> Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
         
         This will query the environment for ALL available D365 Apps.
+        It will output the ones that are either installed or in a failed install state.
         It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
         
         Sample output:
         
-        PackageId                            PackageName                    AvailableVersion    InstalledVersion    UpdateAvailable
-        ---------                            -----------                    ----------------    ----------------    ---------------
-        cea6753e-9c74-4aa9-85a1-5869105115d3 msdyn_ExportControlAnchor      1.0.2553.1          N/A
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24019.1005      True
-        b1676368-b448-4fbd-a238-9b6ddc36be81 SharePointFormProcessing       202209.5.2901.0     N/A
-        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24021.1005     False
-        9f4c778b-2f0b-416f-8166-e96da680ffb2 mpa_AwardsAndRecognition       1.0.0.32            N/A
-        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             1.0.0.1             False
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        Agent Productivity Tools       AgentProductivityToolsAnchor   9.2.24072.1003      False           Installed
+        appprofilemanager              msdyn_AppProfileManagerAnchor  10.1.24072.1008     False           Installed
+        Business Copilot AI            msdyn_BusinessCopilotAIAnchor  1.0.0.23            True            Installed
+        Copilot for finance and ope... msdyn_FnOCopilotAnchor         1.0.02748.3         False           Installed
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId *test*
+        
+        This will query the environment for ALL available D365 Apps.
+        It will output the ones that are either installed or in a failed install state.
+        It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
+        
+        Sample output:
+        
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        Agent Productivity Tools       AgentProductivityToolsAnchor   9.2.24072.1003      False           Installed
+        appprofilemanager              msdyn_AppProfileManagerAnchor  10.1.24072.1008     False           Installed
+        Business Copilot AI            msdyn_BusinessCopilotAIAnchor  1.0.0.23            True            Installed
+        Copilot for finance and ope... msdyn_FnOCopilotAnchor         1.0.02748.3         False           Installed
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId *test* -Status Installed
         
         This will query the environment for installed only D365 Apps.
+        It will output the ones that are either installed or in a failed install state.
         It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
         
         Sample output:
-        PackageId                            PackageName                    AvailableVersion    InstalledVersion    UpdateAvailable
-        ---------                            -----------                    ----------------    ----------------    ---------------
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24019.1005      True
-        1c0a1237-9408-4b99-9fec-39696d99287b msdyn_AppProfileManagerAnchor  10.1.24021.1005     10.1.24021.1005     False
-        6ce2d70e-78bf-4ff6-85ed-1bd63d4ab444 ExportToDataLakeCoreAnchor     1.0.0.1             1.0.0.1             False
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        Agent Productivity Tools       AgentProductivityToolsAnchor   9.2.24072.1003      False           Installed
+        appprofilemanager              msdyn_AppProfileManagerAnchor  10.1.24072.1008     False           Installed
+        Business Copilot AI            msdyn_BusinessCopilotAIAnchor  1.0.0.23            True            Installed
+        Copilot for finance and ope... msdyn_FnOCopilotAnchor         1.0.02748.3         False           Installed
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState None
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId *test* -Status None
         
         This will query the environment for NON-installed only D365 Apps.
         It will output all details available for the D365 Apps.
         
         Sample output:
-        PackageId                            PackageName                    AvailableVersion    InstalledVersion    UpdateAvailable
-        ---------                            -----------                    ----------------    ----------------    ---------------
-        cea6753e-9c74-4aa9-85a1-5869105115d3 msdyn_ExportControlAnchor      1.0.2553.1          N/A
-        b1676368-b448-4fbd-a238-9b6ddc36be81 SharePointFormProcessing       202209.5.2901.0     N/A
-        9f4c778b-2f0b-416f-8166-e96da680ffb2 mpa_AwardsAndRecognition       1.0.0.32            N/A
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        AI Builder for Project Cortex  SharePointFormProcessing       N/A                                 None
+        Analytics Custom Entities      AnalyticsCustomEntities        N/A                                 None
+        Analytics Custom Entities      AnalyticsCustomEntities_Anchor N/A                                 None
+        Awards and Recognitions Tem... mpa_AwardsAndRecognition       N/A                                 None
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Name "*ProviderAnchor*"
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId *test* -Status InstallFailed
+        
+        This will query the environment for D365 Apps that are in a failed installation state.
+        It will output all details available for the D365 Apps.
+        
+        Sample output:
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        Azure Synapse Link for Datave… ExportToDataLakeCoreAnchor     N/A                                 InstallFailed
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId *test* -Name "*ToolsAnchor*"
         
         This will query the environment for ALL D365 Apps.
-        It will filter the output to only those who match the search pattern "*ProviderAnchor*".
+        It will filter the output to only those who match the search pattern "*ToolsAnchor*".
         It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
         
         Sample output:
-        PackageId                            PackageName                    AvailableVersion    InstalledVersion    UpdateAvailable
-        ---------                            -----------                    ----------------    ----------------    ---------------
-        c0cb37fd-d7f4-40f2-8592-64ec71a2c508 msft_ConnectorProviderAnchor   9.0.0.1618          9.0.0.1618          False
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        Agent Productivity Tools       AgentProductivityToolsAnchor   9.2.24072.1003      False           Installed
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -UpdatesOnly
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId *test* -UpdatesOnly
         
         This will query the environment for ALL available D365 Apps.
         It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
         It will filter the output to only containing those who have an update available.
         
         Sample output:
-        PackageId                            PackageName                    AvailableVersion    InstalledVersion    UpdateAvailable
-        ---------                            -----------                    ----------------    ----------------    ---------------
-        ea8d3b2f-ede2-46b4-900d-ed02c81c44fd AgentProductivityToolsAnchor   9.2.24021.1005      9.2.24019.1005      True
+        PpacD365AppName                PpacPackageName                InstalledVersion    UpdateAvailable Status
+        ---------------                ---------------                ----------------    --------------- ------
+        Business Copilot AI            msdyn_BusinessCopilotAIAnchor  1.0.0.23            True            Installed
+        Dual-write core solution       DualWriteCoreAnchor            1.0.24062.2         True            Installed
+        Dynamics 365 ChannelExperienc… msdyn_ChannelExperienceAppsAn… 1.0.24074.1004      True            Installed
+        Dynamics 365 ContextualHelp    msdyn_ContextualHelpAnchor     1.0.0.22            True            Installed
         
     .EXAMPLE
-        PS C:\> $appIds = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly | Select-Object -ExpandProperty PackageId)
-        PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $appIds
+        PS C:\> $appIds = @(Get-BapEnvironmentD365App -EnvironmentId *test* -UpdatesOnly | Select-Object -ExpandProperty PpacD365AppId)
+        PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId *test* -D365AppId $appIds
         
         This will query the environment for installed only D365 Apps.
         It will filter the output to only containing those who have an update available.
@@ -128,7 +166,7 @@
         It will invoke the installation process using the Invoke-BapEnvironmentInstallD365App cmdlet.
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+        PS C:\> Get-BapEnvironmentD365App -EnvironmentId *test* -AsExcelOutput
         
         This will query the environment for ALL available D365 Apps.
         It will compare available vs installed D365 Apps, and indicate whether an update is available of not.
@@ -141,15 +179,17 @@ function Get-BapEnvironmentD365App {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Name = "*",
 
-        [ValidateSet("All", "Installed", "None")]
-        [string] $InstallState = "All",
+        [ValidateSet("All", "Installed", "InstallFailed", "None")]
+        [string] $Status = "All",
 
         [string] $GeoRegion = "Emea",
+
+        [switch] $IncludeAll,
 
         [switch] $UpdatesOnly,
 
@@ -171,18 +211,23 @@ function Get-BapEnvironmentD365App {
         if (Test-PSFFunctionInterrupt) { return }
 
         # First we will fetch ALL available apps for the environment
-        $tokenPowerApi = Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/"
+        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+        $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
+        
         $headersPowerApi = @{
-            "Authorization" = "Bearer $($tokenPowerApi.Token)"
+            "Authorization" = "Bearer $($tokenPowerApiValue)"
         }
         
-        $appsAvailable = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/applicationPackages?api-version=2022-03-01-preview" -Headers $headersPowerApi | Select-Object -ExpandProperty Value
+        $appsAvailable = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" -Headers $headersPowerApi | Select-Object -ExpandProperty Value
 
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
-        $tokenAdminApi = Get-AzAccessToken -ResourceUrl "065d9450-1e87-434e-ac2f-69af271549ed"
+        
+        $secureTokenAdminApi = (Get-AzAccessToken -ResourceUrl "065d9450-1e87-434e-ac2f-69af271549ed" -AsSecureString).Token
+        $tokenAdminApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenAdminApi
+
         $headersAdminApi = @{
-            "Authorization" = "Bearer $($tokenAdminApi.Token)"
+            "Authorization" = "Bearer $($tokenAdminApiValue)"
         }
 
         $appsEnvironment = Invoke-RestMethod -Method Get -Uri "https://api.admin.powerplatform.microsoft.com/api/AppManagement/InstancePackages/instanceId/$tenantId`?instanceUrl=$uriSourceEncoded`&geoType=$GeoRegion" -Headers $headersAdminApi
@@ -194,7 +239,8 @@ function Get-BapEnvironmentD365App {
         $resCol = @(
             foreach ($appObj in $($appsAvailable | Sort-Object -Property ApplicationName)) {
                 if ((-not ($appObj.ApplicationName -like $Name -or $appObj.ApplicationName -eq $Name)) -and (-not ($appObj.UniqueName -like $Name -or $appObj.UniqueName -eq $Name))) { continue }
-                if ($InstallState -ne "All" -and $appObj.state -ne $InstallState) { continue }
+                
+                if ($Status -ne "All" -and $appObj.state -ne $Status) { continue }
             
                 $appObj | Add-Member -MemberType NoteProperty -Name CurrentVersion -Value "N/A"
 
@@ -206,24 +252,31 @@ function Get-BapEnvironmentD365App {
                     $appObj | Add-Member -MemberType NoteProperty -Name UpdateAvail -Value $(-not ($appObj.CurrentVersion -eq $appObj.Version))
                 }
             
-                $appObj | Select-PSFObject -TypeName "D365Bap.Tools.Package" -Property "Id as PackageId",
-                "UniqueName as PackageName",
+                $appObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacD365App" `
+                    -Property "Id as PpacD365AppId",
+                "ApplicationName as PpacD365AppName",
+                "UniqueName as PpacPackageName",
                 "Version as AvailableVersion",
                 "CurrentVersion as InstalledVersion",
                 "UpdateAvail as UpdateAvailable",
-                "ApplicationName as AppName",
-                "state as InstallState",
+                "state as Status",
+                @{Name = "StateIsInstalled"; Expression = { if (($_.state -ne 'none')) { $true }else { $false } } },
                 *,
                 @{Name = "SupportedCountriesList"; Expression = { $_.supportedCountries -join "," } }
             }
         )
+
+        if (-not $IncludeAll -and $Status -ne 'None') {
+            $resCol = @($resCol | Where-Object StateIsInstalled -eq $true )
+        }
 
         if ($UpdatesOnly) {
             $resCol = @($resCol | Where-Object IsLatest -eq $false)
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentD365App" `
+                -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
             return
         }
 

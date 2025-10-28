@@ -42,34 +42,55 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
-		'Compare-BapEnvironmentD365App'
+		'Clear-UdeCredentialCache'
+		, 'Clear-UdeOrphanedConfig'
+
+		, 'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
 		, 'Compare-BapEnvironmentVirtualEntity'
 		
 		, 'Confirm-BapEnvironmentIntegration'
 		
 		, 'Export-BapEnvironmentSolution'
-
+		
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentApplicationUser'
-
 		, 'Get-BapEnvironmentD365App'
-
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
-		
+		, 'Get-BapEnvironmentPowerApp'
 		, 'Get-BapEnvironmentSecurityRole'
+		, 'Get-BapEnvironmentSecurityRoleMember'
 		, 'Get-BapEnvironmentSolution'
-		
 		, 'Get-BapEnvironmentUser'
-
 		, 'Get-BapEnvironmentVirtualEntity'
+		, 'Get-BapTenant'
+		, 'Get-BapTenantDetail'
+		
+		, 'Get-UdeEnvironment'
+		, 'Get-UdeConfig'
+		, 'Get-UdeConnection'
+		, 'Get-UdeCredentialCache'
+		, 'Get-UdeDbJit'
+		, 'Get-UdeDbJitCache'
+		, 'Get-UdeDeveloperFile'
+		, 'Get-UdeXrefDb'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
-
+		, 'Invoke-BapInstallAzCopy'
+		
+		, 'Set-BapAzCopyPath'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
 		, 'Set-BapEnvironmentVirtualEntity'
+		, 'Set-BapTenantDetail'
+		
+		, 'Set-UdeConfig'
+		, 'Set-UdeDbJitCache'
 
+		, 'Start-UdeDbSsms'
+		, 'Switch-BapTenant'
+		
 		, 'Update-BapEnvironmentVirtualEntityMetadata'
+		
 	)
 	
 	# Cmdlets to export from this module

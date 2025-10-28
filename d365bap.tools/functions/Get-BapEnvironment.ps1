@@ -26,10 +26,10 @@
         Sample output:
         PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
         ---------                            -------------   -----------          ---------- ------------------
-        32c6b196-ef52-4c43-93cf-6ecba51e6aa1 europe          new-uat              Sandbox    https://new-uat.sandbox.operatio…
-        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati…
-        d45936a7-0408-4b79-94d1-19e4c6e5a52e europe          new-golden           Sandbox    https://new-golden.sandbox.opera…
-        Default-e210bc90-e54b-4544-a9b8-b1f… europe          New Customer         Default
+        32c6b196-ef52-4c43-93cf-6ecba51e6aa1 europe          new-uat              Sandbox    https://new-uat.sandbox.operatio...
+        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
+        d45936a7-0408-4b79-94d1-19e4c6e5a52e europe          new-golden           Sandbox    https://new-golden.sandbox.opera...
+        Default-e210bc90-e54b-4544-a9b8-b123 europe          New Customer         Default
         
     .EXAMPLE
         PS C:\> Get-BapEnvironment -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
@@ -37,9 +37,19 @@
         This will query for the specific environment.
         
         Sample output:
-        PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
+        PpacEnvId                            PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
         ---------                            -------------   -----------          ---------- ------------------
-        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati…
+        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -EnvironmentId *test*
+        
+        This will query for the specific environment, using a wildcard search.
+        
+        Sample output:
+        PpacEnvId                            PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
+        ---------                            -------------   -----------          ---------- ------------------
+        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
         
     .EXAMPLE
         PS C:\> Get-BapEnvironment -AsExcelOutput
@@ -58,20 +68,31 @@ function Get-BapEnvironment {
 
         [switch] $AsExcelOutput
     )
-    
+
     begin {
-        $tokenBap = Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/"
-        $headers = @{
-            "Authorization" = "Bearer $($tokenBap.Token)"
+        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString -ErrorAction Stop).Token
+        $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
+
+        $headersBapApi = @{
+            "Authorization" = "Bearer $($tokenBapValue)"
         }
         
-        $resEnvs = Invoke-RestMethod -Method Get -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" -Headers $headers | Select-Object -ExpandProperty Value
+        $resEnvs = Invoke-RestMethod -Method Get -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" -Headers $headersBapApi | Select-Object -ExpandProperty Value
+
+        $searchById = Test-Guid -InputObject $EnvironmentId
     }
     
     process {
         $resCol = @(
             foreach ($envObj in $resEnvs) {
-                if (-not ($envObj.Name -like $EnvironmentId)) { continue }
+                if ($searchById) {
+                    # Name is the GUID
+                    if (-not ($envObj.Name -like $EnvironmentId)) { continue }
+                }
+                else {
+                    # DisplayName is the name
+                    if (-not ($envObj.properties.displayName -like $EnvironmentId)) { continue }
+                }
 
                 $res = [ordered]@{}
 
@@ -88,10 +109,15 @@ function Get-BapEnvironment {
                     else {
                         $res."prop_$($prop.Name)" = $prop.Value
                     }
-                
                 }
 
-            ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.Environment" -Property "Id as PpacEnvId",
+                foreach ($endPoint in $($res.prop_runtimeEndpoints.Split("`r`n")) ) {
+                    $keyValue = $endPoint.Replace("microsoft.", "").split("=")
+                    $res."Api.$($keyValue[0])" = $keyValue[1]
+                }
+
+                ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
+                    -Property "Id as PpacEnvId",
                 "Region as PpacEnvRegion",
                 "prop_tenantId as TenantId",
                 "prop_azureRegion as AzureRegion",
@@ -108,12 +134,15 @@ function Get-BapEnvironment {
                 @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
                 @{Name = "LinkedMetaPpacEnvLanguage"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.baseLanguage } },
                 @{Name = "PpacClusterIsland"; Expression = { $envObj.Properties.cluster.uriSuffix } },
+                @{Name = "FinOpsMetadataEnvType"; Expression = { $envObj.Properties.linkedAppMetadata.type } },
+                @{Name = "FinOpsMetadataEnvUri"; Expression = { $envObj.Properties.linkedAppMetadata.url } },
                 "*"
             }
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironment" `
+                -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
             return
         }
 

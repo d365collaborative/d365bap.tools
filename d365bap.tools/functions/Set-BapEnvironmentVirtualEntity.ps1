@@ -73,10 +73,10 @@ function Set-BapEnvironmentVirtualEntity {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $Name,
 
         [switch] $VisibilityOn,
@@ -120,10 +120,13 @@ function Set-BapEnvironmentVirtualEntity {
         
         if (Test-PSFFunctionInterrupt) { return }
 
-        $baseUri = $envObj.LinkedMetaPpacEnvApiUri
-        $tokenWebApi = Get-AzAccessToken -ResourceUrl $baseUri
+        $baseUri = $envObj.LinkedMetaPpacEnvUri
+        
+        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
         $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApi.Token)"
+            "Authorization" = "Bearer $($tokenWebApiValue)"
         }
 
         $entities = @(Get-BapEnvironmentVirtualEntity -EnvironmentId $EnvironmentId -Name $Name)

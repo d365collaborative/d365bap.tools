@@ -63,10 +63,10 @@
 function Compare-BapEnvironmentVirtualEntity {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $SourceEnvironmentId,
 
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $DestinationEnvironmentId,
 
         [switch] $ShowDiffOnly,
@@ -134,7 +134,8 @@ function Compare-BapEnvironmentVirtualEntity {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion SourceVersion, DestinationVersion
+            $resCol | Export-Excel -WorksheetName "Compare-BapEnvironmentVirtualEntity" `
+                -NoNumberConversion SourceVersion, DestinationVersion
             return
         }
 
