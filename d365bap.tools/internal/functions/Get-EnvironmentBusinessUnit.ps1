@@ -23,7 +23,7 @@
 function Get-EnvironmentBusinessUnit {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $BaseUri
     )
 

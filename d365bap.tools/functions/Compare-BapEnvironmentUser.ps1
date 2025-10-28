@@ -82,10 +82,10 @@
 function Compare-BapEnvironmentUser {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $SourceEnvironmentId,
 
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $DestinationEnvironmentId,
     
         [switch] $ShowDiffOnly,

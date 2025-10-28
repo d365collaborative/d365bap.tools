@@ -70,7 +70,7 @@ function Get-BapEnvironment {
     )
 
     begin {
-        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
+        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString -ErrorAction Stop).Token
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
         $headersBapApi = @{
@@ -93,8 +93,6 @@ function Get-BapEnvironment {
                     # DisplayName is the name
                     if (-not ($envObj.properties.displayName -like $EnvironmentId)) { continue }
                 }
-                
-                # $envObj | ConvertTo-Json -depth 10
 
                 $res = [ordered]@{}
 
@@ -136,6 +134,8 @@ function Get-BapEnvironment {
                 @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
                 @{Name = "LinkedMetaPpacEnvLanguage"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.baseLanguage } },
                 @{Name = "PpacClusterIsland"; Expression = { $envObj.Properties.cluster.uriSuffix } },
+                @{Name = "FinOpsMetadataEnvType"; Expression = { $envObj.Properties.linkedAppMetadata.type } },
+                @{Name = "FinOpsMetadataEnvUri"; Expression = { $envObj.Properties.linkedAppMetadata.url } },
                 "*"
             }
         )
