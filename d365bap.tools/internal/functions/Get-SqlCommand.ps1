@@ -9,6 +9,8 @@
     .EXAMPLE
         PS C:\> $sqlCommand = Get-SqlCommand
         
+        This will create and return a SqlCommand object configured to connect to the local SQL Server LocalDB instance.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

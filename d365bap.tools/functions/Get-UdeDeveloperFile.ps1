@@ -18,6 +18,13 @@
         
         Defaults to "C:\Temp\d365bap.tools\UdeDeveloperFiles".
         
+    .PARAMETER Files
+        The types of developer files to retrieve.
+        
+        Can be one or more of the following values: "All", "SystemMetadata", "FinOpsVsix22", "TraceParser", "CrossReference".
+        
+        Defaults to "All".
+        
     .PARAMETER Download
         Instructs the function to download the developer files to the specified path.
         
