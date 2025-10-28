@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Clears the cached credentials used by Visual Studio for connecting to Dynamics 365 / Power Platform environments.
 
