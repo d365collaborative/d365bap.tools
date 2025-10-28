@@ -23,7 +23,7 @@
 function Get-EnvironmentLanguage {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $BaseUri
     )
 

@@ -102,7 +102,7 @@ function Get-BapEnvironmentSecurityRole {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Name = "*",
@@ -173,7 +173,7 @@ function Get-BapEnvironmentSecurityRole {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentSecurityRole"
             return
         }
 

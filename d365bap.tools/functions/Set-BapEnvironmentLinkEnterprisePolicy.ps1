@@ -28,10 +28,10 @@ function Set-BapEnvironmentLinkEnterprisePolicy {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [Alias('SystemId')]
         [string] $EnterprisePolicyResourceId
     )

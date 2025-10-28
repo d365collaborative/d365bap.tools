@@ -73,10 +73,10 @@
 function Compare-BapEnvironmentD365App {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $SourceEnvironmentId,
 
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $DestinationEnvironmentId,
     
         [switch] $ShowDiffOnly,
@@ -140,7 +140,8 @@ function Compare-BapEnvironmentD365App {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion SourceVersion, DestinationVersion
+            $resCol | Export-Excel -WorksheetName "Compare-BapEnvironmentD365App" `
+                -NoNumberConversion SourceVersion, DestinationVersion
             return
         }
 

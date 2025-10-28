@@ -95,7 +95,7 @@ function Get-BapEnvironmentSolution {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $SolutionId,
@@ -150,7 +150,7 @@ function Get-BapEnvironmentSolution {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentSolution"
             return
         }
 

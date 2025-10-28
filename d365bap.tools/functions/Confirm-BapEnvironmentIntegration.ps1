@@ -42,7 +42,7 @@
 function Confirm-BapEnvironmentIntegration {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [switch] $AsExcelOutput
@@ -89,7 +89,7 @@ function Confirm-BapEnvironmentIntegration {
         *
         
         if ($AsExcelOutput) {
-            $temp | Export-Excel
+            $temp | Export-Excel -WorksheetName "Confirm-BapEnvironmentIntegration"
             return
         }
 

@@ -64,7 +64,7 @@
 function Get-BapEnvironmentUser {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [switch] $IncludeAppIds,
@@ -120,7 +120,7 @@ function Get-BapEnvironmentUser {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentUser"
             return
         }
 

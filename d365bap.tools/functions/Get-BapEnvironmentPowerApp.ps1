@@ -69,7 +69,7 @@ function Get-BapEnvironmentPowerApp {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Name = "*",
@@ -162,7 +162,7 @@ function Get-BapEnvironmentPowerApp {
         $resCol = @( $resColModelApps + $resColCanvasApps ) | Sort-Object -Property DisplayName
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentPowerApp"
             return
         }
 

@@ -97,7 +97,7 @@ function Get-BapEnvironmentVirtualEntity {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Name = "*",
@@ -194,7 +194,7 @@ function Get-BapEnvironmentVirtualEntity {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentVirtualEntity"
             return
         }
 

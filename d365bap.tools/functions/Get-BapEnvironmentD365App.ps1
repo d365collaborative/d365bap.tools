@@ -179,7 +179,7 @@ function Get-BapEnvironmentD365App {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter (mandatory = $true)]
+        [Parameter (mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Name = "*",
@@ -275,7 +275,8 @@ function Get-BapEnvironmentD365App {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentD365App" `
+                -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
             return
         }
 

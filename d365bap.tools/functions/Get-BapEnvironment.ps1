@@ -70,7 +70,7 @@ function Get-BapEnvironment {
     )
 
     begin {
-        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
+        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString -ErrorAction Stop).Token
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
         $headersBapApi = @{
@@ -93,8 +93,6 @@ function Get-BapEnvironment {
                     # DisplayName is the name
                     if (-not ($envObj.properties.displayName -like $EnvironmentId)) { continue }
                 }
-                
-                # $envObj | ConvertTo-Json -depth 10
 
                 $res = [ordered]@{}
 
@@ -118,7 +116,7 @@ function Get-BapEnvironment {
                     $res."Api.$($keyValue[0])" = $keyValue[1]
                 }
 
-            ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
+                ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
                     -Property "Id as PpacEnvId",
                 "Region as PpacEnvRegion",
                 "prop_tenantId as TenantId",
@@ -136,12 +134,15 @@ function Get-BapEnvironment {
                 @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
                 @{Name = "LinkedMetaPpacEnvLanguage"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.baseLanguage } },
                 @{Name = "PpacClusterIsland"; Expression = { $envObj.Properties.cluster.uriSuffix } },
+                @{Name = "FinOpsMetadataEnvType"; Expression = { $envObj.Properties.linkedAppMetadata.type } },
+                @{Name = "FinOpsMetadataEnvUri"; Expression = { $envObj.Properties.linkedAppMetadata.url } },
                 "*"
             }
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
+            $resCol | Export-Excel -WorksheetName "Get-BapEnvironment" `
+                -NoNumberConversion Version, AvailableVersion, InstalledVersion, crmMinversion, crmMaxVersion, Version
             return
         }
 
