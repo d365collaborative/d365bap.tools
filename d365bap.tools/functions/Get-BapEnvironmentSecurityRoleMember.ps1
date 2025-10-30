@@ -101,10 +101,10 @@ function Get-BapEnvironmentSecurityRoleMember {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $SecurityRoleId,
 
         [Alias("Email")]

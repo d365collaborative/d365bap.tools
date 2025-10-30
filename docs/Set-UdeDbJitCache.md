@@ -15,7 +15,7 @@ Sets UDE database JIT access credentials in the local cache.
 ```
 Set-UdeDbJitCache [-Id] <String> [-Server] <String> [-Database] <String> [-Username] <String>
  [-Password] <String> [[-Expiration] <DateTime>] [[-Role] <String>] [[-EnvironmentId] <String>]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -133,7 +133,7 @@ Aliases:
 Required: False
 Position: 6
 Default value: (Get-Date).AddHours(8)
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -156,7 +156,7 @@ Accept wildcard characters: False
 ```
 
 ### -EnvironmentId
-The ID of the environment to retrieve.
+The ID of the environment that you want to work against.
 
 Supports wildcard patterns.
 
@@ -165,27 +165,12 @@ Can be either the environment name or the environment GUID.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: PpacEnvId
 
 Required: False
 Position: 8
 Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 

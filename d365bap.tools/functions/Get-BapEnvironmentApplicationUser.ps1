@@ -76,7 +76,7 @@ function Get-BapEnvironmentApplicationUser {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
         [switch] $IncludePpacApplications,

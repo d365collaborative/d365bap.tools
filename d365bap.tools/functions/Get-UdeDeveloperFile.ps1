@@ -7,7 +7,7 @@
         This function retrieves UDE developer files for a specified environment.
         
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve.
+        The ID of the environment that you want to work against.
         
         Supports wildcard patterns.
         
@@ -46,7 +46,8 @@ function Get-UdeDeveloperFile {
     [OutputType('System.Object[]')]
     param (
 
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [Alias("PpacEnvId")]
         [string] $EnvironmentId,
 
         [string] $Path = "C:\Temp\d365bap.tools\UdeDeveloperFiles",
@@ -59,6 +60,22 @@ function Get-UdeDeveloperFile {
     
     begin {
         Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+        $executable = Get-PSFConfigValue -FullName "d365bap.tools.path.azcopy"
+
+        $endpoints = @("SystemMetadata", "FinOpsVsix22", "TraceParser", "CrossReference")
+        $colFileTypes = @()
+        
+        if ($Files -eq 'All') {
+            $colFileTypes = $endpoints
+        }
+        else {
+            $colFileTypes = $Files
+        }
+    }
+    
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
 
         $envObj = Get-UdeEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
 
@@ -80,22 +97,6 @@ function Get-UdeDeveloperFile {
                 -Force `
                 -WarningAction SilentlyContinue > $null
         }
-
-        $executable = Get-PSFConfigValue -FullName "d365bap.tools.path.azcopy"
-
-        $endpoints = @("SystemMetadata", "FinOpsVsix22", "TraceParser", "CrossReference")
-        $colFileTypes = @()
-        
-        if ($Files -eq 'All') {
-            $colFileTypes = $endpoints
-        }
-        else {
-            $colFileTypes = $Files
-        }
-    }
-    
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
 
         $baseUri = $envObj.PpacEnvUri + "/" #! Very important to have the trailing slash
 
@@ -158,11 +159,16 @@ function Get-UdeDeveloperFile {
             # Command to run in new window: azcopy copy, then pause for validation
             $command = @"
 $executable copy '$($fileObj.Uri)' '$outputPath';
-if(-not [System.IO.Path]::Exists('$outputPath')){
+if(-not [System.IO.File]::Exists('$outputPath')){
     Write-Host 'Download failed. Review the logs for more information.' -ForegroundColor Red
+    Read-Host -Prompt 'Press Enter to close this window'
 };
+
 "@
-            $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-Command", $command -WindowStyle Normal -PassThru
+            $process = Start-Process -FilePath "powershell.exe" `
+                -ArgumentList "-Command", $command `
+                -WindowStyle Normal `
+                -PassThru
 
             $processes += $process
         }
@@ -171,6 +177,10 @@ if(-not [System.IO.Path]::Exists('$outputPath')){
 
         if ($processes.Count -gt 0 ) {
             Wait-Process -Id $processes.Id > $null
+        }
+        
+        foreach ($fileObj in $colFiles) {
+            Unblock-File -Path $fileObj.Path
         }
         
         # Output the details to the user
@@ -189,6 +199,9 @@ if(-not [System.IO.Path]::Exists('$outputPath')){
             Write-PSFMessage -Level Host -Message "Will extract the <c='em'>PackagesLocalDirectory.zip</c> file. It will take some minutes..."
             [IO.Compression.ZipFile]::ExtractToDirectory($zipPackages, "$pathPackages\PackagesLocalDirectory")
             Write-PSFMessage -Level Host -Message "Extraction completed..."
+
+            [GC]::Collect()
+            [GC]::WaitForPendingFinalizers()
         }
     }
 

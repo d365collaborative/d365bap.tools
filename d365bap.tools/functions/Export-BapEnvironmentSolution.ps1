@@ -33,13 +33,13 @@
 function Export-BapEnvironmentSolution {
     [CmdletBinding()]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $SolutionId,
 
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $Path
     )
     

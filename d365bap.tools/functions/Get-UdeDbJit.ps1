@@ -7,7 +7,7 @@
         This function retrieves UDE database JIT access information for a specified environment.
         
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve.
+        The ID of the environment that you want to work against.
         
         Supports wildcard patterns.
         
@@ -67,13 +67,22 @@
         It will assign the "Reader" role.
         It will use the specified reason "Needed for data migration".
         
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
+        
+        This will retrieve the JIT database access information for the specified environment ID.
+        It will whitelist the public IP address of the machine running the command.
+        It will assign the "Reader" role.
+        It will use the default reason.
+        It will output all details directly to an Excel file.
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeDbJit {
     [CmdletBinding()]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [Alias("PpacEnvId")]
         [string] $EnvironmentId,
 
         [string] $WhitelistIp = "127.0.0.1",
@@ -87,6 +96,12 @@ function Get-UdeDbJit {
     )
     
     begin {
+        if ($WhitelistIp -eq "127.0.0.1") {
+            $WhitelistIp = (Invoke-RestMethod -Uri "https://icanhazip.com" -UseBasicParsing).Trim()
+        }
+    }
+    
+    process {
         $envObj = Get-UdeEnvironment -EnvironmentId $EnvironmentId `
             -SkipVersionDetails | Select-Object -First 1
 
@@ -98,14 +113,6 @@ function Get-UdeDbJit {
                 -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
-        
-        if ($WhitelistIp -eq "127.0.0.1") {
-            $WhitelistIp = (Invoke-RestMethod -Uri "https://icanhazip.com" -UseBasicParsing).Trim()
-        }
-    }
-    
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
 
         if ($WhitelistIp -eq "127.0.0.1") {
             $messageString = "Could not determine public IP address for JIT database access. Please specify the IP address using the <c='em'>-WhitelistIp</c> parameter."
@@ -146,7 +153,9 @@ function Get-UdeDbJit {
         "sqljitusername as Username",
         "sqljitpassword as Password",
         "sqljitexpiration as Expiration",
+        @{ Name = "ExpirationIso"; Expression = { $_.sqljitexpiration.ToString("o") } },
         "sqljitrole as Role",
+        @{ Name = "EnvironmentId"; Expression = { $envObj.PpacEnvId } },
         *
         
         if ($AsExcelOutput) {

@@ -33,7 +33,7 @@
         Defaults to "Reader".
         
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve.
+        The ID of the environment that you want to work against.
         
         Supports wildcard patterns.
         
@@ -78,11 +78,14 @@ function Set-UdeDbJitCache {
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [string] $Password,
 
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [datetime] $Expiration = (Get-Date).AddHours(8),
 
         [ValidateSet("Reader", "Writer")]
         [string] $Role = "Reader",
 
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
+        [Alias("PpacEnvId")]
         [string] $EnvironmentId
     )
 
@@ -97,27 +100,28 @@ function Set-UdeDbJitCache {
         if (Test-PSFFunctionInterrupt) { return }
 
         Import-Module TUN.CredentialManager
+    }
+
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
 
         if ($null -ne $EnvironmentId) {
             $envObj = Get-UdeEnvironment -EnvironmentId $EnvironmentId `
                 -SkipVersionDetails | Select-Object -First 1
         }
-    }
-
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
         
         $SqlServerGUID = "8c91a03d-f9b4-46c0-a305-b5dcc79ff907"
 
         $details = [PSCustomObject][ordered]@{
-            Id          = $Id
-            Server      = $($Server)
-            Database    = $($Database)
-            Username    = $($Username)
-            Expiration  = $($Expiration.ToString("s"))
-            Role        = $($Role)
-            PpacEnvId   = ""
-            PpacEnvName = ""
+            Id            = $Id
+            Server        = $($Server)
+            Database      = $($Database)
+            Username      = $($Username)
+            Expiration    = $($Expiration)
+            ExpirationIso = $($Expiration.ToString("o"))
+            Role          = $($Role)
+            PpacEnvId     = ""
+            PpacEnvName   = ""
         }
 
         if ($null -ne $envObj) {
@@ -140,6 +144,6 @@ function Set-UdeDbJitCache {
         Set-PSFConfig -FullName "d365bap.tools.ude.dbjit.cache" -Value $credentials
         Register-PSFConfig -FullName "d365bap.tools.ude.dbjit.cache" -Scope UserDefault
 
-        # Get-D365UdeDatabaseCredential -Id $Id
+        Get-UdeDbJitCache -Id $Id
     }
 }

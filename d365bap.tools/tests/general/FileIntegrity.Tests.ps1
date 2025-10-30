@@ -18,7 +18,7 @@ Describe "Verifying integrity of module files" {
 		#>
 			[CmdletBinding()]
 			Param (
-				[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)]
+				[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $True)]
 				[Alias('FullName')]
 				[string]
 				$Path

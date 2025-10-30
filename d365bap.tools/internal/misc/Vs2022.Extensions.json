@@ -1,0 +1,24 @@
+﻿[
+    {
+        "Id": "DynamicsFnO.DeveloperTools",
+        "Name": "Finance and Operations (Dynamics 365)"
+    },
+    {
+        "Id": "74dabc45-79ee-405e-bd3b-1bdcce2176cd",
+        "Name": "Power Platform Tools for VS 2022",
+        "Uri": "https://marketplace.visualstudio.com/items?itemName=microsoft-IsvExpTools.PowerPlatformToolsVS2022",
+        "VsixUrl": "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/microsoft-IsvExpTools/vsextensions/PowerPlatformToolsVS2022/1.0.16846269.0/vspackage"
+    },
+    {
+        "Id": "c908b653-e610-447e-9f48-fda740e2b498",
+        "Name": "Microsoft Reporting Services Projects",
+        "Uri": "https://marketplace.visualstudio.com/items?itemName=ProBITools.MicrosoftReportProjectsforVisualStudio2022",
+        "VsixUrl": "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ProBITools/vsextensions/MicrosoftReportProjectsforVisualStudio2022/4.0.0/vspackage"
+    },
+    {
+        "Id": "B12781A3-35C8-446D-BD72-6051FCA1CBF9",
+        "Name": "Microsoft RDLC Report Designer",
+        "Uri": "https://marketplace.visualstudio.com/items?itemName=ProBITools.MicrosoftRDLCReportDesignerforVisualStudio2022",
+        "VsixUrl": "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ProBITools/vsextensions/MicrosoftRdlcReportDesignerforVisualStudio2022/18.0.0/vspackage"
+    }
+]

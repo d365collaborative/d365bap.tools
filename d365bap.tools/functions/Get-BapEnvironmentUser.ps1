@@ -64,7 +64,7 @@
 function Get-BapEnvironmentUser {
     [CmdletBinding()]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
         [switch] $IncludeAppIds,

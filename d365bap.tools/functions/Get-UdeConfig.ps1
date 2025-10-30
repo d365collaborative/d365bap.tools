@@ -56,7 +56,8 @@ function Get-UdeConfig {
         
         $pathCurConf = Get-ItemPropertyValue `
             -Path "HKCU:\Software\Microsoft\Dynamics\AX7\Development\Configurations" `
-            -Name CurrentMetadataConfig
+            -Name CurrentMetadataConfig `
+            -ErrorAction SilentlyContinue
         
         $configs = Get-ChildItem -Path "$path\*.json"
 
