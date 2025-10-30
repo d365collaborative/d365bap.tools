@@ -48,16 +48,7 @@ function Set-UdeConfig {
     )
 
     begin {
-        # Path to the packages that matches the version
-        $pathPackages = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$PackagesVersion\PackagesLocalDirectory"
-        
-        if (-not [System.IO.Path]::Exists($pathPackages)) {
-            $messageString = "It seems that the PackagesLocalDirectory for <c='em'>$PackagesVersion</c> does not exist. Please download the developer files first using <c='em'>Get-UdeDeveloperFile -Download</c>."
 
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
-            Stop-PSFFunction -Message "Stopping because PackagesLocalDirectory wasn't found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
     }
 
     process {
@@ -74,6 +65,17 @@ function Set-UdeConfig {
             return
         }
 
+        # Path to the packages that matches the version
+        $pathPackages = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$PackagesVersion\PackagesLocalDirectory"
+        
+        if (-not [System.IO.Path]::Exists($pathPackages)) {
+            $messageString = "It seems that the PackagesLocalDirectory for <c='em'>$PackagesVersion</c> does not exist. Please download the developer files first using <c='em'>Get-UdeDeveloperFile -Download</c>."
+
+            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Stop-PSFFunction -Message "Stopping because PackagesLocalDirectory wasn't found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            return
+        }
+        
         # Some of the names need the version without dots
         $striped = $PackagesVersion.Replace(".", "")
 
