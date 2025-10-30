@@ -31,6 +31,15 @@ This will set the UDE configuration for the environment with the URI "https://en
 It will use the packages version "10.0.2177.188".
 It will include the custom source code from "C:\CustomSourceCode".
 
+### EXAMPLE 2
+```
+Get-UdeEnvironment -EnvironmentId "env-123" | Set-UdeConfig -Path "C:\CustomSourceCode"
+```
+
+This will set the UDE configuration for the environment with the ID "env-123".
+It will use the packages version from the environment details.
+It will include the custom source code from "C:\CustomSourceCode".
+
 ## PARAMETERS
 
 ### -EnvironmentUri

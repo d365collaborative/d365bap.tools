@@ -23,8 +23,17 @@ This function sets the specified UDE environment in the current PowerShell sessi
 
 ### EXAMPLE 1
 ```
-An example
+Set-UdeEnvironmentInSession -EnvironmentId "env-123"
 ```
+
+This will set the specified environment ID in the current PowerShell session.
+
+### EXAMPLE 2
+```
+Get-UdeEnvironment -EnvironmentId "env-123" | Set-UdeEnvironmentInSession
+```
+
+This will set the environment ID from the piped UDE environment object in the current PowerShell session.
 
 ## PARAMETERS
 
@@ -55,6 +64,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ## NOTES
-General notes
+Author: Mötz Jensen (@Splaxi)
 
 ## RELATED LINKS

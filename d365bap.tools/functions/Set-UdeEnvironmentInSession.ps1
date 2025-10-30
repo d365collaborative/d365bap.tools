@@ -15,8 +15,13 @@
         
     .EXAMPLE
         PS C:\> Set-UdeEnvironmentInSession -EnvironmentId "env-123"
-
+        
         This will set the specified environment ID in the current PowerShell session.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -EnvironmentId "env-123" | Set-UdeEnvironmentInSession
+        
+        This will set the environment ID from the piped UDE environment object in the current PowerShell session.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)

@@ -133,7 +133,7 @@ Aliases:
 Required: False
 Position: 6
 Default value: (Get-Date).AddHours(8)
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -170,7 +170,7 @@ Aliases: PpacEnvId
 Required: False
 Position: 8
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 

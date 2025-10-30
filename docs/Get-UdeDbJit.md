@@ -62,6 +62,17 @@ It will whitelist the public IP address of the machine running the command.
 It will assign the "Reader" role.
 It will use the specified reason "Needed for data migration".
 
+### EXAMPLE 5
+```
+Get-UdeEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
+```
+
+This will retrieve the JIT database access information for the specified environment ID.
+It will whitelist the public IP address of the machine running the command.
+It will assign the "Reader" role.
+It will use the default reason.
+It will output all details directly to an Excel file.
+
 ## PARAMETERS
 
 ### -EnvironmentId
@@ -74,12 +85,12 @@ Can be either the environment name or the environment GUID.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: PpacEnvId
 
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 

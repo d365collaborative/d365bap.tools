@@ -44,6 +44,7 @@
 	FunctionsToExport = @(
 		'Add-UdeWindowsDefenderRules'
 		, 'Clear-UdeCredentialCache'
+		, 'Clear-UdeDbJitCache'
 		, 'Clear-UdeOrphanedConfig'
 
 		, 'Compare-BapEnvironmentD365App'
