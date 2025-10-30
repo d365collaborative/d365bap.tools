@@ -715,6 +715,9 @@
 							<ListItem>
 								<PropertyName>Role</PropertyName>
 							</ListItem>
+							<ListItem>
+								<PropertyName>EnvironmentId</PropertyName>
+							</ListItem>
 						</ListItems>
 					</ListEntry>
 				</ListEntries>

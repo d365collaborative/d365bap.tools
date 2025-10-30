@@ -13,8 +13,7 @@ Invoke the installation of a D365 App in a given environment
 ## SYNTAX
 
 ```
-Invoke-BapEnvironmentInstallD365App [-EnvironmentId] <String> [-PackageId] <String[]>
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Invoke-BapEnvironmentInstallD365App [-EnvironmentId] <String> [-PackageId] <String[]> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -55,8 +54,9 @@ Succeeded 02/03/2024 13.42.09 02/03/2024 13.48.26                     6885e0f4-6
 ### EXAMPLE 2
 ```
 $appIds = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly | Select-Object -ExpandProperty PackageId)
-PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $appIds
 ```
+
+PS C:\\\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $appIds
 
 This will find all D365 Apps that has a pending update available.
 It will gather the Ids into an array.
@@ -83,8 +83,9 @@ Succeeded 02/03/2024 13.42.09 02/03/2024 13.48.26                     6885e0f4-6
 ### EXAMPLE 3
 ```
 $apps = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly)
-PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $apps.PackageId
 ```
+
+PS C:\\\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $apps.PackageId
 
 This will find all D365 Apps that has a pending update available.
 It will gather the Ids into an array.
@@ -141,21 +142,6 @@ Aliases:
 
 Required: True
 Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

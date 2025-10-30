@@ -14,7 +14,7 @@ Gets detailed information about a BAP tenant.
 
 ```
 Get-BapTenantDetail [[-Id] <String>] [[-Upn] <String>] [[-TenantId] <String>] [[-FriendlyName] <String>]
- [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-AsExcelOutput] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -32,30 +32,34 @@ This will retrieve all available BAP tenant details stored in the local PSFramew
 ### EXAMPLE 2
 ```
 Get-BapTenantDetail -Id "Contoso"
+```
+
 This will retrieve the BAP tenant detail for the specified tenant id.
 It will only return results where the tenant id matches "Contoso".
-```
 
 ### EXAMPLE 3
 ```
 Get-BapTenantDetail -Upn "user@contoso.com"
+```
+
 This will retrieve the BAP tenant detail for the specified user principal name (UPN).
 It will only return results where the UPN matches "user@contoso.com".
-```
 
 ### EXAMPLE 4
 ```
 Get-BapTenantDetail -TenantId "12345678-90ab-cdef-1234-567890abcdef"
+```
+
 This will retrieve the BAP tenant detail for the specified tenant id.
 It will only return results where the tenant id matches "12345678-90ab-cdef-1234-567890abcdef".
-```
 
 ### EXAMPLE 5
 ```
 Get-BapTenantDetail -FriendlyName "Contoso"
+```
+
 This will retrieve the BAP tenant detail for the specified friendly name.
 It will only return results where the friendly name matches "Contoso".
-```
 
 ### EXAMPLE 6
 ```
@@ -139,21 +143,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

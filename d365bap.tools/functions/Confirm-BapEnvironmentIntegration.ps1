@@ -42,7 +42,7 @@
 function Confirm-BapEnvironmentIntegration {
     [CmdletBinding()]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
         [switch] $AsExcelOutput

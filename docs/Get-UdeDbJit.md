@@ -14,7 +14,7 @@ Gets UDE database JIT access information for a specified environment.
 
 ```
 Get-UdeDbJit [-EnvironmentId] <String> [[-WhitelistIp] <String>] [[-Role] <String>] [[-Reason] <String>]
- [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-AsExcelOutput] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -62,10 +62,21 @@ It will whitelist the public IP address of the machine running the command.
 It will assign the "Reader" role.
 It will use the specified reason "Needed for data migration".
 
+### EXAMPLE 5
+```
+Get-UdeEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
+```
+
+This will retrieve the JIT database access information for the specified environment ID.
+It will whitelist the public IP address of the machine running the command.
+It will assign the "Reader" role.
+It will use the default reason.
+It will output all details directly to an Excel file.
+
 ## PARAMETERS
 
 ### -EnvironmentId
-The ID of the environment to retrieve.
+The ID of the environment that you want to work against.
 
 Supports wildcard patterns.
 
@@ -74,12 +85,12 @@ Can be either the environment name or the environment GUID.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: PpacEnvId
 
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -149,21 +160,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

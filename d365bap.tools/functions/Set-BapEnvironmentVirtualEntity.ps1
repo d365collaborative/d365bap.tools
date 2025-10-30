@@ -73,10 +73,10 @@ function Set-BapEnvironmentVirtualEntity {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $Name,
 
         [switch] $VisibilityOn,

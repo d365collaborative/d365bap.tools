@@ -179,7 +179,7 @@ function Get-BapEnvironmentD365App {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Name = "*",

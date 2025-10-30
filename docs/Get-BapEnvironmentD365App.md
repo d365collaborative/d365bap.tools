@@ -14,8 +14,7 @@ Get D365 App from the environment
 
 ```
 Get-BapEnvironmentD365App [-EnvironmentId] <String> [[-Name] <String>] [[-Status] <String>]
- [[-GeoRegion] <String>] [-IncludeAll] [-UpdatesOnly] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [[-GeoRegion] <String>] [-IncludeAll] [-UpdatesOnly] [-AsExcelOutput] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -149,8 +148,9 @@ Dynamics 365 ContextualHelp    msdyn_ContextualHelpAnchor     1.0.0.22          
 ### EXAMPLE 8
 ```
 $appIds = @(Get-BapEnvironmentD365App -EnvironmentId *test* -UpdatesOnly | Select-Object -ExpandProperty PpacD365AppId)
-PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId *test* -D365AppId $appIds
 ```
+
+PS C:\\\> Invoke-BapEnvironmentInstallD365App -EnvironmentId *test* -D365AppId $appIds
 
 This will query the environment for installed only D365 Apps.
 It will filter the output to only containing those who have an update available.
@@ -293,21 +293,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

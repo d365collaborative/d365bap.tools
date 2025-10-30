@@ -13,7 +13,7 @@ Starts SQL Server Management Studio (SSMS) with the specified JIT access credent
 ## SYNTAX
 
 ```
-Start-UdeDbSsms [-Id] <String> [[-Version] <Int32>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Start-UdeDbSsms [-Id] <String> [[-Version] <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -63,21 +63,6 @@ Aliases:
 Required: False
 Position: 2
 Default value: 20
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

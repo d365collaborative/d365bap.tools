@@ -25,6 +25,13 @@
         It will use the packages version "10.0.2177.188".
         It will include the custom source code from "C:\CustomSourceCode".
         
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -EnvironmentId "env-123" | Set-UdeConfig -Path "C:\CustomSourceCode"
+        
+        This will set the UDE configuration for the environment with the ID "env-123".
+        It will use the packages version from the environment details.
+        It will include the custom source code from "C:\CustomSourceCode".
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -32,11 +39,11 @@ function Set-UdeConfig {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias("PpacEnvUri")]
         [string] $EnvironmentUri,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias("PpacProvApp")]
         [string] $PackagesVersion,
 
@@ -48,17 +55,12 @@ function Set-UdeConfig {
     )
 
     begin {
-        # Path to the packages that matches the version
-        $pathPackages = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$PackagesVersion\PackagesLocalDirectory"
-        
-        if (-not [System.IO.Path]::Exists($pathPackages)) {
-            $messageString = "It seems that the PackagesLocalDirectory for <c='em'>$PackagesVersion</c> does not exist. Please download the developer files first using <c='em'>Get-UdeDeveloperFile -Download</c>."
 
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
-            Stop-PSFFunction -Message "Stopping because PackagesLocalDirectory wasn't found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
-        
+    }
+
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
+
         # The configuration name is derived from the environment URI
         $confName = ([uri]$EnvironmentUri).Host.Split(".")[0]
 
@@ -70,6 +72,17 @@ function Set-UdeConfig {
             return
         }
 
+        # Path to the packages that matches the version
+        $pathPackages = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$PackagesVersion\PackagesLocalDirectory"
+        
+        if (-not [System.IO.Path]::Exists($pathPackages)) {
+            $messageString = "It seems that the PackagesLocalDirectory for <c='em'>$PackagesVersion</c> does not exist. Please download the developer files first using <c='em'>Get-UdeDeveloperFile -Download</c>."
+
+            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Stop-PSFFunction -Message "Stopping because PackagesLocalDirectory wasn't found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            return
+        }
+        
         # Some of the names need the version without dots
         $striped = $PackagesVersion.Replace(".", "")
 
@@ -98,10 +111,6 @@ function Set-UdeConfig {
         else {
             $pathSource = "$Path\$confName\Metadata"
         }
-    }
-
-    end {
-        if (Test-PSFFunctionInterrupt) { return }
 
         $pathXRefBackup = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$PackagesVersion\DYNAMICSXREFDB.bak"
 
