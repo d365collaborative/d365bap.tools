@@ -65,7 +65,7 @@ It will use the specified reason "Needed for data migration".
 ## PARAMETERS
 
 ### -EnvironmentId
-The ID of the environment to retrieve.
+The ID of the environment that you want to work against.
 
 Supports wildcard patterns.
 

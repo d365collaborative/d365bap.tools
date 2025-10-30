@@ -7,7 +7,7 @@
         This function retrieves UDE database JIT access information for a specified environment.
         
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve.
+        The ID of the environment that you want to work against.
         
         Supports wildcard patterns.
         
@@ -73,7 +73,7 @@
 function Get-UdeDbJit {
     [CmdletBinding()]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $WhitelistIp = "127.0.0.1",

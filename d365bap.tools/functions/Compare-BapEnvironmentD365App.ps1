@@ -73,10 +73,10 @@
 function Compare-BapEnvironmentD365App {
     [CmdletBinding()]
     param (
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $SourceEnvironmentId,
 
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $DestinationEnvironmentId,
     
         [switch] $ShowDiffOnly,

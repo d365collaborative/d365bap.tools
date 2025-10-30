@@ -42,7 +42,8 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
-		'Clear-UdeCredentialCache'
+		'Add-UdeWindowsDefenderRules'
+		, 'Clear-UdeCredentialCache'
 		, 'Clear-UdeOrphanedConfig'
 
 		, 'Compare-BapEnvironmentD365App'
@@ -85,10 +86,12 @@
 		
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
+		, 'Set-UdeEnvironmentInSession'
 
 		, 'Start-UdeDbSsms'
 		, 'Switch-BapTenant'
 		
+		, 'Confirm-UdeVs2022Installation'
 		, 'Update-BapEnvironmentVirtualEntityMetadata'
 		
 	)

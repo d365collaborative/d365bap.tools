@@ -33,7 +33,7 @@
         Defaults to "Reader".
         
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve.
+        The ID of the environment that you want to work against.
         
         Supports wildcard patterns.
         

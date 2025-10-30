@@ -104,10 +104,10 @@
 function Invoke-BapEnvironmentInstallD365App {
     [CmdletBinding()]
     param (
-        [parameter (mandatory = $true)]
+        [parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
-        [parameter (mandatory = $true)]
+        [parameter (Mandatory = $true)]
         [string[]] $PackageId
     )
     

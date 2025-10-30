@@ -7,7 +7,7 @@
         This function retrieves UDE developer files for a specified environment.
         
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve.
+        The ID of the environment that you want to work against.
         
         Supports wildcard patterns.
         
@@ -46,7 +46,7 @@ function Get-UdeDeveloperFile {
     [OutputType('System.Object[]')]
     param (
 
-        [Parameter (mandatory = $true)]
+        [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
         [string] $Path = "C:\Temp\d365bap.tools\UdeDeveloperFiles",
@@ -173,6 +173,10 @@ if(-not [System.IO.Path]::Exists('$outputPath')){
             Wait-Process -Id $processes.Id > $null
         }
         
+        foreach ($fileObj in $colFiles) {
+            Unblock-File -Path $fileObj.Path
+        }
+        
         # Output the details to the user
         $colFiles
             
@@ -189,6 +193,9 @@ if(-not [System.IO.Path]::Exists('$outputPath')){
             Write-PSFMessage -Level Host -Message "Will extract the <c='em'>PackagesLocalDirectory.zip</c> file. It will take some minutes..."
             [IO.Compression.ZipFile]::ExtractToDirectory($zipPackages, "$pathPackages\PackagesLocalDirectory")
             Write-PSFMessage -Level Host -Message "Extraction completed..."
+
+            [GC]::Collect()
+            [GC]::WaitForPendingFinalizers()
         }
     }
 

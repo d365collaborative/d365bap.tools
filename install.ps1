@@ -133,22 +133,22 @@ function Compress-Archive
 	[CmdletBinding(DefaultParameterSetName = "Path", SupportsShouldProcess = $true, HelpUri = "http://go.microsoft.com/fwlink/?LinkID=393252")]
 	param
 	(
-		[parameter (mandatory = $true, Position = 0, ParameterSetName = "Path", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-		[parameter (mandatory = $true, Position = 0, ParameterSetName = "PathWithForce", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-		[parameter (mandatory = $true, Position = 0, ParameterSetName = "PathWithUpdate", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[parameter (Mandatory = $true, Position = 0, ParameterSetName = "Path", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[parameter (Mandatory = $true, Position = 0, ParameterSetName = "PathWithForce", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[parameter (Mandatory = $true, Position = 0, ParameterSetName = "PathWithUpdate", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string[]]
 		$Path,
 
-		[parameter (mandatory = $true, ParameterSetName = "LiteralPath", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
-		[parameter (mandatory = $true, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
-		[parameter (mandatory = $true, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+		[parameter (Mandatory = $true, ParameterSetName = "LiteralPath", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+		[parameter (Mandatory = $true, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+		[parameter (Mandatory = $true, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
 		[ValidateNotNullOrEmpty()]
 		[Alias("PSPath")]
 		[string[]]
 		$LiteralPath,
 
-		[parameter (mandatory = $true,
+		[parameter (Mandatory = $true,
 					Position = 1,
 					ValueFromPipeline = $false,
 					ValueFromPipelineByPropertyName = $false)]
@@ -164,13 +164,13 @@ function Compress-Archive
 		[string]
 		$CompressionLevel = "Optimal",
 
-		[parameter(mandatory = $true, ParameterSetName = "PathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
-		[parameter(mandatory = $true, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+		[parameter(Mandatory = $true, ParameterSetName = "PathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+		[parameter(Mandatory = $true, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
 		[switch]
 		$Update = $false,
 
-		[parameter(mandatory = $true, ParameterSetName = "PathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
-		[parameter(mandatory = $true, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+		[parameter(Mandatory = $true, ParameterSetName = "PathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+		[parameter(Mandatory = $true, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
 		[switch]
 		$Force = $false
 	)
@@ -1288,7 +1288,7 @@ function Expand-Archive
 	param
 	(
 		[parameter (
-					mandatory = $true,
+					Mandatory = $true,
 					Position = 0,
 					ParameterSetName = "Path",
 					ValueFromPipeline = $true,
@@ -1298,7 +1298,7 @@ function Expand-Archive
 		$Path,
 
 		[parameter (
-					mandatory = $true,
+					Mandatory = $true,
 					ParameterSetName = "LiteralPath",
 					ValueFromPipelineByPropertyName = $true)]
 		[ValidateNotNullOrEmpty()]
