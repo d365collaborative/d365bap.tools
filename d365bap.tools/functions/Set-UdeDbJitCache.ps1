@@ -83,6 +83,7 @@ function Set-UdeDbJitCache {
         [ValidateSet("Reader", "Writer")]
         [string] $Role = "Reader",
 
+        [Alias("PpacEnvId")]
         [string] $EnvironmentId
     )
 

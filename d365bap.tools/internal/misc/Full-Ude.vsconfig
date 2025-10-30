@@ -43,7 +43,10 @@
         "Microsoft.VisualStudio.Component.IntelliCode",
         "Microsoft.VisualStudio.Component.Debugger.JustInTime",
         "Microsoft.VisualStudio.Component.ManagedDesktop.Prerequisites",
-        "Microsoft.VisualStudio.Workload.ManagedDesktop"
+        "Microsoft.VisualStudio.Workload.ManagedDesktop",
+        "Microsoft.Net.Component.4.6.TargetingPack",
+        "Microsoft.VisualStudio.Component.VSSDK",
+        "Microsoft.VisualStudio.Component.DslTools"
     ],
     "extensions": [
         "https://marketplace.visualstudio.com/items?itemName=microsoft-IsvExpTools.PowerPlatformToolsVS2022"
