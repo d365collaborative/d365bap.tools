@@ -58,7 +58,11 @@ function Set-UdeConfig {
             Stop-PSFFunction -Message "Stopping because PackagesLocalDirectory wasn't found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
-        
+    }
+
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
+
         # The configuration name is derived from the environment URI
         $confName = ([uri]$EnvironmentUri).Host.Split(".")[0]
 
@@ -98,10 +102,6 @@ function Set-UdeConfig {
         else {
             $pathSource = "$Path\$confName\Metadata"
         }
-    }
-
-    end {
-        if (Test-PSFFunctionInterrupt) { return }
 
         $pathXRefBackup = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$PackagesVersion\DYNAMICSXREFDB.bak"
 

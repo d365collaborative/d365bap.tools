@@ -14,10 +14,12 @@
         Can be either the environment name or the environment GUID.
         
     .EXAMPLE
-        An example
+        PS C:\> Set-UdeEnvironmentInSession -EnvironmentId "env-123"
+
+        This will set the specified environment ID in the current PowerShell session.
         
     .NOTES
-        General notes
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Set-UdeEnvironmentInSession {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
