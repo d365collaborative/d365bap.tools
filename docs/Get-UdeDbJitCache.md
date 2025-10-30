@@ -13,7 +13,7 @@ Retrieves UDE database JIT access credentials from the local cache.
 ## SYNTAX
 
 ```
-Get-UdeDbJitCache [[-Id] <String>] [-ShowPassword] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-UdeDbJitCache [[-Id] <String>] [-ShowPassword] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -56,21 +56,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

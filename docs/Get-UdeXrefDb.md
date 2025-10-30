@@ -13,7 +13,7 @@ Gets UDE cross-reference databases.
 ## SYNTAX
 
 ```
-Get-UdeXrefDb [[-Name] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-UdeXrefDb [[-Name] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -50,21 +50,6 @@ Aliases:
 Required: False
 Position: 1
 Default value: *
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

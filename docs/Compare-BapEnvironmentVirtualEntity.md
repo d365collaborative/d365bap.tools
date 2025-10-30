@@ -14,7 +14,7 @@ Compare environment Virtual Entities
 
 ```
 Compare-BapEnvironmentVirtualEntity [-SourceEnvironmentId] <String> [-DestinationEnvironmentId] <String>
- [-ShowDiffOnly] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-ShowDiffOnly] [-AsExcelOutput] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -125,21 +125,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

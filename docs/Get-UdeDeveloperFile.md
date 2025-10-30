@@ -14,7 +14,7 @@ Gets UDE developer files for a specified environment.
 
 ```
 Get-UdeDeveloperFile [-EnvironmentId] <String> [[-Path] <String>] [[-Files] <String[]>] [-Download]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -48,12 +48,12 @@ Can be either the environment name or the environment GUID.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: PpacEnvId
 
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -104,21 +104,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

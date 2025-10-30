@@ -14,7 +14,7 @@ Sets UDE configuration for a specific environment.
 
 ```
 Set-UdeConfig [-EnvironmentUri] <String> [-PackagesVersion] <String> [-Path] <String>
- [[-FallbackPath] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [[-FallbackPath] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -89,21 +89,6 @@ Aliases:
 Required: False
 Position: 4
 Default value: C:\Temp\d365bap.tools\UdeDeveloperFiles
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
