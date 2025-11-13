@@ -118,24 +118,24 @@ function Clear-UdeOrphanedConfig {
         } | Select-Object -ExpandProperty Name
 
         if ($orphanedDirs.Count -lt 1 -and $orphanedXRefDbs.Count -lt 1) {
-            Write-PSFMessage -Level Host -Message "No orphaned UDE directories or XRef databases found. <c='em'>Nothing to do.</c>"
+            Write-PSFMessage -Level Important -Message "No orphaned UDE directories or XRef databases found. <c='em'>Nothing to do.</c>"
             return
         }
 
         if (-not $Force) {
             if ($orphanedDirs.Count -gt 0) {
-                Write-PSFMessage -Level Host -Message "The following directories are orphaned and will be removed:"
-                $orphanedDirs.ToArray() | ForEach-Object { Write-PSFMessage -Level Host -Message " - <c='em'>$_</c>" }
+                Write-PSFMessage -Level Important -Message "The following directories are orphaned and will be removed:"
+                $orphanedDirs.ToArray() | ForEach-Object { Write-PSFMessage -Level Important -Message " - <c='em'>$_</c>" }
             }
 
             if ($orphanedXRefDbs.Count -gt 0) {
-                Write-PSFMessage -Level Host -Message "The following XRef databases are orphaned and will be removed:"
-                $orphanedXRefDbs | ForEach-Object { Write-PSFMessage -Level Host -Message " - <c='em'>$_</c>" }
+                Write-PSFMessage -Level Important -Message "The following XRef databases are orphaned and will be removed:"
+                $orphanedXRefDbs | ForEach-Object { Write-PSFMessage -Level Important -Message " - <c='em'>$_</c>" }
             }
 
             $messageString = "This will remove all listed package directories and XRef DBs. If you are sure, please re-run the command with the <c='em'>-Force</c> parameter."
 
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Write-PSFMessage -Level Important -Message $messageString 
             Stop-PSFFunction -Message "Stopping because Force parameter wasn't supplied." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
@@ -178,7 +178,7 @@ function Clear-UdeOrphanedConfig {
             $sqlCommand.Connection.Close()
         }
         catch {
-            Write-PSFMessage -Level Host -Message "Something went wrong while working with the sql server connection objects or the database server threw an unexpected error." -Exception $PSItem.Exception
+            Write-PSFMessage -Level Important -Message "Something went wrong while working with the sql server connection objects or the database server threw an unexpected error." -Exception $PSItem.Exception
             Stop-PSFFunction -Message "Stopping because of errors"
             return
         }

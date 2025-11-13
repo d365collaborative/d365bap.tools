@@ -35,7 +35,7 @@ function Switch-BapTenant {
         if ($null -eq $hashTenants."$Id") {
             $messageString = "No tenant details found for Id <c='em'>$Id</c>. Please add the tenant details using <c='em'>Set-BapTenantDetail</c> first."
 
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Write-PSFMessage -Level Important -Message $messageString 
             Stop-PSFFunction -Message "Stopping because tenant was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
@@ -48,7 +48,7 @@ function Switch-BapTenant {
         $fake = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString -ErrorAction SilentlyContinue).Token
         
         if ([string]::IsNullOrWhiteSpace($fake)) {
-            Write-PSFMessage -Level Host -Message "It seems that your credentials/cache has <c='sub'>expired</c>. Will force an authentication prompt for the <c='em'>$($obj.User)</c>." -Target Host
+            Write-PSFMessage -Level Important -Message "It seems that your credentials/cache has <c='sub'>expired</c>. Will force an authentication prompt for the <c='em'>$($obj.User)</c>." 
             
             Start-Sleep -Seconds 2
             Connect-AzAccount -Tenant $obj.Tenant -AccountId $obj.User

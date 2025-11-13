@@ -94,48 +94,45 @@ function Get-BapEnvironment {
                     if (-not ($envObj.properties.displayName -like $EnvironmentId)) { continue }
                 }
 
-                $res = [ordered]@{}
-
-                $res.Id = $envObj.Name
-                $res.Region = $envObj.Location
-            
+                # Flatten properties
                 foreach ($prop in $envObj.Properties.PsObject.Properties) {
                     if ($prop.Value -is [System.Management.Automation.PSCustomObject]) {
-                        $res."prop_$($prop.Name)" = @(
-                            foreach ($inner in $prop.Value.PsObject.Properties) {
-                                "$($inner.Name)=$($inner.Value)"
-                            }) -join "`r`n"
+                        $envObj | Add-Member -NotePropertyName "prop_$($prop.Name)" -NotePropertyValue (@(
+                                foreach ($inner in $prop.Value.PsObject.Properties) {
+                                    "$($inner.Name)=$($inner.Value)"
+                                }) -join "`r`n")
                     }
                     else {
-                        $res."prop_$($prop.Name)" = $prop.Value
+                        $envObj | Add-Member -NotePropertyName "prop_$($prop.Name)" -NotePropertyValue $prop.Value -Force
                     }
                 }
 
-                foreach ($endPoint in $($res.prop_runtimeEndpoints.Split("`r`n")) ) {
+                foreach ($endPoint in $($envObj.prop_runtimeEndpoints.Split("`r`n")) ) {
                     $keyValue = $endPoint.Replace("microsoft.", "").split("=")
-                    $res."Api.$($keyValue[0])" = $keyValue[1]
+                    $envObj | Add-Member -NotePropertyName "Api.$($keyValue[0])" -NotePropertyValue $keyValue[1] -Force
                 }
 
-                ([PSCustomObject]$res) | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
-                    -Property "Id as PpacEnvId",
-                "Region as PpacEnvRegion",
+                $envObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
+                    -Property "Name as PpacEnvId",
+                "Location as PpacEnvRegion",
                 "prop_tenantId as TenantId",
                 "prop_azureRegion as AzureRegion",
                 "prop_displayName as PpacEnvName",
-                @{Name = "DeployedBy"; Expression = { $envObj.Properties.createdBy.userPrincipalName } },
+                @{Name = "DeployedBy"; Expression = { $_.Properties.createdBy.userPrincipalName } },
                 "prop_provisioningState as PpacProvisioningState",
                 "prop_environmentSku as PpacEnvSku",
                 "prop_databaseType as PpacDbType",
-                @{Name = "LinkedAppLcsEnvId"; Expression = { $envObj.Properties.linkedAppMetadata.id } },
-                @{Name = "LinkedAppLcsEnvUri"; Expression = { $envObj.Properties.linkedAppMetadata.url } },
-                @{Name = "LinkedMetaPpacOrgId"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.resourceId } },
-                @{Name = "LinkedMetaPpacUniqueId"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.uniqueName } },
-                @{Name = "LinkedMetaPpacEnvUri"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
-                @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
-                @{Name = "LinkedMetaPpacEnvLanguage"; Expression = { $envObj.Properties.linkedEnvironmentMetadata.baseLanguage } },
-                @{Name = "PpacClusterIsland"; Expression = { $envObj.Properties.cluster.uriSuffix } },
-                @{Name = "FinOpsMetadataEnvType"; Expression = { $envObj.Properties.linkedAppMetadata.type } },
-                @{Name = "FinOpsMetadataEnvUri"; Expression = { $envObj.Properties.linkedAppMetadata.url } },
+                "prop_creationType as PpacCreationType",
+                @{Name = "LinkedAppLcsEnvId"; Expression = { $_.Properties.linkedAppMetadata.id } },
+                @{Name = "LinkedAppLcsEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
+                @{Name = "LinkedMetaPpacOrgId"; Expression = { $_.Properties.linkedEnvironmentMetadata.resourceId } },
+                @{Name = "LinkedMetaPpacUniqueId"; Expression = { $_.Properties.linkedEnvironmentMetadata.uniqueName } },
+                @{Name = "LinkedMetaPpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
+                @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
+                @{Name = "LinkedMetaPpacEnvLanguage"; Expression = { $_.Properties.linkedEnvironmentMetadata.baseLanguage } },
+                @{Name = "PpacClusterIsland"; Expression = { $_.Properties.cluster.uriSuffix } },
+                @{Name = "FinOpsMetadataEnvType"; Expression = { $_.Properties.linkedAppMetadata.type } },
+                @{Name = "FinOpsMetadataEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
                 "*"
             }
         )

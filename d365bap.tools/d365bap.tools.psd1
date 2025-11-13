@@ -75,6 +75,11 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
+		, 'Get-UdeEnvironmentModule'
+		, 'Get-UdeEnvironmentOperationHistory'
+		, 'Get-UdeEnvironmentPackage'
+		, 'Get-UdeVsPackageDeploy'
+		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'

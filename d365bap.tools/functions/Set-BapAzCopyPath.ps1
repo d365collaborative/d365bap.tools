@@ -29,7 +29,7 @@ function Set-BapAzCopyPath {
     if ($null -eq (Get-Item -Path $Path)) {
         $messageString = "File path doesn't <c='em'>exist</c>. Please make sure that you have specified the correct path '<c='em'>$Path</c>'. You can use the '<c='em'>Invoke-BapInstallAzCopy</c>' function to download and install AzCopy."
 
-        Write-PSFMessage -Level Host -Message $messageString -Target Host
+        Write-PSFMessage -Level Important -Message $messageString 
         Stop-PSFFunction -Message "Stopping because file path doesn't exist." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         return
     }

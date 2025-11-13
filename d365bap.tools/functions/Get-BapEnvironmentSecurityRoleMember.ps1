@@ -121,7 +121,7 @@ function Get-BapEnvironmentSecurityRoleMember {
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
@@ -131,7 +131,7 @@ function Get-BapEnvironmentSecurityRoleMember {
 
         if ($null -eq $secRoleObj) {
             $messageString = "The supplied SecurityRoleId: <c='em'>$SecurityRoleId</c> didn't return any matching security details from the Environment. Please verify that the EnvironmentId & SecurityRoleId is correct - try running the <c='em'>Get-BapEnvironment</c> or <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlets."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 

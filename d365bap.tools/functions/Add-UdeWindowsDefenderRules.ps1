@@ -40,19 +40,19 @@ function Add-UdeWindowsDefenderRules {
 
     if ($DefenderEnabled -eq $false) {
         $messageString = "Windows Defender is <c='em'>NOT</c> enabled on this machine."
-        Write-PSFMessage -Level Host -Message $messageString
+        Write-PSFMessage -Level Important -Message $messageString
         Stop-PSFFunction -Message "Stopping because Windows Defender is turned off." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         return
     }
 
     if ($Force -and (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
-        Start-Process pwsh -Verb RunAs -ArgumentList "-NoExit", "-Command", "cd '$pwd'; Import-Module d365bap.tools; Add-UdeWindowsDefenderRules -Force"
+        Start-Process pwsh -Verb RunAs -ArgumentList "-NoExit", "-Command", "cd '$pwd'; Import-Module d365bap.tools; Add-UdeWindowsDefenderRules"
         exit
     }
 
     if ((-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
         $messageString = "The current PowerShell session is <c='em'>NOT</c> running with elevated (Administrator) privileges. Please run this function with the <c='em'>-Force</c> or start a new PowerShell session as Administrator."
-        Write-PSFMessage -Level Host -Message $messageString
+        Write-PSFMessage -Level Important -Message $messageString
         Stop-PSFFunction -Message "Stopping because Windows Defender is turned off." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         return
     }
@@ -128,7 +128,7 @@ function Add-UdeWindowsDefenderRules {
         Add-MpPreference -ExclusionExtension "netmodule"
     }
     catch {
-        Write-PSFMessage -Level Host -Message "Something went wrong while configuring Windows Defender rules." -Exception $PSItem.Exception
+        Write-PSFMessage -Level Important -Message "Something went wrong while configuring Windows Defender rules." -Exception $PSItem.Exception
         Stop-PSFFunction -Message "Stopping because of errors"
         return
     }

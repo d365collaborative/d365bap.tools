@@ -82,7 +82,7 @@ function Get-UdeDeveloperFile {
         if ($null -eq $envObj) {
             $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UdeEnvironment</c>. Consider using wildcards if needed."
 
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Write-PSFMessage -Level Important -Message $messageString 
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
                 -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
@@ -136,7 +136,7 @@ function Get-UdeDeveloperFile {
             return
         }
 
-        Write-PSFMessage -Level Host -Message "Will start the download of the files. It will open a separate PowerShell window for each:"
+        Write-PSFMessage -Level Important -Message "Will start the download of the files. It will open a separate PowerShell window for each:"
 
         $processes = @()
 
@@ -150,11 +150,11 @@ function Get-UdeDeveloperFile {
             $fileObj | Add-Member -NotePropertyName "Path" -NotePropertyValue $outputPath
 
             if ([System.IO.Path]::Exists($outputPath)) {
-                Write-PSFMessage -Level Host -Message " - Skipping <c='em'>$fileName</c> as it already <c='em'>exists</c>"
+                Write-PSFMessage -Level Important -Message " - Skipping <c='em'>$fileName</c> as it already <c='em'>exists</c>"
                 continue
             }
 
-            Write-PSFMessage -Level Host -Message " - <c='em'>$fileName</c>"
+            Write-PSFMessage -Level Important -Message " - <c='em'>$fileName</c>"
 
             # Command to run in new window: azcopy copy, then pause for validation
             $command = @"
@@ -173,7 +173,7 @@ if(-not [System.IO.File]::Exists('$outputPath')){
             $processes += $process
         }
 
-        Write-PSFMessage -Level Host -Message "Will await the completion of <c='em'>all</c> file downloads."
+        Write-PSFMessage -Level Important -Message "Will await the completion of <c='em'>all</c> file downloads."
 
         if ($processes.Count -gt 0 ) {
             Wait-Process -Id $processes.Id > $null
@@ -196,9 +196,9 @@ if(-not [System.IO.File]::Exists('$outputPath')){
                 -Force `
                 -WarningAction SilentlyContinue > $null
 
-            Write-PSFMessage -Level Host -Message "Will extract the <c='em'>PackagesLocalDirectory.zip</c> file. It will take some minutes..."
+            Write-PSFMessage -Level Important -Message "Will extract the <c='em'>PackagesLocalDirectory.zip</c> file. It will take some minutes..."
             [IO.Compression.ZipFile]::ExtractToDirectory($zipPackages, "$pathPackages\PackagesLocalDirectory")
-            Write-PSFMessage -Level Host -Message "Extraction completed..."
+            Write-PSFMessage -Level Important -Message "Extraction completed..."
 
             [GC]::Collect()
             [GC]::WaitForPendingFinalizers()

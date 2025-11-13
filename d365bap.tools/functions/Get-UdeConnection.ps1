@@ -38,7 +38,7 @@ function Get-UdeConnection {
         if ($null -eq $curConfig) {
             $messageString = "The configuration file was not found. Make sure that the <c='em'>'$Path'</c> is pointing to the correct location of the CRMDeveloperToolKit."
 
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Write-PSFMessage -Level Important -Message $messageString 
             Stop-PSFFunction -Message "Stopping because the configuration file was not found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }

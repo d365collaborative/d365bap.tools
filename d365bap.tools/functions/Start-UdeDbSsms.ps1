@@ -43,7 +43,7 @@ function Start-UdeDbSsms {
         $udeCreds = Get-UdeDbJitCache -Id $Id
 
         if ($null -eq $udeCreds) {
-            Write-PSFMessage -Level Host -Message "No credential found for Id '$Id'. Please check the Id and try again."
+            Write-PSFMessage -Level Important -Message "No credential found for Id '$Id'. Please check the Id and try again."
             Stop-PSFFunction -Message "Stopping because no matching credential was found."
 
             return
@@ -62,7 +62,7 @@ function Start-UdeDbSsms {
             Select-Object -First 1
 
         if ([string]::IsNullOrWhiteSpace($executablePath)) {
-            Write-PSFMessage -Level Host -Message "Could not find a valid SSMS executable for version <c='em'>$Version</c>. Please ensure the version is installed or try a different version."
+            Write-PSFMessage -Level Important -Message "Could not find a valid SSMS executable for version <c='em'>$Version</c>. Please ensure the version is installed or try a different version."
             Stop-PSFFunction -Message "Stopping because SSMS executable was not found."
             return
         }
