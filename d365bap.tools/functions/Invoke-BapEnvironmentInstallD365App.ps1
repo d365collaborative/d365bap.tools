@@ -117,7 +117,7 @@ function Invoke-BapEnvironmentInstallD365App {
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
         
@@ -148,7 +148,7 @@ function Invoke-BapEnvironmentInstallD365App {
 
             if ($null -eq $appToBeInstalled) {
                 $messageString = "The combination of the supplied EnvironmentId: <c='em'>$EnvironmentId</c> and PackageId: <c='em'>$PackageId</c> didn't return any matching D365App. Please verify that the EnvironmentId & PackageId is correct - try running the <c='em'>Get-BapEnvironmentD365App</c> cmdlet."
-                Write-PSFMessage -Level Host -Message $messageString
+                Write-PSFMessage -Level Important -Message $messageString
                 Stop-PSFFunction -Message "Stopping because environment and d365app combination was NOT found based on the supplied parameters." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             }
 
@@ -166,7 +166,7 @@ function Invoke-BapEnvironmentInstallD365App {
 
         if ($arrFailedStarts.Count -gt 0) {
             $messageString = "The following packages <c='em'>failed to start</c>:"
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
                 
             $arrFailedStarts.ToArray()
         }
@@ -180,7 +180,7 @@ function Invoke-BapEnvironmentInstallD365App {
             }
 
             Start-Sleep -Seconds 60
-            # Write-PSFMessage -Level Host -Message "Checking for running operations"
+            # Write-PSFMessage -Level Important -Message "Checking for running operations"
 
             $arrStatus = @()
 

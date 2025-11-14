@@ -91,19 +91,19 @@ function Set-BapEnvironmentVirtualEntity {
     begin {
         if (-not($VisibilityOn -or $VisibilityOff -or $TrackingOn -or $TrackingOff)) {
             $messageString = "You need to select atleast one of the ParameterSets: You have to use either <c='em'>-VisibilityOn</c> / <c='em'>-VisibilityOff</c> or <c='em'>-TrackingOn</c> / <c='em'>-TrackingOff</c>."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because intent of the operation is NOT clear." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
         if ($VisibilityOn -and $VisibilityOff) {
             $messageString = "The supplied parameter combination is not valid. You have to use either <c='em'>-VisibilityOn</c> or <c='em'>-VisibilityOff</c>."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because intent of the operation is NOT clear." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
         if ($TrackingOn -and $TrackingOff) {
             $messageString = "The supplied parameter combination is not valid. You have to use either <c='em'>-TrackingOn</c> or <c='em'>-TrackingOff</c>."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because intent of the operation is NOT clear." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
@@ -114,7 +114,7 @@ function Set-BapEnvironmentVirtualEntity {
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
         
@@ -133,7 +133,7 @@ function Set-BapEnvironmentVirtualEntity {
 
         if ($entities.Count -ne 1) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 

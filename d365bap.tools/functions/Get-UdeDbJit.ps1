@@ -18,6 +18,12 @@
         
         Defaults to 127.0.0.1 - which will cause the function to determine the public IP address of the machine running the command.
         
+        Supports single, range and CIDR notation.
+        
+        10.0.0.7 - single IP
+        10.0.0.7-10.0.0.20 - range
+        10.0.0.0/24 - CIDR notation
+        
     .PARAMETER Role
         The role to assign for JIT database access.
         
@@ -108,7 +114,7 @@ function Get-UdeDbJit {
         if ($null -eq $envObj) {
             $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UdeEnvironment</c>. Consider using wildcards if needed."
 
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
                 -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
@@ -116,7 +122,7 @@ function Get-UdeDbJit {
 
         if ($WhitelistIp -eq "127.0.0.1") {
             $messageString = "Could not determine public IP address for JIT database access. Please specify the IP address using the <c='em'>-WhitelistIp</c> parameter."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because public IP address could not be determined."
             return
         }

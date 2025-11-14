@@ -56,7 +56,7 @@ WHERE NAME NOT IN
             }
         }
         catch {
-            Write-PSFMessage -Level Host -Message "Something went wrong while working against the database" -Exception $PSItem.Exception
+            Write-PSFMessage -Level Important -Message "Something went wrong while working against the database" -Exception $PSItem.Exception
             Stop-PSFFunction -Message "Stopping because of errors"
             return
         }

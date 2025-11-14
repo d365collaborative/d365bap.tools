@@ -49,7 +49,7 @@ function Export-BapEnvironmentSolution {
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
@@ -59,7 +59,7 @@ function Export-BapEnvironmentSolution {
 
         if ($null -eq $solObj) {
             $messageString = "The supplied SolutionId: <c='em'>$SolutionId</c> didn't return any matching solution from the environment. Please verify that the SolutionId is correct - try running the <c='em'>Get-BapEnvironmentSolution</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because solution was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
     }
@@ -69,7 +69,7 @@ function Export-BapEnvironmentSolution {
 
         $tmp = pac org list --filter $EnvironmentId
 
-        Write-PSFMessage -Level Host -Message "<c='em'>$($tmp[0])</c>"
+        Write-PSFMessage -Level Important -Message "<c='em'>$($tmp[0])</c>"
         
         $found = $false
         foreach ($line in $tmp) {
@@ -82,7 +82,7 @@ function Export-BapEnvironmentSolution {
 
         if (-not $found) {
             $messageString = "It seems that the current pac cli session isn't connected to the correct tenant. Please run the <c='em'>pac auth create --name 'ChangeThis'</c> and make sure to use credentials that have enough privileges."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because pac cli session is NOT connected to the correct tenant." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
@@ -95,7 +95,7 @@ function Export-BapEnvironmentSolution {
 
         if (-not (($tmp | Select-Object -Last 1) -eq "Solution export succeeded.")) {
             $messageString = "It seems that export of the solution encountered some kind of error. Please run the cmdlet <c='em'>again in a few minutes</c>."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because export failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 

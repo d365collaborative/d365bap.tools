@@ -102,7 +102,7 @@ function Compare-BapEnvironmentUser {
 
         if ($null -eq $envSourceObj) {
             $messageString = "The supplied SourceEnvironmentId: <c='em'>$SourceEnvironmentId</c> didn't return any matching environment details. Please verify that the SourceEnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
         
@@ -111,7 +111,7 @@ function Compare-BapEnvironmentUser {
 
         if ($null -eq $envDestinationObj) {
             $messageString = "The supplied DestinationEnvironmentId: <c='em'>$DestinationEnvironmentId</c> didn't return any matching environment details. Please verify that the DestinationEnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 

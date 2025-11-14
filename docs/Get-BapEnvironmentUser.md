@@ -30,7 +30,7 @@ Allows the user to include all users, based on those who has the ApplicationId p
 Get-BapEnvironmentUser -EnvironmentId *uat*
 ```
 
-This will fetch all oridinary users from the environment.
+This will fetch all ordinary users from the environment.
 
 Sample output:
 Email                          Name                           PpacAppId            PpacSystemUserId
@@ -62,7 +62,7 @@ c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
 Get-BapEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
 ```
 
-This will fetch all oridinary users from the environment.
+This will fetch all ordinary users from the environment.
 Will output all details into an Excel file, that will auto open on your machine.
 
 ## PARAMETERS

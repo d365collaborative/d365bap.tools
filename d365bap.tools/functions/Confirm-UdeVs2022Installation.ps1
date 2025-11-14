@@ -47,7 +47,7 @@ function Confirm-UdeVs2022Installation {
 
         if ($null -eq $wmiObj) {
             $messageString = "Visual Studio 2022 Professional or Enterprise does not appear to be installed on this machine. Please install Visual Studio 2022 Professional or Enterprise with the required workloads and try again."
-            Write-PSFMessage -Level Host -Message $messageString -Target Host
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because Visual Studio 2022 was NOT installed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
@@ -94,9 +94,9 @@ function Confirm-UdeVs2022Installation {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        Write-PSFMessage -Level Host -Message "Starting the <c='em'>Visual Studio Installer</c>:" -Target Host
-        Write-PSFMessage -Level Host -Message " - You will need to click <c='em'>Modify</c> or <c='em'>Close</c> when prompted." -Target Host
-        Write-PSFMessage -Level Host -Message " - When the installation is finished, you will need to <c='em'>Close</c> the <c='em'>Visual Studio Installer</c> window." -Target Host
+        Write-PSFMessage -Level Important -Message "Starting the <c='em'>Visual Studio Installer</c>:"
+        Write-PSFMessage -Level Important -Message " - You will need to click <c='em'>Modify</c> or <c='em'>Close</c> when prompted."
+        Write-PSFMessage -Level Important -Message " - When the installation is finished, you will need to <c='em'>Close</c> the <c='em'>Visual Studio Installer</c> window."
 
         # We need to make sure VS 2022 has the basic workloads installed
         Start-Process -FilePath $pathVsInstaller `
@@ -129,9 +129,9 @@ function Confirm-UdeVs2022Installation {
                 continue
             }
 
-            Write-PSFMessage -Level Host -Message "Extension: '<c='em'>$($ext.Name)</c>' is missing." -Target Host
+            Write-PSFMessage -Level Important -Message "Extension: '<c='em'>$($ext.Name)</c>' is missing."
 
-            Write-PSFMessage -Level Host -Message " - <c='em'>Downloading</c>..." -Target Host
+            Write-PSFMessage -Level Important -Message " - <c='em'>Downloading</c>..."
             
             $file = (Split-Path -Path $ext.Uri -Leaf).Split('.') | Select-Object -Last 1
             Invoke-WebRequest -Uri $ext.VsixUrl `
@@ -139,7 +139,7 @@ function Confirm-UdeVs2022Installation {
                 -UseBasicParsing `
                 -ErrorAction Stop > $null
 
-            Write-PSFMessage -Level Host -Message " - <c='em'>Installing</c> - Please make sure to let the VSIX installer finish..." -Target Host
+            Write-PSFMessage -Level Important -Message " - <c='em'>Installing</c> - Please make sure to let the VSIX installer finish..."
 
             Start-Process -FilePath "$Path\$file.vsix" `
                 -Wait
