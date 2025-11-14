@@ -58,6 +58,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Start-BapDatabaseRefresh {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [Parameter (Mandatory = $true)]
