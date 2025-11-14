@@ -55,7 +55,7 @@ function Invoke-BapInstallAzCopy {
         if ($null -eq (Get-Item -Path $downloadPath)) {
             $messageString = "File download <c='em'>failed</c>. Please make sure that you have internet access and permissions for the specified path '<c='em'>$downloadPath</c>'."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because file download failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }

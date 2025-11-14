@@ -45,13 +45,11 @@ function Set-UdeEnvironmentInSession {
         if ($null -eq $envObj) {
             $messageString = "Could not find environment with Id '<c='em'>$EnvironmentId</c>'. Please verify the Id and try again, or list available environments using <c='em'>Get-UdeEnvironment</c>. Consider using wildcards if needed."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
                 -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
-
-        # (Get-Command -Module d365bap.tools) | Where-Object { $_.Parameters.Keys -contains 'EnvironmentId' -and $_.Name -like "*-Ude*" } | Select-Object -Property Name
 
         $Global:PSDefaultParameterValues['Get-UdeDbJit:EnvironmentId'] = $envObj.PpacEnvId
         $Global:PSDefaultParameterValues['Get-UdeDeveloperFile:EnvironmentId'] = $envObj.PpacEnvId

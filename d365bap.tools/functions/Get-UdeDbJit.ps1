@@ -114,7 +114,7 @@ function Get-UdeDbJit {
         if ($null -eq $envObj) {
             $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UdeEnvironment</c>. Consider using wildcards if needed."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
                 -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return

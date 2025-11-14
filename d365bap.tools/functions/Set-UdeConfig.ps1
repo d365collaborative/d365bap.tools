@@ -67,7 +67,7 @@ function Set-UdeConfig {
         if ($null -ne (Get-UdeConfig -Name $confName)) {
             $messageString = "The UDE configuration <c='em'>$confName</c> already exists. Please remove it first before creating a new UDE configuration."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because UDE configuration already exists." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
@@ -78,7 +78,7 @@ function Set-UdeConfig {
         if (-not [System.IO.Path]::Exists($pathPackages)) {
             $messageString = "It seems that the PackagesLocalDirectory for <c='em'>$PackagesVersion</c> does not exist. Please download the developer files first using <c='em'>Get-UdeDeveloperFile -Download</c>."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because PackagesLocalDirectory wasn't found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
@@ -119,7 +119,7 @@ function Set-UdeConfig {
             if (-not [System.IO.Path]::Exists("$FallbackPath\$PackagesVersion\DYNAMICSXREFDB.bak")) {
                 $messageString = "It seems that the XRef DB backup file for <c='em'>$PackagesVersion</c> does not exist at `r`n<c='em'>$pathXRefBackup</c> `r`nor the fallback path `r`n<c='em'>$FallbackPath\$PackagesVersion\DYNAMICSXREFDB.bak</c>. Please download the developer files first using <c='em'>Get-UdeDeveloperFile -Download</c>."
 
-                Write-PSFMessage -Level Important -Message $messageString 
+                Write-PSFMessage -Level Important -Message $messageString
                 Stop-PSFFunction -Message "Stopping because XRef DB backup file wasn't found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
                 return
             }
@@ -151,7 +151,7 @@ STATS = 10;
             catch {
                 $messageString = "The backup for XRef DB <c='em'>failed</c>. Please make sure that you have enough free disk space."
 
-                Write-PSFMessage -Level Important -Message $messageString  -Exception $PSItem.Exception
+                Write-PSFMessage -Level Important -Message $messageString -Exception $PSItem.Exception
                 Stop-PSFFunction -Message "Stopping because XRef DB backup failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
                 return
             }
@@ -163,7 +163,7 @@ STATS = 10;
         if ($null -ne (Get-UdeXrefDb -Name $dbXrefName)) {
             $messageString = "The XRef DB <c='em'>$dbXrefName</c> already exists. Please consider running the <c='em'>Clear-UdeOrphanedConfig</c> cmdlet to make sure that your configuration is cleaned."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because XRef DB already exists." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
@@ -195,7 +195,7 @@ WITH
         catch {
             $messageString = "The restore for XRef DB <c='em'>failed</c>. Please make sure that you have enough free disk space."
 
-            Write-PSFMessage -Level Important -Message $messageString  -Exception $PSItem.Exception
+            Write-PSFMessage -Level Important -Message $messageString -Exception $PSItem.Exception
             Stop-PSFFunction -Message "Stopping because XRef DB restore failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
@@ -211,7 +211,7 @@ WITH
         if ($null -eq (Get-UdeXrefDb -Name $dbXrefName)) {
             $messageString = "The XRef DB <c='em'>$dbXrefName</c> was not found after restore."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because XRef DB was not found after restore." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 

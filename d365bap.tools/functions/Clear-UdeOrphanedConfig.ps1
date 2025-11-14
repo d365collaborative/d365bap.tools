@@ -135,7 +135,7 @@ function Clear-UdeOrphanedConfig {
 
             $messageString = "This will remove all listed package directories and XRef DBs. If you are sure, please re-run the command with the <c='em'>-Force</c> parameter."
 
-            Write-PSFMessage -Level Important -Message $messageString 
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because Force parameter wasn't supplied." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
