@@ -1,33 +1,34 @@
-﻿<#
-.SYNOPSIS
-Get UDE VS package deploys.
-
-.DESCRIPTION
-Gets the UDE package deploys from Visual Studio, that are stored in the local temp folder.
-
-.PARAMETER All
-Instructs the cmdlet to return all package deploys.
-
-.PARAMETER OpenFolder
-Instructs the cmdlet to open the folder containing the package deploys.
-
-.EXAMPLE
-PS C:\> Get-UdeVsPackageDeploy
-
-This will retrieve the latest UDE VS package deploy from the local temp folder.
-
-.EXAMPLE
-PS C:\> Get-UdeVsPackageDeploy -All
-
-This will retrieve all UDE VS package deploys from the local temp folder.
-
-.EXAMPLE
-PS C:\> Get-UdeVsPackageDeploy -OpenFolder
-
-This will open the folder containing the UDE VS package deploys in File Explorer.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Get UDE VS package deploys.
+        
+    .DESCRIPTION
+        Gets the UDE package deploys from Visual Studio, that are stored in the local temp folder.
+        
+    .PARAMETER All
+        Instructs the cmdlet to return all package deploys.
+        
+    .PARAMETER OpenFolder
+        Instructs the cmdlet to open the folder containing the package deploys.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeVsPackageDeploy
+        
+        This will retrieve the latest UDE VS package deploy from the local temp folder.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeVsPackageDeploy -All
+        
+        This will retrieve all UDE VS package deploys from the local temp folder.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeVsPackageDeploy -OpenFolder
+        
+        This will open the folder containing the UDE VS package deploys in File Explorer.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeVsPackageDeploy {
     [CmdletBinding()]

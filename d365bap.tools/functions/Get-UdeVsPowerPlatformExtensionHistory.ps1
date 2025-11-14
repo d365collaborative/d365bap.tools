@@ -1,41 +1,42 @@
-﻿<#
-.SYNOPSIS
-Get UDE VS Power Platform extension history.
-
-.DESCRIPTION
-Gets the UDE VS Power Platform extension history from the local logs folder.
-
-.PARAMETER All
-Instructs the cmdlet to return all extension history entries.
-
-.PARAMETER OpenFolder
-Instructs the cmdlet to open the folder containing the extension history logs.
-
-.PARAMETER DeploysOnly
-Instructs the cmdlet to return only extension history entries related to deployments.
-
-.EXAMPLE
-PS C:\> Get-UdeVsPowerPlatformExtensionHistory
-
-This will retrieve the latest UDE VS Power Platform extension history entry from the local logs folder.
-
-.EXAMPLE
-PS C:\> Get-UdeVsPowerPlatformExtensionHistory -All
-
-This will retrieve all UDE VS Power Platform extension history entries from the local logs folder.
-
-.EXAMPLE
-PS C:\> Get-UdeVsPowerPlatformExtensionHistory -OpenFolder
-
-This will open the folder containing the UDE VS Power Platform extension history logs in File Explorer.
-
-.EXAMPLE
-PS C:\> Get-UdeVsPowerPlatformExtensionHistory -DeploysOnly
-
-This will retrieve only UDE VS Power Platform extension history entries related to deployments from the local logs folder.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Get UDE VS Power Platform extension history.
+        
+    .DESCRIPTION
+        Gets the UDE VS Power Platform extension history from the local logs folder.
+        
+    .PARAMETER All
+        Instructs the cmdlet to return all extension history entries.
+        
+    .PARAMETER OpenFolder
+        Instructs the cmdlet to open the folder containing the extension history logs.
+        
+    .PARAMETER DeploysOnly
+        Instructs the cmdlet to return only extension history entries related to deployments.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeVsPowerPlatformExtensionHistory
+        
+        This will retrieve the latest UDE VS Power Platform extension history entry from the local logs folder.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeVsPowerPlatformExtensionHistory -All
+        
+        This will retrieve all UDE VS Power Platform extension history entries from the local logs folder.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeVsPowerPlatformExtensionHistory -OpenFolder
+        
+        This will open the folder containing the UDE VS Power Platform extension history logs in File Explorer.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeVsPowerPlatformExtensionHistory -DeploysOnly
+        
+        This will retrieve only UDE VS Power Platform extension history entries related to deployments from the local logs folder.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeVsPowerPlatformExtensionHistory {
     [CmdletBinding()]

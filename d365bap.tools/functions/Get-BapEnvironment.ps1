@@ -141,6 +141,7 @@ function Get-BapEnvironment {
                 @{Name = "FnOEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
                 @{Name = "PpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
                 @{Name = "PpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
+                @{Name = "AdminMode"; Expression = { $_.Properties.states.runtime.id -eq "AdminMode" } },
                 "*"
             }
         )

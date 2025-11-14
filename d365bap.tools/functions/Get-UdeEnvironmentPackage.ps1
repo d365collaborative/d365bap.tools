@@ -1,40 +1,41 @@
-﻿<#
-.SYNOPSIS
-Get UDE environment packages.
-
-.DESCRIPTION
-Gets the UDE environment packages for a specified environment.
-
-.PARAMETER EnvironmentId
-The id of the environment that you want to work against
-
-.PARAMETER LatestOnly
-Instructs the cmdlet to return only the latest package.
-
-Is based on the modified date.
-
-.PARAMETER AsExcelOutput
-Instructs the function to export the results to an Excel file.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123"
-
-This will retrieve all UDE environment packages for the specified environment id.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123" -LatestOnly
-
-This will retrieve only the latest UDE environment package for the specified environment id.
-It is based on the modified date.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123" -AsExcelOutput
-
-This will retrieve all UDE environment packages for the specified environment id.
-Will output all details into an Excel file, that will auto open on your machine.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Get UDE environment packages.
+        
+    .DESCRIPTION
+        Gets the UDE environment packages for a specified environment.
+        
+    .PARAMETER EnvironmentId
+        The id of the environment that you want to work against
+        
+    .PARAMETER LatestOnly
+        Instructs the cmdlet to return only the latest package.
+        
+        Is based on the modified date.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the function to export the results to an Excel file.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123"
+        
+        This will retrieve all UDE environment packages for the specified environment id.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123" -LatestOnly
+        
+        This will retrieve only the latest UDE environment package for the specified environment id.
+        It is based on the modified date.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123" -AsExcelOutput
+        
+        This will retrieve all UDE environment packages for the specified environment id.
+        Will output all details into an Excel file, that will auto open on your machine.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeEnvironmentPackage {
     [CmdletBinding()]

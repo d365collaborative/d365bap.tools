@@ -1,52 +1,53 @@
-﻿<#
-.SYNOPSIS
-Get UDE environment operation history.
-
-.DESCRIPTION
-Gets the UDE environment operation history for a specified environment.
-
-.PARAMETER EnvironmentId
-The id of the environment that you want to work against
-
-.PARAMETER LatestOnly
-Instructs the cmdlet to return only the latest operation history.
-
-Is based on the modified date.
-
-.PARAMETER AsExcelOutput
-Instructs the function to export the results to an Excel file.
-
-.PARAMETER DownloadLog
-Instructs the function to download the operation log.
-
-.PARAMETER DownloadPath
-Specifies the path where the operation log will be downloaded.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123"
-
-This will retrieve all UDE environment operation history for the specified environment id.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -LatestOnly
-
-This will retrieve only the latest UDE environment operation history for the specified environment id.
-It is based on the modified date.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -AsExcelOutput
-
-This will retrieve all UDE environment operation history for the specified environment id.
-Will output all details into an Excel file, that will auto open on your machine.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -DownloadLog -DownloadPath "C:\Logs"
-
-This will retrieve all UDE environment operation history for the specified environment id.
-Will download the operation logs into the specified path.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Get UDE environment operation history.
+        
+    .DESCRIPTION
+        Gets the UDE environment operation history for a specified environment.
+        
+    .PARAMETER EnvironmentId
+        The id of the environment that you want to work against
+        
+    .PARAMETER LatestOnly
+        Instructs the cmdlet to return only the latest operation history.
+        
+        Is based on the modified date.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the function to export the results to an Excel file.
+        
+    .PARAMETER DownloadLog
+        Instructs the function to download the operation log.
+        
+    .PARAMETER DownloadPath
+        Specifies the path where the operation log will be downloaded.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123"
+        
+        This will retrieve all UDE environment operation history for the specified environment id.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -LatestOnly
+        
+        This will retrieve only the latest UDE environment operation history for the specified environment id.
+        It is based on the modified date.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -AsExcelOutput
+        
+        This will retrieve all UDE environment operation history for the specified environment id.
+        Will output all details into an Excel file, that will auto open on your machine.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -DownloadLog -DownloadPath "C:\Logs"
+        
+        This will retrieve all UDE environment operation history for the specified environment id.
+        Will download the operation logs into the specified path.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeEnvironmentOperationHistory {
     [CmdletBinding()]

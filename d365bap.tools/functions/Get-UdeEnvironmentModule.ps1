@@ -1,40 +1,41 @@
-﻿<#
-.SYNOPSIS
-Get UDE environment modules.
-
-.DESCRIPTION
-Gets the UDE environment modules for a specified environment.
-
+﻿
+<#
+    .SYNOPSIS
+        Get UDE environment modules.
+        
+    .DESCRIPTION
+        Gets the UDE environment modules for a specified environment.
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
-
-.PARAMETER LatestOnly
-Instructs the cmdlet to return only the latest module.
-
-Is based on the modified date.
-
+        
+    .PARAMETER LatestOnly
+        Instructs the cmdlet to return only the latest module.
+        
+        Is based on the modified date.
+        
     .PARAMETER AsExcelOutput
         Instructs the function to export the results to an Excel file.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentModule -EnvironmentId "env-123"
-
-This will retrieve all UDE environment modules for the specified environment id.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentModule -EnvironmentId "env-123" -LatestOnly
-
-This will retrieve only the latest UDE environment module for the specified environment id.
-It is based on the modified date.
-
-.EXAMPLE
-PS C:\> Get-UdeEnvironmentModule -EnvironmentId "env-123" -AsExcelOutput
-
-This will retrieve all UDE environment modules for the specified environment id.
-Will output all details into an Excel file, that will auto open on your machine.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentModule -EnvironmentId "env-123"
+        
+        This will retrieve all UDE environment modules for the specified environment id.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentModule -EnvironmentId "env-123" -LatestOnly
+        
+        This will retrieve only the latest UDE environment module for the specified environment id.
+        It is based on the modified date.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironmentModule -EnvironmentId "env-123" -AsExcelOutput
+        
+        This will retrieve all UDE environment modules for the specified environment id.
+        Will output all details into an Excel file, that will auto open on your machine.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeEnvironmentModule {
     [CmdletBinding()]

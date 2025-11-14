@@ -59,6 +59,7 @@
 		, 'Get-BapEnvironmentApplicationUser'
 		, 'Get-BapEnvironmentD365App'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
+		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
 		, 'Get-BapEnvironmentSecurityRole'
 		, 'Get-BapEnvironmentSecurityRoleMember'

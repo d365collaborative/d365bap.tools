@@ -24,6 +24,8 @@ This function sets UDE database JIT access credentials in the local cache for la
 Handles storing the credentials securely using the TUN.CredentialManager module.
 Made to have SSMS able to retrieve the password when connecting.
 
+Calling this cmdlet with the same Server, Database and Username will overwrite the existing cached credentials.
+
 ## EXAMPLES
 
 ### EXAMPLE 1

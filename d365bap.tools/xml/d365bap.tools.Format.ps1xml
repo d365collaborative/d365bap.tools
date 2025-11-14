@@ -64,7 +64,7 @@
 						<Width>7</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>10</Width>
+						<Width>9</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>36</Width>
@@ -89,7 +89,7 @@
 								<PropertyName>Managed</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PpacRegion</PropertyName>
+								<PropertyName>AdminMode</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>EnvId</PropertyName>
@@ -125,6 +125,9 @@
 							</ListItem>
 							<ListItem>
 								<PropertyName>Managed</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>AdminMode</PropertyName>
 							</ListItem>
 							<ListItem>
 								<PropertyName>PpacRegion</PropertyName>
@@ -1146,6 +1149,126 @@
 							</ListItem>
 							<ListItem>
 								<PropertyName>CreatedBy</PropertyName>
+							</ListItem>
+						</ListItems>
+					</ListEntry>
+				</ListEntries>
+			</ListControl>
+		</View>
+		<View>
+			<Name>D365Bap.Tools.BapEnvironmentOperation</Name>
+			<ViewSelectedBy>
+				<TypeName>D365Bap.Tools.BapEnvironmentOperation</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Width>36</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>10</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>9</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>19</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>19</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>20</Width>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>Id</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Type</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Status</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>StartedOn</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>LastAction</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>RequestedBy</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
+		<View>
+			<Name>D365Bap.Tools.BapEnvironmentOperation</Name>
+			<ViewSelectedBy>
+				<TypeName>D365Bap.Tools.BapEnvironmentOperation</TypeName>
+			</ViewSelectedBy>
+			<ListControl>
+				<ListEntries>
+					<ListEntry>
+						<ListItems>
+							<ListItem>
+								<PropertyName>Id</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>Type</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>StartedOn</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>LastAction</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>Status</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>RequestedBy</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>ValidateStartedOn</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>ValidateLastAction</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>ValidateStatus</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>PrepareStartedOn</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>PrepareLastAction</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>PrepareStatus</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>RunStartedOn</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>RunLastAction</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>RunStatus</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>FinalizeStartedOn</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>FinalizeLastAction</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>FinalizeStatus</PropertyName>
 							</ListItem>
 						</ListItems>
 					</ListEntry>
