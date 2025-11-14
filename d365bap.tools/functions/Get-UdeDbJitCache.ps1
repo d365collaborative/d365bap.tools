@@ -32,7 +32,7 @@ function Get-UdeDbJitCache {
 
     begin {
         if ($null -eq (Get-Module TUN.CredentialManager -ListAvailable)) {
-            Write-PSFMessage -Level Host -Message "This cmdlet needs the <c='em'>TUN.CredentialManager</c> module. Please install it from the PowerShell Gallery with <c='em'>Install-Module -Name TUN.CredentialManager</c> and try again."
+            Write-PSFMessage -Level Important -Message "This cmdlet needs the <c='em'>TUN.CredentialManager</c> module. Please install it from the PowerShell Gallery with <c='em'>Install-Module -Name TUN.CredentialManager</c> and try again."
             Stop-PSFFunction -Message "Stopping because the TUN.CredentialManager module is not available."
 
             return

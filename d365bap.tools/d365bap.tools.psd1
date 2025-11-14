@@ -59,6 +59,7 @@
 		, 'Get-BapEnvironmentApplicationUser'
 		, 'Get-BapEnvironmentD365App'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
+		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
 		, 'Get-BapEnvironmentSecurityRole'
 		, 'Get-BapEnvironmentSecurityRoleMember'
@@ -75,6 +76,11 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
+		, 'Get-UdeEnvironmentModule'
+		, 'Get-UdeEnvironmentOperationHistory'
+		, 'Get-UdeEnvironmentPackage'
+		, 'Get-UdeVsPackageDeploy'
+		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
@@ -82,6 +88,8 @@
 		
 		, 'Set-BapAzCopyPath'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
+		, 'Set-BapEnvironmentSecurityGroup'
+		, 'Set-BapEnvironmentSecurityRoleMember'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
@@ -89,6 +97,7 @@
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
 
+		, 'Start-BapDatabaseRefresh'
 		, 'Start-UdeDbSsms'
 		, 'Switch-BapTenant'
 		

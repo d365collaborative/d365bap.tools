@@ -99,6 +99,12 @@ Ip address to whitelist for JIT database access.
 
 Defaults to 127.0.0.1 - which will cause the function to determine the public IP address of the machine running the command.
 
+Supports single, range and CIDR notation.
+
+10.0.0.7 - single IP
+10.0.0.7-10.0.0.20 - range
+10.0.0.0/24 - CIDR notation
+
 ```yaml
 Type: String
 Parameter Sets: (All)

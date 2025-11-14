@@ -88,7 +88,7 @@ function Get-UdeEnvironment {
             foreach ($envObj in $($colEnv | Where-Object FinOpsMetadataEnvType -eq "Internal")) {
                 if ($searchById) {
                     # Name is the GUID
-                    if (-not ($envObj.Id -like $EnvironmentId)) { continue }
+                    if (-not ($envObj.PpacEnvId -like $EnvironmentId)) { continue }
                 }
                 else {
                     # DisplayName is the name
@@ -122,21 +122,29 @@ function Get-UdeEnvironment {
                     -Method Post `
                     -Headers $headers `
                     -Body $payload `
-                    -UseBasicParsing
+                    -UseBasicParsing `
+                    -SkipHttpErrorCheck
 
-                $tmpXml = [xml]$Response.Content
-                $nodes = $tmpXml.SelectNodes('//*[local-name()="KeyValuePairOfstringanyType"]')
+                if (-not ($Response.StatusCode -like "2**")) {
+                    $messageString = "Could not obtain the <c='em'>Ppac Provision</c> details for <c='em'>$($envObj.PpacEnvName)</c>. It could be due to insufficient permissions or the environment not being fully provisioned. Please try to access the environment details from PowerPlatform Admin Center."
+                    Write-PSFMessage -Level Important -Message $messageString
+                    Write-PSFHostColor -String "- <c='em'>https://admin.powerplatform.microsoft.com/environments/environment/$($envObj.PpacEnvId)/hub</c>"
+                }
+                else {
+                    $tmpXml = [xml]$Response.Content
+                    $nodes = $tmpXml.SelectNodes('//*[local-name()="KeyValuePairOfstringanyType"]')
 
-                foreach ($node in $nodes) {
-                    $keyNode = $node.SelectSingleNode('*[local-name()="key"]')
-                    $valueNode = $node.SelectSingleNode('*[local-name()="value"]')
+                    foreach ($node in $nodes) {
+                        $keyNode = $node.SelectSingleNode('*[local-name()="key"]')
+                        $valueNode = $node.SelectSingleNode('*[local-name()="value"]')
 
-                    $propName = $($keyNode.InnerText).Replace("applicationversion", "AppVersion").Replace("platformversion", "PlatVersion").Replace("finopsenvironmentstate", "State").Replace("applicationdeploymenttype", "Type").Replace("finopsenvironmentid", "Id")
-                    $envObj | Add-Member -NotePropertyName "Provisioning$($propName)" -NotePropertyValue $valueNode.InnerText
+                        $propName = $($keyNode.InnerText).Replace("applicationversion", "AppVersion").Replace("platformversion", "PlatVersion").Replace("finopsenvironmentstate", "State").Replace("applicationdeploymenttype", "Type").Replace("finopsenvironmentid", "Id")
+                        $envObj | Add-Member -NotePropertyName "Provisioning$($propName)" -NotePropertyValue $valueNode.InnerText
+                    }
                 }
 
                 # We need to user friendly version details from the installed D365 app
-                $appProvision = Get-BapEnvironmentD365App -EnvironmentId $envObj.Id `
+                $appProvision = Get-BapEnvironmentD365App -EnvironmentId $envObj.PpacEnvId `
                     -Status Installed `
                     -Name msdyn_FinanceAndOperationsProvisioningAppAnchor | `
                     Select-Object -First 1

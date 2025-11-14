@@ -38,7 +38,7 @@ function Clear-UdeCredentialCache {
     if (-not $Force) {
         $messageString = "This will remove all Visual Studio cached credentials for connecting to Dynamics 365 / Power Platform environments. If you are sure, please re-run the command with the <c='em'>-Force</c> parameter."
 
-        Write-PSFMessage -Level Host -Message $messageString -Target Host
+        Write-PSFMessage -Level Important -Message $messageString
         Stop-PSFFunction -Message "Stopping because Force parameter wasn't supplied." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         return
     }

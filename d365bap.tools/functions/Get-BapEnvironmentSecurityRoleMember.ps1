@@ -45,7 +45,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -SecurityRoleId 'System Administrator'
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
         Sample output:
         Email                          Name                           AppId                SystemUserId
@@ -56,7 +56,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator'
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
         Sample output:
         Email                          Name                           AppId                SystemUserId
@@ -67,7 +67,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -UserId '*@contoso.com'
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         It will only include the ones that have an email address that contains '@contoso.com'.
         
         Sample output:
@@ -91,7 +91,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -AsExcelOutput
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
         
     .NOTES
@@ -121,7 +121,7 @@ function Get-BapEnvironmentSecurityRoleMember {
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
@@ -131,7 +131,7 @@ function Get-BapEnvironmentSecurityRoleMember {
 
         if ($null -eq $secRoleObj) {
             $messageString = "The supplied SecurityRoleId: <c='em'>$SecurityRoleId</c> didn't return any matching security details from the Environment. Please verify that the EnvironmentId & SecurityRoleId is correct - try running the <c='em'>Get-BapEnvironment</c> or <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlets."
-            Write-PSFMessage -Level Host -Message $messageString
+            Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
