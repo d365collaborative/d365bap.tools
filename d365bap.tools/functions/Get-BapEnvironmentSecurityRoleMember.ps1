@@ -45,7 +45,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -SecurityRoleId 'System Administrator'
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
         Sample output:
         Email                          Name                           AppId                SystemUserId
@@ -56,7 +56,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator'
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
         Sample output:
         Email                          Name                           AppId                SystemUserId
@@ -67,7 +67,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -UserId '*@contoso.com'
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         It will only include the ones that have an email address that contains '@contoso.com'.
         
         Sample output:
@@ -91,7 +91,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -AsExcelOutput
         
-        This will fetch all oridinary users that are members of the security role 'System Administrator' from the environment.
+        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
         
     .NOTES

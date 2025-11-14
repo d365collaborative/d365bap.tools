@@ -28,7 +28,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat*
         
-        This will fetch all oridinary users from the environment.
+        This will fetch all ordinary users from the environment.
         
         Sample output:
         Email                          Name                           PpacAppId            PpacSystemUserId
@@ -55,7 +55,7 @@
     .EXAMPLE
         PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
         
-        This will fetch all oridinary users from the environment.
+        This will fetch all ordinary users from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
         
     .NOTES
@@ -97,7 +97,7 @@ function Get-BapEnvironmentUser {
     process {
         if (Test-PSFFunctionInterrupt) { return }
         
-        $resUsers = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/systemusers?$select=fullname,internalemailaddress,applicationid&$expand=user_settings($select=uilanguageid)') -Headers $headersWebApi
+        $resUsers = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/systemusers?$select=fullname,internalemailaddress,applicationid,azureactivedirectoryobjectid&$expand=user_settings($select=uilanguageid)') -Headers $headersWebApi
 
         $resCol = @(
             foreach ($usrObj in  $($resUsers.value | Sort-Object -Property internalemailaddress)) {

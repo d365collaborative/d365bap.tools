@@ -88,6 +88,8 @@
 		
 		, 'Set-BapAzCopyPath'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
+		, 'Set-BapEnvironmentSecurityGroup'
+		, 'Set-BapEnvironmentSecurityRoleMember'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
@@ -95,6 +97,7 @@
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
 
+		, 'Start-BapDatabaseRefresh'
 		, 'Start-UdeDbSsms'
 		, 'Switch-BapTenant'
 		
