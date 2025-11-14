@@ -126,22 +126,31 @@ function Get-BapEnvironment {
                 "prop_environmentSku as Sku",
                 "prop_databaseType as PpacDbType",
                 "prop_creationType as PpacCreationType",
-                @{Name = "LinkedAppLcsEnvId"; Expression = { $_.Properties.linkedAppMetadata.id } },
-                @{Name = "LinkedAppLcsEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
-                @{Name = "LinkedMetaPpacOrgId"; Expression = { $_.Properties.linkedEnvironmentMetadata.resourceId } },
-                @{Name = "LinkedMetaPpacUniqueId"; Expression = { $_.Properties.linkedEnvironmentMetadata.uniqueName } },
+                "Properties.linkedAppMetadata.id as LinkedAppLcsEnvId",
+                "Properties.linkedAppMetadata.url as LinkedAppLcsEnvUri",
+                "Properties.linkedEnvironmentMetadata.resourceId as LinkedMetaPpacOrgId",
+                "Properties.linkedEnvironmentMetadata.uniqueName as LinkedMetaPpacUniqueId",
                 @{Name = "LinkedMetaPpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
                 @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
-                @{Name = "LinkedMetaPpacEnvLanguage"; Expression = { $_.Properties.linkedEnvironmentMetadata.baseLanguage } },
-                @{Name = "PpacClusterIsland"; Expression = { $_.Properties.cluster.uriSuffix } },
-                @{Name = "FinOpsMetadataEnvType"; Expression = { $_.Properties.linkedAppMetadata.type } },
-                @{Name = "FinOpsMetadataEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
+                "Properties.linkedEnvironmentMetadata.baseLanguage as LinkedMetaPpacEnvLanguage",
+                "Properties.cluster.uriSuffix as PpacClusterIsland",
+                "Properties.linkedAppMetadata.type as FinOpsMetadataEnvType",
+                "Properties.linkedAppMetadata.url as FinOpsMetadataEnvUri",
                 @{Name = "PpacManagedEnv"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
                 @{Name = "Managed"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
-                @{Name = "FnOEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
+                "Properties.linkedAppMetadata.url as FnOEnvUri",
                 @{Name = "PpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
                 @{Name = "PpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
                 @{Name = "AdminMode"; Expression = { $_.Properties.states.runtime.id -eq "AdminMode" } },
+                @{Name = "State"; Expression = {
+                        if ($_.Properties.states.management.id -eq 'NotSpecified') {
+                            $_.Properties.linkedEnvironmentMetadata.instanceState
+                        }
+                        else {
+                            $_.Properties.states.management.id
+                        }
+                    }
+                },
                 "*"
             }
         )

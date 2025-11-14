@@ -67,6 +67,9 @@
 						<Width>9</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
+						<Width>9</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
 						<Width>36</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -90,6 +93,9 @@
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>AdminMode</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>State</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>EnvId</PropertyName>
@@ -128,6 +134,9 @@
 							</ListItem>
 							<ListItem>
 								<PropertyName>AdminMode</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>State</PropertyName>
 							</ListItem>
 							<ListItem>
 								<PropertyName>PpacRegion</PropertyName>
