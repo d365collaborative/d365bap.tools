@@ -114,13 +114,16 @@ function Get-BapEnvironment {
 
                 $envObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
                     -Property "Name as PpacEnvId",
-                "Location as PpacEnvRegion",
+                "Name as EnvId",
+                "Location as PpacRegion",
                 "prop_tenantId as TenantId",
                 "prop_azureRegion as AzureRegion",
                 "prop_displayName as PpacEnvName",
+                "prop_displayName as EnvName",
                 @{Name = "DeployedBy"; Expression = { $_.Properties.createdBy.userPrincipalName } },
                 "prop_provisioningState as PpacProvisioningState",
                 "prop_environmentSku as PpacEnvSku",
+                "prop_environmentSku as Sku",
                 "prop_databaseType as PpacDbType",
                 "prop_creationType as PpacCreationType",
                 @{Name = "LinkedAppLcsEnvId"; Expression = { $_.Properties.linkedAppMetadata.id } },
@@ -133,6 +136,11 @@ function Get-BapEnvironment {
                 @{Name = "PpacClusterIsland"; Expression = { $_.Properties.cluster.uriSuffix } },
                 @{Name = "FinOpsMetadataEnvType"; Expression = { $_.Properties.linkedAppMetadata.type } },
                 @{Name = "FinOpsMetadataEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
+                @{Name = "PpacManagedEnv"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
+                @{Name = "Managed"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
+                @{Name = "FnOEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url } },
+                @{Name = "PpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
+                @{Name = "PpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
                 "*"
             }
         )

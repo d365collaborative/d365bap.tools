@@ -55,16 +55,19 @@
 			<TableControl>
 				<TableHeaders>
 					<TableColumnHeader>
-						<Width>36</Width>
-					</TableColumnHeader>
-					<TableColumnHeader>
-						<Width>15</Width>
-					</TableColumnHeader>
-					<TableColumnHeader>
 						<Width>20</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>10</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>7</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>10</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>36</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Width>40</Width>
@@ -77,22 +80,25 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>PpacEnvId</PropertyName>
+								<PropertyName>EnvName</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PpacEnvRegion</PropertyName>
+								<PropertyName>Sku</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PpacEnvName</PropertyName>
+								<PropertyName>Managed</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>PpacEnvSku</PropertyName>
+								<PropertyName>PpacRegion</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>LinkedAppLcsEnvUri</PropertyName>
+								<PropertyName>EnvId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>LinkedMetaPpacEnvUri</PropertyName>
+								<PropertyName>FnOEnvUri</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>PpacEnvUri</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -109,22 +115,28 @@
 					<ListEntry>
 						<ListItems>
 							<ListItem>
-								<PropertyName>PpacEnvId</PropertyName>
+								<PropertyName>EnvId</PropertyName>
 							</ListItem>
 							<ListItem>
-								<PropertyName>PpacEnvName</PropertyName>
+								<PropertyName>EnvName</PropertyName>
 							</ListItem>
 							<ListItem>
-								<PropertyName>PpacEnvSku</PropertyName>
+								<PropertyName>Sku</PropertyName>
 							</ListItem>
 							<ListItem>
-								<PropertyName>LinkedAppLcsEnvUri</PropertyName>
+								<PropertyName>Managed</PropertyName>
 							</ListItem>
 							<ListItem>
-								<PropertyName>LinkedMetaPpacEnvUri</PropertyName>
+								<PropertyName>PpacRegion</PropertyName>
 							</ListItem>
 							<ListItem>
-								<PropertyName>LinkedMetaPpacUniqueId</PropertyName>
+								<PropertyName>FnOEnvUri</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>PpacEnvUri</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>PpacEnvApiUri</PropertyName>
 							</ListItem>
 							<ListItem>
 								<PropertyName>PpacClusterIsland</PropertyName>
