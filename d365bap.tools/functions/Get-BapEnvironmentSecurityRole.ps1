@@ -10,7 +10,7 @@
         The id of the environment that you want to work against
         
     .PARAMETER Name
-        Name of the Security Role that you want to work against
+        Name or RoleId of the Security Role that you want to work against
         
         Supports wildcard search
         

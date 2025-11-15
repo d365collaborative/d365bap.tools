@@ -13,7 +13,7 @@ Get users/members from security role
 ## SYNTAX
 
 ```
-Get-BapEnvironmentSecurityRoleMember [-EnvironmentId] <String> [-SecurityRoleId] <String> [[-UserId] <String>]
+Get-BapEnvironmentSecurityRoleMember [-EnvironmentId] <String> [-Role] <String> [[-UserId] <String>]
  [-IncludePpacApplications] [-AsExcelOutput] [<CommonParameters>]
 ```
 
@@ -28,7 +28,7 @@ Allows the user to include all users/members, based on those who has the Applica
 
 ### EXAMPLE 1
 ```
-Get-BapEnvironmentSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -SecurityRoleId 'System Administrator'
+Get-BapEnvironmentSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Role 'System Administrator'
 ```
 
 This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
@@ -41,7 +41,7 @@ crmoln2@microsoft.com          Delegated Admin                                  
 
 ### EXAMPLE 2
 ```
-Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator'
+Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator'
 ```
 
 This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
@@ -54,7 +54,7 @@ crmoln2@microsoft.com          Delegated Admin                                  
 
 ### EXAMPLE 3
 ```
-Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -UserId '*@contoso.com'
+Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -UserId '*@contoso.com'
 ```
 
 This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
@@ -67,7 +67,7 @@ d365admin@contoso.com          # D365Admin                                      
 
 ### EXAMPLE 4
 ```
-Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -IncludePpacApplications
+Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -IncludePpacApplications
 ```
 
 This will fetch all users that are members of the security role 'System Administrator' from the environment.
@@ -82,7 +82,7 @@ d365admin@contoso.com          # D365Admin                                      
 
 ### EXAMPLE 5
 ```
-Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -AsExcelOutput
+Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -AsExcelOutput
 ```
 
 This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
@@ -107,15 +107,15 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SecurityRoleId
-The id of the security role that you want to work against
+### -Role
+Name or RoleId of the security role that you want to work against
 
 This can be obtained from the Get-BapEnvironmentSecurityRole cmdlet
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: SecurityRoleId, Name
 
 Required: True
 Position: 2

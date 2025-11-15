@@ -69,6 +69,10 @@
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		
+		, 'Get-FnOEnvironmentSecurityRole'
+		, 'Get-FnOEnvironmentSecurityRoleMember'
+		, 'Get-FnOEnvironmentUser'
+		
 		, 'Get-UdeEnvironment'
 		, 'Get-UdeConfig'
 		, 'Get-UdeConnection'
@@ -87,12 +91,16 @@
 		, 'Invoke-BapInstallAzCopy'
 		
 		, 'Set-BapAzCopyPath'
+
+		, 'Set-BapEnvironmentAdminMode'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
 		, 'Set-BapEnvironmentSecurityGroup'
 		, 'Set-BapEnvironmentSecurityRoleMember'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
+		, 'Set-FnOEnvironmentSecurityRoleMember'
+
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
