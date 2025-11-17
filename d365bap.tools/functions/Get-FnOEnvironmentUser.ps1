@@ -28,6 +28,7 @@
 #>
 function Get-FnOEnvironmentUser {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
