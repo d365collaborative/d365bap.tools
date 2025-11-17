@@ -107,6 +107,7 @@ function Get-BapEnvironmentUser {
                     -ExcludeProperty "@odata.etag" `
                     -Property "systemuserid as PpacSystemUserId",
                 "internalemailaddress as Email",
+                "internalemailaddress as Upn",
                 "fullname as Name",
                 "applicationid as PpacAppId",
                 "lang as Language",
