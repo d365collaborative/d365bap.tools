@@ -97,9 +97,7 @@ function Get-UdeEnvironment {
 
                 if ($SkipVersionDetails) {
                     $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironmentBasic" `
-                        -Property "LinkedAppLcsEnvUri as FinOpsEnvUri",
-                    "LinkedMetaPpacEnvUri as PpacEnvUri",
-                    *
+                        -Property *
 
                     continue
                 }
@@ -156,8 +154,7 @@ function Get-UdeEnvironment {
                 "ProvisioningPlatVersion as PpacProvPlatform",
                 "ProvisioningState as PpacProvState",
                 "ProvisioningType as PpacProvType",
-                "LinkedAppLcsEnvUri as FinOpsEnvUri",
-                "LinkedMetaPpacEnvUri as PpacEnvUri", *
+                *
             }
         )
 

@@ -141,10 +141,10 @@ function Set-BapEnvironmentSecurityRoleMember {
             }
 
             $payLoad = [PsCustomObject][ordered]@{
-                "@odata.id" = $baseUri + "/api/data/v9.0/roles($($colSecurityRoles[0].PpacRoleId))"
+                "@odata.id" = $baseUri + "/api/data/v9.2/roles($($colSecurityRoles[0].PpacRoleId))"
             } | ConvertTo-Json -Depth 10
 
-            $localUri = $baseUri + "/api/data/v9.0/systemusers($($matchedUser.PpacSystemUserId))/systemuserroles_association/`$ref"
+            $localUri = $baseUri + "/api/data/v9.2/systemusers($($matchedUser.PpacSystemUserId))/systemuserroles_association/`$ref"
            
             Invoke-RestMethod -Method Post `
                 -Uri $localUri `

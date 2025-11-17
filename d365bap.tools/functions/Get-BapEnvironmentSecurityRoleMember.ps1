@@ -16,10 +16,8 @@
         
         This can be obtained from the Get-BapEnvironment cmdlet
         
-        
-        
-    .PARAMETER SecurityRoleId
-        The id of the security role that you want to work against
+    .PARAMETER Role
+        Name or RoleId of the security role that you want to work against
         
         This can be obtained from the Get-BapEnvironmentSecurityRole cmdlet
         
@@ -43,7 +41,7 @@
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -SecurityRoleId 'System Administrator'
+        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Role 'System Administrator'
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
@@ -54,7 +52,7 @@
         crmoln2@microsoft.com          Delegated Admin                                     58879b65-65ca-47f5-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator'
+        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator'
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
@@ -65,7 +63,7 @@
         crmoln2@microsoft.com          Delegated Admin                                     58879b65-65ca-47f5-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -UserId '*@contoso.com'
+        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -UserId '*@contoso.com'
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         It will only include the ones that have an email address that contains '@contoso.com'.
@@ -76,7 +74,7 @@
         d365admin@contoso.com          # D365Admin                                         58879b65-65ca-45f7-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -IncludePpacApplications
+        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -IncludePpacApplications
         
         This will fetch all users that are members of the security role 'System Administrator' from the environment.
         It will include the ones with the ApplicationId property filled.
@@ -89,7 +87,7 @@
         d365admin@contoso.com          # D365Admin                                         58879b65-56ca-45f7-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -SecurityRoleId 'System Administrator' -AsExcelOutput
+        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -AsExcelOutput
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
@@ -105,7 +103,9 @@ function Get-BapEnvironmentSecurityRoleMember {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
-        [string] $SecurityRoleId,
+        [Alias("Name")]
+        [Alias("SecurityRoleId")]
+        [string] $Role,
 
         [Alias("Email")]
         [string] $UserId = "*",
@@ -127,17 +127,19 @@ function Get-BapEnvironmentSecurityRoleMember {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $secRoleObj = Get-BapEnvironmentSecurityRole -EnvironmentId $EnvironmentId -Name $SecurityRoleId | Select-Object -First 1
+        $secRoleObj = Get-BapEnvironmentSecurityRole -EnvironmentId $EnvironmentId `
+            -Name $Role | `
+            Select-Object -First 1
 
         if ($null -eq $secRoleObj) {
-            $messageString = "The supplied SecurityRoleId: <c='em'>$SecurityRoleId</c> didn't return any matching security details from the Environment. Please verify that the EnvironmentId & SecurityRoleId is correct - try running the <c='em'>Get-BapEnvironment</c> or <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlets."
+            $messageString = "The supplied: <c='em'>$Role</c> didn't return any matching security details from the Environment. Please verify that the EnvironmentId & Role is correct - try running the <c='em'>Get-BapEnvironment</c> or <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlets."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $baseUri = $envObj.LinkedMetaPpacEnvUri
+        $baseUri = $envObj.PpacEnvUri
 
         $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
@@ -150,10 +152,10 @@ function Get-BapEnvironmentSecurityRoleMember {
     process {
         if (Test-PSFFunctionInterrupt) { return }
         
-        $resRoleObj = Invoke-RestMethod -Method Get -Uri $($baseUri + "/api/data/v9.2/roles($($secRoleObj.PpacRoleId))?`$expand=systemuserroles_association") -Headers $headersWebApi
-        
-        # $resRoleObj.systemuserroles_association | ConvertTo-Json -Depth 10 | Set-Clipboard
-        # return
+        $localUri = $($baseUri + "/api/data/v9.2/roles($($secRoleObj.PpacRoleId))?`$expand=systemuserroles_association")
+        $resRoleObj = Invoke-RestMethod -Method Get `
+            -Uri $localUri `
+            -Headers $headersWebApi
 
         $resCol = @(
             $resRoleObj.systemuserroles_association | Select-PSFObject -TypeName "D365Bap.Tools.PpacUser" `
