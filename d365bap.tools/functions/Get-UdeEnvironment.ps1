@@ -65,25 +65,6 @@ function Get-UdeEnvironment {
     }
     
     process {
-        $SoapBody = @"
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-    <s:Header>
-        <UserType xmlns="http://schemas.microsoft.com/xrm/2011/Contracts">CrmUser</UserType>
-        <SdkClientVersion xmlns="http://schemas.microsoft.com/xrm/2011/Contracts">9.2.49.6961</SdkClientVersion>
-        <x-ms-client-request-id xmlns="http://schemas.microsoft.com/xrm/2011/Contracts">##REQUESTID##</x-ms-client-request-id>
-    </s:Header>
-    <s:Body>
-        <Execute xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
-            <request xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-                <a:Parameters xmlns:b="http://schemas.datacontract.org/2004/07/System.Collections.Generic"/>
-                <a:RequestId>##REQUESTID##</a:RequestId>
-                <a:RequestName>msprov_getfinopsapplicationdetails</a:RequestName>
-            </request>
-        </Execute>
-    </s:Body>
-</s:Envelope>
-"@
-        
         $resCol = @(
             foreach ($envObj in $($colEnv | Where-Object FinOpsMetadataEnvType -eq "Internal")) {
                 if ($searchById) {
@@ -107,22 +88,6 @@ function Get-UdeEnvironment {
                 $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
                 $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
         
-                # $payload = $SoapBody -replace "##REQUESTID##", ([System.Guid]::NewGuid().ToString())
-                # $localUri = "$($baseUri)/XRMServices/2011/Organization.svc/web?SDKClientVersion=9.2.49.6961"
-
-                # $headers = @{
-                #     "Content-Type"  = "text/xml; charset=utf-8"
-                #     "Authorization" = "Bearer $($tokenWebApiValue)"
-                #     "Soapaction"    = "http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/Execute"
-                # }
-
-                # $Response = Invoke-WebRequest -Uri $localUri `
-                #     -Method Post `
-                #     -Headers $headers `
-                #     -Body $payload `
-                #     -UseBasicParsing `
-                #     -SkipHttpErrorCheck
-
                 $headers = @{
                     "Authorization" = "Bearer $($tokenWebApiValue)"
                 }
@@ -140,17 +105,6 @@ function Get-UdeEnvironment {
                     Write-PSFHostColor -String "- <c='em'>https://admin.powerplatform.microsoft.com/environments/environment/$($envObj.PpacEnvId)/hub</c>"
                 }
                 else {
-                    # $tmpXml = [xml]$Response.Content
-                    # $nodes = $tmpXml.SelectNodes('//*[local-name()="KeyValuePairOfstringanyType"]')
-
-                    # foreach ($node in $nodes) {
-                    #     $keyNode = $node.SelectSingleNode('*[local-name()="key"]')
-                    #     $valueNode = $node.SelectSingleNode('*[local-name()="value"]')
-
-                    #     $propName = $($keyNode.InnerText).Replace("applicationversion", "AppVersion").Replace("platformversion", "PlatVersion").Replace("finopsenvironmentstate", "State").Replace("applicationdeploymenttype", "Type").Replace("finopsenvironmentid", "Id")
-                    #     $envObj | Add-Member -NotePropertyName "Provisioning$($propName)" -NotePropertyValue $valueNode.InnerText
-                    # }
-
                     $envObj | Add-Member -NotePropertyName "ProvisioningAppVersion" -NotePropertyValue $Response.applicationversion
                     $envObj | Add-Member -NotePropertyName "ProvisioningPlatVersion" -NotePropertyValue $Response.platformversion
                     $envObj | Add-Member -NotePropertyName "ProvisioningState" -NotePropertyValue $Response.finopsenvironmentstate
