@@ -118,7 +118,7 @@ function Get-UdeEnvironmentOperationHistory {
         }
 
         foreach ($opsObj in $colModules) {
-            foreach ($prop in ($opsObj.msprov_operationproperties | `
+            foreach ($prop in ($opsObj.msprov_operationproperties | Where-Object { $null -ne $_ } |`
                         ConvertFrom-Json -Depth 10).PsObject.Properties) {
                 $opsObj | Add-Member -NotePropertyName "prop_$($prop.Name)" -NotePropertyValue $prop.Value -Force
             }
@@ -152,7 +152,6 @@ function Get-UdeEnvironmentOperationHistory {
         if ($DownloadLog) {
             Write-PSFMessage `
                 -Message "Please note that for '<c='em'>FnO DB Sql Jit request</c>' there exists no logs. Will attempt to download logs for other operations." `
-                
 
             foreach ($histObj in $resCol) {
                 $logFileName = "$($histObj.Id)_$($histObj.msprov_logs_name)"
@@ -165,11 +164,14 @@ function Get-UdeEnvironmentOperationHistory {
                     Invoke-WebRequest -Uri $logUri `
                         -Method Get `
                         -Headers $headers `
-                        -OutFile $downloadFilePath
+                        -OutFile $downloadFilePath `
+                        -SkipHttpErrorCheck
                 }
             }
-        }
 
+            Write-PSFMessage -Level Important -Message "Operation logs downloaded to:"
+            Write-PSFHostColor -String "- '<c='em'>$downloadDir</c>'"
+        }
 
         $resCol
     }
