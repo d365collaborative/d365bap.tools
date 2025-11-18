@@ -89,7 +89,7 @@ function Get-BapEnvironmentPowerApp {
         
         if (Test-PSFFunctionInterrupt) { return }
 
-        $baseUri = $envObj.LinkedMetaPpacEnvUri
+        $baseUri = $envObj.PpacEnvUri
         $uriPowerAppsApi = $envObj."Api.PowerApps"
 
         $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token

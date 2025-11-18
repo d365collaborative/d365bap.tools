@@ -56,7 +56,7 @@ function Set-BapEnvironmentSecurityRoleMember {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $baseUri = $envObj.LinkedMetaPpacEnvUri
+        $baseUri = $envObj.PpacEnvUri
 
         $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken

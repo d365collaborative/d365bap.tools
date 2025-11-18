@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Start-BapDatabaseRefresh
+# Start-UdeDatabaseRefresh
 
 ## SYNOPSIS
 Start a database refresh between two environments
@@ -13,7 +13,7 @@ Start a database refresh between two environments
 ## SYNTAX
 
 ```
-Start-BapDatabaseRefresh [-SourceEnvironmentId] <String> [[-TargetEnvironmentId] <String>]
+Start-UdeDatabaseRefresh [-SourceEnvironmentId] <String> [[-TargetEnvironmentId] <String>]
  [[-CopyType] <String>] [-IncludeAuditData] [-AdvancedFnO] [<CommonParameters>]
 ```
 
@@ -26,7 +26,7 @@ The source and target environments must both be either managed or unmanaged.
 
 ### EXAMPLE 1
 ```
-Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat*
+Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat*
 ```
 
 This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
@@ -34,21 +34,21 @@ It defaults to a full copy.
 
 ### EXAMPLE 2
 ```
-Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy
+Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy
 ```
 
 This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
 
 ### EXAMPLE 3
 ```
-Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType TransactionLess
+Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType TransactionLess
 ```
 
 This will start a transaction-less database refresh from the environment with id containing "dev" to the environment with id containing "uat".
 
 ### EXAMPLE 4
 ```
-Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -IncludeAuditData
+Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -IncludeAuditData
 ```
 
 This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
@@ -56,7 +56,7 @@ It will include audit data in the copy.
 
 ### EXAMPLE 5
 ```
-Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -AdvancedFnO
+Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -AdvancedFnO
 ```
 
 This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
