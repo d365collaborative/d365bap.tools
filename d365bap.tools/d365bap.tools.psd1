@@ -105,7 +105,7 @@
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
 
-		, 'Start-BapDatabaseRefresh'
+		, 'Start-UdeDatabaseRefresh'
 		, 'Start-UdeDbSsms'
 		, 'Switch-BapTenant'
 		

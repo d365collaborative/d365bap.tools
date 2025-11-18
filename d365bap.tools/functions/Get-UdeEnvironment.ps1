@@ -65,25 +65,6 @@ function Get-UdeEnvironment {
     }
     
     process {
-        $SoapBody = @"
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-    <s:Header>
-        <UserType xmlns="http://schemas.microsoft.com/xrm/2011/Contracts">CrmUser</UserType>
-        <SdkClientVersion xmlns="http://schemas.microsoft.com/xrm/2011/Contracts">9.2.49.6961</SdkClientVersion>
-        <x-ms-client-request-id xmlns="http://schemas.microsoft.com/xrm/2011/Contracts">##REQUESTID##</x-ms-client-request-id>
-    </s:Header>
-    <s:Body>
-        <Execute xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
-            <request xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-                <a:Parameters xmlns:b="http://schemas.datacontract.org/2004/07/System.Collections.Generic"/>
-                <a:RequestId>##REQUESTID##</a:RequestId>
-                <a:RequestName>msprov_getfinopsapplicationdetails</a:RequestName>
-            </request>
-        </Execute>
-    </s:Body>
-</s:Envelope>
-"@
-        
         $resCol = @(
             foreach ($envObj in $($colEnv | Where-Object FinOpsMetadataEnvType -eq "Internal")) {
                 if ($searchById) {
@@ -103,42 +84,31 @@ function Get-UdeEnvironment {
                 }
 
                 # We need to get the internal provisioning details via SOAP call
-                $baseUri = $envObj.LinkedMetaPpacEnvUri
+                $baseUri = $envObj.PpacEnvUri
                 $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
                 $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
         
-                $payload = $SoapBody -replace "##REQUESTID##", ([System.Guid]::NewGuid().ToString())
-                $localUri = "$($baseUri)/XRMServices/2011/Organization.svc/web?SDKClientVersion=9.2.49.6961"
-
                 $headers = @{
-                    "Content-Type"  = "text/xml; charset=utf-8"
                     "Authorization" = "Bearer $($tokenWebApiValue)"
-                    "Soapaction"    = "http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/Execute"
                 }
 
-                $Response = Invoke-WebRequest -Uri $localUri `
-                    -Method Post `
+                $localUri = $baseUri + '/api/data/v9.2/msprov_getfinopsapplicationdetails'
+
+                $Response = Invoke-RestMethod -Uri $localUri `
+                    -Method Get `
                     -Headers $headers `
-                    -Body $payload `
-                    -UseBasicParsing `
                     -SkipHttpErrorCheck
 
-                if (-not ($Response.StatusCode -like "2**")) {
+                if ($null -eq $Response) {
                     $messageString = "Could not obtain the <c='em'>Ppac Provision</c> details for <c='em'>$($envObj.PpacEnvName)</c>. It could be due to insufficient permissions or the environment not being fully provisioned. Please try to access the environment details from PowerPlatform Admin Center."
                     Write-PSFMessage -Level Important -Message $messageString
                     Write-PSFHostColor -String "- <c='em'>https://admin.powerplatform.microsoft.com/environments/environment/$($envObj.PpacEnvId)/hub</c>"
                 }
                 else {
-                    $tmpXml = [xml]$Response.Content
-                    $nodes = $tmpXml.SelectNodes('//*[local-name()="KeyValuePairOfstringanyType"]')
-
-                    foreach ($node in $nodes) {
-                        $keyNode = $node.SelectSingleNode('*[local-name()="key"]')
-                        $valueNode = $node.SelectSingleNode('*[local-name()="value"]')
-
-                        $propName = $($keyNode.InnerText).Replace("applicationversion", "AppVersion").Replace("platformversion", "PlatVersion").Replace("finopsenvironmentstate", "State").Replace("applicationdeploymenttype", "Type").Replace("finopsenvironmentid", "Id")
-                        $envObj | Add-Member -NotePropertyName "Provisioning$($propName)" -NotePropertyValue $valueNode.InnerText
-                    }
+                    $envObj | Add-Member -NotePropertyName "ProvisioningAppVersion" -NotePropertyValue $Response.applicationversion
+                    $envObj | Add-Member -NotePropertyName "ProvisioningPlatVersion" -NotePropertyValue $Response.platformversion
+                    $envObj | Add-Member -NotePropertyName "ProvisioningState" -NotePropertyValue $Response.finopsenvironmentstate
+                    $envObj | Add-Member -NotePropertyName "ProvisioningType" -NotePropertyValue $Response.applicationdeploymenttype
                 }
 
                 # We need to user friendly version details from the installed D365 app

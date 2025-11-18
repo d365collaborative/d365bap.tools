@@ -67,10 +67,12 @@ function Clear-UdeOrphanedConfig {
             $colPackageDirs = Get-Item -Path $pathPackages | `
                 Select-Object -ExpandProperty FullName
 
-            # Then we need to find all active package directories - based on the UDE configs
-            $activePackageDirs = @($colConfigs.PackagesLocalDirectory | `
-                    ForEach-Object { Split-Path -Path $_ -Parent }) | `
-                Select-Object -Unique
+            if ($colConfigs.Count -gt 0) {
+                # Then we need to find all active package directories - based on the UDE configs
+                $activePackageDirs = @($colConfigs.PackagesLocalDirectory | `
+                        ForEach-Object { Split-Path -Path $_ -Parent }) | `
+                    Select-Object -Unique
+            }
 
             # Finally, we need to find all orphaned package directories
             $colPackageDirs | Where-Object { $_ -notin $activePackageDirs } | ForEach-Object {

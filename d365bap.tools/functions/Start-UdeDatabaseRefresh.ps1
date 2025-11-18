@@ -28,36 +28,36 @@
         Instructs the cmdlet to execute an advanced copy for Finance and Operations.
         
     .EXAMPLE
-        PS C:\> Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat*
+        PS C:\> Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat*
         
         This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
         It defaults to a full copy.
         
     .EXAMPLE
-        PS C:\> Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy
+        PS C:\> Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy
         
         This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
         
     .EXAMPLE
-        PS C:\> Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType TransactionLess
+        PS C:\> Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType TransactionLess
         
         This will start a transaction-less database refresh from the environment with id containing "dev" to the environment with id containing "uat".
         
     .EXAMPLE
-        PS C:\> Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -IncludeAuditData
+        PS C:\> Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -IncludeAuditData
         
         This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
         It will include audit data in the copy.
         
     .EXAMPLE
-        PS C:\> Start-BapDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -AdvancedFnO
+        PS C:\> Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -AdvancedFnO
         This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
         It will execute an advanced copy for Finance and Operations.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Start-BapDatabaseRefresh {
+function Start-UdeDatabaseRefresh {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -88,8 +88,8 @@ function Start-BapDatabaseRefresh {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $envSource = Get-BapEnvironment -EnvironmentId $SourceEnvironmentId | Select-Object -First 1
-        $envTarget = Get-BapEnvironment -EnvironmentId $TargetEnvironmentId | Select-Object -First 1
+        $envSource = Get-UdeEnvironment -EnvironmentId $SourceEnvironmentId | Select-Object -First 1
+        $envTarget = Get-UdeEnvironment -EnvironmentId $TargetEnvironmentId | Select-Object -First 1
 
         if ($null -eq $envSource -or $null -eq $envTarget) {
             $messageString = "Could not find either <c='em'>source</c> or <c='em'>target</c> environments. Please verify the Ids and try again, or list available environments using <c='em'>Get-BapEnvironment</c>."
@@ -105,6 +105,15 @@ function Start-BapDatabaseRefresh {
 
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because one of the environments Managed state is different." `
+                -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            return
+        }
+
+        if (([Version]$envSource.FinOpsApp).Build -lt ([Version]$envTarget.FinOpsApp).Build) {
+            $messageString = "The build version of FnO application in the source environment is <c='em'>lower</c> than in the target environment. Database refresh is not supported in this scenario."
+
+            Write-PSFMessage -Level Important -Message $messageString
+            Stop-PSFFunction -Message "Stopping because one of the FnO application is different." `
                 -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
