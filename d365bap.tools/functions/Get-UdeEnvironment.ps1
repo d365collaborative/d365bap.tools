@@ -1,10 +1,10 @@
 ﻿
 <#
     .SYNOPSIS
-        Gets UDE environments.
+        Gets UDE/USE environments.
         
     .DESCRIPTION
-        This function retrieves UDE environments.
+        This function retrieves UDE/USE environments.
         
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve.
@@ -16,47 +16,73 @@
     .PARAMETER SkipVersionDetails
         Instructs the function to skip retrieving version details.
         
-        Will result in faster execution.
+        Will result in faster execution, but will not include version information and tell you if the environment is UDE or USE.
         
+    .PARAMETER UdeOnly
+        Instructs the function to only return UDE environments.
+
+    .PARAMETER UseOnly
+        Instructs the function to only return USE environments.
+
     .PARAMETER AsExcelOutput
         Instructs the function to export the results to an Excel file.
         
     .EXAMPLE
         PS C:\> Get-UdeEnvironment
         
-        This will retrieve all available UDE environments.
+        This will retrieve all available UDE/USE environments.
         
     .EXAMPLE
         PS C:\> Get-UdeEnvironment -EnvironmentId "env-123"
         
-        This will retrieve the UDE environment with the specified environment ID.
+        This will retrieve the UDE/USE environment with the specified environment ID.
         
     .EXAMPLE
         PS C:\> Get-UdeEnvironment -SkipVersionDetails
         
-        This will retrieve all available UDE environments without version details.
+        This will retrieve all available UDE/USE environments without version details.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -UdeOnly
+        
+        This will retrieve only UDE environments.
+
+    .EXAMPLE
+        PS C:\> Get-UdeEnvironment -UseOnly
+        
+        This will retrieve only USE environments.
         
     .EXAMPLE
         PS C:\> Get-UdeEnvironment -AsExcelOutput
         
-        This will export the retrieved UDE environments to an Excel file.
+        This will export the retrieved UDE/USE environments to an Excel file.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeEnvironment {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType('System.Object[]')]
     param (
+        [Parameter()]
         [string] $EnvironmentId = "*",
 
+        [Parameter(ParameterSetName = "SkipVersion")]
         [switch] $SkipVersionDetails,
 
+        [Parameter(ParameterSetName = "UdeOnly")]
+        [switch] $UdeOnly,
+        
+        [Parameter(ParameterSetName = "UseOnly")]
+        [switch] $UseOnly,
+
+        [Parameter()]
         [switch] $AsExcelOutput
     )
 
     begin {
-        $colEnv = Get-BapEnvironment -EnvironmentId $EnvironmentId
+        $colEnv = Get-BapEnvironment -EnvironmentId $EnvironmentId `
+            -FnOEnabled
 
         $searchById = Test-Guid -InputObject $EnvironmentId
 
@@ -77,8 +103,7 @@ function Get-UdeEnvironment {
                 }
 
                 if ($SkipVersionDetails) {
-                    $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironmentBasic" `
-                        -Property *
+                    $envObj
 
                     continue
                 }
@@ -120,13 +145,29 @@ function Get-UdeEnvironment {
                 $envObj | Add-Member -NotePropertyName "FinOpsApp" -NotePropertyValue $appProvision.InstalledVersion
 
                 $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `
+                    -ExcludeProperty FnOEnvType `
                     -Property "ProvisioningAppVersion as PpacProvApp",
                 "ProvisioningPlatVersion as PpacProvPlatform",
                 "ProvisioningState as PpacProvState",
                 "ProvisioningType as PpacProvType",
+                @{Name = "FnOEnvType"; Expression = {
+                        switch ($_.ProvisioningType) {
+                            "OnlineDev" { "UDE" }
+                            "Sandbox" { "USE" }
+                            Default { "N/A" }
+                        }
+                    }
+                },
                 *
             }
         )
+
+        if ($UdeOnly) {
+            $resCol = $resCol | Where-Object FnOEnvType -eq "UDE"
+        }
+        elseif ($UseOnly) {
+            $resCol = $resCol | Where-Object FnOEnvType -eq "USE"
+        }
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-UdeEnvironment"

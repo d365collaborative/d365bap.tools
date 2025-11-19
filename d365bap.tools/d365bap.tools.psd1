@@ -58,6 +58,7 @@
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentApplicationUser'
 		, 'Get-BapEnvironmentD365App'
+		, 'Get-BapEnvironmentFnOAppUpdate'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
@@ -87,6 +88,7 @@
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
+		, 'Invoke-BapEnvironmentFnOAppUpdate'
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 		

@@ -12,8 +12,24 @@ Gets UDE environments.
 
 ## SYNTAX
 
+### Default (Default)
 ```
-Get-UdeEnvironment [[-EnvironmentId] <String>] [-SkipVersionDetails] [-AsExcelOutput] [<CommonParameters>]
+Get-UdeEnvironment [-EnvironmentId <String>] [-AsExcelOutput] [<CommonParameters>]
+```
+
+### SkipVersion
+```
+Get-UdeEnvironment [-EnvironmentId <String>] [-SkipVersionDetails] [-AsExcelOutput] [<CommonParameters>]
+```
+
+### UdeOnly
+```
+Get-UdeEnvironment [-EnvironmentId <String>] [-UdeOnly] [-AsExcelOutput] [<CommonParameters>]
+```
+
+### UseOnly
+```
+Get-UdeEnvironment [-EnvironmentId <String>] [-UseOnly] [-AsExcelOutput] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -64,7 +80,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: Named
 Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -77,7 +93,37 @@ Will result in faster execution.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: SkipVersion
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -UdeOnly
+{{ Fill UdeOnly Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: UdeOnly
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -UseOnly
+{{ Fill UseOnly Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: UseOnly
 Aliases:
 
 Required: False
