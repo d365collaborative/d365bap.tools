@@ -73,10 +73,7 @@
 						<Width>36</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Width>40</Width>
-					</TableColumnHeader>
-					<TableColumnHeader>
-						<Width>40</Width>
+						<Width>13</Width>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
@@ -101,10 +98,7 @@
 								<PropertyName>EnvId</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>FnOEnvUri</PropertyName>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>PpacEnvUri</PropertyName>
+								<PropertyName>FnOEnvType</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -140,6 +134,9 @@
 							</ListItem>
 							<ListItem>
 								<PropertyName>PpacRegion</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>FnOEnvType</PropertyName>
 							</ListItem>
 							<ListItem>
 								<PropertyName>FnOEnvUri</PropertyName>
@@ -586,32 +583,6 @@
 			</TableControl>
 		</View>
 		<View>
-			<Name>D365Bap.Tools.UdeEnvironmentBasic</Name>
-			<ViewSelectedBy>
-				<TypeName>D365Bap.Tools.UdeEnvironmentBasic</TypeName>
-			</ViewSelectedBy>
-			<ListControl>
-				<ListEntries>
-					<ListEntry>
-						<ListItems>
-							<ListItem>
-								<PropertyName>PpacEnvId</PropertyName>
-							</ListItem>
-							<ListItem>
-								<PropertyName>PpacEnvName</PropertyName>
-							</ListItem>
-							<ListItem>
-								<PropertyName>FinOpsEnvUri</PropertyName>
-							</ListItem>
-							<ListItem>
-								<PropertyName>PpacEnvUri</PropertyName>
-							</ListItem>
-						</ListItems>
-					</ListEntry>
-				</ListEntries>
-			</ListControl>
-		</View>
-		<View>
 			<Name>D365Bap.Tools.UdeEnvironment</Name>
 			<ViewSelectedBy>
 				<TypeName>D365Bap.Tools.UdeEnvironment</TypeName>
@@ -621,16 +592,19 @@
 					<ListEntry>
 						<ListItems>
 							<ListItem>
-								<PropertyName>PpacEnvId</PropertyName>
+								<PropertyName>EnvId</PropertyName>
 							</ListItem>
 							<ListItem>
-								<PropertyName>PpacEnvName</PropertyName>
+								<PropertyName>EnvName</PropertyName>
 							</ListItem>
 							<ListItem>
 								<PropertyName>FinOpsEnvUri</PropertyName>
 							</ListItem>
 							<ListItem>
 								<PropertyName>FinOpsApp</PropertyName>
+							</ListItem>
+							<ListItem>
+								<PropertyName>FnOEnvType</PropertyName>
 							</ListItem>
 							<ListItem>
 								<PropertyName>PpacProvApp</PropertyName>

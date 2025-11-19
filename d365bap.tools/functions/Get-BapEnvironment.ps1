@@ -66,6 +66,8 @@ function Get-BapEnvironment {
     param (
         [string] $EnvironmentId = "*",
 
+        [switch] $FnOEnabled,
+
         [switch] $AsExcelOutput
     )
 
@@ -77,7 +79,10 @@ function Get-BapEnvironment {
             "Authorization" = "Bearer $($tokenBapValue)"
         }
         
-        $resEnvs = Invoke-RestMethod -Method Get -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" -Headers $headersBapApi | Select-Object -ExpandProperty Value
+        $resEnvs = Invoke-RestMethod -Method Get `
+            -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" `
+            -Headers $headersBapApi | `
+            Select-Object -ExpandProperty Value
 
         $searchById = Test-Guid -InputObject $EnvironmentId
     }
@@ -152,9 +157,32 @@ function Get-BapEnvironment {
                         }
                     }
                 },
-                "*"
+                @{Name = "FnOEnvType"; Expression = {
+                        $uri = $_.Properties.linkedAppMetadata.url
+                        switch ($_.Properties.linkedAppMetadata.type) {
+                            "Internal" { "UDE/USE" }
+                            "Linked" {
+                                if ($uri -like "*axcloud*") {
+                                    "LcsDevbox"
+                                }
+                                elseif ($uri -like "*sandbox*") {
+                                    "LcsSandbox"
+                                }
+                                else {
+                                    "LcsProduction"
+                                }
+                            }
+                            Default { "N/A" }
+                        }
+                    }
+                },
+                *
             }
         )
+
+        if ($FnOEnabled) {
+            $resCol = $resCol | Where-Object { $null -ne $_.FinOpsMetadataEnvType }
+        }
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-BapEnvironment" `

@@ -45,18 +45,28 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeEnvironment {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType('System.Object[]')]
     param (
+        [Parameter()]
         [string] $EnvironmentId = "*",
 
+        [Parameter(ParameterSetName = "SkipVersion")]
         [switch] $SkipVersionDetails,
 
+        [Parameter(ParameterSetName = "UdeOnly")]
+        [switch] $UdeOnly,
+        
+        [Parameter(ParameterSetName = "UseOnly")]
+        [switch] $UseOnly,
+
+        [Parameter()]
         [switch] $AsExcelOutput
     )
 
     begin {
-        $colEnv = Get-BapEnvironment -EnvironmentId $EnvironmentId
+        $colEnv = Get-BapEnvironment -EnvironmentId $EnvironmentId `
+            -FnOEnabled
 
         $searchById = Test-Guid -InputObject $EnvironmentId
 
@@ -77,8 +87,7 @@ function Get-UdeEnvironment {
                 }
 
                 if ($SkipVersionDetails) {
-                    $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironmentBasic" `
-                        -Property *
+                    $envObj
 
                     continue
                 }
@@ -120,13 +129,29 @@ function Get-UdeEnvironment {
                 $envObj | Add-Member -NotePropertyName "FinOpsApp" -NotePropertyValue $appProvision.InstalledVersion
 
                 $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `
+                    -ExcludeProperty FnOEnvType `
                     -Property "ProvisioningAppVersion as PpacProvApp",
                 "ProvisioningPlatVersion as PpacProvPlatform",
                 "ProvisioningState as PpacProvState",
                 "ProvisioningType as PpacProvType",
+                @{Name = "FnOEnvType"; Expression = {
+                        switch ($_.ProvisioningType) {
+                            "OnlineDev" { "UDE" }
+                            "Sandbox" { "USE" }
+                            Default { "N/A" }
+                        }
+                    }
+                },
                 *
             }
         )
+
+        if ($UdeOnly) {
+            $resCol = $resCol | Where-Object FnOEnvType -eq "UDE"
+        }
+        elseif ($UseOnly) {
+            $resCol = $resCol | Where-Object FnOEnvType -eq "USE"
+        }
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-UdeEnvironment"
