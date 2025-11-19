@@ -13,6 +13,9 @@
         
         Default value is "*" - which translates into all available environments
         
+    .PARAMETER FnOEnabled
+        Instruct the cmdlet to only return environments that have Finance and Operations enabled
+
     .PARAMETER AsExcelOutput
         Instruct the cmdlet to output all details directly to an Excel file
         
@@ -22,34 +25,23 @@
         PS C:\> Get-BapEnvironment
         
         This will query for ALL available environments.
+        It will include both PPAC and FinOps enabled environments.
         
-        Sample output:
-        PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
-        ---------                            -------------   -----------          ---------- ------------------
-        32c6b196-ef52-4c43-93cf-6ecba51e6aa1 europe          new-uat              Sandbox    https://new-uat.sandbox.operatio...
-        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
-        d45936a7-0408-4b79-94d1-19e4c6e5a52e europe          new-golden           Sandbox    https://new-golden.sandbox.opera...
-        Default-e210bc90-e54b-4544-a9b8-b123 europe          New Customer         Default
-        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -FnOEnabled
+
+        This will query for ALL available environments.
+        It will ONLY include FinOps enabled environments.
+
     .EXAMPLE
         PS C:\> Get-BapEnvironment -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
         
         This will query for the specific environment.
         
-        Sample output:
-        PpacEnvId                            PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
-        ---------                            -------------   -----------          ---------- ------------------
-        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
-        
     .EXAMPLE
         PS C:\> Get-BapEnvironment -EnvironmentId *test*
         
         This will query for the specific environment, using a wildcard search.
-        
-        Sample output:
-        PpacEnvId                            PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
-        ---------                            -------------   -----------          ---------- ------------------
-        eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
         
     .EXAMPLE
         PS C:\> Get-BapEnvironment -AsExcelOutput
@@ -66,6 +58,8 @@ function Get-BapEnvironment {
     param (
         [string] $EnvironmentId = "*",
 
+        [switch] $FnOEnabled,
+
         [switch] $AsExcelOutput
     )
 
@@ -77,7 +71,10 @@ function Get-BapEnvironment {
             "Authorization" = "Bearer $($tokenBapValue)"
         }
         
-        $resEnvs = Invoke-RestMethod -Method Get -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" -Headers $headersBapApi | Select-Object -ExpandProperty Value
+        $resEnvs = Invoke-RestMethod -Method Get `
+            -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" `
+            -Headers $headersBapApi | `
+            Select-Object -ExpandProperty Value
 
         $searchById = Test-Guid -InputObject $EnvironmentId
     }
@@ -152,9 +149,32 @@ function Get-BapEnvironment {
                         }
                     }
                 },
-                "*"
+                @{Name = "FnOEnvType"; Expression = {
+                        $uri = $_.Properties.linkedAppMetadata.url
+                        switch ($_.Properties.linkedAppMetadata.type) {
+                            "Internal" { "UDE/USE" }
+                            "Linked" {
+                                if ($uri -like "*axcloud*") {
+                                    "LcsDevbox"
+                                }
+                                elseif ($uri -like "*sandbox*") {
+                                    "LcsSandbox"
+                                }
+                                else {
+                                    "LcsProduction"
+                                }
+                            }
+                            Default { "N/A" }
+                        }
+                    }
+                },
+                *
             }
         )
+
+        if ($FnOEnabled) {
+            $resCol = $resCol | Where-Object { $null -ne $_.FinOpsMetadataEnvType }
+        }
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-BapEnvironment" `

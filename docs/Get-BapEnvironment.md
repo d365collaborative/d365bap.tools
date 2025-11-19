@@ -13,7 +13,7 @@ Get environment info
 ## SYNTAX
 
 ```
-Get-BapEnvironment [[-EnvironmentId] <String>] [-AsExcelOutput] [<CommonParameters>]
+Get-BapEnvironment [[-EnvironmentId] <String>] [-FnOEnabled] [-AsExcelOutput] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -85,6 +85,21 @@ Aliases:
 Required: False
 Position: 1
 Default value: *
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -FnOEnabled
+{{ Fill FnOEnabled Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
