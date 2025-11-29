@@ -28,7 +28,7 @@
 	RequiredModules   = @(
 		@{ ModuleName = 'PSFramework'; ModuleVersion = '1.9.310' }
 		, @{ ModuleName = 'ImportExcel'; ModuleVersion = '7.8.6' }
-		, @{ ModuleName = 'Az.Accounts'; ModuleVersion = '2.12.4' }
+		, @{ ModuleName = 'Az.Accounts'; ModuleVersion = '2.17.0' }
 	)
 	
 	# Assemblies that must be loaded prior to importing this module
