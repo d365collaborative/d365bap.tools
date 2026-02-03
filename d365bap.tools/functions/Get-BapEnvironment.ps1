@@ -13,9 +13,9 @@
         
         Default value is "*" - which translates into all available environments
         
-    .PARAMETER FnOEnabled
+    .PARAMETER FnoEnabled
         Instruct the cmdlet to only return environments that have Finance and Operations enabled
-
+        
     .PARAMETER AsExcelOutput
         Instruct the cmdlet to output all details directly to an Excel file
         
@@ -28,11 +28,11 @@
         It will include both PPAC and FinOps enabled environments.
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironment -FnOEnabled
-
+        PS C:\> Get-BapEnvironment -FnoEnabled
+        
         This will query for ALL available environments.
         It will ONLY include FinOps enabled environments.
-
+        
     .EXAMPLE
         PS C:\> Get-BapEnvironment -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
         
@@ -58,7 +58,7 @@ function Get-BapEnvironment {
     param (
         [string] $EnvironmentId = "*",
 
-        [switch] $FnOEnabled,
+        [switch] $FnoEnabled,
 
         [switch] $AsExcelOutput
     )
@@ -172,7 +172,7 @@ function Get-BapEnvironment {
             }
         )
 
-        if ($FnOEnabled) {
+        if ($FnoEnabled) {
             $resCol = $resCol | Where-Object { $null -ne $_.FinOpsMetadataEnvType }
         }
 

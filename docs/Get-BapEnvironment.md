@@ -13,7 +13,8 @@ Get environment info
 ## SYNTAX
 
 ```
-Get-BapEnvironment [[-EnvironmentId] <String>] [-FnOEnabled] [-AsExcelOutput] [<CommonParameters>]
+Get-BapEnvironment [[-EnvironmentId] <String>] [-FnoEnabled] [-AsExcelOutput]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -29,40 +30,31 @@ Get-BapEnvironment
 ```
 
 This will query for ALL available environments.
-
-Sample output:
-PpacEnvId                            PpacEnvRegion   PpacEnvName          PpacEnvSku LinkedAppLcsEnvUri
----------                            -------------   -----------          ---------- ------------------
-32c6b196-ef52-4c43-93cf-6ecba51e6aa1 europe          new-uat              Sandbox    https://new-uat.sandbox.operatio...
-eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
-d45936a7-0408-4b79-94d1-19e4c6e5a52e europe          new-golden           Sandbox    https://new-golden.sandbox.opera...
-Default-e210bc90-e54b-4544-a9b8-b123 europe          New Customer         Default
+It will include both PPAC and FinOps enabled environments.
 
 ### EXAMPLE 2
+```
+Get-BapEnvironment -FnoEnabled
+```
+
+This will query for ALL available environments.
+It will ONLY include FinOps enabled environments.
+
+### EXAMPLE 3
 ```
 Get-BapEnvironment -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
 ```
 
 This will query for the specific environment.
 
-Sample output:
-PpacEnvId                            PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
----------                            -------------   -----------          ---------- ------------------
-eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
-
-### EXAMPLE 3
+### EXAMPLE 4
 ```
 Get-BapEnvironment -EnvironmentId *test*
 ```
 
 This will query for the specific environment, using a wildcard search.
 
-Sample output:
-PpacEnvId                            PpacRegion      PpacName             PpacSku    LinkedAppLcsEnvUri
----------                            -------------   -----------          ---------- ------------------
-eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 europe          new-test             Sandbox    https://new-test.sandbox.operati...
-
-### EXAMPLE 4
+### EXAMPLE 5
 ```
 Get-BapEnvironment -AsExcelOutput
 ```
@@ -89,8 +81,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -FnOEnabled
-{{ Fill FnOEnabled Description }}
+### -FnoEnabled
+Instruct the cmdlet to only return environments that have Finance and Operations enabled
 
 ```yaml
 Type: SwitchParameter
@@ -117,6 +109,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

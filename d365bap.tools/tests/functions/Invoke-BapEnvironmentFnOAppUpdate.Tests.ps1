@@ -27,7 +27,7 @@
 		It 'Should have the expected parameter Version' {
 			$parameter = (Get-Command Invoke-BapEnvironmentFnOAppUpdate).Parameters['Version']
 			$parameter.Name | Should -Be 'Version'
-			$parameter.ParameterType.ToString() | Should -Be System.String
+			$parameter.ParameterType.ToString() | Should -Be System.Version
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
 			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'

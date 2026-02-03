@@ -14,7 +14,7 @@ Sets the details for a specific tenant.
 
 ```
 Set-BapTenantDetail [-Id] <String> [-Upn] <String> [-TenantId] <String> [[-TenantName] <String>]
- [<CommonParameters>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -35,7 +35,8 @@ It will also set the tenant ID to "12345678-1234-1234-1234-123456789012" and the
 
 ### EXAMPLE 2
 ```
-Get-BapTenant -TenantId "12345678-1234-1234-1234-123456789012" | Set-BapTenantDetail -Id "Contoso"
+$detailsHash = Get-BapTenant -TenantId "12345678-1234-1234-1234-123456789012" -AsHashTable
+PS C:\> Set-BapTenantDetail -Id "Contoso" @detailsHash
 ```
 
 This will retrieve the tenant with the specified tenant ID.
@@ -71,7 +72,7 @@ Aliases: Username, User, Login
 Required: True
 Position: 2
 Default value: None
-Accept pipeline input: True (ByPropertyName)
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
@@ -86,7 +87,7 @@ Aliases:
 Required: True
 Position: 3
 Default value: None
-Accept pipeline input: True (ByPropertyName)
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
@@ -101,7 +102,22 @@ Aliases: FriendlyName
 Required: False
 Position: 4
 Default value: None
-Accept pipeline input: True (ByPropertyName)
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

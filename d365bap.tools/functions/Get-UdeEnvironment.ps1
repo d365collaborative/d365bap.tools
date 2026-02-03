@@ -20,10 +20,10 @@
         
     .PARAMETER UdeOnly
         Instructs the function to only return UDE environments.
-
+        
     .PARAMETER UseOnly
         Instructs the function to only return USE environments.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the function to export the results to an Excel file.
         
@@ -46,7 +46,7 @@
         PS C:\> Get-UdeEnvironment -UdeOnly
         
         This will retrieve only UDE environments.
-
+        
     .EXAMPLE
         PS C:\> Get-UdeEnvironment -UseOnly
         
@@ -82,7 +82,7 @@ function Get-UdeEnvironment {
 
     begin {
         $colEnv = Get-BapEnvironment -EnvironmentId $EnvironmentId `
-            -FnOEnabled
+            -FnoEnabled
 
         $searchById = Test-Guid -InputObject $EnvironmentId
 
