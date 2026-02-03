@@ -89,6 +89,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function New-UseEnvironment {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [string] $Name,

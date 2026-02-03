@@ -90,6 +90,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function New-UdeEnvironment {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [string] $Name,
