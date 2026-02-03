@@ -23,6 +23,9 @@
     .PARAMETER AsExcelOutput
         Instructs the function to export the results to an Excel file.
         
+    .PARAMETER AsHashTable
+        Instructs the function to export the results to a hashtable.
+        
     .EXAMPLE
         PS C:\> Get-BapTenant
         
@@ -45,22 +48,33 @@
         
         This will export the retrieved tenant information to an Excel file.
         
+    .EXAMPLE
+        PS C:\> Get-BapTenant -AsHashTable
+        
+        This will export the retrieved tenant information to a hashtable.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
         
 #>
 function Get-BapTenant {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType('System.Object[]')]
     param (
+        [Parameter()]
         [Alias("Login")]
         [Alias("User")]
         [Alias("Username")]
         [string] $Upn = "*",
-
+        
+        [Parameter()]
         [string] $TenantId = "*",
 
-        [switch] $AsExcelOutput
+        [Parameter(ParameterSetName = 'Excel')]
+        [switch] $AsExcelOutput,
+
+        [Parameter(ParameterSetName = 'HashTable')]
+        [switch] $AsHashTable
     )
 
     begin {
@@ -88,6 +102,10 @@ function Get-BapTenant {
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-BapTenant"
+            return
+        }
+        elseif ($AsHashTable) {
+            $resCol | ConvertTo-PSFHashtable
             return
         }
 

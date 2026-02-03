@@ -5,50 +5,52 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-UdeConfig
+# Get-BapDeployLocation
 
 ## SYNOPSIS
-Gets UDE configuration information.
+Get the available deployment locations for Power Platform environments.
 
 ## SYNTAX
 
 ```
-Get-UdeConfig [[-Name] <String>] [-Active] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+Get-BapDeployLocation [[-Name] <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
  [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Retrieves configuration settings for the User Development Environment (UDE).
+Retrieves the list of available deployment locations where Power Platform environments can be provisioned.
 
-Is based on the details that the developer can see from within Visual Studio when working with UDE.
+Includes details such as location name and azure regions.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-UdeConfig
+Get-BapDeployLocation
 ```
 
-This will retrieve all available UDE configurations.
+This will retrieve all available deployment locations for Power Platform environments.
 
 ### EXAMPLE 2
 ```
-Get-UdeConfig -Name "ContosoUdeConfig"
+Get-BapDeployLocation -Name "Europe"
 ```
 
-This will retrieve the UDE configuration with the name "ContosoUdeConfig".
+This will retrieve the deployment location "Europe".
 
 ### EXAMPLE 3
 ```
-Get-UdeConfig -Active
+Get-BapDeployLocation -AsExcelOutput
 ```
 
-This will retrieve the currently active UDE configuration.
+This will retrieve all available deployment locations and export the output to an Excel file.
 
 ## PARAMETERS
 
 ### -Name
-The name of the UDE configuration.
+Filter the deployment locations by name or ID.
+
+Supports wildcard characters (*).
 
 ```yaml
 Type: String
@@ -62,25 +64,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Active
-Instructs the function to only return the active UDE configuration.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -AsExcelOutput
-Instruct the cmdlet to output all details directly to an Excel file.
-
-Will include all properties, including those not shown by default in the console output.
+Instructs the cmdlet to export the output to an Excel file.
 
 ```yaml
 Type: SwitchParameter

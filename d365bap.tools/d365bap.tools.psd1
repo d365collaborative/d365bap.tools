@@ -55,6 +55,9 @@
 		, 'Confirm-BapEnvironmentIntegration'
 		
 		, 'Export-BapEnvironmentSolution'
+
+		, 'Get-BapDeployLocation'
+		, 'Get-BapDeployTemplate'
 		
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentApplicationUser'
@@ -92,6 +95,9 @@
 		, 'Invoke-BapEnvironmentFnOAppUpdate'
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
+		
+		, 'New-UdeEnvironment'
+		, 'New-UseEnvironment'
 		
 		, 'Set-BapAzCopyPath'
 
