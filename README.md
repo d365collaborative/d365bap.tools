@@ -16,6 +16,9 @@ Available on PowerShell Gallery:
 * [Dependencies](#dependencies)
 
 ## Getting started
+
+It is recommended to use the Core edition of PowerShell (i.e. [PowerShell 7](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell-on-windows)). d365bap.tools can be used in the Desktop edition (i.e. Windows PowerShell 5.1), but not all commands will work there.
+
 ### Install the latest module
 ```PowerShell
 Install-Module -Name d365bap.tools

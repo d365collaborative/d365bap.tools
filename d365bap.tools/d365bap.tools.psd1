@@ -21,6 +21,7 @@
 	Description       = 'Tools used for Business Application Platform, One Dynamics One Platform - D365FO + Dataverse'
 	
 	# Minimum version of the Windows PowerShell engine required by this module
+	# Some commands require PowerShell 7, but the module can still be imported in 5.0
 	PowerShellVersion = '5.0'
 	
 	# Modules that must be imported into the global environment prior to importing
@@ -28,7 +29,7 @@
 	RequiredModules   = @(
 		@{ ModuleName = 'PSFramework'; ModuleVersion = '1.9.310' }
 		, @{ ModuleName = 'ImportExcel'; ModuleVersion = '7.8.6' }
-		, @{ ModuleName = 'Az.Accounts'; ModuleVersion = '2.12.4' }
+		, @{ ModuleName = 'Az.Accounts'; ModuleVersion = '2.17.0' }
 	)
 	
 	# Assemblies that must be loaded prior to importing this module
@@ -54,6 +55,9 @@
 		, 'Confirm-BapEnvironmentIntegration'
 		
 		, 'Export-BapEnvironmentSolution'
+
+		, 'Get-BapDeployLocation'
+		, 'Get-BapDeployTemplate'
 		
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentApplicationUser'
@@ -91,6 +95,9 @@
 		, 'Invoke-BapEnvironmentFnOAppUpdate'
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
+		
+		, 'New-UdeEnvironment'
+		, 'New-UseEnvironment'
 		
 		, 'Set-BapAzCopyPath'
 

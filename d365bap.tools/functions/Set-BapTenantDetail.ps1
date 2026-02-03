@@ -30,7 +30,8 @@
         It will also set the tenant ID to "12345678-1234-1234-1234-123456789012" and the friendly name to "ContosoUnlimited".
         
     .EXAMPLE
-        PS C:\> Get-BapTenant -TenantId "12345678-1234-1234-1234-123456789012" | Set-BapTenantDetail -Id "Contoso"
+        PS C:\> $detailsHash = Get-BapTenant -TenantId "12345678-1234-1234-1234-123456789012" -AsHashTable
+        PS C:\> Set-BapTenantDetail -Id "Contoso" @detailsHash
         
         This will retrieve the tenant with the specified tenant ID.
         It will then set the details for the tenant with the id "Contoso" using the retrieved UPN and tenant ID.
@@ -45,16 +46,15 @@ function Set-BapTenantDetail {
         [Parameter(Mandatory = $true)]
         [string] $Id,
 
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory = $true)]
         [Alias("Login")]
         [Alias("User")]
         [Alias("Username")]
         [string] $Upn,
 
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory = $true)]
         [string] $TenantId,
 
-        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [Alias("FriendlyName")]
         [string] $TenantName
     )

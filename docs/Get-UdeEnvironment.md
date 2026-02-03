@@ -8,32 +8,36 @@ schema: 2.0.0
 # Get-UdeEnvironment
 
 ## SYNOPSIS
-Gets UDE environments.
+Gets UDE/USE environments.
 
 ## SYNTAX
 
 ### Default (Default)
 ```
-Get-UdeEnvironment [-EnvironmentId <String>] [-AsExcelOutput] [<CommonParameters>]
+Get-UdeEnvironment [-EnvironmentId <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### SkipVersion
 ```
-Get-UdeEnvironment [-EnvironmentId <String>] [-SkipVersionDetails] [-AsExcelOutput] [<CommonParameters>]
+Get-UdeEnvironment [-EnvironmentId <String>] [-SkipVersionDetails] [-AsExcelOutput]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### UdeOnly
 ```
-Get-UdeEnvironment [-EnvironmentId <String>] [-UdeOnly] [-AsExcelOutput] [<CommonParameters>]
+Get-UdeEnvironment [-EnvironmentId <String>] [-UdeOnly] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### UseOnly
 ```
-Get-UdeEnvironment [-EnvironmentId <String>] [-UseOnly] [-AsExcelOutput] [<CommonParameters>]
+Get-UdeEnvironment [-EnvironmentId <String>] [-UseOnly] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-This function retrieves UDE environments.
+This function retrieves UDE/USE environments.
 
 ## EXAMPLES
 
@@ -42,28 +46,42 @@ This function retrieves UDE environments.
 Get-UdeEnvironment
 ```
 
-This will retrieve all available UDE environments.
+This will retrieve all available UDE/USE environments.
 
 ### EXAMPLE 2
 ```
 Get-UdeEnvironment -EnvironmentId "env-123"
 ```
 
-This will retrieve the UDE environment with the specified environment ID.
+This will retrieve the UDE/USE environment with the specified environment ID.
 
 ### EXAMPLE 3
 ```
 Get-UdeEnvironment -SkipVersionDetails
 ```
 
-This will retrieve all available UDE environments without version details.
+This will retrieve all available UDE/USE environments without version details.
 
 ### EXAMPLE 4
+```
+Get-UdeEnvironment -UdeOnly
+```
+
+This will retrieve only UDE environments.
+
+### EXAMPLE 5
+```
+Get-UdeEnvironment -UseOnly
+```
+
+This will retrieve only USE environments.
+
+### EXAMPLE 6
 ```
 Get-UdeEnvironment -AsExcelOutput
 ```
 
-This will export the retrieved UDE environments to an Excel file.
+This will export the retrieved UDE/USE environments to an Excel file.
 
 ## PARAMETERS
 
@@ -89,7 +107,7 @@ Accept wildcard characters: False
 ### -SkipVersionDetails
 Instructs the function to skip retrieving version details.
 
-Will result in faster execution.
+Will result in faster execution, but will not include version information and tell you if the environment is UDE or USE.
 
 ```yaml
 Type: SwitchParameter
@@ -104,7 +122,7 @@ Accept wildcard characters: False
 ```
 
 ### -UdeOnly
-{{ Fill UdeOnly Description }}
+Instructs the function to only return UDE environments.
 
 ```yaml
 Type: SwitchParameter
@@ -119,7 +137,7 @@ Accept wildcard characters: False
 ```
 
 ### -UseOnly
-{{ Fill UseOnly Description }}
+Instructs the function to only return USE environments.
 
 ```yaml
 Type: SwitchParameter
@@ -144,6 +162,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

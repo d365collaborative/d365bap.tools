@@ -39,7 +39,7 @@ function Invoke-BapEnvironmentFnOAppUpdate {
         [string] $EnvironmentId,
 
         [parameter (Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
-        [string] $Version
+        [version] $Version
     )
     
     begin {
@@ -80,17 +80,16 @@ function Invoke-BapEnvironmentFnOAppUpdate {
             -Headers $headersWebApi `
             -Body $payload `
             -ContentType "application/json" `
-            -SkipHttpErrorCheck | `
-            Select-Object -ExpandProperty queuefnoinstallorupdateresponse
+            -SkipHttpErrorCheck
 
-        if ($null -eq $resRequest) {
-            $messageString = "Failed to queue the update/install of FinOps Application version <c='em'>$Version</c> for environment <c='em'>$($envObj.PpacEnvName)</c>. Please verify that the version exists using <c='em'>Get-BapEnvironmentFnOAppUpdate</c> and try again."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because the update/install could not be queued." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
+        # if ($null -eq $resRequest) {
+        #     $messageString = "Failed to queue the update/install of FinOps Application version <c='em'>$Version</c> for environment <c='em'>$($envObj.PpacEnvName)</c>. Please verify that the version exists using <c='em'>Get-BapEnvironmentFnOAppUpdate</c> and try again."
+        #     Write-PSFMessage -Level Important -Message $messageString
+        #     Stop-PSFFunction -Message "Stopping because the update/install could not be queued." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+        #     return
+        # }
 
-        $resRequest | ConvertFrom-Json
+        $resRequest
     }
     
     end {

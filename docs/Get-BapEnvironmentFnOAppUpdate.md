@@ -14,17 +14,20 @@ Get FnO/FinOps Application update versions.
 
 ### Default (Default)
 ```
-Get-BapEnvironmentFnOAppUpdate -EnvironmentId <String> [<CommonParameters>]
+Get-BapEnvironmentFnOAppUpdate -EnvironmentId <String> [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### Lowest
 ```
-Get-BapEnvironmentFnOAppUpdate -EnvironmentId <String> [-Oldest] [<CommonParameters>]
+Get-BapEnvironmentFnOAppUpdate -EnvironmentId <String> [-Oldest] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### Highest
 ```
-Get-BapEnvironmentFnOAppUpdate -EnvironmentId <String> [-Latest] [<CommonParameters>]
+Get-BapEnvironmentFnOAppUpdate -EnvironmentId <String> [-Latest] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -96,6 +99,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

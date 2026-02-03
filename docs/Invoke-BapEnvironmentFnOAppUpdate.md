@@ -13,7 +13,8 @@ Start FnO/FinOps Application update/install.
 ## SYNTAX
 
 ```
-Invoke-BapEnvironmentFnOAppUpdate [-EnvironmentId] <String> [-Version] <String> [<CommonParameters>]
+Invoke-BapEnvironmentFnOAppUpdate [-EnvironmentId] <String> [-Version] <Version>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -65,7 +66,7 @@ Accept wildcard characters: False
 The version of the FnO/FinOps Application to update/install.
 
 ```yaml
-Type: String
+Type: Version
 Parameter Sets: (All)
 Aliases:
 
@@ -73,6 +74,21 @@ Required: True
 Position: 2
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

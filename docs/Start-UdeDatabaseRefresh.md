@@ -14,7 +14,8 @@ Start a database refresh between two environments
 
 ```
 Start-UdeDatabaseRefresh [-SourceEnvironmentId] <String> [[-TargetEnvironmentId] <String>]
- [[-CopyType] <String>] [-IncludeAuditData] [-AdvancedFnO] [<CommonParameters>]
+ [[-CopyType] <String>] [-IncludeAuditData] [-AdvancedFnO] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -57,10 +58,9 @@ It will include audit data in the copy.
 ### EXAMPLE 5
 ```
 Start-UdeDatabaseRefresh -SourceEnvironmentId *dev* -TargetEnvironmentId *uat* -CopyType FullCopy -AdvancedFnO
-```
-
 This will start a full copy database refresh from the environment with id containing "dev" to the environment with id containing "uat".
 It will execute an advanced copy for Finance and Operations.
+```
 
 ## PARAMETERS
 
@@ -139,6 +139,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

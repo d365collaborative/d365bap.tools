@@ -12,8 +12,21 @@ Retrieves information about the available azure tenant.
 
 ## SYNTAX
 
+### Default (Default)
 ```
-Get-BapTenant [[-Upn] <String>] [[-TenantId] <String>] [-AsExcelOutput] [<CommonParameters>]
+Get-BapTenant [-Upn <String>] [-TenantId <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+### Excel
+```
+Get-BapTenant [-Upn <String>] [-TenantId <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
+```
+
+### HashTable
+```
+Get-BapTenant [-Upn <String>] [-TenantId <String>] [-AsHashTable] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -51,6 +64,13 @@ Get-BapTenant -AsExcelOutput
 
 This will export the retrieved tenant information to an Excel file.
 
+### EXAMPLE 5
+```
+Get-BapTenant -AsHashTable
+```
+
+This will export the retrieved tenant information to a hashtable.
+
 ## PARAMETERS
 
 ### -Upn
@@ -66,7 +86,7 @@ Parameter Sets: (All)
 Aliases: Username, User, Login
 
 Required: False
-Position: 1
+Position: Named
 Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -85,7 +105,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 2
+Position: Named
 Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -96,12 +116,42 @@ Instructs the function to export the results to an Excel file.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: Excel
 Aliases:
 
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AsHashTable
+Instructs the function to export the results to a hashtable.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: HashTable
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
