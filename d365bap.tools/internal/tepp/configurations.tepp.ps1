@@ -6,27 +6,6 @@ $scriptBlock = { Get-UdeDbJitCache | Sort-Object Id | Select-Object -ExpandPrope
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.ude.dbjit.credentials" -ScriptBlock $scriptBlock -Mode Simple
 
-$azureRegions = @{
-    "UnitedStates"             = @("EastUS", "WestUS", "EastUS2", "CentralUS")
-    "UnitedStatesFirstRelease" = @("EastUS", "WestUS", "EastUS2", "CentralUS")
-    "Europe"                   = @("WestEurope", "NorthEurope")
-    "Asia"                     = @("EastAsia", "SoutheastAsia")
-    "Australia"                = @("AustraliaEast", "AustraliaSoutheast")
-    "India"                    = @("CentralIndia", "SouthIndia")
-    "Japan"                    = @("JapanEast", "JapanWest")
-    "Canada"                   = @("CanadaCentral", "CanadaEast")
-    "UnitedKingdom"            = @("UKSouth", "UKWest")
-    "SouthAmerica"             = @("BrazilSouth")
-    "France"                   = @("FranceCentral", "FranceSouth")
-    "UnitedArabEmirates"       = @("UAENorth")
-    "Germany"                  = @("GermanyNorth", "GermanyWestCentral")
-    "Switzerland"              = @("SwitzerlandNorth", "SwitzerlandWest")
-    "Norway"                   = @("NorwayEast", "NorwayWest")
-    "Korea"                    = @("KoreaCentral", "KoreaSouth")
-    "SouthAfrica"              = @("SouthAfricaNorth")
-    "Sweden"                   = @("SwedenCentral")
-}
-
 $scriptBlock = {
     param (
         $commandName,
@@ -44,6 +23,8 @@ $scriptBlock = {
         return
     }
 
+    $azureRegions = Get-PSFConfigValue -FullName "d365bap.tools.bap.deploy.locations"
+
     # Filter items based on the location and what the user has typed
     $filteredItems = $azureRegions[$location] | Where-Object { $_ -like "$wordToComplete*" } | Sort-Object
 
@@ -55,7 +36,11 @@ $scriptBlock = {
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.regions" -ScriptBlock $scriptBlock -Mode Full
 
-$scriptBlock = { @($azureRegions.Keys | Sort-Object) }
+$scriptBlock = {
+    $azureRegions = Get-PSFConfigValue -FullName "d365bap.tools.bap.deploy.locations"
+
+    @($azureRegions.Keys | Sort-Object)
+}
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.locations" -ScriptBlock $scriptBlock -Mode Simple
 

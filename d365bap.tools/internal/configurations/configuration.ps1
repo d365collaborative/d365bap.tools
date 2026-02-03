@@ -19,3 +19,24 @@ Set-PSFConfig -FullName "d365bap.tools.tenant.details" -Value @{} -Initialize -D
 Set-PSFConfig -FullName "d365bap.tools.path.azcopy" -Value "C:\temp\d365bap.tools\AzCopy\AzCopy.exe" -Initialize -Description "Path to the default location where AzCopy.exe is located."
 
 Set-PSFConfig -FullName "d365bap.tools.ude.dbjit.cache" -Value @{} -Initialize -Description "Object that stores different Ude Database JIT credentials and their details."
+
+Set-PSFConfig -FullName "d365bap.tools.bap.deploy.locations" -Value @{
+    "UnitedStates"             = @("EastUS", "WestUS", "EastUS2", "CentralUS")
+    "UnitedStatesFirstRelease" = @("EastUS", "WestUS", "EastUS2", "CentralUS")
+    "Europe"                   = @("WestEurope", "NorthEurope")
+    "Asia"                     = @("EastAsia", "SoutheastAsia")
+    "Australia"                = @("AustraliaEast", "AustraliaSoutheast")
+    "India"                    = @("CentralIndia", "SouthIndia")
+    "Japan"                    = @("JapanEast", "JapanWest")
+    "Canada"                   = @("CanadaCentral", "CanadaEast")
+    "UnitedKingdom"            = @("UKSouth", "UKWest")
+    "SouthAmerica"             = @("BrazilSouth")
+    "France"                   = @("FranceCentral", "FranceSouth")
+    "UnitedArabEmirates"       = @("UAENorth")
+    "Germany"                  = @("GermanyNorth", "GermanyWestCentral")
+    "Switzerland"              = @("SwitzerlandNorth", "SwitzerlandWest")
+    "Norway"                   = @("NorwayEast", "NorwayWest")
+    "Korea"                    = @("KoreaCentral", "KoreaSouth")
+    "SouthAfrica"              = @("SouthAfricaNorth")
+    "Sweden"                   = @("SwedenCentral")
+} -Initialize -Description "Object that stores different BAP deploy locations and their details."
