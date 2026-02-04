@@ -47,7 +47,7 @@
         Succeeded 02/03/2024 13.42.09 02/03/2024 13.48.26                     6885e0f4-639f-4ebc-b21e-49ce5d5e920d
         
     .EXAMPLE
-        PS C:\> $appIds = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly | Select-Object -ExpandProperty PackageId)
+        PS C:\> $appIds = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly | Select-Object -ExpandProperty PpacD365AppId)
         PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $appIds
         
         This will find all D365 Apps that has a pending update available.
@@ -74,7 +74,7 @@
         
     .EXAMPLE
         PS C:\> $apps = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly)
-        PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $apps.PackageId
+        PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $apps.PpacD365AppId
         
         This will find all D365 Apps that has a pending update available.
         It will gather the Ids into an array.
@@ -144,10 +144,12 @@ function Invoke-BapEnvironmentInstallD365App {
         $headersPowerApi."Content-Type" = "application/json;charset=utf-8"
 
         foreach ($pgkId in $PackageId) {
-            $appToBeInstalled = $appsAvailable | Where-Object Id -eq $pgkId | Select-Object -First 1
+            $appToBeInstalled = $appsAvailable | `
+                Where-Object Id -eq $pgkId | `
+                Select-Object -First 1
 
             if ($null -eq $appToBeInstalled) {
-                $messageString = "The combination of the supplied EnvironmentId: <c='em'>$EnvironmentId</c> and PackageId: <c='em'>$PackageId</c> didn't return any matching D365App. Please verify that the EnvironmentId & PackageId is correct - try running the <c='em'>Get-BapEnvironmentD365App</c> cmdlet."
+                $messageString = "The combination of the supplied EnvironmentId: <c='em'>$EnvironmentId</c> and PpacD365AppId: <c='em'>$pgkId</c> didn't return any matching D365App. Please verify that the EnvironmentId & PpacD365AppId is correct - try running the <c='em'>Get-BapEnvironmentD365App</c> cmdlet."
                 Write-PSFMessage -Level Important -Message $messageString
                 Stop-PSFFunction -Message "Stopping because environment and d365app combination was NOT found based on the supplied parameters." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             }
@@ -155,7 +157,11 @@ function Invoke-BapEnvironmentInstallD365App {
             $body = $appToBeInstalled | ConvertTo-Json
 
             try {
-                $resIntall = Invoke-RestMethod -Method Post -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/applicationPackages/$($appToBeInstalled.uniqueName)/install?api-version=2022-03-01-preview" -Headers $headersPowerApi -Body $body
+                $resIntall = Invoke-RestMethod `
+                    -Method Post `
+                    -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/applicationPackages/$($appToBeInstalled.id)/install?api-version=2022-03-01-preview" `
+                    -Headers $headersPowerApi `
+                    -Body $body
 
                 $arrInstallStarted.Add($resIntall)
             }
