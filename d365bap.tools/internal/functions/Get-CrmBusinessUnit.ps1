@@ -44,7 +44,7 @@ function Get-CrmBusinessUnit {
 
         $resBusinessUnits.value | Select-PSFObject -TypeName "D365Bap.Tools.BusinessUnit" -Property "businessunitid as Id",
         Name,
-        @{Name = "IsRoot"; Expression = { $_.business_unit_parent_business_unit[0].businessunitid -eq $null } },
+        @{Name = "IsRoot"; Expression = { $null -eq $_.business_unit_parent_business_unit[0].businessunitid } },
         @{Name = "ParentId"; Expression = { $_.business_unit_parent_business_unit[0].businessunitid } },
         @{Name = "ParentName"; Expression = { $_.business_unit_parent_business_unit[0].name } },
         "_organizationid_value as OrganizationId"

@@ -324,7 +324,9 @@ function New-UnifiedEnvironment {
                 -Verbose:$false > $null
 
             if (-not ($statusProvision -like "2**")) {
-                Write-Host "Failed to provision the environment with the specified version. Please check the environment and try provisioning manually: $($deployVersion.Version)"
+                $messageString = "Failed to provision the environment with the specified version: <c='em'>$($deployVersion.Version)</c>. Please check the environment and try provisioning manually."
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because provisioning the environment with the specified version failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
                 return
             }
             
