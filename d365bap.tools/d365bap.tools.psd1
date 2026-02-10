@@ -44,6 +44,9 @@
 	# Functions to export from this module
 	FunctionsToExport = @(
 		'Add-UdeWindowsDefenderRules'
+
+		, 'Add-PpacApplicationUser'
+		
 		, 'Clear-UdeCredentialCache'
 		, 'Clear-UdeDbJitCache'
 		, 'Clear-UdeOrphanedConfig'
@@ -56,13 +59,16 @@
 		
 		, 'Export-BapEnvironmentSolution'
 
-		, 'Get-BapDeployLocation'
-		, 'Get-BapDeployTemplate'
+		, 'Get-PpacD365App'
+		, 'Get-PpacD365PlatformUpdate'
+		, 'Get-BapD365ProvisionApp'
+			
+		, 'Get-PpacDeployLocation'
 		
 		, 'Get-BapEnvironment'
-		, 'Get-BapEnvironmentApplicationUser'
+		, 'Get-PpacApplicationUser'
 		, 'Get-BapEnvironmentD365App'
-		, 'Get-BapEnvironmentFnOAppUpdate'
+		, 'Get-PpacD365PlatformUpdate'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
@@ -92,12 +98,13 @@
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
-		, 'Invoke-BapEnvironmentFnOAppUpdate'
+		, 'Invoke-PpacD365PlatformUpdate'
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 		
 		, 'New-UdeEnvironment'
 		, 'New-UseEnvironment'
+		, 'New-UseEnvironmentV2'
 		
 		, 'Set-BapAzCopyPath'
 

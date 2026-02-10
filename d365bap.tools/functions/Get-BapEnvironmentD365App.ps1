@@ -209,6 +209,7 @@ function Get-BapEnvironmentD365App {
         }
         
         if (Test-PSFFunctionInterrupt) { return }
+        # $envObj = @{"PpacEnvId" = "f0612c9b-3995-eaf5-a011-29f65bab374a"; "LinkedMetaPpacEnvUri" = "https://org47ec3c08.crm4.dynamics.com/"}
 
         # First we will fetch ALL available apps for the environment
         $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
@@ -218,7 +219,11 @@ function Get-BapEnvironmentD365App {
             "Authorization" = "Bearer $($tokenPowerApiValue)"
         }
         
-        $appsAvailable = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" -Headers $headersPowerApi | Select-Object -ExpandProperty Value
+        $appsAvailable = Invoke-RestMethod `
+            -Method Get `
+            -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" `
+            -Headers $headersPowerApi | `
+            Select-Object -ExpandProperty Value
 
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
@@ -230,7 +235,10 @@ function Get-BapEnvironmentD365App {
             "Authorization" = "Bearer $($tokenAdminApiValue)"
         }
 
-        $appsEnvironment = Invoke-RestMethod -Method Get -Uri "https://api.admin.powerplatform.microsoft.com/api/AppManagement/InstancePackages/instanceId/$tenantId`?instanceUrl=$uriSourceEncoded`&geoType=$GeoRegion" -Headers $headersAdminApi
+        $appsEnvironment = Invoke-RestMethod `
+            -Method Get `
+            -Uri "https://api.admin.powerplatform.microsoft.com/api/AppManagement/InstancePackages/instanceId/$tenantId`?instanceUrl=$uriSourceEncoded`&geoType=$GeoRegion" `
+            -Headers $headersAdminApi
     }
     
     process {
