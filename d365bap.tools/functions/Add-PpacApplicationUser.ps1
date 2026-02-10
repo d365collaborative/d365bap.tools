@@ -40,7 +40,7 @@ function Add-PpacApplicationUser {
     )
     
     begin {
-        $ObjectId = $null
+        $spnObj = $null
 
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
         $envObj = Get-BapEnvironment `
@@ -64,9 +64,8 @@ function Add-PpacApplicationUser {
             "Authorization" = "Bearer $($tokenWebApiValue)"
         }
 
-        $ObjectId = Get-GraphServicePrincipal `
-            -SpId $ServicePrincipal | `
-            Select-Object -ExpandProperty id
+        $spnObj = Get-GraphServicePrincipal `
+            -SpId $ServicePrincipal
 
         if (Test-PSFFunctionInterrupt) { return }
 

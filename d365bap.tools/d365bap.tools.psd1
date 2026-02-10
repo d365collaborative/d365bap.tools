@@ -110,7 +110,7 @@
 
 		, 'Set-BapEnvironmentAdminMode'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
-		, 'Set-BapEnvironmentSecurityGroup'
+		, 'Set-PpacSecurityGroup'
 		, 'Set-BapEnvironmentSecurityRoleMember'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
