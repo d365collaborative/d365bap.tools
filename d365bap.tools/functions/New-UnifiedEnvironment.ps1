@@ -1,46 +1,47 @@
-﻿<#
-.SYNOPSIS
+﻿
+<#
+    .SYNOPSIS
         Deploy a new Unified Environment in Power Platform Admin Center (PPAC).
-
-.DESCRIPTION
-Deploys a new Unified Environment in Power Platform Admin Center (PPAC).
-
-Support D365 Finance and Operations, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
-
-.PARAMETER Type
-Instructs the cmdlet to create either a Unified Sandbox Environment (USE) or a Unified Developer Environment (UDE).
-
-Valid values are:
-- "USE": Deploys a Unified Sandbox Environment (USE) which is a sandbox environment without developer tools.
-- "UDE": Deploys a Unified Developer Environment (UDE) which is a sandbox environment with developer tools.
-
-.PARAMETER Name
-Name of the new environment as it will be displayed in Power Platform Admin Center (PPAC).
-
-.PARAMETER CustomDomainName
-The custom domain name to be associated with the new environment.
         
-E.g. "demo-time" will create the environment URLs:
-- "https://demo-time.crmX.dynamics.com".
-- "https://demo-time.operations.eu.dynamics.com"
-
-.PARAMETER Location
-The deployment location for the new environment.
+    .DESCRIPTION
+        Deploys a new Unified Environment in Power Platform Admin Center (PPAC).
         
-This translates to the Power Platform location where the environment will be created.
-
-Data residency and compliance requirements should be considered when selecting the location.
-
-Get-PpacDeployLocation can be used to find available locations.
-
-.PARAMETER Region
-The Azure region for the new environment.
+        Support D365 Finance and Operations, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
         
-It specifies the physical location of the data center where the environment will be hosted.
-
-Get-PpacDeployLocation | Format-List can be used to find possible regions.
-
-.PARAMETER NoDemoDb
+    .PARAMETER Type
+        Instructs the cmdlet to create either a Unified Sandbox Environment (USE) or a Unified Developer Environment (UDE).
+        
+        Valid values are:
+        - "USE": Deploys a Unified Sandbox Environment (USE) which is a sandbox environment without developer tools.
+        - "UDE": Deploys a Unified Developer Environment (UDE) which is a sandbox environment with developer tools.
+        
+    .PARAMETER Name
+        Name of the new environment as it will be displayed in Power Platform Admin Center (PPAC).
+        
+    .PARAMETER CustomDomainName
+        The custom domain name to be associated with the new environment.
+        
+        E.g. "demo-time" will create the environment URLs:
+        - "https://demo-time.crmX.dynamics.com".
+        - "https://demo-time.operations.eu.dynamics.com"
+        
+    .PARAMETER Location
+        The deployment location for the new environment.
+        
+        This translates to the Power Platform location where the environment will be created.
+        
+        Data residency and compliance requirements should be considered when selecting the location.
+        
+        Get-PpacDeployLocation can be used to find available locations.
+        
+    .PARAMETER Region
+        The Azure region for the new environment.
+        
+        It specifies the physical location of the data center where the environment will be hosted.
+        
+        Get-PpacDeployLocation | Format-List can be used to find possible regions.
+        
+    .PARAMETER NoDemoDb
         Instructs the cmdlet to create the environment without a demo database.
         
     .PARAMETER Version
@@ -48,67 +49,67 @@ Get-PpacDeployLocation | Format-List can be used to find possible regions.
         
     .PARAMETER SecurityGroup
         Entra Groups security group to restrict access to the new environment.
-
-.EXAMPLE
-PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe"
-
-This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
-It will include a demo database by default.
-It will get a default/unique domain name assigned by Power Platform.
-It will take the latest available version of Finance and Operations.
-It will not restrict access to the environment.
-
-It will deploy into the North Europe region, as it's the default region for the Europe location.
-
-.EXAMPLE
-PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -Region "West Europe"
-
-This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
-It will deploy into the "West Europe" region.
-It will include a demo database.
-It will get a default/unique domain name assigned by Power Platform.
-It will take the latest available version of Finance and Operations.
-It will not restrict access to the environment.
-
-.EXAMPLE
-PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -CustomDomainName "myudeenv"
-
-This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
-It will include a demo database by default.
-It will get the custom domain name "myudeenv".
-It will take the latest available version of Finance and Operations.
-It will not restrict access to the environment.
-
-.EXAMPLE
-PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -NoDemoDb
-
-This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
-It will not include a demo database.
-It will get a default/unique domain name assigned by Power Platform.
-It will take the latest available version of Finance and Operations.
-It will not restrict access to the environment.
-
-.EXAMPLE
-PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -Version "10.0.44"
-
-This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
-It will include a demo database by default.
-It will get a default/unique domain name assigned by Power Platform.
-It will install version 10.0.44 of Finance and Operations.
-It will not restrict access to the environment.
-
-.EXAMPLE
-PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -SecurityGroup "MySecurityGroup"
-
-This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
-It will include a demo database by default.
-It will get a default/unique domain name assigned by Power Platform.
-It will take the latest available version of Finance and Operations.
-It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
-
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe"
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        It will include a demo database by default.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will not restrict access to the environment.
+        
+        It will deploy into the North Europe region, as it's the default region for the Europe location.
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -Region "West Europe"
+        
+        This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
+        It will deploy into the "West Europe" region.
+        It will include a demo database.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will not restrict access to the environment.
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -CustomDomainName "myudeenv"
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        It will include a demo database by default.
+        It will get the custom domain name "myudeenv".
+        It will take the latest available version of Finance and Operations.
+        It will not restrict access to the environment.
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -NoDemoDb
+        
+        This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
+        It will not include a demo database.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will not restrict access to the environment.
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -Version "10.0.44"
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        It will include a demo database by default.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will install version 10.0.44 of Finance and Operations.
+        It will not restrict access to the environment.
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -SecurityGroup "MySecurityGroup"
+        
+        This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
+        It will include a demo database by default.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+        
 #>
 function New-UnifiedEnvironment {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]

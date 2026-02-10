@@ -1,20 +1,21 @@
-﻿<#
-.SYNOPSIS
-Get a Security Group from Azure AD / Entra ID.
-
-.DESCRIPTION
-Retrieves a Security Group from Azure AD / Entra ID based on the supplied ObjectId or display name.
-
-.PARAMETER Group
-The ObjectId or display name of the Security Group in Azure AD / Entra ID.
-
-.EXAMPLE
-PS C:\> Get-GraphGroup -Group "env-123"
-
-This will retrieve the Security Group with the specified ObjectId or display name from Azure AD / Entra ID.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Get a Security Group from Azure AD / Entra ID.
+        
+    .DESCRIPTION
+        Retrieves a Security Group from Azure AD / Entra ID based on the supplied ObjectId or display name.
+        
+    .PARAMETER Group
+        The ObjectId or display name of the Security Group in Azure AD / Entra ID.
+        
+    .EXAMPLE
+        PS C:\> Get-GraphGroup -Group "env-123"
+        
+        This will retrieve the Security Group with the specified ObjectId or display name from Azure AD / Entra ID.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-GraphGroup {
     [CmdletBinding()]

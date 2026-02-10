@@ -15,10 +15,10 @@
         
     .PARAMETER Name
         Name of the application user that you want to retrieve.
-
+        
         This can be either the systemuserid, fullname or applicationid of the application user.
         Wildcards are accepted, and it will search in all three properties for a match.
-
+        
     .PARAMETER IncludePpacApplications
         Instruct the cmdlet to include all PPAC applications in the output
         

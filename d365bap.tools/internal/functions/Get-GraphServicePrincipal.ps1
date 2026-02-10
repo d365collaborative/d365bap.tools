@@ -1,20 +1,21 @@
-﻿<#
-.SYNOPSIS
-Get a Service Principal from Azure AD / Entra ID.
-
-.DESCRIPTION
-Retrieves a Service Principal from Azure AD / Entra ID based on the supplied ObjectId or appId.
-
-.PARAMETER SpId
-The ObjectId or appId of the Service Principal in Azure AD / Entra ID.
-
-.EXAMPLE
-PS C:\> Get-GraphServicePrincipal -SpId "00000000-0000-0000-0000-000000000000"
-
-This will retrieve the Service Principal with the specified ObjectId or appId from Azure AD / Entra ID.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Get a Service Principal from Azure AD / Entra ID.
+        
+    .DESCRIPTION
+        Retrieves a Service Principal from Azure AD / Entra ID based on the supplied ObjectId or appId.
+        
+    .PARAMETER SpId
+        The ObjectId or appId of the Service Principal in Azure AD / Entra ID.
+        
+    .EXAMPLE
+        PS C:\> Get-GraphServicePrincipal -SpId "00000000-0000-0000-0000-000000000000"
+        
+        This will retrieve the Service Principal with the specified ObjectId or appId from Azure AD / Entra ID.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-GraphServicePrincipal {
     [CmdletBinding()]

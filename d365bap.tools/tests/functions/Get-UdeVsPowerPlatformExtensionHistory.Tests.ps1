@@ -1,0 +1,62 @@
+﻿Describe "Get-UdeVsPowerPlatformExtensionHistory Unit Tests" -Tag "Unit" {
+	BeforeAll {
+		# Place here all things needed to prepare for the tests
+	}
+	AfterAll {
+		# Here is where all the cleanup tasks go
+	}
+	
+	Describe "Ensuring unchanged command signature" {
+		It "should have the expected parameter sets" {
+			(Get-Command Get-UdeVsPowerPlatformExtensionHistory).ParameterSets.Name | Should -Be '__AllParameterSets'
+		}
+		
+		It 'Should have the expected parameter All' {
+			$parameter = (Get-Command Get-UdeVsPowerPlatformExtensionHistory).Parameters['All']
+			$parameter.Name | Should -Be 'All'
+			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
+		It 'Should have the expected parameter OpenFolder' {
+			$parameter = (Get-Command Get-UdeVsPowerPlatformExtensionHistory).Parameters['OpenFolder']
+			$parameter.Name | Should -Be 'OpenFolder'
+			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
+		It 'Should have the expected parameter DeploysOnly' {
+			$parameter = (Get-Command Get-UdeVsPowerPlatformExtensionHistory).Parameters['DeploysOnly']
+			$parameter.Name | Should -Be 'DeploysOnly'
+			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
+	}
+	
+	Describe "Testing parameterset __AllParameterSets" {
+		<#
+		__AllParameterSets -
+		__AllParameterSets -All -OpenFolder -DeploysOnly
+		#>
+	}
+
+}

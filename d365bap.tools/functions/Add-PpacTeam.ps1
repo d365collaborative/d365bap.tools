@@ -25,7 +25,7 @@
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Add-PpacApplicationUser {
+function Add-PpacTeam {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -41,7 +41,7 @@ function Add-PpacApplicationUser {
     )
     
     begin {
-        $spnObj = $null
+        $ObjectId = $null
 
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
         $envObj = Get-BapEnvironment `
@@ -65,8 +65,9 @@ function Add-PpacApplicationUser {
             "Authorization" = "Bearer $($tokenWebApiValue)"
         }
 
-        $spnObj = Get-GraphServicePrincipal `
-            -SpId $ServicePrincipal
+        $ObjectId = Get-GraphServicePrincipal `
+            -SpId $ServicePrincipal | `
+            Select-Object -ExpandProperty id
 
         if (Test-PSFFunctionInterrupt) { return }
 

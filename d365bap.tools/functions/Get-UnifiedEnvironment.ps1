@@ -6,7 +6,7 @@
     .DESCRIPTION
         Retrieves information about Unified Environments in Power Platform Admin Center (PPAC).
         
-Support D365 Finance and Operations, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
+        Support D365 Finance and Operations, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
         
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve.

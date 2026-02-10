@@ -1,36 +1,37 @@
-﻿<#
-.SYNOPSIS
-Get D365 platform update information for the environment.
-
-.DESCRIPTION
-Enables the user to retrieve information about the available D365 platform updates for the environment.
-
-.PARAMETER EnvironmentId
-The id of the environment that you want to work against.
-
-.PARAMETER Oldest
-Instructs the cmdlet to return only the oldest available platform update for the environment.
-
-.PARAMETER Latest
-Instructs the cmdlet to return only the latest available platform update for the environment.
-
-.EXAMPLE
-PS C:\> Get-PpacD365PlatformUpdate -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
-
-This will retrieve all available D365 platform updates for the environment.
-
-.EXAMPLE
-PS C:\> Get-PpacD365PlatformUpdate -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Oldest
-
-This will retrieve the oldest available D365 platform update for the environment.
-
-.EXAMPLE
-PS C:\> Get-PpacD365PlatformUpdate -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Latest
-
-This will retrieve the latest available D365 platform update for the environment.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Get D365 platform update information for the environment.
+        
+    .DESCRIPTION
+        Enables the user to retrieve information about the available D365 platform updates for the environment.
+        
+    .PARAMETER EnvironmentId
+        The id of the environment that you want to work against.
+        
+    .PARAMETER Oldest
+        Instructs the cmdlet to return only the oldest available platform update for the environment.
+        
+    .PARAMETER Latest
+        Instructs the cmdlet to return only the latest available platform update for the environment.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365PlatformUpdate -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
+        
+        This will retrieve all available D365 platform updates for the environment.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365PlatformUpdate -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Oldest
+        
+        This will retrieve the oldest available D365 platform update for the environment.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365PlatformUpdate -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Latest
+        
+        This will retrieve the latest available D365 platform update for the environment.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-PpacD365PlatformUpdate {
     [CmdletBinding(DefaultParameterSetName = 'Default')]

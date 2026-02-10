@@ -1,40 +1,41 @@
-﻿<#
-.SYNOPSIS
-Get D365 application that are available in the environment.
-
-.DESCRIPTION
-Retrieves available D365 applications from the environment as they are shown in the Power Platform Admin Center (PPAC).
-
+﻿
+<#
+    .SYNOPSIS
+        Get D365 application that are available in the environment.
+        
+    .DESCRIPTION
+        Retrieves available D365 applications from the environment as they are shown in the Power Platform Admin Center (PPAC).
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
-
-.PARAMETER Name
-Name of the D365 application that you want to retrieve.
-
-Wildcards are accepted, and it will search in both the application name and the unique name for a match.
-
-.PARAMETER AsExcelOutput
-Instructs the cmdlet to output the results as an Excel file.
-
-.EXAMPLE
-PS C:\> Get-PpacD365App -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
-
-This will fetch all D365 applications from the environment.
-
-.EXAMPLE
-PS C:\> Get-PpacD365App -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Name "*invoice*"
-
-This will fetch all D365 applications from the environment.
-It will filter the results to only include applications that have "invoice" in either the application name or the unique name.
-
-.EXAMPLE
-PS C:\> Get-PpacD365App -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -AsExcelOutput
-
-This will fetch all D365 applications from the environment.
-It will output the results directly into an Excel file, that will automatically open on your machine.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+        
+    .PARAMETER Name
+        Name of the D365 application that you want to retrieve.
+        
+        Wildcards are accepted, and it will search in both the application name and the unique name for a match.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365App -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
+        
+        This will fetch all D365 applications from the environment.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365App -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Name "*invoice*"
+        
+        This will fetch all D365 applications from the environment.
+        It will filter the results to only include applications that have "invoice" in either the application name or the unique name.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365App -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -AsExcelOutput
+        
+        This will fetch all D365 applications from the environment.
+        It will output the results directly into an Excel file, that will automatically open on your machine.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-PpacD365App {
     [CmdletBinding()]
