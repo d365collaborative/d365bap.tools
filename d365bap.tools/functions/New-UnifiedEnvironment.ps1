@@ -133,6 +133,7 @@ function New-UnifiedEnvironment {
 
         [version] $Version,
 
+        [Alias('EntraGroup')]
         [string] $SecurityGroup
     )
     

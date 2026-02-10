@@ -1,30 +1,4 @@
 ﻿
-<#
-    .SYNOPSIS
-        Add application user to Power Platform environment.
-        
-    .DESCRIPTION
-        Enables the user to add an application user to the environment and assign a security role to it.
-        
-    .PARAMETER EnvironmentId
-        The id of the environment that you want to work against.
-        
-    .PARAMETER ObjectId
-        The ObjectId of the Service Principal in Azure AD / Entra ID that you want to add as an application user to the Power Platform environment.
-        
-    .PARAMETER Role
-        The security role that you want to assign to the application user.
-        
-    .EXAMPLE
-        PS C:\> Add-PpacApplicationUser -EnvironmentId "env-123" -ObjectId "00000000-0000-0000-0000-000000000000" -Role "System Administrator"
-        
-        This will add an application user to the Power Platform environment.
-        It will use the Service Principal with the ObjectId "00000000-0000-0000-0000-000000000000" from Azure AD / Entra ID
-        It will then assign the "System Administrator" security role to it in the Power Platform environment.
-        
-    .NOTES
-        Author: Mötz Jensen (@Splaxi)
-#>
 function Add-PpacTeam {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
