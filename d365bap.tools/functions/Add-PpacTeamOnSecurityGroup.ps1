@@ -167,10 +167,9 @@ function Add-PpacTeamOnSecurityGroup {
             "Owners"             = 3
         }
 
-        $payLoad = [PsCustomObject][ordered]@{
+        $payload = [PsCustomObject][ordered]@{
             "teamtype"                     = 2 # Security Group
             "name"                         = $Name
-            "msentraobjectid"              = $secGrp.id
             "membershiptype"               = $hashMembType[$MembershipType]
             "isdefault"                    = $false
             "azureactivedirectoryobjectid" = $secGrp.id
@@ -190,7 +189,7 @@ function Add-PpacTeamOnSecurityGroup {
             -Uri $localUri `
             -Headers $localHeaders `
             -ContentType $localHeaders."Content-Type" `
-            -Body $payLoad `
+            -Body $payload `
             -StatusCodeVariable statusTeam > $null
 
         if (-not ($statusTeam -like "2*")) {
@@ -206,17 +205,17 @@ function Add-PpacTeamOnSecurityGroup {
             Select-Object -First 1
 
         # Now we need to assign the Security Role to the application user in the Power Platform environment using the Web API
-        $payLoad = [PsCustomObject][ordered]@{
+        $payload = [PsCustomObject][ordered]@{
             "@odata.id" = $baseUri + "/api/data/v9.2/roles($($secRoleObj.PpacRoleId))"
         } | ConvertTo-Json -Depth 10
 
         $localUri = $baseUri + "/api/data/v9.2/teams($($crmTeam.PpacTeamId))/teamroles_association/`$ref"
-           
+
         Invoke-RestMethod -Method Post `
             -Uri $localUri `
-            -Headers $headersWebApi `
-            -ContentType "application/json" `
-            -Body $payLoad `
+            -Headers $localHeaders `
+            -ContentType $localHeaders."Content-Type" `
+            -Body $payload `
             -StatusCodeVariable statusRole > $null
 
         if (-not ($statusRole -like "2*")) {

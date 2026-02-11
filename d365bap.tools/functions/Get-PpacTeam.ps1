@@ -86,11 +86,9 @@ function Get-PpacTeam {
                     -and (-not ($teamObj.name -like $Name -or $teamObj.name -eq $Name)) `
             ) { continue }
 
-            # $tmp = $teamObj
-
             $tmp = $teamObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacTeam" `
                 -ExcludeProperty "@odata.etag", "TeamType", "TeamId", "modifiedon", "membershiptype" `
-                -Property "teamId as TeamId",
+                -Property "teamId as PpacTeamId",
             "name as TeamName",
             "'teamtype@OData.Community.Display.V1.FormattedValue' As TeamType",
             "'_administratorid_value@OData.Community.Display.V1.FormattedValue' As Administrator",
