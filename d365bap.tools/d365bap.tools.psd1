@@ -62,14 +62,12 @@
 
 		, 'Get-PpacD365App'
 		, 'Get-PpacD365PlatformUpdate'
-		, 'Get-BapD365ProvisionApp'
 			
 		, 'Get-PpacDeployLocation'
 		
 		, 'Get-BapEnvironment'
 		, 'Get-PpacApplicationUser'
 		, 'Get-BapEnvironmentD365App'
-		, 'Get-PpacD365PlatformUpdate'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
@@ -107,9 +105,7 @@
 		, 'Invoke-BapInstallAzCopy'
 		
 		, 'New-UnifiedEnvironment'
-		, 'New-UseEnvironment'
-		, 'New-UseEnvironmentV2'
-		
+				
 		, 'Set-BapAzCopyPath'
 
 		, 'Set-BapEnvironmentAdminMode'
