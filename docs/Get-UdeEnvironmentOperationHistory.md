@@ -14,7 +14,7 @@ Get UDE environment operation history.
 
 ```
 Get-UdeEnvironmentOperationHistory [-EnvironmentId] <String> [-LatestOnly] [-AsExcelOutput] [-DownloadLog]
- [[-DownloadPath] <String>] [<CommonParameters>]
+ [[-DownloadPath] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -128,6 +128,21 @@ Aliases:
 Required: False
 Position: 2
 Default value: C:\Temp\d365bap.tools\UdeEnvironmentOperation
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

@@ -13,7 +13,8 @@ Start D365 Platform update.
 ## SYNTAX
 
 ```
-Invoke-PpacD365PlatformUpdate [-EnvironmentId] <String> [-Version] <Version> [<CommonParameters>]
+Invoke-PpacD365PlatformUpdate [-EnvironmentId] <String> [-Version] <Version>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -73,6 +74,21 @@ Required: True
 Position: 2
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

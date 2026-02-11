@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-BapEnvironmentSecurityRole
+# Get-PpacSecurityRole
 
 ## SYNOPSIS
 Get Security Roles from environment
@@ -13,8 +13,8 @@ Get Security Roles from environment
 ## SYNTAX
 
 ```
-Get-BapEnvironmentSecurityRole [-EnvironmentId] <String> [[-Name] <String>] [-IncludeAll] [-AsExcelOutput]
- [<CommonParameters>]
+Get-PpacSecurityRole [-EnvironmentId] <String> [[-Name] <String>] [-IncludeAll] [-AsExcelOutput]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -24,7 +24,7 @@ Get Security Roles from the Dataverse environment
 
 ### EXAMPLE 1
 ```
-Get-BapEnvironmentSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+Get-PpacSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
 ```
 
 This will list all Security Roles from the Dataverse environment, by the EnvironmentId (guid).
@@ -39,7 +39,7 @@ d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   Tr
 
 ### EXAMPLE 2
 ```
-Get-BapEnvironmentSecurityRole -EnvironmentId *uat*
+Get-PpacSecurityRole -EnvironmentId *uat*
 ```
 
 This will list all Security Roles from the Dataverse environment, by the EnvironmentId (Name/Wildcard).
@@ -54,7 +54,7 @@ d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   Tr
 
 ### EXAMPLE 3
 ```
-Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "*Administrator*"
+Get-PpacSecurityRole -EnvironmentId *uat* -Name "*Administrator*"
 ```
 
 This will list all Security Roles, which matches the "*Administrator*" pattern, from the Dataverse environment.
@@ -70,7 +70,7 @@ abce3b01-5697-4973-9d7d-fca48ca84445 Survey Services Administrator(Deprecate… 
 
 ### EXAMPLE 4
 ```
-Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "System Administrator"
+Get-PpacSecurityRole -EnvironmentId *uat* -Name "System Administrator"
 ```
 
 This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
@@ -83,7 +83,7 @@ PpacRoleId                           Name                                     Is
 
 ### EXAMPLE 5
 ```
-Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "System Administrator" -IncludeAll
+Get-PpacSecurityRole -EnvironmentId *uat* -Name "System Administrator" -IncludeAll
 ```
 
 This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
@@ -97,7 +97,7 @@ PpacRoleId                           Name                                     Is
 
 ### EXAMPLE 6
 ```
-Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -AsExcelOutput
+Get-PpacSecurityRole -EnvironmentId *uat* -AsExcelOutput
 ```
 
 This will list all Security Roles from the Dataverse environment.
@@ -169,6 +169,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

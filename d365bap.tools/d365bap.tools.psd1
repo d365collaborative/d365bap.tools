@@ -72,10 +72,10 @@
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
-		, 'Get-BapEnvironmentSecurityRole'
-		, 'Get-BapEnvironmentSecurityRoleMember'
+		, 'Get-PpacSecurityRole'
+		, 'Get-PpacSecurityRoleMember'
 		, 'Get-BapEnvironmentSolution'
-		, 'Get-BapEnvironmentUser'
+		, 'Get-PpacUser'
 		, 'Get-BapEnvironmentVirtualEntity'
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
@@ -83,6 +83,8 @@
 		, 'Get-FnOEnvironmentSecurityRole'
 		, 'Get-FnOEnvironmentSecurityRoleMember'
 		, 'Get-FnOEnvironmentUser'
+		
+		, 'Get-PpacTeam'
 		
 		, 'Get-UdeEnvironment'
 		, 'Get-UdeConfig'

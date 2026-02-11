@@ -14,17 +14,19 @@ Retrieves information about the available azure tenant.
 
 ### Default (Default)
 ```
-Get-BapTenant [-Upn <String>] [-TenantId <String>] [<CommonParameters>]
+Get-BapTenant [-Upn <String>] [-TenantId <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### Excel
 ```
-Get-BapTenant [-Upn <String>] [-TenantId <String>] [-AsExcelOutput] [<CommonParameters>]
+Get-BapTenant [-Upn <String>] [-TenantId <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### HashTable
 ```
-Get-BapTenant [-Upn <String>] [-TenantId <String>] [-AsHashTable] [<CommonParameters>]
+Get-BapTenant [-Upn <String>] [-TenantId <String>] [-AsHashTable] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -135,6 +137,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

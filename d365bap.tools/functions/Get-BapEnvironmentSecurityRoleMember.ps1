@@ -19,12 +19,12 @@
     .PARAMETER Role
         Name or RoleId of the security role that you want to work against
         
-        This can be obtained from the Get-BapEnvironmentSecurityRole cmdlet
+        This can be obtained from the Get-PpacSecurityRole cmdlet
         
     .PARAMETER UserId
         The (SystemUser)Id or email of the user that you want to filter on
         
-        This can be obtained from the Get-BapEnvironmentUser cmdlet
+        This can be obtained from the Get-PpacUser cmdlet
         
         Default value is "*" - which translates into all available users/members
         
@@ -41,7 +41,7 @@
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Role 'System Administrator'
+        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Role 'System Administrator'
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
@@ -52,7 +52,7 @@
         crmoln2@microsoft.com          Delegated Admin                                     58879b65-65ca-47f5-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator'
+        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator'
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         
@@ -63,7 +63,7 @@
         crmoln2@microsoft.com          Delegated Admin                                     58879b65-65ca-47f5-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -UserId '*@contoso.com'
+        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -UserId '*@contoso.com'
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         It will only include the ones that have an email address that contains '@contoso.com'.
@@ -74,7 +74,7 @@
         d365admin@contoso.com          # D365Admin                                         58879b65-65ca-45f7-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -IncludePpacApplications
+        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -IncludePpacApplications
         
         This will fetch all users that are members of the security role 'System Administrator' from the environment.
         It will include the ones with the ApplicationId property filled.
@@ -87,7 +87,7 @@
         d365admin@contoso.com          # D365Admin                                         58879b65-56ca-45f7-bf8e-9550e241083e
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -AsExcelOutput
+        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -AsExcelOutput
         
         This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
@@ -95,7 +95,7 @@
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Get-BapEnvironmentSecurityRoleMember {
+function Get-PpacSecurityRoleMember {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
@@ -127,12 +127,12 @@ function Get-BapEnvironmentSecurityRoleMember {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $secRoleObj = Get-BapEnvironmentSecurityRole -EnvironmentId $EnvironmentId `
+        $secRoleObj = Get-PpacSecurityRole -EnvironmentId $EnvironmentId `
             -Name $Role | `
             Select-Object -First 1
 
         if ($null -eq $secRoleObj) {
-            $messageString = "The supplied: <c='em'>$Role</c> didn't return any matching security details from the Environment. Please verify that the EnvironmentId & Role is correct - try running the <c='em'>Get-BapEnvironment</c> or <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlets."
+            $messageString = "The supplied: <c='em'>$Role</c> didn't return any matching security details from the Environment. Please verify that the EnvironmentId & Role is correct - try running the <c='em'>Get-BapEnvironment</c> or <c='em'>Get-PpacSecurityRole</c> cmdlets."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
@@ -183,7 +183,7 @@ function Get-BapEnvironmentSecurityRoleMember {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentSecurityRoleMember"
+            $resCol | Export-Excel -WorksheetName "Get-PpacSecurityRoleMember"
             return
         }
 

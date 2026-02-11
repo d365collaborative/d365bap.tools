@@ -15,7 +15,7 @@ Sets UDE database JIT access credentials in the local cache.
 ```
 Set-UdeDbJitCache [-Id] <String> [-Server] <String> [-Database] <String> [-Username] <String>
  [-Password] <String> [[-Expiration] <DateTime>] [[-Role] <String>] [[-EnvironmentId] <String>]
- [<CommonParameters>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -173,6 +173,21 @@ Required: False
 Position: 8
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

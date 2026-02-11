@@ -70,18 +70,18 @@ function Add-PpacApplicationUser {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $colSecurityRoles = Get-BapEnvironmentSecurityRole `
+        $colSecurityRoles = Get-PpacSecurityRole `
             -EnvironmentId $envObj.PpacEnvId `
             -Name $Role
 
         if ($colSecurityRoles.Count -eq 0) {
-            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> didn't return any matching Security Role in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlet."
+            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> didn't return any matching Security Role in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because Security Role was NOT found based on the Role Name / Id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
         if ($colSecurityRoles.Count -gt 1) {
-            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> returned multiple matching Security Roles in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlet."
+            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> returned multiple matching Security Roles in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because multiple Security Roles were found based on the Role Name / Id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }

@@ -26,7 +26,7 @@
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat*
+        PS C:\> Get-PpacUser -EnvironmentId *uat*
         
         This will fetch all ordinary users from the environment.
         
@@ -39,7 +39,7 @@
         ade@temp.com                   Alex Denver                                         39309a5c-7676-4c8a-b702-719fb92c5151
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat* -IncludeAppIds
+        PS C:\> Get-PpacUser -EnvironmentId *uat* -IncludeAppIds
         
         This will fetch all users from the environment.
         It will include the ones with the ApplicationId property filled.
@@ -53,7 +53,7 @@
         AIBuilderProd@onmicrosoft.com  # AIBuilderProd                0a143f2d-2320-414... c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
+        PS C:\> Get-PpacUser -EnvironmentId *uat* -AsExcelOutput
         
         This will fetch all ordinary users from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
@@ -61,11 +61,13 @@
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Get-BapEnvironmentUser {
+function Get-PpacUser {
     [CmdletBinding()]
     param (
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
+
+        [string] $Name = "*",
 
         [switch] $IncludeAppIds,
 
@@ -74,7 +76,9 @@ function Get-BapEnvironmentUser {
     
     begin {
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        $envObj = Get-BapEnvironment `
+            -EnvironmentId $EnvironmentId | `
+            Select-Object -First 1
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
@@ -101,7 +105,11 @@ function Get-BapEnvironmentUser {
 
         $resCol = @(
             foreach ($usrObj in  $($resUsers.value | Sort-Object -Property internalemailaddress)) {
-                
+                if ((-not ($usrObj.systemuserid -like $Name -or $usrObj.systemuserid -eq $Name)) `
+                        -and (-not ($usrObj.internalemailaddress -like $Name -or $usrObj.internalemailaddress -eq $Name)) `
+                        -and (-not ($usrObj.fullname -like $Name -or $usrObj.fullname -eq $Name)) `
+                ) { continue }
+
                 $usrObj | Add-Member -MemberType NoteProperty -Name "lang" -Value $($languages | Where-Object { ($_.localeid -eq $usrObj.user_settings[0].uilanguageid) -or ($_.BaseLocaleId -eq $usrObj.user_settings[0].uilanguageid) } | Select-Object -First 1 -ExpandProperty code)
                 $usrObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacUser" `
                     -ExcludeProperty "@odata.etag" `
@@ -121,7 +129,7 @@ function Get-BapEnvironmentUser {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentUser"
+            $resCol | Export-Excel -WorksheetName "Get-PpacUser"
             return
         }
 

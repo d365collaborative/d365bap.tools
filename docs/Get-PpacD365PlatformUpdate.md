@@ -14,17 +14,19 @@ Get D365 platform update information for the environment.
 
 ### Default (Default)
 ```
-Get-PpacD365PlatformUpdate -EnvironmentId <String> [<CommonParameters>]
+Get-PpacD365PlatformUpdate -EnvironmentId <String> [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### Lowest
 ```
-Get-PpacD365PlatformUpdate -EnvironmentId <String> [-Oldest] [<CommonParameters>]
+Get-PpacD365PlatformUpdate -EnvironmentId <String> [-Oldest] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### Highest
 ```
-Get-PpacD365PlatformUpdate -EnvironmentId <String> [-Latest] [<CommonParameters>]
+Get-PpacD365PlatformUpdate -EnvironmentId <String> [-Latest] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -96,6 +98,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

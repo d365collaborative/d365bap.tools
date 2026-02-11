@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-BapEnvironmentUser
+# Get-PpacUser
 
 ## SYNOPSIS
 Get users from environment
@@ -13,7 +13,8 @@ Get users from environment
 ## SYNTAX
 
 ```
-Get-BapEnvironmentUser [-EnvironmentId] <String> [-IncludeAppIds] [-AsExcelOutput] [<CommonParameters>]
+Get-PpacUser [-EnvironmentId] <String> [[-Name] <String>] [-IncludeAppIds] [-AsExcelOutput]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -27,7 +28,7 @@ Allows the user to include all users, based on those who has the ApplicationId p
 
 ### EXAMPLE 1
 ```
-Get-BapEnvironmentUser -EnvironmentId *uat*
+Get-PpacUser -EnvironmentId *uat*
 ```
 
 This will fetch all ordinary users from the environment.
@@ -42,7 +43,7 @@ ade@temp.com                   Alex Denver                                      
 
 ### EXAMPLE 2
 ```
-Get-BapEnvironmentUser -EnvironmentId *uat* -IncludeAppIds
+Get-PpacUser -EnvironmentId *uat* -IncludeAppIds
 ```
 
 This will fetch all users from the environment.
@@ -59,7 +60,7 @@ c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
 
 ### EXAMPLE 3
 ```
-Get-BapEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
+Get-PpacUser -EnvironmentId *uat* -AsExcelOutput
 ```
 
 This will fetch all ordinary users from the environment.
@@ -80,6 +81,21 @@ Aliases:
 Required: True
 Position: 1
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Name
+{{ Fill Name Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -114,6 +130,21 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

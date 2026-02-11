@@ -27,7 +27,7 @@
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+        PS C:\> Get-PpacSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
         
         This will list all Security Roles from the Dataverse environment, by the EnvironmentId (guid).
         It will only list the Security Roles that are tied to the Environment.
@@ -40,7 +40,7 @@
         d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat*
+        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat*
         
         This will list all Security Roles from the Dataverse environment, by the EnvironmentId (Name/Wildcard).
         It will only list the Security Roles that are tied to the Environment.
@@ -53,7 +53,7 @@
         d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "*Administrator*"
+        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -Name "*Administrator*"
         
         This will list all Security Roles, which matches the "*Administrator*" pattern, from the Dataverse environment.
         It will only list the Security Roles that are tied to the Environment.
@@ -67,7 +67,7 @@
         63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "System Administrator"
+        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -Name "System Administrator"
         
         This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
         It will only list the Security Roles that are tied to the Environment.
@@ -78,7 +78,7 @@
         63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -Name "System Administrator" -IncludeAll
+        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -Name "System Administrator" -IncludeAll
         
         This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
         It will only list the Security Roles that are tied to the Environment.
@@ -90,7 +90,7 @@
         63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
         
     .EXAMPLE
-        PS C:\> Get-BapEnvironmentSecurityRole -EnvironmentId *uat* -AsExcelOutput
+        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -AsExcelOutput
         
         This will list all Security Roles from the Dataverse environment.
         Will output all details into an Excel file, that will auto open on your machine.
@@ -98,7 +98,7 @@
     .NOTES
         General notes
 #>
-function Get-BapEnvironmentSecurityRole {
+function Get-PpacSecurityRole {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
@@ -114,7 +114,9 @@ function Get-BapEnvironmentSecurityRole {
     
     begin {
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        $envObj = Get-BapEnvironment `
+            -EnvironmentId $EnvironmentId | `
+            Select-Object -First 1
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
@@ -173,7 +175,7 @@ function Get-BapEnvironmentSecurityRole {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-BapEnvironmentSecurityRole"
+            $resCol | Export-Excel -WorksheetName "Get-PpacSecurityRole"
             return
         }
 
