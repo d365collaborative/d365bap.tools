@@ -24,11 +24,20 @@ Enables the user to add an application user to the environment and assign a secu
 
 ### EXAMPLE 1
 ```
-Add-PpacApplicationUser -EnvironmentId "env-123" -ObjectId "00000000-0000-0000-0000-000000000000" -Role "System Administrator"
+Add-PpacApplicationUser -EnvironmentId "env-123" -ServicePrincipal "00000000-0000-0000-0000-000000000000" -Role "System Administrator"
 ```
 
 This will add an application user to the Power Platform environment.
-It will use the Service Principal with the ObjectId "00000000-0000-0000-0000-000000000000" from Azure AD / Entra ID
+It will use the Service Principal with the ServicePrincipal "00000000-0000-0000-0000-000000000000" from Azure AD / Entra ID
+It will then assign the "System Administrator" security role to it in the Power Platform environment.
+
+### EXAMPLE 2
+```
+Add-PpacApplicationUser -EnvironmentId "env-123" -ServicePrincipal "My Service Principal" -Role "System Administrator"
+```
+
+This will add an application user to the Power Platform environment.
+It will use the Service Principal with the display name "My Service Principal" from Azure AD / Entra ID
 It will then assign the "System Administrator" security role to it in the Power Platform environment.
 
 ## PARAMETERS
@@ -49,7 +58,9 @@ Accept wildcard characters: False
 ```
 
 ### -ServicePrincipal
-{{ Fill ServicePrincipal Description }}
+The Service Principal in Azure AD / Entra ID that you want to add as an application user to the Power Platform environment.
+
+You can provide either the id (objectId) or display name of the Service Principal.
 
 ```yaml
 Type: String

@@ -15,6 +15,13 @@
         
         This can be obtained from the Get-BapEnvironment cmdlet
         
+    .PARAMETER Name
+        The name, email or systemuserid of the user that you want to filter on
+        
+        Wildcard search is supported
+        
+        Default value is "*" - which translates into all available users
+        
     .PARAMETER IncludeAppIds
         Instruct the cmdlet to include all users that are available from the "systemusers" OData Entity
         
@@ -57,6 +64,17 @@
         
         This will fetch all ordinary users from the environment.
         Will output all details into an Excel file, that will auto open on your machine.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacUser -EnvironmentId *uat* -Name "alice@contoso.com"
+        
+        This will fetch the user with the specified email from the environment.
+        It will return the user with email "alice@contoso.com".
+        
+    .EXAMPLE
+        PS C:\> Get-PpacUser -EnvironmentId *uat* -Name "*@contoso.com"
+        
+        This will fetch all users with email that ends with "@contoso.com" from the environment.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)

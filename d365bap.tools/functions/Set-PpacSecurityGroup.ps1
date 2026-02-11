@@ -9,8 +9,8 @@
     .PARAMETER EnvironmentId
         Id of the environment that you want to work against.
         
-    .PARAMETER ObjectId
-        The ObjectId or Display Name of the Security Group in Azure AD / Entra ID that you want to link to the environment.
+    .PARAMETER SecurityGroup
+        The id (objectId) or Display Name of the Security Group in Azure AD / Entra ID that you want to link to the environment.
         
         If you want to remove any existing linked Security Group, simply provide an empty string.
         
@@ -18,17 +18,17 @@
         Instructs the cmdlet to proceed with removing any existing linked Security Group without additional confirmation.
         
     .EXAMPLE
-        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -ObjectId 12345678-90ab-cdef-1234-567890abcdef
+        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup 12345678-90ab-cdef-1234-567890abcdef
         
-        This will link the Security Group with ObjectId "12345678-90ab-cdef-1234-567890abcdef" to the environment with id containing "uat".
+        This will link the Security Group with SecurityGroup "12345678-90ab-cdef-1234-567890abcdef" to the environment with id containing "uat".
         
     .EXAMPLE
-        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -ObjectId "My Security Group"
+        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "My Security Group"
         
         This will link the Security Group with Display Name "My Security Group" to the environment with id containing "uat".
         
     .EXAMPLE
-        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -ObjectId "" -Force
+        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "" -Force
         
         This will remove any existing linked Security Group from the environment with id containing "uat".
         The cmdlet will not prompt for confirmation because of the -Force switch.
@@ -88,7 +88,7 @@ function Set-PpacSecurityGroup {
             if (-not $Force) {
                 $messageString = "You are about to <c='em'>REMOVE</c> any existing Security Group linked to the Environment: <c='em'>$($envObj.PpacEnvName)</c> ($($envObj.PpacEnvId)). If you want to proceed with this, please re-run the command with the <c='em'>-Force</c> switch."
                 Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because no ObjectId was supplied to remove existing Security Group link." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                Stop-PSFFunction -Message "Stopping because no SecurityGroup was supplied to remove existing Security Group link." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             }
         }
 

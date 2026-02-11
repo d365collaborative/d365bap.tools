@@ -46,7 +46,8 @@
 		'Add-UdeWindowsDefenderRules'
 
 		, 'Add-PpacApplicationUser'
-		
+		, 'Add-PpacTeamOnSecurityGroup'
+
 		, 'Clear-UdeCredentialCache'
 		, 'Clear-UdeDbJitCache'
 		, 'Clear-UdeOrphanedConfig'
@@ -86,7 +87,8 @@
 		
 		, 'Get-PpacTeam'
 		
-		, 'Get-UdeEnvironment'
+		, 'Get-UnifiedEnvironment'
+
 		, 'Get-UdeConfig'
 		, 'Get-UdeConnection'
 		, 'Get-UdeCredentialCache'
@@ -104,7 +106,7 @@
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 		
-		, 'New-UdeEnvironment'
+		, 'New-UnifiedEnvironment'
 		, 'New-UseEnvironment'
 		, 'New-UseEnvironmentV2'
 		

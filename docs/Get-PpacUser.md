@@ -66,6 +66,21 @@ Get-PpacUser -EnvironmentId *uat* -AsExcelOutput
 This will fetch all ordinary users from the environment.
 Will output all details into an Excel file, that will auto open on your machine.
 
+### EXAMPLE 4
+```
+Get-PpacUser -EnvironmentId *uat* -Name "alice@contoso.com"
+```
+
+This will fetch the user with the specified email from the environment.
+It will return the user with email "alice@contoso.com".
+
+### EXAMPLE 5
+```
+Get-PpacUser -EnvironmentId *uat* -Name "*@contoso.com"
+```
+
+This will fetch all users with email that ends with "@contoso.com" from the environment.
+
 ## PARAMETERS
 
 ### -EnvironmentId
@@ -86,7 +101,11 @@ Accept wildcard characters: False
 ```
 
 ### -Name
-{{ Fill Name Description }}
+The name, email or systemuserid of the user that you want to filter on
+
+Wildcard search is supported
+
+Default value is "*" - which translates into all available users
 
 ```yaml
 Type: String

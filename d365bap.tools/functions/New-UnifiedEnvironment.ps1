@@ -228,7 +228,7 @@ function New-UnifiedEnvironment {
             $envProvisioned = $false
             
             do {
-                Write-Verbose "Waiting for environment '$Name' to be provisioned..."
+                Write-PSFMessage -Level Verbose -Message "Waiting for environment '$Name' to be provisioned..."
                 Start-Sleep -Seconds 20
                 $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
 
@@ -269,7 +269,7 @@ function New-UnifiedEnvironment {
             $appPlatformInstalled = $false
 
             do {
-                Write-Verbose "Waiting for platform app to be installed ..."
+                Write-PSFMessage -Level Verbose -Message "Waiting for platform app to be installed ..."
                 Start-Sleep -Seconds 20
 
                 $appObj = Get-PpacD365App `
@@ -335,7 +335,7 @@ function New-UnifiedEnvironment {
                 First we wait to make sure that the provisioning installation is queued
             #>
             do {
-                Write-Verbose "Waiting for provisioning installation to be queued ..."
+                Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be queued ..."
                 Start-Sleep -Seconds 20
                 
                 $appObj = Get-PpacD365App `
@@ -348,7 +348,7 @@ function New-UnifiedEnvironment {
                 ... If requested by the user ... using the WaitForCompletion
             #>
             while ($WaitForCompletion -and $appObj.Status -ne "Installed") {
-                Write-Verbose "Waiting for provisioning installation to be completed ..."
+                Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be completed ..."
                 Start-Sleep -Seconds 20
                 
                 $appObj = Get-PpacD365App `

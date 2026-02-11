@@ -24,21 +24,21 @@ Enables the user to set or remove a Security Group linked to the environment in 
 
 ### EXAMPLE 1
 ```
-Set-PpacSecurityGroup -EnvironmentId *uat* -ObjectId 12345678-90ab-cdef-1234-567890abcdef
+Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup 12345678-90ab-cdef-1234-567890abcdef
 ```
 
-This will link the Security Group with ObjectId "12345678-90ab-cdef-1234-567890abcdef" to the environment with id containing "uat".
+This will link the Security Group with SecurityGroup "12345678-90ab-cdef-1234-567890abcdef" to the environment with id containing "uat".
 
 ### EXAMPLE 2
 ```
-Set-PpacSecurityGroup -EnvironmentId *uat* -ObjectId "My Security Group"
+Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "My Security Group"
 ```
 
 This will link the Security Group with Display Name "My Security Group" to the environment with id containing "uat".
 
 ### EXAMPLE 3
 ```
-Set-PpacSecurityGroup -EnvironmentId *uat* -ObjectId "" -Force
+Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "" -Force
 ```
 
 This will remove any existing linked Security Group from the environment with id containing "uat".
@@ -62,7 +62,9 @@ Accept wildcard characters: False
 ```
 
 ### -SecurityGroup
-{{ Fill SecurityGroup Description }}
+The id (objectId) or Display Name of the Security Group in Azure AD / Entra ID that you want to link to the environment.
+
+If you want to remove any existing linked Security Group, simply provide an empty string.
 
 ```yaml
 Type: String
