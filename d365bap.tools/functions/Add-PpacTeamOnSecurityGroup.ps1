@@ -99,10 +99,6 @@ function Add-PpacTeamOnSecurityGroup {
         $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
-        $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApiValue)"
-        }
-
         $secGrp = Get-GraphGroup `
             -Group $SecurityGroup
             
