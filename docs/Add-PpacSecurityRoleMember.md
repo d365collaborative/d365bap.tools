@@ -5,42 +5,34 @@ online version:
 schema: 2.0.0
 ---
 
-# Switch-BapTenant
+# Add-PpacSecurityRoleMember
 
 ## SYNOPSIS
-Switches the current context to a specified BAP tenant.
+Add user to a security role in the Power Platform environment.
 
 ## SYNTAX
 
 ```
-Switch-BapTenant [-Id] <String> [-Force] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Add-PpacSecurityRoleMember [-EnvironmentId] <String> [-Upn] <String> [-Role] <String>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
+Enables the user to add an user to a security role in the Power Platform environment.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Switch-BapTenant -Id "Contoso"
+Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator"
 ```
 
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will ensure that the authentication token is valid, prompting for re-authentication if necessary.
-
-### EXAMPLE 2
-```
-Switch-BapTenant -Id "Contoso" -Force
-```
-
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will force an authentication prompt, even if the current token is still valid.
+This will add the user with the UPN "alice@contoso.com" to the "System Administrator" security role.
 
 ## PARAMETERS
 
-### -Id
-The ID of the BAP tenant to switch to.
+### -EnvironmentId
+The id of the environment that you want to work against.
 
 ```yaml
 Type: String
@@ -54,18 +46,32 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-Instruct the function to force an authentication prompt even if the current token is still valid.
-This can be useful if you want to ensure that you are using the most up-to-date credentials or if you want to switch to a different user within the same tenant.
+### -Upn
+The UPN of the user you want to add to the security role in the Power Platform environment.
 
 ```yaml
-Type: SwitchParameter
+Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: False
-Position: Named
-Default value: False
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Role
+The name of the security role you want to add the user to in the Power Platform environment.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: RoleName
+
+Required: True
+Position: 3
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

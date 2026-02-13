@@ -1,26 +1,27 @@
-﻿<#
-.SYNOPSIS
-Add user to a security role in the Power Platform environment.
-
-.DESCRIPTION
-Enables the user to add an user to a security role in the Power Platform environment.
-
-.PARAMETER EnvironmentId
-The id of the environment that you want to work against.
-
-.PARAMETER Upn
-The UPN of the user you want to add to the security role in the Power Platform environment.
-
-.PARAMETER Role
-The name of the security role you want to add the user to in the Power Platform environment.
-
-.EXAMPLE
-PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator"
-
-This will add the user with the UPN "alice@contoso.com" to the "System Administrator" security role.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+﻿
+<#
+    .SYNOPSIS
+        Add user to a security role in the Power Platform environment.
+        
+    .DESCRIPTION
+        Enables the user to add an user to a security role in the Power Platform environment.
+        
+    .PARAMETER EnvironmentId
+        The id of the environment that you want to work against.
+        
+    .PARAMETER Upn
+        The UPN of the user you want to add to the security role in the Power Platform environment.
+        
+    .PARAMETER Role
+        The name of the security role you want to add the user to in the Power Platform environment.
+        
+    .EXAMPLE
+        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator"
+        
+        This will add the user with the UPN "alice@contoso.com" to the "System Administrator" security role.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Add-PpacSecurityRoleMember {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]

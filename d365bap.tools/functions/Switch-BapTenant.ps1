@@ -11,7 +11,7 @@
         
     .PARAMETER Force
         Instruct the function to force an authentication prompt even if the current token is still valid. This can be useful if you want to ensure that you are using the most up-to-date credentials or if you want to switch to a different user within the same tenant.
-
+        
     .EXAMPLE
         PS C:\> Switch-BapTenant -Id "Contoso"
         
