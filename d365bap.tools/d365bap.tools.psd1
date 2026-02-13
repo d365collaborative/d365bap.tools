@@ -44,39 +44,29 @@
 	# Functions to export from this module
 	FunctionsToExport = @(
 		'Add-UdeWindowsDefenderRules'
-
+		
 		, 'Add-PpacApplicationUser'
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
-
+		
 		, 'Clear-UdeCredentialCache'
 		, 'Clear-UdeDbJitCache'
 		, 'Clear-UdeOrphanedConfig'
-
+		
 		, 'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
 		, 'Compare-BapEnvironmentVirtualEntity'
-		
 		, 'Confirm-BapEnvironmentIntegration'
 		
-		, 'Export-BapEnvironmentSolution'
-
-		, 'Get-PpacD365App'
-		, 'Get-PpacD365PlatformUpdate'
-			
-		, 'Get-PpacDeployLocation'
+		, 'Confirm-UdeVs2022Installation'
 		
 		, 'Get-BapEnvironment'
-		, 'Get-PpacApplicationUser'
 		, 'Get-BapEnvironmentD365App'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
-		, 'Get-PpacSecurityRole'
-		, 'Get-PpacSecurityRoleMember'
-		, 'Get-BapEnvironmentSolution'
-		, 'Get-PpacUser'
 		, 'Get-BapEnvironmentVirtualEntity'
+		
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		
@@ -84,13 +74,22 @@
 		, 'Get-FnOEnvironmentSecurityRoleMember'
 		, 'Get-FnOEnvironmentUser'
 		
+		, 'Get-PpacApplicationUser'
+		, 'Get-PpacD365App'
+		, 'Get-PpacD365PlatformUpdate'
+		, 'Get-PpacDeployLocation'
+		, 'Get-PpacSecurityRole'
+		, 'Get-PpacSecurityRoleMember'
 		, 'Get-PpacTeam'
+		, 'Get-PpacUser'
 		
-		, 'Get-UnifiedEnvironment'
-
+		, 'Get-PpeSolution'
+		, 'Get-PpeSolutionHistory'
+		
 		, 'Get-UdeConfig'
 		, 'Get-UdeConnection'
 		, 'Get-UdeCredentialCache'
+		
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
@@ -101,33 +100,37 @@
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
-		, 'Invoke-PpacD365AppInstall'
-		, 'Invoke-PpacD365PlatformUpdate'
+		, 'Get-UnifiedEnvironment'
+
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 		
+		, 'Invoke-PpacD365AppInstall'
+		, 'Invoke-PpacD365PlatformUpdate'
+		
 		, 'New-UnifiedEnvironment'
-				
+		
 		, 'Set-BapAzCopyPath'
-
+		
 		, 'Set-BapEnvironmentAdminMode'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
-		, 'Set-PpacSecurityGroup'
 		, 'Set-BapEnvironmentSecurityRoleMember'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
 		, 'Set-FnOEnvironmentSecurityRoleMember'
-
+		
+		, 'Set-PpacSecurityGroup'
+		
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
-
+		
 		, 'Start-UdeDatabaseRefresh'
 		, 'Start-UdeDbSsms'
+		
 		, 'Switch-BapTenant'
 		
-		, 'Confirm-UdeVs2022Installation'
 		, 'Update-BapEnvironmentVirtualEntityMetadata'
 		
 	)
