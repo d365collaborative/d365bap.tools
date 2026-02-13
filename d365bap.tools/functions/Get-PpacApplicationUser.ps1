@@ -122,7 +122,7 @@ function Get-PpacApplicationUser {
         $resSystemUsers = Invoke-RestMethod `
             -Method Get `
             -Uri $($baseUri + '/api/data/v9.2/systemusers?$filter=applicationid ne null&$expand=systemuserroles_association($select=name,roleid),businessunitid($select=name,businessunitid),teammembership_association($select=name,teamid)') `
-            -Headers $headersWebApi
+            -Headers $headersWebApi 4> $null
 
         [System.Collections.Generic.List[System.Object]] $resCol = @()
         

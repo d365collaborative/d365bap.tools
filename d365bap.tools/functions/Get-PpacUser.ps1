@@ -119,7 +119,10 @@ function Get-PpacUser {
     process {
         if (Test-PSFFunctionInterrupt) { return }
         
-        $resUsers = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/systemusers?$select=fullname,internalemailaddress,applicationid,azureactivedirectoryobjectid&$expand=user_settings($select=uilanguageid)') -Headers $headersWebApi
+        $resUsers = Invoke-RestMethod `
+            -Method Get `
+            -Uri $($baseUri + '/api/data/v9.2/systemusers?$select=fullname,internalemailaddress,applicationid,azureactivedirectoryobjectid&$expand=user_settings($select=uilanguageid)') `
+            -Headers $headersWebApi 4> $null
 
         $resCol = @(
             foreach ($usrObj in  $($resUsers.value | Sort-Object -Property internalemailaddress)) {

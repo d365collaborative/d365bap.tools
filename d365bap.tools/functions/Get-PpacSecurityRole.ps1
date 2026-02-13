@@ -141,7 +141,10 @@ function Get-PpacSecurityRole {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $resRoles = Invoke-RestMethod -Method Get -Uri $($baseUri + '/api/data/v9.2/roles?$expand=businessunitid($select=businessunitid,_parentbusinessunitid_value)') -Headers $headersWebApi
+        $resRoles = Invoke-RestMethod `
+            -Method Get `
+            -Uri $($baseUri + '/api/data/v9.2/roles?$expand=businessunitid($select=businessunitid,_parentbusinessunitid_value)') `
+            -Headers $headersWebApi 4> $null
 
         [System.Collections.Generic.List[System.Object]] $resCol = @()
 

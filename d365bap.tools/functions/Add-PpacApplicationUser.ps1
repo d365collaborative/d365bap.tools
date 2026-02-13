@@ -137,7 +137,7 @@ function Add-PpacApplicationUser {
                 -Headers $localHeaders `
                 -ContentType $localHeaders."Content-Type" `
                 -Body $payLoad `
-                -StatusCodeVariable statusAppUser > $null
+                -StatusCodeVariable statusAppUser > $null 4> $null
 
             if (-not ($statusAppUser -like "2*")) {
                 $messageString = "Failed to add the Service Principal: <c='em'>$($spnObj.displayName) - $($spnObj.appId)</c> as an application user to the Power Platform environment. Please verify that the Service Principal exists in Azure AD / Entra ID and that the Role Name / Id is correct."
@@ -167,7 +167,7 @@ function Add-PpacApplicationUser {
             -Headers $headersWebApi `
             -ContentType "application/json" `
             -Body $payLoad `
-            -StatusCodeVariable statusRole > $null
+            -StatusCodeVariable statusRole > $null 4> $null
 
         if (-not ($statusRole -like "2*")) {
             $messageString = "Failed to assign the Security Role: <c='em'>$($colSecurityRoles[0].Name)</c> to the application user in the Power Platform environment. Please try assigning the role manually via the Power Platform admin center - <c='em'>https://aka.ms/ppac</c>"

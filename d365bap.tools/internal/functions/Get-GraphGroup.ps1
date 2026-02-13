@@ -44,7 +44,8 @@ function Get-GraphGroup {
 
         $colGroups = Invoke-RestMethod -Method Get `
             -Uri $uriGraph `
-            -Headers $headersGraphApi | Select-Object -ExpandProperty Value
+            -Headers $headersGraphApi 4> $null | `
+            Select-Object -ExpandProperty Value
 
         if ($colGroups.Count -eq 0) {
             $messageString = "The supplied ObjectId / Entra Group: <c='em'>$Group</c> didn't return any matching Security Group in Azure AD / Entra ID. Please verify that the ObjectId is correct - try running the <c='em'>Get-AzADGroup</c> cmdlet."

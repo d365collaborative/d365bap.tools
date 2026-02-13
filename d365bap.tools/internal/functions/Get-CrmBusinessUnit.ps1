@@ -40,7 +40,7 @@ function Get-CrmBusinessUnit {
         $resBusinessUnits = Invoke-RestMethod `
             -Method Get `
             -Uri $($baseUri + '/api/data/v9.2/businessunits?$expand=business_unit_parent_business_unit') `
-            -Headers $headersWebApi
+            -Headers $headersWebApi 4> $null
 
         $resBusinessUnits.value | Select-PSFObject -TypeName "D365Bap.Tools.BusinessUnit" -Property "businessunitid as Id",
         Name,

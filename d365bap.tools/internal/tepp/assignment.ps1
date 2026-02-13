@@ -13,8 +13,5 @@ Register-PSFTeppArgumentCompleter -Command Start-UdeDbSsms -Parameter Id -Name "
 
 Register-PSFTeppArgumentCompleter -Command Get-PpacDeployLocation -Parameter Name -Name "d365bap.tools.tepp.bap.locations"
 
-Register-PSFTeppArgumentCompleter -Command New-UdeEnvironment -Parameter Location -Name "d365bap.tools.tepp.bap.locations"
-Register-PSFTeppArgumentCompleter -Command New-UdeEnvironment -Parameter Region -Name "d365bap.tools.tepp.bap.regions"
-
-Register-PSFTeppArgumentCompleter -Command New-UseEnvironment -Parameter Location -Name "d365bap.tools.tepp.bap.locations"
-Register-PSFTeppArgumentCompleter -Command New-UseEnvironment -Parameter Region -Name "d365bap.tools.tepp.bap.regions"
+Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironment -Parameter Location -Name "d365bap.tools.tepp.bap.locations"
+Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironment -Parameter Region -Name "d365bap.tools.tepp.bap.regions"

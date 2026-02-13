@@ -222,7 +222,7 @@ function New-UnifiedEnvironment {
             -ContentType "application/json" `
             -SkipHttpErrorCheck `
             -StatusCodeVariable 'statusEnv' `
-            -Verbose:$false > $null
+            -Verbose:$false > $null 4>$null
 
         if ($statusEnv -like "2**") {
             $envProvisioned = $false

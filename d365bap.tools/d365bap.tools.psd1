@@ -46,6 +46,7 @@
 		'Add-UdeWindowsDefenderRules'
 
 		, 'Add-PpacApplicationUser'
+		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
 
 		, 'Clear-UdeCredentialCache'

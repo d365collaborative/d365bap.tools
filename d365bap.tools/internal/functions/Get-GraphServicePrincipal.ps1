@@ -31,20 +31,19 @@ function Get-GraphServicePrincipal {
 
         $headersGraphApi = @{
             "Authorization" = "Bearer $($tokenGraphValue)"
-            "Content-Type"  = "application/json"
         }
 
         if (Test-Guid -InputObject $SpId) {
             # Validate that the Service Principal exists in Azure AD / Entra ID
-            $uriGraph = "$uriGraphBase`$filter=id eq '$SpId' or appId eq '$SpId'"
+            $uriGraph = "https://graph.microsoft.com/v1.0/servicePrincipals?`$filter=id eq '$SpId' or appId eq '$SpId'"
         }
         else {
-            $uriGraph = "$uriGraphBase`$filter=startswith(displayName, '$SpId')"
+            $uriGraph = "https://graph.microsoft.com/v1.0/servicePrincipals?`$filter=startswith(displayName, '$SpId')"
         }
 
         $colSpns = Invoke-RestMethod -Method Get `
             -Uri $uriGraph `
-            -Headers $headersGraphApi | `
+            -Headers $headersGraphApi 4> $null | `
             Select-Object -ExpandProperty Value
 
         if ($colSpns.Count -eq 0) {

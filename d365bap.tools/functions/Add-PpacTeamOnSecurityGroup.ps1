@@ -186,7 +186,7 @@ function Add-PpacTeamOnSecurityGroup {
             -Headers $localHeaders `
             -ContentType $localHeaders."Content-Type" `
             -Body $payload `
-            -StatusCodeVariable statusTeam > $null
+            -StatusCodeVariable statusTeam > $null 4> $null
 
         if (-not ($statusTeam -like "2*")) {
             $messageString = "Failed to create the team in the Power Platform environment. Please try creating the team manually via the Power Platform admin center - <c='em'>https://aka.ms/ppac</c>"
@@ -212,7 +212,7 @@ function Add-PpacTeamOnSecurityGroup {
             -Headers $localHeaders `
             -ContentType $localHeaders."Content-Type" `
             -Body $payload `
-            -StatusCodeVariable statusRole > $null
+            -StatusCodeVariable statusRole > $null 4> $null
 
         if (-not ($statusRole -like "2*")) {
             $messageString = "Failed to assign the security role to the team in the Power Platform environment. Please try assigning the role manually via the Power Platform admin center - <c='em'>https://aka.ms/ppac</c>"
@@ -221,7 +221,10 @@ function Add-PpacTeamOnSecurityGroup {
             return
         }
 
-        $crmTeam
+        Get-PpacTeam `
+            -EnvironmentId $envObj.PpacEnvId `
+            -Name $Name | `
+            Select-Object -First 1
     }
     
     end {

@@ -73,7 +73,7 @@ function Get-BapEnvironment {
         
         $resEnvs = Invoke-RestMethod -Method Get `
             -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" `
-            -Headers $headersBapApi | `
+            -Headers $headersBapApi 4> $null | `
             Select-Object -ExpandProperty Value
 
         $searchById = Test-Guid -InputObject $EnvironmentId
