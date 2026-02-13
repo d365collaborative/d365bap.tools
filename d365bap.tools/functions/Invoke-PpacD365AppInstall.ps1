@@ -150,7 +150,7 @@ function Invoke-PpacD365AppInstall {
 
             $arrStatus | Format-Table
         } while (
-            (-not ("Installed" -in $arrStatus.status)) `
+            (-not ("Succeeded" -in $arrStatus.status)) `
                 -or
             (-not ("Failed" -in $arrStatus.status))
         )
