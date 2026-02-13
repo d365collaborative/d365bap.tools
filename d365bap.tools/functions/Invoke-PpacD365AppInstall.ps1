@@ -1,38 +1,39 @@
-﻿<#
-.SYNOPSIS
-    Installs D365 applications in the environment.
-
-.DESCRIPTION
-    Enables the user to install D365 applications in the environment as it would be done in Power Platform Admin Center (PPAC).
-
-.PARAMETER EnvironmentId
+﻿
+<#
+    .SYNOPSIS
+        Installs D365 applications in the environment.
+        
+    .DESCRIPTION
+        Enables the user to install D365 applications in the environment as it would be done in Power Platform Admin Center (PPAC).
+        
+    .PARAMETER EnvironmentId
         The id of the environment that you want to work against
-
-.PARAMETER D365App
+        
+    .PARAMETER D365App
         The name, unique name or package name of the D365 application you want to install in the environment.
-
+        
         Supports single or multiple application names.
-
-.EXAMPLE
-PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "Invoice Capture for Dynamics 365 Finance"
-
-This will install the "Invoice Capture for Dynamics 365 Finance" application in the environment.
-
-.EXAMPLE
-PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "msdyn_FnoInvoiceCaptureAnchor"
-
-This will install the "Invoice Capture for Dynamics 365 Finance" application in the environment.
-It will use the unique name of the application (msdyn_FnoInvoiceCaptureAnchor) to find the application and install it.
-
-.EXAMPLE
-PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "MicrosoftOperationsVEAnchor","msdyn_FnoInvoiceCaptureAnchor"
-
-This will install the "Microsoft Operations VE" and "Invoice Capture for Dynamics 365 Finance" applications in the environment.
-It will use the unique name of the D365 applications to find the applications and install them.
-It will start the installation of both applications, and then wait for the installation process to finish.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+        
+    .EXAMPLE
+        PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "Invoice Capture for Dynamics 365 Finance"
+        
+        This will install the "Invoice Capture for Dynamics 365 Finance" application in the environment.
+        
+    .EXAMPLE
+        PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "msdyn_FnoInvoiceCaptureAnchor"
+        
+        This will install the "Invoice Capture for Dynamics 365 Finance" application in the environment.
+        It will use the unique name of the application (msdyn_FnoInvoiceCaptureAnchor) to find the application and install it.
+        
+    .EXAMPLE
+        PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "MicrosoftOperationsVEAnchor","msdyn_FnoInvoiceCaptureAnchor"
+        
+        This will install the "Microsoft Operations VE" and "Invoice Capture for Dynamics 365 Finance" applications in the environment.
+        It will use the unique name of the D365 applications to find the applications and install them.
+        It will start the installation of both applications, and then wait for the installation process to finish.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Invoke-PpacD365AppInstall {
     [CmdletBinding()]

@@ -13,7 +13,7 @@ Add user to a security role in the Power Platform environment.
 ## SYNTAX
 
 ```
-Add-PpacSecurityRoleMember [-EnvironmentId] <String> [-Upn] <String> [-Role] <String>
+Add-PpacSecurityRoleMember [-EnvironmentId] <String> [-Upn] <String> [-Role] <String[]>
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -28,6 +28,13 @@ Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Ro
 ```
 
 This will add the user with the UPN "alice@contoso.com" to the "System Administrator" security role.
+
+### EXAMPLE 2
+```
+Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator", "System Customizer"
+```
+
+This will add the user with the UPN "alice@contoso.com" to the "System Administrator" and "System Customizer" security roles.
 
 ## PARAMETERS
 
@@ -62,10 +69,12 @@ Accept wildcard characters: False
 ```
 
 ### -Role
-The name of the security role you want to add the user to in the Power Platform environment.
+The name of the security role(s) you want to add the user to in the Power Platform environment.
+
+Supports single or multiple role names.
 
 ```yaml
-Type: String
+Type: String[]
 Parameter Sets: (All)
 Aliases: RoleName
 

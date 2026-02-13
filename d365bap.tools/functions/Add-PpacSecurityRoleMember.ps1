@@ -16,7 +16,7 @@
         The name of the security role(s) you want to add the user to in the Power Platform environment.
         
         Supports single or multiple role names.
-
+        
     .EXAMPLE
         PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator"
         
@@ -24,9 +24,9 @@
         
     .EXAMPLE
         PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator", "System Customizer"
-
+        
         This will add the user with the UPN "alice@contoso.com" to the "System Administrator" and "System Customizer" security roles.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
