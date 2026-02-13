@@ -230,7 +230,8 @@ function New-UnifiedEnvironment {
             do {
                 Write-PSFMessage -Level Verbose -Message "Waiting for environment '$Name' to be provisioned..."
                 Start-Sleep -Seconds 20
-                $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
+                $envObj = Get-BapEnvironment -EnvironmentId $Name | `
+                    Select-Object -First 1
 
                 $envProvisioned = $envObj.State -eq "Ready"
             } until ($envProvisioned -eq $true)
@@ -246,8 +247,8 @@ function New-UnifiedEnvironment {
             }
 
             # Installing the platform application package
-            $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2022-03-01-preview" -f `
-                $envObj.PpacEnvId `
+            $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2022-03-01-preview" `
+                -f $envObj.PpacEnvId `
                 , $appPlatform.PpacPackageName
 
             Invoke-RestMethod `

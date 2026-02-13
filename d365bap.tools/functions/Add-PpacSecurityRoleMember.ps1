@@ -13,13 +13,20 @@
         The UPN of the user you want to add to the security role in the Power Platform environment.
         
     .PARAMETER Role
-        The name of the security role you want to add the user to in the Power Platform environment.
+        The name of the security role(s) you want to add the user to in the Power Platform environment.
         
+        Supports single or multiple role names.
+
     .EXAMPLE
         PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator"
         
         This will add the user with the UPN "alice@contoso.com" to the "System Administrator" security role.
         
+    .EXAMPLE
+        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator", "System Customizer"
+
+        This will add the user with the UPN "alice@contoso.com" to the "System Administrator" and "System Customizer" security roles.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -35,7 +42,7 @@ function Add-PpacSecurityRoleMember {
 
         [Parameter (Mandatory = $true)]
         [Alias('RoleName')]
-        [string] $Role
+        [string[]] $Role
     )
     
     begin {
@@ -64,20 +71,7 @@ function Add-PpacSecurityRoleMember {
         if (Test-PSFFunctionInterrupt) { return }
         
         $colSecurityRoles = Get-PpacSecurityRole `
-            -EnvironmentId $envObj.PpacEnvId `
-            -Name $Role
-
-        if ($colSecurityRoles.Count -eq 0) {
-            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> didn't return any matching Security Role in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because Security Role was NOT found based on the Role Name / Id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
-
-        if ($colSecurityRoles.Count -gt 1) {
-            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> returned multiple matching Security Roles in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because multiple Security Roles were found based on the Role Name / Id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+            -EnvironmentId $envObj.PpacEnvId
 
         if (Test-PSFFunctionInterrupt) { return }
     }
@@ -103,25 +97,32 @@ function Add-PpacSecurityRoleMember {
             return
         }
 
-        # Now we need to assign the Security Role to the application user in the Power Platform environment using the Web API
-        $payLoad = [PsCustomObject][ordered]@{
-            "@odata.id" = $baseUri + "/api/data/v9.2/roles($($colSecurityRoles[0].PpacRoleId))"
-        } | ConvertTo-Json -Depth 10
+        foreach ($roleName in $role) {
+            $roleObj = $colSecurityRoles | `
+                Where-Object Name -eq $roleName | `
+                Select-Object -First 1
+        
 
-        $localUri = $baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))/systemuserroles_association/`$ref"
+            # Now we need to assign the Security Role to the application user in the Power Platform environment using the Web API
+            $payLoad = [PsCustomObject][ordered]@{
+                "@odata.id" = $baseUri + "/api/data/v9.2/roles($($roleObj.PpacRoleId))"
+            } | ConvertTo-Json -Depth 10
+
+            $localUri = $baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))/systemuserroles_association/`$ref"
            
-        Invoke-RestMethod -Method Post `
-            -Uri $localUri `
-            -Headers $headersWebApi `
-            -ContentType "application/json" `
-            -Body $payLoad `
-            -StatusCodeVariable statusRole > $null 4> $null
+            Invoke-RestMethod -Method Post `
+                -Uri $localUri `
+                -Headers $headersWebApi `
+                -ContentType "application/json" `
+                -Body $payLoad `
+                -StatusCodeVariable statusRole > $null 4> $null
 
-        if (-not ($statusRole -like "2*")) {
-            $messageString = "Failed to assign the Security Role: <c='em'>$($colSecurityRoles[0].Name)</c> to the user in the Power Platform environment. Please try assigning the role manually via the Power Platform admin center - <c='em'>https://aka.ms/ppac</c>"
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because assigning the Security Role to the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
+            if (-not ($statusRole -like "2*")) {
+                $messageString = "Failed to assign the Security Role: <c='em'>$($roleObj[0].Name)</c> to the user in the Power Platform environment. Please try assigning the role manually via the Power Platform admin center - <c='em'>https://aka.ms/ppac</c>"
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because assigning the Security Role to the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                return
+            }
         }
 
         Get-PpacUser `
