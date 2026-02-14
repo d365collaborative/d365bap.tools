@@ -21,6 +21,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Invoke-PpePublishAllCustomizations {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [CmdletBinding()]
     param (
         [parameter (Mandatory = $true)]
