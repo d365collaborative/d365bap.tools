@@ -1,4 +1,25 @@
 ﻿
+<#
+    .SYNOPSIS
+        Start the publish all customizations process for a given environment.
+        
+    .DESCRIPTION
+        This cmdlet starts the publish all customizations process for a given Power Platform environment.
+        
+        Can be helpful to run this cmdlet after importing a solution to make sure all customizations are published and ready to use.
+        
+    .PARAMETER EnvironmentId
+        The id of the environment that you want to work against
+        
+    .EXAMPLE
+        PS C:\> Invoke-PpePublishAllCustomizations -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
+        
+        This will start the publish all customizations process for the environment with the id "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6".
+        It will fail if any internal error occurs during the publish process, otherwise it will complete silently.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+#>
 function Invoke-PpePublishAllCustomizations {
     [CmdletBinding()]
     param (
