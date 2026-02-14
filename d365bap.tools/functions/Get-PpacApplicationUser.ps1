@@ -123,38 +123,33 @@ function Get-PpacApplicationUser {
             -Method Get `
             -Uri $($baseUri + '/api/data/v9.2/systemusers?$filter=applicationid ne null&$expand=systemuserroles_association($select=name,roleid),businessunitid($select=name,businessunitid),teammembership_association($select=name,teamid)') `
             -Headers $headersWebApi 4> $null
-
-        [System.Collections.Generic.List[System.Object]] $resCol = @()
         
-        foreach ($appUsrObj in  $($resSystemUsers.value | Sort-Object -Property fullname -Descending)) {
-            if ((-not ($appUsrObj.systemuserid -like $Name -or $appUsrObj.systemuserid -eq $Name)) `
-                    -and (-not ($appUsrObj.fullname -like $Name -or $appUsrObj.fullname -eq $Name)) `
-                    -and (-not ($appUsrObj.applicationid -like $Name -or $appUsrObj.applicationid -eq $Name)) `
-            ) { continue }
+        $colUsersRaw = $resSystemUsers.value | Where-Object {
+            ($_.systemuserid -like $Name -or $_.systemuserid -eq $Name) `
+                -or ($_.fullname -like $Name -or $_.fullname -eq $Name) `
+                -or ($_.applicationid -like $Name -or $_.applicationid -eq $Name)
+        } | Sort-Object -Property fullname -Descending
 
-            $tmp = $appUsrObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacApplicationUser" `
-                -ExcludeProperty "@odata.etag" `
-                -Property "systemuserid as PpacSystemUserId",
-            "fullname as PpacAppName",
-            @{Name = "PpacAppId"; Expression = { $_.applicationid } },
-            @{Name = "State"; Expression = { if (-not $_.isdisabled) { "Active" } else { "Inactive" } } },
-            @{Name = "StateIsActive"; Expression = { -not $_.isdisabled } },
-            "applicationid as EntraClientId",
-            "azureactivedirectoryobjectid as EntraObjectId",
-            *
-
-            if (-not $IncludePpacApplications) {
-                if ($tmp.EntraObjectId) {
-                    $resCol.Add($tmp)
-                }
-                elseif (-not ($tmp.internalemailaddress -like '*@onmicrosoft.com')) {
-                    $resCol.Add($tmp)
-                }
-            }
-            else {
-                $resCol.Add($tmp)
+        if (-not $IncludePpacApplications) {
+            $colUsers = $colUsersRaw | Where-Object {
+                ($null -ne $_.azureactivedirectoryobjectid) `
+                    -or (-not ($_.internalemailaddress -like '*@onmicrosoft.com'))
             }
         }
+        else {
+            $colUsers = $colUsersRaw
+        }
+
+        $resCol = $colUsers | Select-PSFObject -TypeName "D365Bap.Tools.PpacApplicationUser" `
+            -ExcludeProperty "@odata.etag" `
+            -Property "systemuserid as PpacSystemUserId",
+        "fullname as PpacAppName",
+        @{Name = "PpacAppId"; Expression = { $_.applicationid } },
+        @{Name = "State"; Expression = { if (-not $_.isdisabled) { "Active" } else { "Inactive" } } },
+        @{Name = "StateIsActive"; Expression = { -not $_.isdisabled } },
+        "applicationid as EntraClientId",
+        "azureactivedirectoryobjectid as EntraObjectId",
+        *
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-PpacApplicationUser"

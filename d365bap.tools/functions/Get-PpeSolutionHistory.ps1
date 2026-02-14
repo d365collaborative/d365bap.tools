@@ -47,6 +47,7 @@
 #>
 function Get-PpeSolutionHistory {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [parameter (Mandatory = $true)]
         [string] $EnvironmentId,

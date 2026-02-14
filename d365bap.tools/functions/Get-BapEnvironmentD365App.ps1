@@ -244,15 +244,21 @@ function Get-BapEnvironmentD365App {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $resCol = @(
-            foreach ($appObj in $($appsAvailable | Sort-Object -Property ApplicationName)) {
-                if ((-not ($appObj.ApplicationName -like $Name -or $appObj.ApplicationName -eq $Name)) -and (-not ($appObj.UniqueName -like $Name -or $appObj.UniqueName -eq $Name))) { continue }
+        $colApps = $appsAvailable | Where-Object {
+            ($_.ApplicationName -like $Name -or $_.ApplicationName -eq $Name) `
+                -or ($_.UniqueName -like $Name -or $_.UniqueName -eq $Name)
+        } | Sort-Object -Property ApplicationName
+
+        $resColRaw = @(
+            foreach ($appObj in $colApps) {
+                # if ((-not ($appObj.ApplicationName -like $Name -or $appObj.ApplicationName -eq $Name)) -and (-not ($appObj.UniqueName -like $Name -or $appObj.UniqueName -eq $Name))) { continue }
                 
                 if ($Status -ne "All" -and $appObj.state -ne $Status) { continue }
             
                 $appObj | Add-Member -MemberType NoteProperty -Name CurrentVersion -Value "N/A"
 
                 $currentApp = $appsEnvironment | Where-Object ApplicationId -eq $appObj.ApplicationId | Select-Object -First 1
+                
                 if ($currentApp) {
                     $appObj.CurrentVersion = $currentApp.Version
                 
@@ -260,19 +266,21 @@ function Get-BapEnvironmentD365App {
                     $appObj | Add-Member -MemberType NoteProperty -Name UpdateAvail -Value $(-not ($appObj.CurrentVersion -eq $appObj.Version))
                 }
             
-                $appObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacD365App" `
-                    -Property "Id as PpacD365AppId",
-                "ApplicationName as PpacD365AppName",
-                "UniqueName as PpacPackageName",
-                "Version as AvailableVersion",
-                "CurrentVersion as InstalledVersion",
-                "UpdateAvail as UpdateAvailable",
-                "state as Status",
-                @{Name = "StateIsInstalled"; Expression = { if (($_.state -ne 'none')) { $true }else { $false } } },
-                *,
-                @{Name = "SupportedCountriesList"; Expression = { $_.supportedCountries -join "," } }
+                $appObj
             }
         )
+
+        $resCol = $resColRaw | Select-PSFObject -TypeName "D365Bap.Tools.PpacD365App" `
+            -Property "Id as PpacD365AppId",
+        "ApplicationName as PpacD365AppName",
+        "UniqueName as PpacPackageName",
+        "Version as AvailableVersion",
+        "CurrentVersion as InstalledVersion",
+        "UpdateAvail as UpdateAvailable",
+        "state as Status",
+        @{Name = "StateIsInstalled"; Expression = { if (($_.state -ne 'none')) { $true }else { $false } } },
+        *,
+        @{Name = "SupportedCountriesList"; Expression = { $_.supportedCountries -join "," } }
 
         if (-not $IncludeAll -and $Status -ne 'None') {
             $resCol = @($resCol | Where-Object StateIsInstalled -eq $true )

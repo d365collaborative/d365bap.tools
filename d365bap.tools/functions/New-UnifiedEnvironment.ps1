@@ -221,8 +221,7 @@ function New-UnifiedEnvironment {
             -Body $payload `
             -ContentType "application/json" `
             -SkipHttpErrorCheck `
-            -StatusCodeVariable 'statusEnv' `
-            -Verbose:$false > $null 4>$null
+            -StatusCodeVariable 'statusEnv' > $null 4>$null
 
         if ($statusEnv -like "2**") {
             $envProvisioned = $false
@@ -257,8 +256,7 @@ function New-UnifiedEnvironment {
                 -Headers $headersLocal `
                 -Body "{}" `
                 -SkipHttpErrorCheck `
-                -StatusCodeVariable 'statusPlat' `
-                -Verbose:$false > $null
+                -StatusCodeVariable 'statusPlat' > $null 4>$null
 
             if (-not ($statusPlat -like "2**")) {
                 $messageString = "Failed to install the platform application package: <c='em'>$($appPlatform.PpacPackageName)</c>. Please check the environment and try installing the package manually."
@@ -322,8 +320,7 @@ function New-UnifiedEnvironment {
                 -Body $payload `
                 -ContentType $headersWebApi."Content-Type" `
                 -SkipHttpErrorCheck `
-                -StatusCodeVariable 'statusProvision' `
-                -Verbose:$false > $null
+                -StatusCodeVariable 'statusProvision' > $null 4>$null
 
             if (-not ($statusProvision -like "2**")) {
                 $messageString = "Failed to provision the environment with the specified version: <c='em'>$($deployVersion.Version)</c>. Please check the environment and try provisioning manually."

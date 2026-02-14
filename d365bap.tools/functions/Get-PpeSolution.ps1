@@ -47,6 +47,7 @@
 #>
 function Get-PpeSolution {
     [CmdletBinding()]
+    [OutputType('System.Object[]')]
     param (
         [parameter (Mandatory = $true)]
         [string] $EnvironmentId,
@@ -104,7 +105,8 @@ function Get-PpeSolution {
             -Headers $headersWebApi 4> $null | `
             Select-Object -ExpandProperty value
 
-        $colSolutions = $colSolutionsRaw | Where-Object { ($_.friendlyname -like $Name -or $_.friendlyname -eq $Name) `
+        $colSolutions = $colSolutionsRaw | Where-Object {
+            ($_.friendlyname -like $Name -or $_.friendlyname -eq $Name) `
                 -or ($_.uniquename -like $Name -or $_.uniquename -eq $Name) `
                 -or ($_.solutionId -like $Name -or $_.solutionId -eq $Name)
         } | Sort-Object -Property friendlyname

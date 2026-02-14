@@ -85,23 +85,20 @@ function Get-PpacD365App {
     process {
         if (Test-PSFFunctionInterrupt) { return }
         
-        $resCol = @(
-            foreach ($appObj in $($appsAvailable | Sort-Object -Property ApplicationName)) {
-                if ((-not ($appObj.ApplicationName -like $Name -or $appObj.ApplicationName -eq $Name)) `
-                        -and (-not ($appObj.UniqueName -like $Name -or $appObj.UniqueName -eq $Name)) `
-                ) { continue }
-                
-                $appObj | Select-PSFObject -TypeName "D365Bap.Tools.BapD365App" `
-                    -Property "Id as PpacD365AppId",
-                "ApplicationName as PpacD365AppName",
-                "UniqueName as PpacPackageName",
-                "Version as AvailableVersion",
-                "state as Status",
-                @{Name = "StateIsInstalled"; Expression = { if (($_.state -ne 'none')) { $true } else { $false } } },
-                *,
-                @{Name = "SupportedCountriesList"; Expression = { $_.supportedCountries -join "," } }
-            }
-        )
+        $colApps = $appsAvailable | Where-Object {
+            ($_.ApplicationName -like $Name -or $_.ApplicationName -eq $Name) `
+                -or ($_.UniqueName -like $Name -or $_.UniqueName -eq $Name)
+        } | Sort-Object -Property ApplicationName
+
+        $resCol = $colApps | Select-PSFObject -TypeName "D365Bap.Tools.BapD365App" `
+            -Property "Id as PpacD365AppId",
+        "ApplicationName as PpacD365AppName",
+        "UniqueName as PpacPackageName",
+        "Version as AvailableVersion",
+        "state as Status",
+        @{Name = "StateIsInstalled"; Expression = { if (($_.state -ne 'none')) { $true } else { $false } } },
+        *,
+        @{Name = "SupportedCountriesList"; Expression = { $_.supportedCountries -join "," } }
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-PpacD365App" `

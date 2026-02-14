@@ -108,6 +108,8 @@
 		, 'Invoke-PpacD365AppInstall'
 		, 'Invoke-PpacD365PlatformUpdate'
 		
+		, 'Invoke-PpePublishAllCustomizations'
+		
 		, 'New-UnifiedEnvironment'
 		
 		, 'Set-BapAzCopyPath'
@@ -119,7 +121,7 @@
 		, 'Set-BapTenantDetail'
 		
 		, 'Set-FnOEnvironmentSecurityRoleMember'
-		
+
 		, 'Set-PpacSecurityGroup'
 		
 		, 'Set-UdeConfig'
