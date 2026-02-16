@@ -109,16 +109,16 @@ function Set-BapEnvironmentSecurityRoleMember {
             Stop-PSFFunction -Message "Stopping because the Security Group has no members." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
-        $colSecurityRoles = Get-BapEnvironmentSecurityRole -EnvironmentId $envObj.PpacEnvId -Name $Role
+        $colSecurityRoles = Get-PpacSecurityRole -EnvironmentId $envObj.PpacEnvId -Name $Role
 
         if ($colSecurityRoles.Count -eq 0) {
-            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> didn't return any matching Security Role in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlet."
+            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> didn't return any matching Security Role in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because Security Role was NOT found based on the Role Name / Id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
         if ($colSecurityRoles.Count -gt 1) {
-            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> returned multiple matching Security Roles in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-BapEnvironmentSecurityRole</c> cmdlet."
+            $messageString = "The supplied Role Name / Id: <c='em'>$Role</c> returned multiple matching Security Roles in the Power Platform environment. Please verify that the Role Name / Id is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because multiple Security Roles were found based on the Role Name / Id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
@@ -129,7 +129,7 @@ function Set-BapEnvironmentSecurityRoleMember {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $colUsers = Get-BapEnvironmentUser -EnvironmentId $envObj.PpacEnvId
+        $colUsers = Get-PpacUser -EnvironmentId $envObj.PpacEnvId
 
         foreach ($usrObj in $colMembers | Where-Object { $_.'@odata.type' -eq "#microsoft.graph.user" }) {
             $matchedUser = $colUsers | Where-Object { $_.EntraObjectId -eq $usrObj.id } | Select-Object -First 1

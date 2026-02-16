@@ -5,42 +5,42 @@ online version:
 schema: 2.0.0
 ---
 
-# Switch-BapTenant
+# Get-PpacTeam
 
 ## SYNOPSIS
-Switches the current context to a specified BAP tenant.
+Get team details from Power Platform environment.
 
 ## SYNTAX
 
 ```
-Switch-BapTenant [-Id] <String> [-Force] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-PpacTeam [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
+Enables the user to get details about teams in a Power Platform environment.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Switch-BapTenant -Id "Contoso"
+Get-PpacTeam -EnvironmentId "env-123" -Name "*Team*"
 ```
 
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will ensure that the authentication token is valid, prompting for re-authentication if necessary.
+This will retrieve the team with the name "*Team*" in the environment with the id "env-123".
 
 ### EXAMPLE 2
 ```
-Switch-BapTenant -Id "Contoso" -Force
+Get-PpacTeam -EnvironmentId "env-123" -Name "*Team*" -AsExcelOutput
 ```
 
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will force an authentication prompt, even if the current token is still valid.
+This will retrieve the team with the name "*Team*" in the environment with the id "env-123".
+It will export the results to an Excel file.
 
 ## PARAMETERS
 
-### -Id
-The ID of the BAP tenant to switch to.
+### -EnvironmentId
+The id of the environment that you want to work against.
 
 ```yaml
 Type: String
@@ -54,9 +54,25 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-Instruct the function to force an authentication prompt even if the current token is still valid.
-This can be useful if you want to ensure that you are using the most up-to-date credentials or if you want to switch to a different user within the same tenant.
+### -Name
+The name of the team you want to get details for.
+
+Support wildcards (*) to filter the team names.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: *
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AsExcelOutput
+Instructs the function to export the results to an Excel file.
 
 ```yaml
 Type: SwitchParameter
@@ -92,6 +108,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
+### System.Object[]
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 

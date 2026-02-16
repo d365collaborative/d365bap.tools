@@ -48,6 +48,46 @@
 			</TableControl>
 		</View>
 		<View>
+			<Name>D365Bap.Tools.BapD365App</Name>
+			<ViewSelectedBy>
+				<TypeName>D365Bap.Tools.BapD365App</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Width>40</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>35</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>15</Width>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Width>16</Width>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>PpacD365AppName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>PpacPackageName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Status</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>StateIsInstalled</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
+		<View>
 			<Name>D365Bap.Tools.PpacEnvironment</Name>
 			<ViewSelectedBy>
 				<TypeName>D365Bap.Tools.PpacEnvironment</TypeName>

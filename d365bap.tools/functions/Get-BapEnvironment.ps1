@@ -73,24 +73,20 @@ function Get-BapEnvironment {
         
         $resEnvs = Invoke-RestMethod -Method Get `
             -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" `
-            -Headers $headersBapApi | `
+            -Headers $headersBapApi 4> $null | `
             Select-Object -ExpandProperty Value
-
-        $searchById = Test-Guid -InputObject $EnvironmentId
     }
     
     process {
-        $resCol = @(
-            foreach ($envObj in $resEnvs) {
-                if ($searchById) {
-                    # Name is the GUID
-                    if (-not ($envObj.Name -like $EnvironmentId)) { continue }
-                }
-                else {
-                    # DisplayName is the name
-                    if (-not ($envObj.properties.displayName -like $EnvironmentId)) { continue }
-                }
-
+        $colEnvs = $resEnvs | Where-Object {
+            ($_.Name -like $EnvironmentId -or $_.Name -eq $EnvironmentId) `
+                -or ($_.properties.displayName -like $EnvironmentId `
+                    -or $_.properties.displayName -eq $EnvironmentId
+            )
+        }
+            
+        $resColRaw = @(
+            foreach ($envObj in $colEnvs) {
                 # Flatten properties
                 foreach ($prop in $envObj.Properties.PsObject.Properties) {
                     if ($prop.Value -is [System.Management.Automation.PSCustomObject]) {
@@ -109,68 +105,70 @@ function Get-BapEnvironment {
                     $envObj | Add-Member -NotePropertyName "Api.$($keyValue[0])" -NotePropertyValue $keyValue[1] -Force
                 }
 
-                $envObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
-                    -Property "Name as PpacEnvId",
-                "Name as EnvId",
-                "Location as PpacRegion",
-                "prop_tenantId as TenantId",
-                "prop_azureRegion as AzureRegion",
-                "prop_displayName as PpacEnvName",
-                "prop_displayName as EnvName",
-                @{Name = "DeployedBy"; Expression = { $_.Properties.createdBy.userPrincipalName } },
-                "prop_provisioningState as PpacProvisioningState",
-                "prop_environmentSku as PpacEnvSku",
-                "prop_environmentSku as Sku",
-                "prop_databaseType as PpacDbType",
-                "prop_creationType as PpacCreationType",
-                "Properties.linkedAppMetadata.id as LinkedAppLcsEnvId",
-                "Properties.linkedAppMetadata.url as LinkedAppLcsEnvUri",
-                "Properties.linkedEnvironmentMetadata.resourceId as LinkedMetaPpacOrgId",
-                "Properties.linkedEnvironmentMetadata.uniqueName as LinkedMetaPpacUniqueId",
-                @{Name = "LinkedMetaPpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
-                @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
-                "Properties.linkedEnvironmentMetadata.baseLanguage as LinkedMetaPpacEnvLanguage",
-                "Properties.cluster.uriSuffix as PpacClusterIsland",
-                "Properties.linkedAppMetadata.type as FinOpsMetadataEnvType",
-                "Properties.linkedAppMetadata.url as FinOpsMetadataEnvUri",
-                @{Name = "PpacManagedEnv"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
-                @{Name = "Managed"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
-                @{Name = "FnOEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url -replace "com/", "com" } },
-                @{Name = "FinOpsEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url -replace "com/", "com" } },
-                @{Name = "PpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
-                @{Name = "PpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
-                @{Name = "AdminMode"; Expression = { $_.Properties.states.runtime.id -eq "AdminMode" } },
-                @{Name = "State"; Expression = {
-                        if ($_.Properties.states.management.id -eq 'NotSpecified') {
-                            $_.Properties.linkedEnvironmentMetadata.instanceState
-                        }
-                        else {
-                            $_.Properties.states.management.id
-                        }
-                    }
-                },
-                @{Name = "FnOEnvType"; Expression = {
-                        $uri = $_.Properties.linkedAppMetadata.url
-                        switch ($_.Properties.linkedAppMetadata.type) {
-                            "Internal" { "UDE/USE" }
-                            "Linked" {
-                                if ($uri -like "*axcloud*") {
-                                    "LcsDevbox"
-                                }
-                                elseif ($uri -like "*sandbox*") {
-                                    "LcsSandbox"
-                                }
-                                else {
-                                    "LcsProduction"
-                                }
-                            }
-                            Default { "N/A" }
-                        }
-                    }
-                },
-                *
+                $envObj
             }
         )
+
+        $resCol = $resColRaw | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
+            -Property "Name as PpacEnvId",
+        "Name as EnvId",
+        "Location as PpacRegion",
+        "prop_tenantId as TenantId",
+        "prop_azureRegion as AzureRegion",
+        "prop_displayName as PpacEnvName",
+        "prop_displayName as EnvName",
+        @{Name = "DeployedBy"; Expression = { $_.Properties.createdBy.userPrincipalName } },
+        "prop_provisioningState as PpacProvisioningState",
+        "prop_environmentSku as PpacEnvSku",
+        "prop_environmentSku as Sku",
+        "prop_databaseType as PpacDbType",
+        "prop_creationType as PpacCreationType",
+        "Properties.linkedAppMetadata.id as LinkedAppLcsEnvId",
+        "Properties.linkedAppMetadata.url as LinkedAppLcsEnvUri",
+        "Properties.linkedEnvironmentMetadata.resourceId as LinkedMetaPpacOrgId",
+        "Properties.linkedEnvironmentMetadata.uniqueName as LinkedMetaPpacUniqueId",
+        @{Name = "LinkedMetaPpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
+        @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
+        "Properties.linkedEnvironmentMetadata.baseLanguage as LinkedMetaPpacEnvLanguage",
+        "Properties.cluster.uriSuffix as PpacClusterIsland",
+        "Properties.linkedAppMetadata.type as FinOpsMetadataEnvType",
+        "Properties.linkedAppMetadata.url as FinOpsMetadataEnvUri",
+        @{Name = "PpacManagedEnv"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
+        @{Name = "Managed"; Expression = { $_.Properties.governanceConfiguration.protectionLevel -ne 'Basic' } },
+        @{Name = "FnOEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url -replace "com/", "com" } },
+        @{Name = "FinOpsEnvUri"; Expression = { $_.Properties.linkedAppMetadata.url -replace "com/", "com" } },
+        @{Name = "PpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
+        @{Name = "PpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
+        @{Name = "AdminMode"; Expression = { $_.Properties.states.runtime.id -eq "AdminMode" } },
+        @{Name = "State"; Expression = {
+                if ($_.Properties.states.management.id -eq 'NotSpecified') {
+                    $_.Properties.linkedEnvironmentMetadata.instanceState
+                }
+                else {
+                    $_.Properties.states.management.id
+                }
+            }
+        },
+        @{Name = "FnOEnvType"; Expression = {
+                $uri = $_.Properties.linkedAppMetadata.url
+                switch ($_.Properties.linkedAppMetadata.type) {
+                    "Internal" { "UDE/USE" }
+                    "Linked" {
+                        if ($uri -like "*axcloud*") {
+                            "LcsDevbox"
+                        }
+                        elseif ($uri -like "*sandbox*") {
+                            "LcsSandbox"
+                        }
+                        else {
+                            "LcsProduction"
+                        }
+                    }
+                    Default { "N/A" }
+                }
+            }
+        },
+        *
 
         if ($FnoEnabled) {
             $resCol = $resCol | Where-Object { $null -ne $_.FinOpsMetadataEnvType }

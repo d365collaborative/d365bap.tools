@@ -43,35 +43,3 @@ $scriptBlock = {
 }
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.locations" -ScriptBlock $scriptBlock -Mode Simple
-
-$scriptBlock = {
-    param (
-        $commandName,
-        $parameterName,
-        $wordToComplete,
-        $commandAst,
-        $fakeBoundParameter
-    )
-
-    # Get the value of the previous parameter (-Location)
-    $location = $fakeBoundParameter['Location']
-
-    # If no location is specified yet, return nothing or a default set (adjust as needed)
-    if (-not $location) {
-        return
-    }
-
-    $templates = Get-BapDeployTemplate -Location $location -FnoOnly
-    # Filter items based on the location and what the user has typed
-    $filteredItems = $templates | `
-        Select-Object -ExpandProperty Id | `
-        Where-Object { $_ -like "$wordToComplete*" } | `
-        Sort-Object
-
-    # Generate completion results
-    foreach ($item in $filteredItems) {
-        New-PSFTeppCompletionResult -CompletionText $item -ToolTip $item
-    }
-}
-
-Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.templates" -ScriptBlock $scriptBlock -Mode Full

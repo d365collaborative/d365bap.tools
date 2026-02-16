@@ -9,11 +9,20 @@
     .PARAMETER Id
         The ID of the BAP tenant to switch to.
         
+    .PARAMETER Force
+        Instruct the function to force an authentication prompt even if the current token is still valid. This can be useful if you want to ensure that you are using the most up-to-date credentials or if you want to switch to a different user within the same tenant.
+        
     .EXAMPLE
         PS C:\> Switch-BapTenant -Id "Contoso"
         
         This will switch the current context to the BAP tenant with the id "Contoso".
         It will ensure that the authentication token is valid, prompting for re-authentication if necessary.
+        
+    .EXAMPLE
+        PS C:\> Switch-BapTenant -Id "Contoso" -Force
+        
+        This will switch the current context to the BAP tenant with the id "Contoso".
+        It will force an authentication prompt, even if the current token is still valid.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -22,7 +31,9 @@ function Switch-BapTenant {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
-        [string] $Id
+        [string] $Id,
+
+        [switch] $Force
     )
 
     begin {
@@ -49,6 +60,11 @@ function Switch-BapTenant {
         
         if ([string]::IsNullOrWhiteSpace($fake)) {
             Write-PSFMessage -Level Important -Message "It seems that your credentials/cache has <c='sub'>expired</c>. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
+            
+            Start-Sleep -Seconds 2
+            Connect-AzAccount -Tenant $obj.Tenant -AccountId $obj.User
+        }elseif ($Force) {
+            Write-PSFMessage -Level Verbose -Message "Force flag is set. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
             
             Start-Sleep -Seconds 2
             Connect-AzAccount -Tenant $obj.Tenant -AccountId $obj.User

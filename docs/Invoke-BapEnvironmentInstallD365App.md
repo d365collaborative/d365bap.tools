@@ -54,7 +54,7 @@ Succeeded 02/03/2024 13.42.09 02/03/2024 13.48.26                     6885e0f4-6
 
 ### EXAMPLE 2
 ```
-$appIds = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly | Select-Object -ExpandProperty PackageId)
+$appIds = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly | Select-Object -ExpandProperty PpacD365AppId)
 PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $appIds
 ```
 
@@ -83,7 +83,7 @@ Succeeded 02/03/2024 13.42.09 02/03/2024 13.48.26                     6885e0f4-6
 ### EXAMPLE 3
 ```
 $apps = @(Get-BapEnvironmentD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -InstallState Installed -UpdatesOnly)
-PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $apps.PackageId
+PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId $apps.PpacD365AppId
 ```
 
 This will find all D365 Apps that has a pending update available.
