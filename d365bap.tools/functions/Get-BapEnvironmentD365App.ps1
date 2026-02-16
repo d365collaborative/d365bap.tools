@@ -209,6 +209,7 @@ function Get-BapEnvironmentD365App {
         }
         
         if (Test-PSFFunctionInterrupt) { return }
+        # $envObj = @{"PpacEnvId" = "f0612c9b-3995-eaf5-a011-29f65bab374a"; "LinkedMetaPpacEnvUri" = "https://org47ec3c08.crm4.dynamics.com/"}
 
         # First we will fetch ALL available apps for the environment
         $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
@@ -218,7 +219,11 @@ function Get-BapEnvironmentD365App {
             "Authorization" = "Bearer $($tokenPowerApiValue)"
         }
         
-        $appsAvailable = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" -Headers $headersPowerApi | Select-Object -ExpandProperty Value
+        $appsAvailable = Invoke-RestMethod `
+            -Method Get `
+            -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" `
+            -Headers $headersPowerApi | `
+            Select-Object -ExpandProperty Value
 
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
@@ -230,21 +235,30 @@ function Get-BapEnvironmentD365App {
             "Authorization" = "Bearer $($tokenAdminApiValue)"
         }
 
-        $appsEnvironment = Invoke-RestMethod -Method Get -Uri "https://api.admin.powerplatform.microsoft.com/api/AppManagement/InstancePackages/instanceId/$tenantId`?instanceUrl=$uriSourceEncoded`&geoType=$GeoRegion" -Headers $headersAdminApi
+        $appsEnvironment = Invoke-RestMethod `
+            -Method Get `
+            -Uri "https://api.admin.powerplatform.microsoft.com/api/AppManagement/InstancePackages/instanceId/$tenantId`?instanceUrl=$uriSourceEncoded`&geoType=$GeoRegion" `
+            -Headers $headersAdminApi
     }
     
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $resCol = @(
-            foreach ($appObj in $($appsAvailable | Sort-Object -Property ApplicationName)) {
-                if ((-not ($appObj.ApplicationName -like $Name -or $appObj.ApplicationName -eq $Name)) -and (-not ($appObj.UniqueName -like $Name -or $appObj.UniqueName -eq $Name))) { continue }
+        $colApps = $appsAvailable | Where-Object {
+            ($_.ApplicationName -like $Name -or $_.ApplicationName -eq $Name) `
+                -or ($_.UniqueName -like $Name -or $_.UniqueName -eq $Name)
+        } | Sort-Object -Property ApplicationName
+
+        $resColRaw = @(
+            foreach ($appObj in $colApps) {
+                # if ((-not ($appObj.ApplicationName -like $Name -or $appObj.ApplicationName -eq $Name)) -and (-not ($appObj.UniqueName -like $Name -or $appObj.UniqueName -eq $Name))) { continue }
                 
                 if ($Status -ne "All" -and $appObj.state -ne $Status) { continue }
             
                 $appObj | Add-Member -MemberType NoteProperty -Name CurrentVersion -Value "N/A"
 
                 $currentApp = $appsEnvironment | Where-Object ApplicationId -eq $appObj.ApplicationId | Select-Object -First 1
+                
                 if ($currentApp) {
                     $appObj.CurrentVersion = $currentApp.Version
                 
@@ -252,19 +266,21 @@ function Get-BapEnvironmentD365App {
                     $appObj | Add-Member -MemberType NoteProperty -Name UpdateAvail -Value $(-not ($appObj.CurrentVersion -eq $appObj.Version))
                 }
             
-                $appObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacD365App" `
-                    -Property "Id as PpacD365AppId",
-                "ApplicationName as PpacD365AppName",
-                "UniqueName as PpacPackageName",
-                "Version as AvailableVersion",
-                "CurrentVersion as InstalledVersion",
-                "UpdateAvail as UpdateAvailable",
-                "state as Status",
-                @{Name = "StateIsInstalled"; Expression = { if (($_.state -ne 'none')) { $true }else { $false } } },
-                *,
-                @{Name = "SupportedCountriesList"; Expression = { $_.supportedCountries -join "," } }
+                $appObj
             }
         )
+
+        $resCol = $resColRaw | Select-PSFObject -TypeName "D365Bap.Tools.PpacD365App" `
+            -Property "Id as PpacD365AppId",
+        "ApplicationName as PpacD365AppName",
+        "UniqueName as PpacPackageName",
+        "Version as AvailableVersion",
+        "CurrentVersion as InstalledVersion",
+        "UpdateAvail as UpdateAvailable",
+        "state as Status",
+        @{Name = "StateIsInstalled"; Expression = { if (($_.state -ne 'none')) { $true }else { $false } } },
+        *,
+        @{Name = "SupportedCountriesList"; Expression = { $_.supportedCountries -join "," } }
 
         if (-not $IncludeAll -and $Status -ne 'None') {
             $resCol = @($resCol | Where-Object StateIsInstalled -eq $true )

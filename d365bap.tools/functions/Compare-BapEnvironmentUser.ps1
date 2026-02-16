@@ -117,8 +117,8 @@ function Compare-BapEnvironmentUser {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $usersSourceEnvironment = Get-BapEnvironmentUser -EnvironmentId $SourceEnvironmentId -IncludeAppIds:$IncludeAppIds
-        $usersDestinationEnvironment = Get-BapEnvironmentUser -EnvironmentId $DestinationEnvironmentId -IncludeAppIds:$IncludeAppIds
+        $usersSourceEnvironment = Get-PpacUser -EnvironmentId $SourceEnvironmentId -IncludeAppIds:$IncludeAppIds
+        $usersDestinationEnvironment = Get-PpacUser -EnvironmentId $DestinationEnvironmentId -IncludeAppIds:$IncludeAppIds
     }
     
     process {

@@ -5,58 +5,67 @@ online version:
 schema: 2.0.0
 ---
 
-# Switch-BapTenant
+# Get-PpacDeployLocation
 
 ## SYNOPSIS
-Switches the current context to a specified BAP tenant.
+Get the available deployment locations for Power Platform environments.
 
 ## SYNTAX
 
 ```
-Switch-BapTenant [-Id] <String> [-Force] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-PpacDeployLocation [[-Name] <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
+Retrieves the list of available deployment locations where Power Platform environments can be provisioned.
+
+Includes details such as location name and azure regions.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Switch-BapTenant -Id "Contoso"
+Get-PpacDeployLocation
 ```
 
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will ensure that the authentication token is valid, prompting for re-authentication if necessary.
+This will retrieve all available deployment locations for Power Platform environments.
 
 ### EXAMPLE 2
 ```
-Switch-BapTenant -Id "Contoso" -Force
+Get-PpacDeployLocation -Name "Europe"
 ```
 
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will force an authentication prompt, even if the current token is still valid.
+This will retrieve the deployment location "Europe".
+
+### EXAMPLE 3
+```
+Get-PpacDeployLocation -AsExcelOutput
+```
+
+This will retrieve all available deployment locations and export the output to an Excel file.
 
 ## PARAMETERS
 
-### -Id
-The ID of the BAP tenant to switch to.
+### -Name
+Filter the deployment locations by name or ID.
+
+Supports wildcard characters (*).
 
 ```yaml
 Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: 1
-Default value: None
+Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-Instruct the function to force an authentication prompt even if the current token is still valid.
-This can be useful if you want to ensure that you are using the most up-to-date credentials or if you want to switch to a different user within the same tenant.
+### -AsExcelOutput
+Instructs the cmdlet to export the output to an Excel file.
 
 ```yaml
 Type: SwitchParameter
@@ -92,6 +101,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
+### System.Object[]
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 
