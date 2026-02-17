@@ -108,7 +108,7 @@ function Set-UdeDbJitCache {
         if (Test-PSFFunctionInterrupt) { return }
 
         if ($null -ne $EnvironmentId) {
-            $envObj = Get-UdeEnvironment -EnvironmentId $EnvironmentId `
+            $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId `
                 -SkipVersionDetails | Select-Object -First 1
         }
         
