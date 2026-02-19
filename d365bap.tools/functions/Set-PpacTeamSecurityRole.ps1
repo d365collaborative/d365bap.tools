@@ -52,8 +52,6 @@ function Set-PpacTeamSecurityRole {
     )
     
     begin {
-        $secGrp = $null
-
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
         $envObj = Get-BapEnvironment `
             -EnvironmentId $EnvironmentId | `

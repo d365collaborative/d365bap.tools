@@ -81,14 +81,6 @@ function Add-FscmUserFromSecurityGroup {
             "Authorization" = "Bearer $($tokenFnoOdataValue)"
             "Content-Type"  = "application/json;charset=utf-8"
         }
-         
-        $secureTokenGraph = (Get-AzAccessToken -ResourceUrl "https://graph.microsoft.com/" -AsSecureString).Token
-        $tokenGraphValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenGraph
-
-        $headersGraphApi = @{
-            "Authorization" = "Bearer $($tokenGraphValue)"
-            "Content-Type"  = "application/json"
-        }
 
         $secGrp = Get-GraphGroup `
             -Group $SecurityGroup
