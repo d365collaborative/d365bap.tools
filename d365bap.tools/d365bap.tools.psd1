@@ -44,7 +44,8 @@
 	# Functions to export from this module
 	FunctionsToExport = @(
 		'Add-UdeWindowsDefenderRules'
-		
+
+		, 'Add-FscmSecurityRoleMember'
 		, 'Add-FscmUserFromSecurityGroup'
 		
 		, 'Add-PpacApplicationUser'
