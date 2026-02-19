@@ -5,42 +5,48 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-FnOEnvironmentUser
+# Set-PpacAdminMode
 
 ## SYNOPSIS
-Get users from a Finance and Operations environment.
+Set the admin mode for a Power Platform environment.
 
 ## SYNTAX
 
 ```
-Get-FnOEnvironmentUser [-EnvironmentId] <String> [-AsExcelOutput] [-ProgressAction <ActionPreference>]
+Set-PpacAdminMode [-EnvironmentId] <String> [[-Mode] <String>] [-ProgressAction <ActionPreference>]
  [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to get System Users from a Finance and Operations environment.
+This cmdlet sets the admin mode for a Power Platform environment.
+It allows switching between User Mode and Admin Mode, which can be useful for troubleshooting and support scenarios.
+
+Is the same as the administrative mode in LCS.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-FnOEnvironmentUser -EnvironmentId *uat*
+Set-PpacAdminMode -EnvironmentId "ContosoEnv" -Mode "AdminMode"
 ```
 
-This will list all System Users from the Finance and Operations environment matching the "*uat*" pattern.
+This command sets the admin mode for the Power Platform environment "ContosoEnv" to "AdminMode".
+Now the environment is an admin-only mode.
 
 ### EXAMPLE 2
 ```
-Get-FnOEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
+Set-PpacAdminMode -EnvironmentId "ContosoEnv" -Mode "UserMode"
 ```
 
-This will list all System Users from the Finance and Operations environment matching the "*uat*" pattern.
-Will output all details into an Excel file, that will auto open on your machine.
+This command sets the admin mode for the Power Platform environment "ContosoEnv" to "UserMode".
+Now the environment is in normal user mode and accessible for all users with permissions.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against.
+The ID of the environment to set the admin mode for.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -54,17 +60,19 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AsExcelOutput
-Instruct the cmdlet to output all details directly to an Excel file.
+### -Mode
+The mode to set for the environment.
+
+Valid values are "UserMode" and "AdminMode".
 
 ```yaml
-Type: SwitchParameter
+Type: String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
-Default value: False
+Position: 2
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -91,7 +99,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-### System.Object[]
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 

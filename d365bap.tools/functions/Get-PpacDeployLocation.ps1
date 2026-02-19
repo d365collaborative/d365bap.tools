@@ -55,13 +55,18 @@ function Get-PpacDeployLocation {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $colLocations = Invoke-RestMethod -Method Get `
+        $colLocationsRaw = Invoke-RestMethod -Method Get `
             -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/locations?api-version=2021-04-01" `
             -Headers $headersBapApi | `
             Select-Object -ExpandProperty Value
         
+        $colLocations = $colLocationsRaw | Where-Object {
+            ($_.name -like $Name -or $_.name -eq $Name) `
+            -or ($_.displayName -like $Name -or $_.displayName -eq $Name)
+        }
+            
         $resCol = @(
-            $colLocations | Select-PSFObject -TypeName "D365Bap.Tools.BapLocation" `
+            $colLocations | Select-PSFObject -TypeName "D365Bap.Tools.PpacLocation" `
                 -ExcludeProperty "id", "type", "name", "properties" `
                 -Property "name as Id",
             "properties.displayName as Name",
@@ -74,11 +79,6 @@ function Get-PpacDeployLocation {
             @{Name = "AzureRegionsList"; Expression = { ($_.properties.azureRegions -join ", ") } },
             "properties as Properties"
         )
-
-        $resCol = $resCol | Where-Object { `
-                $_.Name -like $Name `
-                -or $_.Id -like $Name
-        }
         
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-PpacDeployLocation" `

@@ -9,6 +9,8 @@
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
         
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+        
     .PARAMETER ServicePrincipal
         The Service Principal in Azure AD / Entra ID that you want to add as an application user to the Power Platform environment.
         
@@ -120,7 +122,7 @@ function Add-PpacApplicationUser {
 
             # Then we can add the Service Principal as an application user to the environment using the Web API
             $localUri = $baseUri + "/api/data/v9.2/systemusers"
-            $payLoad = [PsCustomObject][ordered]@{
+            $payload = [PsCustomObject][ordered]@{
                 "applicationid"             = $spnObj.appId
                 "accessmode"                = 4 # Application User
                 "isdisabled"                = $false
@@ -136,7 +138,7 @@ function Add-PpacApplicationUser {
                 -Uri $localUri `
                 -Headers $localHeaders `
                 -ContentType $localHeaders."Content-Type" `
-                -Body $payLoad `
+                -Body $payload `
                 -StatusCodeVariable statusAppUser > $null 4> $null
 
             if (-not ($statusAppUser -like "2*")) {
@@ -156,7 +158,7 @@ function Add-PpacApplicationUser {
         }
 
         # Now we need to assign the Security Role to the application user in the Power Platform environment using the Web API
-        $payLoad = [PsCustomObject][ordered]@{
+        $payload = [PsCustomObject][ordered]@{
             "@odata.id" = $baseUri + "/api/data/v9.2/roles($($colSecurityRoles[0].PpacRoleId))"
         } | ConvertTo-Json -Depth 10
 
@@ -166,7 +168,7 @@ function Add-PpacApplicationUser {
             -Uri $localUri `
             -Headers $headersWebApi `
             -ContentType "application/json" `
-            -Body $payLoad `
+            -Body $payload `
             -StatusCodeVariable statusRole > $null 4> $null
 
         if (-not ($statusRole -like "2*")) {

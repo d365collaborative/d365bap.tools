@@ -8,38 +8,40 @@ schema: 2.0.0
 # Add-PpacSecurityRoleMember
 
 ## SYNOPSIS
-Add user to a security role in the Power Platform environment.
+Enables assignment of a user to a security role in the Power Platform environment.
 
 ## SYNTAX
 
 ```
-Add-PpacSecurityRoleMember [-EnvironmentId] <String> [-Upn] <String> [-Role] <String[]>
+Add-PpacSecurityRoleMember [-EnvironmentId] <String> [-User] <String> [-Role] <String[]>
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to add an user to a security role in the Power Platform environment.
+This cmdlet assigns a user to one or more security roles in the specified Power Platform environment.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator"
+Add-PpacSecurityRoleMember -EnvironmentId "env-123" -User "alice" -Role "System Customizer"
 ```
 
-This will add the user with the UPN "alice@contoso.com" to the "System Administrator" security role.
+This will assign the user "alice" to the "System Customizer" security role in the environment with the id "env-123".
 
 ### EXAMPLE 2
 ```
-Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator", "System Customizer"
+Add-PpacSecurityRoleMember -EnvironmentId "env-123" -User "alice@contoso.com" -Role "System Customizer", "Environment Maker"
 ```
 
-This will add the user with the UPN "alice@contoso.com" to the "System Administrator" and "System Customizer" security roles.
+This will assign the user "alice@contoso.com" to the "System Customizer" and "Environment Maker" security roles in the environment with the id "env-123".
 
 ## PARAMETERS
 
 ### -EnvironmentId
 The id of the environment that you want to work against.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -53,8 +55,10 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Upn
-The UPN of the user you want to add to the security role in the Power Platform environment.
+### -User
+The user that you want to assign to the security role.
+
+Can be either the User Principal Name (UPN) or the UserId of the user in the Power Platform environment.
 
 ```yaml
 Type: String
@@ -69,9 +73,9 @@ Accept wildcard characters: False
 ```
 
 ### -Role
-The name of the security role(s) you want to add the user to in the Power Platform environment.
+The security role that you want to assign to the user.
 
-Supports single or multiple role names.
+Can be either the role name or the role ID.
 
 ```yaml
 Type: String[]

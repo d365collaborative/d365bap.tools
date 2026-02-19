@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-PpacSecurityRoleMember
+# Get-FscmSecurityRoleMember
 
 ## SYNOPSIS
 Get information about Finance and Operations security role members in a given environment.
@@ -13,8 +13,8 @@ Get information about Finance and Operations security role members in a given en
 ## SYNTAX
 
 ```
-Get-PpacSecurityRoleMember [-EnvironmentId] <String> [-Role] <String> [[-User] <String>]
- [-IncludePpacApplications] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-FscmSecurityRoleMember [-EnvironmentId] <String> [-Role] <String> [[-User] <String>] [-AsExcelOutput]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -25,33 +25,25 @@ It allows filtering by role name or ID, user name or ID, and exporting the resul
 
 ### EXAMPLE 1
 ```
-Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer"
+Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Administrator"
 ```
 
-This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv" and displays their information in the console.
+This command retrieves the members of the Finance and Operations security role with the name "System Administrator" from the environment "ContosoEnv" and displays their information in the console.
 
 ### EXAMPLE 2
 ```
-Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer" -User "*john*"
+Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "-SYSADMIN-" -User "*john*"
 ```
 
-This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv" and filters the members to those with user names or user IDs matching "*john*".
+This command retrieves the members of the Finance and Operations security role with names matching "-SYSADMIN-" from the environment "ContosoEnv" and filters the members to those with user names, user IDs or UPNs matching "*john*".
 The information is displayed in the console.
 
 ### EXAMPLE 3
 ```
-Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer" -IncludePpacApplications
+Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Administrator" -AsExcelOutput
 ```
 
-This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv" and includes service principals (applications) in the results, in addition to user principals.
-The information is displayed in the console.
-
-### EXAMPLE 4
-```
-Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer" -AsExcelOutput
-```
-
-This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv".
+This command retrieves the members of the Finance and Operations security role with the name "System Administrator" from the environment "ContosoEnv".
 It will export the information to an Excel file.
 
 ## PARAMETERS
@@ -93,7 +85,7 @@ Accept wildcard characters: False
 ### -User
 The name or ID of the user to filter the security role members by.
 
-Can be either the user name or user ID.
+Can be either the user name, user ID or user principal name (UPN).
 
 Supports wildcard characters for flexible matching.
 
@@ -105,21 +97,6 @@ Aliases:
 Required: False
 Position: 3
 Default value: *
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludePpacApplications
-Instructs the cmdlet to include service principals (applications) in the results, in addition to user principals.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

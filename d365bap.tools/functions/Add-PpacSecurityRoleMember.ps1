@@ -1,31 +1,35 @@
 ﻿
 <#
     .SYNOPSIS
-        Add user to a security role in the Power Platform environment.
+        Enables assignment of a user to a security role in the Power Platform environment.
         
     .DESCRIPTION
-        Enables the user to add an user to a security role in the Power Platform environment.
+        This cmdlet assigns a user to one or more security roles in the specified Power Platform environment.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
         
-    .PARAMETER Upn
-        The UPN of the user you want to add to the security role in the Power Platform environment.
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+        
+    .PARAMETER User
+        The user that you want to assign to the security role.
+        
+        Can be either the User Principal Name (UPN) or the UserId of the user in the Power Platform environment.
         
     .PARAMETER Role
-        The name of the security role(s) you want to add the user to in the Power Platform environment.
+        The security role that you want to assign to the user.
         
-        Supports single or multiple role names.
-        
-    .EXAMPLE
-        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator"
-        
-        This will add the user with the UPN "alice@contoso.com" to the "System Administrator" security role.
+        Can be either the role name or the role ID.
         
     .EXAMPLE
-        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -Upn "alice@contoso.com" -Role "System Administrator", "System Customizer"
+        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -User "alice" -Role "System Customizer"
         
-        This will add the user with the UPN "alice@contoso.com" to the "System Administrator" and "System Customizer" security roles.
+        This will assign the user "alice" to the "System Customizer" security role in the environment with the id "env-123".
+        
+    .EXAMPLE
+        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -User "alice@contoso.com" -Role "System Customizer", "Environment Maker"
+        
+        This will assign the user "alice@contoso.com" to the "System Customizer" and "Environment Maker" security roles in the environment with the id "env-123".
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -38,7 +42,7 @@ function Add-PpacSecurityRoleMember {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
-        [string] $Upn,
+        [string] $User,
 
         [Parameter (Mandatory = $true)]
         [Alias('RoleName')]
@@ -68,8 +72,6 @@ function Add-PpacSecurityRoleMember {
             "Authorization" = "Bearer $($tokenWebApiValue)"
         }
 
-        if (Test-PSFFunctionInterrupt) { return }
-        
         $colSecurityRoles = Get-PpacSecurityRole `
             -EnvironmentId $envObj.PpacEnvId
 
@@ -79,19 +81,15 @@ function Add-PpacSecurityRoleMember {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $colUsers = Get-PpacUser `
+        $crmUser = Get-PpacUser `
             -EnvironmentId $envObj.PpacEnvId `
-            -Name $Upn
+            -User $User | `
+            Select-Object -First 1
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        # Check if the upn is already added as an user in the Power Platform environment
-        $crmUser = $colUsers | `
-            Where-Object Upn -eq $Upn | `
-            Select-Object -First 1
-
         if ($null -eq $crmUser) {
-            $messageString = "The supplied User with UPN: <c='em'>$Upn</c> is not an user in the Power Platform environment. Please verify that the user exists in the environment - try running the <c='em'>Get-PpacUser</c> cmdlet."
+            $messageString = "The supplied User: <c='em'>$User</c> is not an user in the Power Platform environment. Please verify that the user exists in the environment - try running the <c='em'>Get-PpacUser</c> cmdlet."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because user was NOT found based on the UPN." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
@@ -101,10 +99,15 @@ function Add-PpacSecurityRoleMember {
             $roleObj = $colSecurityRoles | `
                 Where-Object Name -eq $roleName | `
                 Select-Object -First 1
-        
+
+            if ($null -eq $roleObj) {
+                $messageString = "The supplied RoleName: <c='em'>$roleName</c> is not a valid Security Role in the Power Platform environment. Please verify that the role exists in the environment - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
+                Write-PSFMessage -Level Important -Message $messageString
+                continue
+            }
 
             # Now we need to assign the Security Role to the application user in the Power Platform environment using the Web API
-            $payLoad = [PsCustomObject][ordered]@{
+            $payload = [PsCustomObject][ordered]@{
                 "@odata.id" = $baseUri + "/api/data/v9.2/roles($($roleObj.PpacRoleId))"
             } | ConvertTo-Json -Depth 10
 
@@ -114,7 +117,7 @@ function Add-PpacSecurityRoleMember {
                 -Uri $localUri `
                 -Headers $headersWebApi `
                 -ContentType "application/json" `
-                -Body $payLoad `
+                -Body $payload `
                 -StatusCodeVariable statusRole > $null 4> $null
 
             if (-not ($statusRole -like "2*")) {
@@ -127,7 +130,7 @@ function Add-PpacSecurityRoleMember {
 
         Get-PpacUser `
             -EnvironmentId $envObj.PpacEnvId `
-            -Name $Upn
+            -User $User
     }
     
     end {

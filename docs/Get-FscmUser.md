@@ -5,58 +5,58 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-PpacUser
+# Get-FscmUser
 
 ## SYNOPSIS
-Get information about users in a Power Platform environment.
+Get information about Finance and Operations users in a given environment.
 
 ## SYNTAX
 
 ```
-Get-PpacUser [-EnvironmentId] <String> [[-User] <String>] [-IncludeAppIds] [-AsExcelOutput]
+Get-FscmUser [-EnvironmentId] <String> [[-User] <String>] [-IncludeMicrosoftAccounts] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-This cmdlet retrieves information about users in a Power Platform environment.
-It allows filtering by user name or ID, including application users, and exporting the results to Excel.
+This cmdlet retrieves information about Finance and Operations users in a given environment.
+It allows filtering by user name or ID, including or excluding Microsoft accounts, and exporting the results to Excel.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-PpacUser -EnvironmentId "ContosoEnv"
+Get-FscmUser -EnvironmentId "ContosoEnv" -User "john.doe"
 ```
 
-This command retrieves all users from the Power Platform environment "ContosoEnv" and displays their information in the console.
+This command retrieves the Finance and Operations user with the user name "john.doe" from the environment "ContosoEnv" and displays their information in the console.
 
 ### EXAMPLE 2
 ```
-Get-PpacUser -EnvironmentId "ContosoEnv" -User "john.doe"
+Get-FscmUser -EnvironmentId "ContosoEnv" -User "*john*"
 ```
 
-This command retrieves the user with the name "john.doe" from the Power Platform environment "ContosoEnv" and displays their information in the console.
+This command retrieves all Finance and Operations users with user names, user IDs or UPNs matching "*john*" from the environment "ContosoEnv" and displays their information in the console.
 
 ### EXAMPLE 3
 ```
-Get-PpacUser -EnvironmentId "ContosoEnv" -User "*john*"
+Get-FscmUser -EnvironmentId "ContosoEnv" -User "john@contoso.com"
 ```
 
-This command retrieves all users with names, user IDs, UPNs or application IDs matching "*john*" from the Power Platform environment "ContosoEnv" and displays their information in the console.
+This command retrieves the Finance and Operations user with the UPN "john@contoso.com" from the environment "ContosoEnv" and displays their information in the console.
 
 ### EXAMPLE 4
 ```
-Get-PpacUser -EnvironmentId "ContosoEnv" -IncludeAppIds
+Get-FscmUser -EnvironmentId "ContosoEnv" -IncludeMicrosoftAccounts
 ```
 
-This command retrieves all users, including application users, from the Power Platform environment "ContosoEnv" and displays their information in the console.
+This command retrieves all Finance and Operations users, including Microsoft accounts, from the environment "ContosoEnv" and displays their information in the console.
 
 ### EXAMPLE 5
 ```
-Get-PpacUser -EnvironmentId "ContosoEnv" -IncludeAppIds -AsExcelOutput
+Get-FscmUser -EnvironmentId "ContosoEnv" -IncludeMicrosoftAccounts -AsExcelOutput
 ```
 
-This command retrieves all users, including application users, from the Power Platform environment "ContosoEnv".
+This command retrieves all Finance and Operations users, including Microsoft accounts, from the environment "ContosoEnv".
 It will export the information to an Excel file.
 
 ## PARAMETERS
@@ -81,7 +81,7 @@ Accept wildcard characters: False
 ### -User
 The name or ID of the user to filter the users by.
 
-Can be either the user name, user ID, user principal name (UPN) or application ID.
+Can be either the user name, user ID or user principal name (UPN).
 
 Supports wildcard characters for flexible matching.
 
@@ -97,11 +97,11 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IncludeAppIds
-Instructs the cmdlet to include application users (service principals) in the results.
-By default, application users are excluded.
+### -IncludeMicrosoftAccounts
+Instructs the cmdlet to include Microsoft accounts in the results.
+By default, Microsoft accounts are excluded.
 
-Application users can be identified by their application ID and typically do not have an email address or UPN.
+Microsoft accounts typically have aliases (UPNs) ending with domains like @dynamics.com, @microsoft.com, @onmicrosoft.com, @devtesttie.ccsctp.net or @capintegration01.onmicrosoft.com.
 
 ```yaml
 Type: SwitchParameter
@@ -152,6 +152,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
+### System.Object[]
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 

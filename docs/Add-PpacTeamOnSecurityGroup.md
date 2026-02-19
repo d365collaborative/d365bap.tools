@@ -8,7 +8,7 @@ schema: 2.0.0
 # Add-PpacTeamOnSecurityGroup
 
 ## SYNOPSIS
-Add a team based on a Microsoft Entra Security Group to a Power Platform environment.
+Enables assignment of a Microsoft Entra ID security group as a team in the Power Platform environment.
 
 ## SYNTAX
 
@@ -19,35 +19,36 @@ Add-PpacTeamOnSecurityGroup [-EnvironmentId] <String> [-Name] <String> [-Securit
 ```
 
 ## DESCRIPTION
-Enables the user to add a team based on a Microsoft Entra Security Group to a Power Platform environment, and assign a security role to it.
+This cmdlet assigns a Microsoft Entra ID security group as a team in the specified Power Platform environment and assigns a security role to the team.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales SG" -SecurityGroup "Contoso Sales SG" -MembershipType "Members" -Role "System Customizer"
+Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer"
 ```
 
-This will create a team named "Contoso Sales Team" in the Power Platform environment with the id "env-123".
-It will link the team to the Microsoft Entra Security Group named "Contoso Sales SG".
-It will set the membership type to "Members".
-It will assign the "System Customizer" security role to the team.
-It will use the UPN of the user running the function as the administrator for the team.
+This will add the Microsoft Entra ID security group "Contoso Sales Security Group" as a team in the Power Platform environment with the id "env-123".
+The team will be named "Contoso Sales Team" and have the membership type "Members and Guests".
+The "System Customizer" security role will be assigned to the team.
+The administrator of the team will be the user running the cmdlet.
 
 ### EXAMPLE 2
 ```
-Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales SG" -SecurityGroup "Contoso Sales SG" -MembershipType "Members and Guests" -Role "System Customizer" -AdminUpn "admin@contoso.com"
+Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer" -AdminUpn "admin@contoso.com"
 ```
 
-This will create a team named "Contoso Sales Team" in the Power Platform environment with the id "env-123".
-It will link the team to the Microsoft Entra Security Group named "Contoso Sales SG".
-It will set the membership type to "Members and Guests".
-It will assign the "System Customizer" security role to the team.
+This will add the Microsoft Entra ID security group "Contoso Sales Security Group" as a team in the Power Platform environment with the id "env-123".
+The team will be named "Contoso Sales Team" and have the membership type "Members and Guests".
+The "System Customizer" security role will be assigned to the team.
+The administrator of the team will be "admin@contoso.com".
 
 ## PARAMETERS
 
 ### -EnvironmentId
 The id of the environment that you want to work against.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -62,7 +63,7 @@ Accept wildcard characters: False
 ```
 
 ### -Name
-The name of the team you want to create in the Power Platform environment.
+The name of the team to create in the Power Platform environment.
 
 ```yaml
 Type: String
@@ -77,9 +78,9 @@ Accept wildcard characters: False
 ```
 
 ### -SecurityGroup
-The name or id of the Microsoft Entra Security Group that you want to link the team to.
+The Microsoft Entra ID security group that you want to assign as a team in the Power Platform environment.
 
-You can use either the name or the id of the Security Group, and the function will try to find a match in Microsoft Graph.
+Can be either the name or the id (objectId) of the Microsoft Entra ID security group.
 
 ```yaml
 Type: String
@@ -94,13 +95,9 @@ Accept wildcard characters: False
 ```
 
 ### -MembershipType
-The membership type of the team in relation to the Microsoft Entra Security Group.
+The membership type of the team.
 
-Possible values are:
-- Members and Guests
-- Members
-- Guests
-- Owners
+Can be either "Members and Guests", "Members", "Guests", or "Owners".
 
 ```yaml
 Type: String
@@ -115,7 +112,9 @@ Accept wildcard characters: False
 ```
 
 ### -Role
-The name of the security role that you want to assign to the team.
+The security role that you want to assign to the team.
+
+Can be either the role name or the role ID.
 
 ```yaml
 Type: String
@@ -130,9 +129,11 @@ Accept wildcard characters: False
 ```
 
 ### -AdminUpn
-The User Principal Name (UPN) of the administrator who will be associated with the team.
+The User Principal Name (UPN) of the admin user in the Power Platform environment.
 
-If not supplied, the function will try to determine the UPN of the user running the function, and use that as the administrator.
+This user needs to have sufficient permissions to create teams and assign security roles in the Power Platform environment.
+
+If not provided, the cmdlet will use the account used to authenticate to Azure.
 
 ```yaml
 Type: String

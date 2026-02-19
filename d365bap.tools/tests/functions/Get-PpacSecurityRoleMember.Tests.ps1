@@ -37,9 +37,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter UserId' {
-			$parameter = (Get-Command Get-PpacSecurityRoleMember).Parameters['UserId']
-			$parameter.Name | Should -Be 'UserId'
+		It 'Should have the expected parameter User' {
+			$parameter = (Get-Command Get-PpacSecurityRoleMember).Parameters['User']
+			$parameter.Name | Should -Be 'User'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Role
-		__AllParameterSets -EnvironmentId -Role -UserId -IncludePpacApplications -AsExcelOutput
+		__AllParameterSets -EnvironmentId -Role -User -IncludePpacApplications -AsExcelOutput
 		#>
 	}
 

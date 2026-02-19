@@ -1,53 +1,44 @@
 ﻿
 <#
     .SYNOPSIS
-        Get environment info
+        Get information about Power Platform environments as listed in the Power Platform Admin Center (PPAC).
         
     .DESCRIPTION
-        Enables the user to query and validate all environments that are available from inside PPAC
-        
-        It utilizes the "https://api.bap.microsoft.com" REST API
+        This cmdlet retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC). It allows filtering by environment ID, checking for Finance and Operations enabled environments, and exporting the results to Excel.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against
+        The ID of the environment to retrieve.
         
-        Default value is "*" - which translates into all available environments
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+        
+        Supports wildcard characters for flexible matching.
         
     .PARAMETER FnoEnabled
-        Instruct the cmdlet to only return environments that have Finance and Operations enabled
+        Instructs the cmdlet to filter and return only environments that are enabled for Finance and Operations.
         
     .PARAMETER AsExcelOutput
-        Instruct the cmdlet to output all details directly to an Excel file
-        
-        This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
+        Instructs the cmdlet to export the retrieved environment information to an Excel file.
         
     .EXAMPLE
         PS C:\> Get-BapEnvironment
         
-        This will query for ALL available environments.
-        It will include both PPAC and FinOps enabled environments.
+        This command retrieves all Power Platform environments listed in the Power Platform Admin Center (PPAC) and displays their information in the console.
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -EnvironmentId "Contoso*"
+        
+        This command retrieves all Power Platform environments matching "Contoso*" and displays their information in the console.
+        It will match environments with names, display names, or linked app metadata IDs against "Contoso*".
         
     .EXAMPLE
         PS C:\> Get-BapEnvironment -FnoEnabled
         
-        This will query for ALL available environments.
-        It will ONLY include FinOps enabled environments.
-        
-    .EXAMPLE
-        PS C:\> Get-BapEnvironment -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
-        
-        This will query for the specific environment.
-        
-    .EXAMPLE
-        PS C:\> Get-BapEnvironment -EnvironmentId *test*
-        
-        This will query for the specific environment, using a wildcard search.
+        This command retrieves all Power Platform environments that are enabled for Finance and Operations and displays their information in the console.
         
     .EXAMPLE
         PS C:\> Get-BapEnvironment -AsExcelOutput
         
-        This will query for ALL available environments.
-        Will output all details into an Excel file, that will auto open on your machine.
+        This command retrieves all Power Platform environments and exports their information to an Excel file.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -71,18 +62,23 @@ function Get-BapEnvironment {
             "Authorization" = "Bearer $($tokenBapValue)"
         }
         
-        $resEnvs = Invoke-RestMethod -Method Get `
+        $colEnvsRaw = Invoke-RestMethod -Method Get `
             -Uri "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01" `
             -Headers $headersBapApi 4> $null | `
             Select-Object -ExpandProperty Value
     }
     
     process {
-        $colEnvs = $resEnvs | Where-Object {
+        $colEnvs = $colEnvsRaw | Where-Object {
             ($_.Name -like $EnvironmentId -or $_.Name -eq $EnvironmentId) `
                 -or ($_.properties.displayName -like $EnvironmentId `
-                    -or $_.properties.displayName -eq $EnvironmentId
-            )
+                    -or $_.properties.displayName -eq $EnvironmentId) `
+                -or ($_.Properties.linkedAppMetadata.id -like $EnvironmentId `
+                    -or $_.Properties.linkedAppMetadata.id -eq $EnvironmentId)
+        }
+        
+        if ($FnoEnabled) {
+            $colEnvs = $colEnvs | Where-Object { $null -ne $_.Properties.linkedAppMetadata.type }
         }
             
         $resColRaw = @(
@@ -170,9 +166,6 @@ function Get-BapEnvironment {
         },
         *
 
-        if ($FnoEnabled) {
-            $resCol = $resCol | Where-Object { $null -ne $_.FinOpsMetadataEnvType }
-        }
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-BapEnvironment" `

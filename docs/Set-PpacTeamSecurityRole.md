@@ -5,41 +5,44 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-BapEnvironmentSecurityRoleMember
+# Set-PpacTeamSecurityRole
 
 ## SYNOPSIS
-Set Security Role members from Entra Group in environment
+Set Security Role for a team in a Power Platform environment.
 
 ## SYNTAX
 
 ```
-Set-BapEnvironmentSecurityRoleMember [-EnvironmentId] <String> [-ObjectId] <String> [-Role] <String>
+Set-PpacTeamSecurityRole [-EnvironmentId] <String> [-Team] <String> [-Role] <String[]>
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to set Security Role members in the Power Platform environment based on members from a Security Group in Azure AD / Entra ID.
+This cmdlet allows you to set a Security Role for a team in a Power Platform environment.
+It can be used to configure a Security Role to a team.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Set-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -ObjectId 12345678-90ab-cdef-1234-567890abcdef -Role "System Administrator"
+Set-PpacTeamSecurityRole -EnvironmentId "ContosoEnv" -Team "ContosoTeam" -Role "ContosoRole"
 ```
 
-This will add all members from the Security Group with ObjectId "12345678-90ab-cdef-1234-567890abcdef" to the Security Role "System Administrator" in the environment with id containing "uat".
+This command sets the Security Role "ContosoRole" for the team "ContosoTeam" in the Power Platform environment "ContosoEnv".
 
 ### EXAMPLE 2
 ```
-Set-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -ObjectId "My Security Group" -Role "Basic User"
+Set-PpacTeamSecurityRole -EnvironmentId "ContosoEnv" -Team "ContosoTeam" -Role "ContosoRole1","ContosoRole2"
 ```
 
-This will add all members from the Security Group with Display Name "My Security Group" to the Security Role "Basic User" in the environment with id containing "uat".
+This command sets the Security Roles "ContosoRole1" and "ContosoRole2" for the team "ContosoTeam" in the Power Platform environment "ContosoEnv".
 
 ## PARAMETERS
 
 ### -EnvironmentId
-Id of the environment that you want to work against.
+The ID of the environment to set the Security Role for.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -53,13 +56,15 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ObjectId
-The ObjectId or Display Name of the Security Group in Azure AD / Entra ID that you want to use as source for members to add to the Security Role.
+### -Team
+The name or ID of the team to set the Security Role for.
+
+Can be either the team name or the team ID.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: EntraGroup
+Aliases:
 
 Required: True
 Position: 2
@@ -69,10 +74,14 @@ Accept wildcard characters: False
 ```
 
 ### -Role
-The name of the Security Role in the Power Platform environment to which you want to add members from the specified Security Group.
+The name or ID of the Security Role to assign to the team.
+
+Can be either the role name or the role ID.
+
+Multiple roles / array of roles are supported.
 
 ```yaml
-Type: String
+Type: String[]
 Parameter Sets: (All)
 Aliases: RoleName
 
@@ -106,6 +115,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ## NOTES
-author: Mötz Jensen (@Splaxi)
+Author: Mötz Jensen (@Splaxi)
 
 ## RELATED LINKS

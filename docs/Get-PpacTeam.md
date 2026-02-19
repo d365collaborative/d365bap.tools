@@ -18,29 +18,39 @@ Get-PpacTeam [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput] [-Pro
 ```
 
 ## DESCRIPTION
-Enables the user to get details about teams in a Power Platform environment.
+This cmdlet retrieves team details from a Power Platform environment.
+It allows filtering by team name or ID, and exporting the results to Excel.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-PpacTeam -EnvironmentId "env-123" -Name "*Team*"
+Get-PpacTeam -EnvironmentId "ContosoEnv" -Name "Contoso Team"
 ```
 
-This will retrieve the team with the name "*Team*" in the environment with the id "env-123".
+This command retrieves the team with the name "Contoso Team" from the environment "ContosoEnv" and displays its information in the console.
 
 ### EXAMPLE 2
 ```
-Get-PpacTeam -EnvironmentId "env-123" -Name "*Team*" -AsExcelOutput
+Get-PpacTeam -EnvironmentId "ContosoEnv" -Name "*contoso*"
 ```
 
-This will retrieve the team with the name "*Team*" in the environment with the id "env-123".
-It will export the results to an Excel file.
+This command retrieves all teams with names matching "*contoso*" from the environment "ContosoEnv" and displays their information in the console.
+
+### EXAMPLE 3
+```
+Get-PpacTeam -EnvironmentId "ContosoEnv" -AsExcelOutput
+```
+
+This command retrieves all teams from the environment "ContosoEnv".
+It will export the information to an Excel file.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against.
+The ID of the environment to retrieve team details from.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -55,9 +65,11 @@ Accept wildcard characters: False
 ```
 
 ### -Name
-The name of the team you want to get details for.
+The name or ID of the team to retrieve details for.
 
-Support wildcards (*) to filter the team names.
+Can be either the team name or the team ID.
+
+Supports wildcard characters for flexible matching.
 
 ```yaml
 Type: String
@@ -72,7 +84,7 @@ Accept wildcard characters: False
 ```
 
 ### -AsExcelOutput
-Instructs the function to export the results to an Excel file.
+Instructs the cmdlet to export the retrieved team information to an Excel file.
 
 ```yaml
 Type: SwitchParameter

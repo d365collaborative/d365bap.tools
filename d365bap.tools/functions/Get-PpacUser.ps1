@@ -1,80 +1,56 @@
 ﻿
 <#
     .SYNOPSIS
-        Get users from environment
+        Get information about users in a Power Platform environment.
         
     .DESCRIPTION
-        Enables the user to fetch all users from the environment
-        
-        Utilizes the built-in "systemusers" OData entity
-        
-        Allows the user to include all users, based on those who has the ApplicationId property filled
+        This cmdlet retrieves information about users in a Power Platform environment. It allows filtering by user name or ID, including application users, and exporting the results to Excel.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against
+        The ID of the environment to retrieve users from.
         
-        This can be obtained from the Get-BapEnvironment cmdlet
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
-    .PARAMETER Name
-        The name, email or systemuserid of the user that you want to filter on
+    .PARAMETER User
+        The name or ID of the user to filter the users by.
         
-        Wildcard search is supported
+        Can be either the user name, user ID, user principal name (UPN) or application ID.
         
-        Default value is "*" - which translates into all available users
+        Supports wildcard characters for flexible matching.
         
     .PARAMETER IncludeAppIds
-        Instruct the cmdlet to include all users that are available from the "systemusers" OData Entity
+        Instructs the cmdlet to include application users (service principals) in the results. By default, application users are excluded.
         
-        Simply includes those who has the ApplicationId property filled
+        Application users can be identified by their application ID and typically do not have an email address or UPN.
         
     .PARAMETER AsExcelOutput
-        Instruct the cmdlet to output all details directly to an Excel file
-        
-        This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
+        Instructs the cmdlet to export the retrieved user information to an Excel file.
         
     .EXAMPLE
-        PS C:\> Get-PpacUser -EnvironmentId *uat*
+        PS C:\> Get-PpacUser -EnvironmentId "ContosoEnv"
         
-        This will fetch all ordinary users from the environment.
-        
-        Sample output:
-        Email                          Name                           PpacAppId            PpacSystemUserId
-        -----                          ----                           ---------            ----------------
-        SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
-        INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
-        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
-        ade@temp.com                   Alex Denver                                         39309a5c-7676-4c8a-b702-719fb92c5151
+        This command retrieves all users from the Power Platform environment "ContosoEnv" and displays their information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacUser -EnvironmentId *uat* -IncludeAppIds
+        PS C:\> Get-PpacUser -EnvironmentId "ContosoEnv" -User "john.doe"
         
-        This will fetch all users from the environment.
-        It will include the ones with the ApplicationId property filled.
-        
-        Sample output:
-        Email                          Name                           PpacAppId            PpacSystemUserId
-        -----                          ----                           ---------            ----------------
-        SYSTEM                                                                             5d2ff978-a74c-4ba4-8cc2-b4c5a23994f7
-        INTEGRATION                                                                        baabe592-2860-4d1a-9365-e95317372498
-        aba@temp.com                   Austin Baker                                        f85bcd69-ef72-45bd-a338-62670a8cef2a
-        AIBuilderProd@onmicrosoft.com  # AIBuilderProd                0a143f2d-2320-414... c96f82b8-320f-4c5e-ac84-1831f4dc7d5f
+        This command retrieves the user with the name "john.doe" from the Power Platform environment "ContosoEnv" and displays their information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacUser -EnvironmentId *uat* -AsExcelOutput
+        PS C:\> Get-PpacUser -EnvironmentId "ContosoEnv" -User "*john*"
         
-        This will fetch all ordinary users from the environment.
-        Will output all details into an Excel file, that will auto open on your machine.
-        
-    .EXAMPLE
-        PS C:\> Get-PpacUser -EnvironmentId *uat* -Name "alice@contoso.com"
-        
-        This will fetch the user with the specified email from the environment.
-        It will return the user with email "alice@contoso.com".
+        This command retrieves all users with names, user IDs, UPNs or application IDs matching "*john*" from the Power Platform environment "ContosoEnv" and displays their information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacUser -EnvironmentId *uat* -Name "*@contoso.com"
+        PS C:\> Get-PpacUser -EnvironmentId "ContosoEnv" -IncludeAppIds
         
-        This will fetch all users with email that ends with "@contoso.com" from the environment.
+        This command retrieves all users, including application users, from the Power Platform environment "ContosoEnv" and displays their information in the console.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacUser -EnvironmentId "ContosoEnv" -IncludeAppIds -AsExcelOutput
+        
+        This command retrieves all users, including application users, from the Power Platform environment "ContosoEnv".
+        It will export the information to an Excel file.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -85,7 +61,7 @@ function Get-PpacUser {
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
-        [string] $Name = "*",
+        [string] $User = "*",
 
         [switch] $IncludeAppIds,
 
@@ -119,34 +95,36 @@ function Get-PpacUser {
     process {
         if (Test-PSFFunctionInterrupt) { return }
         
-        $resUsers = Invoke-RestMethod `
+        $colUsersRaw = Invoke-RestMethod `
             -Method Get `
-            -Uri $($baseUri + '/api/data/v9.2/systemusers?$select=fullname,internalemailaddress,applicationid,azureactivedirectoryobjectid&$expand=user_settings($select=uilanguageid)') `
-            -Headers $headersWebApi 4> $null
+            -Uri $($baseUri + '/api/data/v9.2/systemusers?$select=fullname,internalemailaddress,applicationid,azureactivedirectoryobjectid') `
+            -Headers $headersWebApi 4> $null | `
+            Select-Object -ExpandProperty value
 
-        $resCol = @(
-            foreach ($usrObj in  $($resUsers.value | Sort-Object -Property internalemailaddress)) {
-                if ((-not ($usrObj.systemuserid -like $Name -or $usrObj.systemuserid -eq $Name)) `
-                        -and (-not ($usrObj.internalemailaddress -like $Name -or $usrObj.internalemailaddress -eq $Name)) `
-                        -and (-not ($usrObj.fullname -like $Name -or $usrObj.fullname -eq $Name)) `
-                ) { continue }
+        $colUsers = $colUsersRaw | Where-Object {
+            ($_.systemuserid -like $User -or $_.systemuserid -eq $User) `
+                -or ($_.internalemailaddress -like $User -or $_.internalemailaddress -eq $User) `
+                -or ($_.applicationid -like $User -or $_.applicationid -eq $User) `
+                -or ($_.azureactivedirectoryobjectid -like $User -or $_.azureactivedirectoryobjectid -eq $User) `
+                -or ($_.fullname -like $User -or $_.fullname -eq $User)
+        }
 
-                $usrObj | Add-Member -MemberType NoteProperty -Name "lang" -Value $($languages | Where-Object { ($_.localeid -eq $usrObj.user_settings[0].uilanguageid) -or ($_.BaseLocaleId -eq $usrObj.user_settings[0].uilanguageid) } | Select-Object -First 1 -ExpandProperty code)
-                $usrObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacUser" `
-                    -ExcludeProperty "@odata.etag" `
-                    -Property "systemuserid as PpacSystemUserId",
-                "internalemailaddress as Email",
-                "internalemailaddress as Upn",
-                "fullname as Name",
-                "applicationid as PpacAppId",
-                "lang as Language",
-                "azureactivedirectoryobjectid as EntraObjectId",
-                *
-            }
+        $resCol = @($colUsers | Select-PSFObject -TypeName "D365Bap.Tools.PpacUser" `
+                -ExcludeProperty "@odata.etag" `
+                -Property "systemuserid as PpacSystemUserId",
+            "internalemailaddress as Email",
+            "internalemailaddress as Upn",
+            "fullname as Name",
+            "applicationid as PpacAppId",
+            "azureactivedirectoryobjectid as EntraObjectId",
+            @{Name = "NameSortable"; Expression = { $_.fullname.Replace("# ", "") } },
+            *
         )
 
+        $resCol = $resCol | Sort-Object -Property NameSortable
+
         if (-not $IncludeAppIds) {
-            $resCol = $resCol | Where-Object applicationid -eq $null
+            $resCol = $resCol | Where-Object PpacAppId -eq $null
         }
 
         if ($AsExcelOutput) {

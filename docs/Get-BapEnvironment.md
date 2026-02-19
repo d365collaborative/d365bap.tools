@@ -8,7 +8,7 @@ schema: 2.0.0
 # Get-BapEnvironment
 
 ## SYNOPSIS
-Get environment info
+Get information about Power Platform environments as listed in the Power Platform Admin Center (PPAC).
 
 ## SYNTAX
 
@@ -18,9 +18,8 @@ Get-BapEnvironment [[-EnvironmentId] <String>] [-FnoEnabled] [-AsExcelOutput]
 ```
 
 ## DESCRIPTION
-Enables the user to query and validate all environments that are available from inside PPAC
-
-It utilizes the "https://api.bap.microsoft.com" REST API
+This cmdlet retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC).
+It allows filtering by environment ID, checking for Finance and Operations enabled environments, and exporting the results to Excel.
 
 ## EXAMPLES
 
@@ -29,45 +28,38 @@ It utilizes the "https://api.bap.microsoft.com" REST API
 Get-BapEnvironment
 ```
 
-This will query for ALL available environments.
-It will include both PPAC and FinOps enabled environments.
+This command retrieves all Power Platform environments listed in the Power Platform Admin Center (PPAC) and displays their information in the console.
 
 ### EXAMPLE 2
+```
+Get-BapEnvironment -EnvironmentId "Contoso*"
+```
+
+This command retrieves all Power Platform environments matching "Contoso*" and displays their information in the console.
+It will match environments with names, display names, or linked app metadata IDs against "Contoso*".
+
+### EXAMPLE 3
 ```
 Get-BapEnvironment -FnoEnabled
 ```
 
-This will query for ALL available environments.
-It will ONLY include FinOps enabled environments.
-
-### EXAMPLE 3
-```
-Get-BapEnvironment -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
-```
-
-This will query for the specific environment.
+This command retrieves all Power Platform environments that are enabled for Finance and Operations and displays their information in the console.
 
 ### EXAMPLE 4
-```
-Get-BapEnvironment -EnvironmentId *test*
-```
-
-This will query for the specific environment, using a wildcard search.
-
-### EXAMPLE 5
 ```
 Get-BapEnvironment -AsExcelOutput
 ```
 
-This will query for ALL available environments.
-Will output all details into an Excel file, that will auto open on your machine.
+This command retrieves all Power Platform environments and exports their information to an Excel file.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against
+The ID of the environment to retrieve.
 
-Default value is "*" - which translates into all available environments
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+
+Supports wildcard characters for flexible matching.
 
 ```yaml
 Type: String
@@ -82,7 +74,7 @@ Accept wildcard characters: False
 ```
 
 ### -FnoEnabled
-Instruct the cmdlet to only return environments that have Finance and Operations enabled
+Instructs the cmdlet to filter and return only environments that are enabled for Finance and Operations.
 
 ```yaml
 Type: SwitchParameter
@@ -97,9 +89,7 @@ Accept wildcard characters: False
 ```
 
 ### -AsExcelOutput
-Instruct the cmdlet to output all details directly to an Excel file
-
-This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
+Instructs the cmdlet to export the retrieved environment information to an Excel file.
 
 ```yaml
 Type: SwitchParameter

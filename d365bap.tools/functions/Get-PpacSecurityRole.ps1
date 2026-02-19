@@ -1,102 +1,59 @@
 ﻿
 <#
     .SYNOPSIS
-        Get Security Roles from environment
+        Get information about Power Platform security roles in a given environment.
         
     .DESCRIPTION
-        Get Security Roles from the Dataverse environment
+        This cmdlet retrieves information about Power Platform security roles in a given environment. It allows filtering by role name or ID, including all roles, and exporting the results to Excel.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against
+        The ID of the environment to retrieve security roles from.
+        
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER Name
-        Name or RoleId of the Security Role that you want to work against
+        The name or ID of the security role to filter the roles by.
         
-        Supports wildcard search
+        Can be either the role name or role ID.
         
-        Default value is "*" - which translates into all available Security Roles
+        Supports wildcard characters for flexible matching.
         
     .PARAMETER IncludeAll
-        Instruct the cmdlet to output all security roles, regardless of their type
+        Instructs the cmdlet to include all security roles in the results, including both environment-level and business unit-level roles.
         
-        This will output all security roles, including the ones that are tied to Business Units, which at first glance might seem like duplicates
+        By default, only environment-level roles are included.
         
     .PARAMETER AsExcelOutput
-        Instruct the cmdlet to output all details directly to an Excel file
-        
-        This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
+        Instructs the cmdlet to export the retrieved security role information to an Excel file.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRole -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+        PS C:\> Get-PpacSecurityRole -EnvironmentId "ContosoEnv"
         
-        This will list all Security Roles from the Dataverse environment, by the EnvironmentId (guid).
-        It will only list the Security Roles that are tied to the Environment.
-        
-        Sample output:
-        PpacRoleId                           Name                                     IsManaged PpacRoleType
-        ----------                           ----                                     --------- ------------
-        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature… True      Environment
-        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature… True      Environment
-        d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
+        This command retrieves all Power Platform security roles from the environment "ContosoEnv" and displays their information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat*
+        PS C:\> Get-PpacSecurityRole -EnvironmentId "ContosoEnv" -Name "System Customizer"
         
-        This will list all Security Roles from the Dataverse environment, by the EnvironmentId (Name/Wildcard).
-        It will only list the Security Roles that are tied to the Environment.
-        
-        Sample output:
-        PpacRoleId                           Name                                     IsManaged PpacRoleType
-        ----------                           ----                                     --------- ------------
-        5a8c8098-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature… True      Environment
-        1cbf96a1-b933-eb11-a813-000d3a8e7ded (Deprecated) Marketing Realtime Feature… True      Environment
-        d364ba1c-1bfb-eb11-94f0-0022482381ee Accounts Payable Admin                   True      Environment
+        This command retrieves the Power Platform security role with the name "System Customizer" from the environment "ContosoEnv" and displays its information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -Name "*Administrator*"
+        PS C:\> Get-PpacSecurityRole -EnvironmentId "ContosoEnv" -Name "*system*"
         
-        This will list all Security Roles, which matches the "*Administrator*" pattern, from the Dataverse environment.
-        It will only list the Security Roles that are tied to the Environment.
-        
-        Sample output:
-        PpacRoleId                           Name                                     IsManaged PpacRoleType
-        ----------                           ----                                     --------- ------------
-        470a750f-d810-4ee7-a64a-ec002965c1ec Copilot for Service Administrator        True      Environment
-        ebbb3fcb-fcd7-4bf8-9a48-7b5a9878e79e Sales Copilot Administrator              True      Environment
-        abce3b01-5697-4973-9d7d-fca48ca84445 Survey Services Administrator(Deprecate… True      Environment
-        63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
+        This command retrieves all Power Platform security roles with names matching "*system*" from the environment "ContosoEnv" and displays their information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -Name "System Administrator"
+        PS C:\> Get-PpacSecurityRole -EnvironmentId "ContosoEnv" -IncludeAll
         
-        This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
-        It will only list the Security Roles that are tied to the Environment.
-        
-        Sample output:
-        PpacRoleId                           Name                                     IsManaged PpacRoleType
-        ----------                           ----                                     --------- ------------
-        63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
+        This command retrieves all Power Platform security roles, including both environment-level and business unit-level roles, from the environment "ContosoEnv" and displays their information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -Name "System Administrator" -IncludeAll
+        PS C:\> Get-PpacSecurityRole -EnvironmentId "ContosoEnv" -AsExcelOutput
         
-        This will list all Security Roles, which matches the "System Administrator" pattern, from the Dataverse environment.
-        It will only list the Security Roles that are tied to the Environment.
-        
-        Sample output:
-        PpacRoleId                           Name                                     IsManaged PpacRoleType
-        ----------                           ----                                     --------- ------------
-        0cdbad8e-72e7-406c-ae38-8c4406caea59 System Administrator                     False     BusinessUnit
-        63e389ae-bc55-ec11-8f8f-6045bd88b210 System Administrator                     True      Environment
-        
-    .EXAMPLE
-        PS C:\> Get-PpacSecurityRole -EnvironmentId *uat* -AsExcelOutput
-        
-        This will list all Security Roles from the Dataverse environment.
-        Will output all details into an Excel file, that will auto open on your machine.
+        This command retrieves all Power Platform security roles from the environment "ContosoEnv".
+        It will export the information to an Excel file.
         
     .NOTES
-        General notes
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-PpacSecurityRole {
     [CmdletBinding()]
@@ -134,29 +91,24 @@ function Get-PpacSecurityRole {
         $headersWebApi = @{
             "Authorization" = "Bearer $($tokenWebApiValue)"
         }
-
-        $searchById = Test-Guid -InputObject $Name
     }
     
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $resRoles = Invoke-RestMethod `
+        $colRolesRaw = Invoke-RestMethod `
             -Method Get `
             -Uri $($baseUri + '/api/data/v9.2/roles?$expand=businessunitid($select=businessunitid,_parentbusinessunitid_value)') `
-            -Headers $headersWebApi 4> $null
+            -Headers $headersWebApi 4> $null | `
+            Select-Object -ExpandProperty value
 
-        [System.Collections.Generic.List[System.Object]] $resCol = @()
+        $colRoles = $colRolesRaw | Where-Object {
+            ($_.name -like $Name -or $_.name -eq $Name) `
+                -or ($_.roleid -like $Name -or $_.roleid -eq $Name)
+        } | Sort-Object -Property name
 
-        foreach ($roleObj in  $($resRoles.value | Sort-Object -Property name)) {
-            if ($searchById) {
-                if (-not ($roleObj.roleid -like $Name)) { continue }
-            }
-            else {
-                if (-not ($roleObj.Name -like $Name)) { continue }
-            }
-                
-            $tmp = $roleObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacRole" `
+        $resCol = @(
+            $colRoles | Select-PSFObject -TypeName "D365Bap.Tools.PpacRole" `
                 -ExcludeProperty "@odata.etag" `
                 -Property "roleid as PpacRoleId", *,
             @{Name = "PpacRoleType"; Expression = {
@@ -168,13 +120,10 @@ function Get-PpacSecurityRole {
                     }
                 }
             }
+        )
 
-            if ($IncludeAll) {
-                $resCol.Add($tmp)
-            }
-            elseif ($tmp.PpacRoleType -eq "Environment") {
-                $resCol.Add($tmp)
-            }
+        if (-not $IncludeAll) {
+            $resCol = $resCol | Where-Object PpacRoleType -eq "Environment"
         }
 
         if ($AsExcelOutput) {

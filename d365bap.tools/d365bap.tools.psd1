@@ -45,6 +45,8 @@
 	FunctionsToExport = @(
 		'Add-UdeWindowsDefenderRules'
 		
+		, 'Add-FscmUserFromSecurityGroup'
+		
 		, 'Add-PpacApplicationUser'
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
@@ -70,9 +72,9 @@
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		
-		, 'Get-FnOEnvironmentSecurityRole'
-		, 'Get-FnOEnvironmentSecurityRoleMember'
-		, 'Get-FnOEnvironmentUser'
+		, 'Get-FscmSecurityRole'
+		, 'Get-FscmSecurityRoleMember'
+		, 'Get-FscmUser'
 		
 		, 'Get-PpacApplicationUser'
 		, 'Get-PpacD365App'
@@ -114,16 +116,14 @@
 		
 		, 'Set-BapAzCopyPath'
 		
-		, 'Set-BapEnvironmentAdminMode'
+		, 'Set-PpacAdminMode'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
-		, 'Set-BapEnvironmentSecurityRoleMember'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
-		, 'Set-FnOEnvironmentSecurityRoleMember'
-
 		, 'Set-PpacSecurityGroup'
-		
+		, 'Set-PpacTeamSecurityRole'
+
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'

@@ -4,29 +4,38 @@
         Get team details from Power Platform environment.
         
     .DESCRIPTION
-        Enables the user to get details about teams in a Power Platform environment.
+        This cmdlet retrieves team details from a Power Platform environment. It allows filtering by team name or ID, and exporting the results to Excel.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against.
+        The ID of the environment to retrieve team details from.
+        
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER Name
-        The name of the team you want to get details for.
+        The name or ID of the team to retrieve details for.
         
-        Support wildcards (*) to filter the team names.
+        Can be either the team name or the team ID.
+        
+        Supports wildcard characters for flexible matching.
         
     .PARAMETER AsExcelOutput
-        Instructs the function to export the results to an Excel file.
+        Instructs the cmdlet to export the retrieved team information to an Excel file.
         
     .EXAMPLE
-        PS C:\> Get-PpacTeam -EnvironmentId "env-123" -Name "*Team*"
+        PS C:\> Get-PpacTeam -EnvironmentId "ContosoEnv" -Name "Contoso Team"
         
-        This will retrieve the team with the name "*Team*" in the environment with the id "env-123".
+        This command retrieves the team with the name "Contoso Team" from the environment "ContosoEnv" and displays its information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacTeam -EnvironmentId "env-123" -Name "*Team*" -AsExcelOutput
+        PS C:\> Get-PpacTeam -EnvironmentId "ContosoEnv" -Name "*contoso*"
         
-        This will retrieve the team with the name "*Team*" in the environment with the id "env-123".
-        It will export the results to an Excel file.
+        This command retrieves all teams with names matching "*contoso*" from the environment "ContosoEnv" and displays their information in the console.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacTeam -EnvironmentId "ContosoEnv" -AsExcelOutput
+        
+        This command retrieves all teams from the environment "ContosoEnv".
+        It will export the information to an Excel file.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -74,19 +83,18 @@ function Get-PpacTeam {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $resTeams = Invoke-RestMethod `
+        $colTeamsRaw = Invoke-RestMethod `
             -Method Get `
             -Uri $($baseUri + '/api/data/v9.2/teams?$expand=teamroles_association($select=name)') `
-            -Headers $headersWebApi 4> $null
+            -Headers $headersWebApi 4> $null | `
+            Select-Object -ExpandProperty value
 
-        [System.Collections.Generic.List[System.Object]] $resCol = @()
-        
-        foreach ($teamObj in  $($resTeams.value | Sort-Object -Property name -Descending)) {
-            if ((-not ($teamObj.TeamId -like $Name -or $teamObj.TeamId -eq $Name)) `
-                    -and (-not ($teamObj.name -like $Name -or $teamObj.name -eq $Name)) `
-            ) { continue }
+        $colTeams = $colTeamsRaw | Where-Object {
+            ($_.name -like $Name -or $_.name -eq $Name) `
+                -or ($_.teamId -like $Name -or $_.teamId -eq $Name)
+        } | Sort-Object -Property name -Descending
 
-            $tmp = $teamObj | Select-PSFObject -TypeName "D365Bap.Tools.PpacTeam" `
+        $resCol = @($colTeams | Select-PSFObject -TypeName "D365Bap.Tools.PpacTeam" `
                 -ExcludeProperty "@odata.etag", "TeamType", "TeamId", "modifiedon", "membershiptype" `
                 -Property "teamId as PpacTeamId",
             "name as TeamName",
@@ -96,11 +104,10 @@ function Get-PpacTeam {
             "'membershiptype@OData.Community.Display.V1.FormattedValue' As MembershipType",
             "'_businessunitid_value@OData.Community.Display.V1.FormattedValue' As BusinessUnit",
             "modifiedon as ModifiedOn",
+            @{Name = "RolesList"; Expression = { ($_.teamroles_association.name -join ", ") } },
             *
-
-            $resCol.Add($tmp)
-        }
-
+        )
+        
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-PpacTeam"
             return

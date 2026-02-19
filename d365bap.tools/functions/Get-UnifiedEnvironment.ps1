@@ -13,7 +13,7 @@
         
         Supports wildcard patterns.
         
-        Can be either the environment name or the environment GUID.
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER SkipVersionDetails
         Instructs the function to skip retrieving version details.
