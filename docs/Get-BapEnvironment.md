@@ -13,7 +13,7 @@ Get information about Power Platform environments as listed in the Power Platfor
 ## SYNTAX
 
 ```
-Get-BapEnvironment [[-EnvironmentId] <String>] [-FnoEnabled] [-AsExcelOutput]
+Get-BapEnvironment [[-EnvironmentId] <String>] [-FscmEnabled] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -40,7 +40,7 @@ It will match environments with names, display names, or linked app metadata IDs
 
 ### EXAMPLE 3
 ```
-Get-BapEnvironment -FnoEnabled
+Get-BapEnvironment -FscmEnabled
 ```
 
 This command retrieves all Power Platform environments that are enabled for Finance and Operations and displays their information in the console.
@@ -73,7 +73,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -FnoEnabled
+### -FscmEnabled
 Instructs the cmdlet to filter and return only environments that are enabled for Finance and Operations.
 
 ```yaml

@@ -84,7 +84,7 @@ function Get-UnifiedEnvironment {
 
     begin {
         $colEnv = Get-BapEnvironment -EnvironmentId $EnvironmentId `
-            -FnoEnabled
+            -FscmEnabled
 
         $searchById = Test-Guid -InputObject $EnvironmentId
 

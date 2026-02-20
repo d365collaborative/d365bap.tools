@@ -87,12 +87,8 @@ function Add-FscmUserFromSecurityGroup {
             
         if (Test-PSFFunctionInterrupt) { return }
         
-        $colMembersRaw = Get-GraphGroupMember `
+        $colMembers = Get-GraphGroupMember `
             -Group $secGrp.id
-
-        $colMembers = $colMembersRaw | Where-Object {
-            $_.'@odata.type' -eq "#microsoft.graph.user"
-        }
 
         if (Test-PSFFunctionInterrupt) { return }
 

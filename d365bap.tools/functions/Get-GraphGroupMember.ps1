@@ -72,6 +72,8 @@ function Get-GraphGroupMember {
             Stop-PSFFunction -Message "Stopping because the Security Group has no members." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
         }
 
-        $colMembers
+        $colMembers | Where-Object {
+            $_.'@odata.type' -eq "#microsoft.graph.user"
+        }
     }
 }

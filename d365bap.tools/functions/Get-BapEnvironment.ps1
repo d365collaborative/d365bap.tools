@@ -1,47 +1,46 @@
-﻿
-<#
-    .SYNOPSIS
-        Get information about Power Platform environments as listed in the Power Platform Admin Center (PPAC).
-        
-    .DESCRIPTION
-        This cmdlet retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC). It allows filtering by environment ID, checking for Finance and Operations enabled environments, and exporting the results to Excel.
-        
-    .PARAMETER EnvironmentId
-        The ID of the environment to retrieve.
+﻿<#
+.SYNOPSIS
+    Retrieves information about Power Platform environments.
+
+.DESCRIPTION
+    This function retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC).
+    
+    It allows filtering by environment ID, checking for Finance and Operations enabled environments, and exporting the results to Excel.
+
+.PARAMETER EnvironmentId
+        The id of the environment that you want to work against.
         
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-        
-        Supports wildcard characters for flexible matching.
-        
-    .PARAMETER FnoEnabled
-        Instructs the cmdlet to filter and return only environments that are enabled for Finance and Operations.
-        
-    .PARAMETER AsExcelOutput
-        Instructs the cmdlet to export the retrieved environment information to an Excel file.
-        
-    .EXAMPLE
-        PS C:\> Get-BapEnvironment
-        
-        This command retrieves all Power Platform environments listed in the Power Platform Admin Center (PPAC) and displays their information in the console.
-        
-    .EXAMPLE
-        PS C:\> Get-BapEnvironment -EnvironmentId "Contoso*"
-        
-        This command retrieves all Power Platform environments matching "Contoso*" and displays their information in the console.
-        It will match environments with names, display names, or linked app metadata IDs against "Contoso*".
-        
-    .EXAMPLE
-        PS C:\> Get-BapEnvironment -FnoEnabled
-        
-        This command retrieves all Power Platform environments that are enabled for Finance and Operations and displays their information in the console.
-        
-    .EXAMPLE
-        PS C:\> Get-BapEnvironment -AsExcelOutput
-        
-        This command retrieves all Power Platform environments and exports their information to an Excel file.
-        
-    .NOTES
-        Author: Mötz Jensen (@Splaxi)
+
+.PARAMETER FscmEnabled
+Instructs the function to only return environments that have Dynamics 365 ERP suite capabilities (environments that is either linked or provisioned as an unified environment).
+
+.PARAMETER AsExcelOutput
+Instructs the function to export the results to an Excel file.
+
+.EXAMPLE
+PS C:\> Get-BapEnvironment
+
+This will return all environments in the Power Platform tenant.
+
+.EXAMPLE
+PS C:\> Get-BapEnvironment -EnvironmentId "env-123"
+
+This will return the environment with the id "env-123".
+
+.EXAMPLE
+PS C:\> Get-BapEnvironment -FscmEnabled
+
+This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
+
+.EXAMPLE
+PS C:\> Get-BapEnvironment -FscmEnabled -AsExcelOutput
+
+This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
+It will export the results to an Excel file.
+
+.NOTES
+Author: Mötz Jensen (@Splaxi)
 #>
 function Get-BapEnvironment {
     [CmdletBinding()]
@@ -49,7 +48,7 @@ function Get-BapEnvironment {
     param (
         [string] $EnvironmentId = "*",
 
-        [switch] $FnoEnabled,
+        [switch] $FscmEnabled,
 
         [switch] $AsExcelOutput
     )
@@ -77,7 +76,7 @@ function Get-BapEnvironment {
                     -or $_.Properties.linkedAppMetadata.id -eq $EnvironmentId)
         }
         
-        if ($FnoEnabled) {
+        if ($FscmEnabled) {
             $colEnvs = $colEnvs | Where-Object { $null -ne $_.Properties.linkedAppMetadata.type }
         }
             
