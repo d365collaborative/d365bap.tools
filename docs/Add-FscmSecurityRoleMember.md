@@ -5,41 +5,43 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-BapEnvironmentSecurityRoleMember
+# Add-FscmSecurityRoleMember
 
 ## SYNOPSIS
-Set Security Role members from Entra Group in environment
+Enables assignment of a user to a security role in the Dynamics 365 ERP environment.
 
 ## SYNTAX
 
 ```
-Set-BapEnvironmentSecurityRoleMember [-EnvironmentId] <String> [-ObjectId] <String> [-Role] <String>
+Add-FscmSecurityRoleMember [-EnvironmentId] <String> [-User] <String> [-Role] <String[]>
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to set Security Role members in the Power Platform environment based on members from a Security Group in Azure AD / Entra ID.
+This cmdlet assigns a user to one or more security roles in the specified Dynamics 365 ERP environment.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Set-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -ObjectId 12345678-90ab-cdef-1234-567890abcdef -Role "System Administrator"
+Add-FscmSecurityRoleMember -EnvironmentId "env-123" -User "alice" -Role "Sales Clerk"
 ```
 
-This will add all members from the Security Group with ObjectId "12345678-90ab-cdef-1234-567890abcdef" to the Security Role "System Administrator" in the environment with id containing "uat".
+This will assign the user "alice" to the "Sales Clerk" security role in the environment with the id "env-123".
 
 ### EXAMPLE 2
 ```
-Set-BapEnvironmentSecurityRoleMember -EnvironmentId *uat* -ObjectId "My Security Group" -Role "Basic User"
+Add-FscmSecurityRoleMember -EnvironmentId "env-123" -User "alice@contoso.com" -Role "Sales Clerk", "Sales Manager"
 ```
 
-This will add all members from the Security Group with Display Name "My Security Group" to the Security Role "Basic User" in the environment with id containing "uat".
+This will assign the user "alice@contoso.com" to the "Sales Clerk" and "Sales Manager" security roles in the environment with the id "env-123".
 
 ## PARAMETERS
 
 ### -EnvironmentId
-Id of the environment that you want to work against.
+The id of the environment that you want to work against.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -53,13 +55,15 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ObjectId
-The ObjectId or Display Name of the Security Group in Azure AD / Entra ID that you want to use as source for members to add to the Security Role.
+### -User
+The user that you want to assign to the security role.
+
+Can be either the User Principal Name (UPN) or the UserId of the user in the Dynamics 365 ERP environment.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: EntraGroup
+Aliases:
 
 Required: True
 Position: 2
@@ -69,10 +73,12 @@ Accept wildcard characters: False
 ```
 
 ### -Role
-The name of the Security Role in the Power Platform environment to which you want to add members from the specified Security Group.
+The security role that you want to assign to the user.
+
+Can be either the role name or the role ID.
 
 ```yaml
-Type: String
+Type: String[]
 Parameter Sets: (All)
 Aliases: RoleName
 
@@ -106,6 +112,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ## NOTES
-author: Mötz Jensen (@Splaxi)
+Author: Mötz Jensen (@Splaxi)
 
 ## RELATED LINKS

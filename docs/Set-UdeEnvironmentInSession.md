@@ -30,7 +30,7 @@ This will set the specified environment ID in the current PowerShell session.
 
 ### EXAMPLE 2
 ```
-Get-UdeEnvironment -EnvironmentId "env-123" | Set-UdeEnvironmentInSession
+Get-UnifiedEnvironment -EnvironmentId "env-123" | Set-UdeEnvironmentInSession
 ```
 
 This will set the environment ID from the piped UDE environment object in the current PowerShell session.

@@ -18,18 +18,18 @@
         Instructs the function to export the results to an Excel file.
         
     .EXAMPLE
-        PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123"
+        PS C:\> Get-UnifiedEnvironmentPackage -EnvironmentId "env-123"
         
         This will retrieve all UDE environment packages for the specified environment id.
         
     .EXAMPLE
-        PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123" -LatestOnly
+        PS C:\> Get-UnifiedEnvironmentPackage -EnvironmentId "env-123" -LatestOnly
         
         This will retrieve only the latest UDE environment package for the specified environment id.
         It is based on the modified date.
         
     .EXAMPLE
-        PS C:\> Get-UdeEnvironmentPackage -EnvironmentId "env-123" -AsExcelOutput
+        PS C:\> Get-UnifiedEnvironmentPackage -EnvironmentId "env-123" -AsExcelOutput
         
         This will retrieve all UDE environment packages for the specified environment id.
         Will output all details into an Excel file, that will auto open on your machine.
@@ -37,7 +37,7 @@
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Get-UdeEnvironmentPackage {
+function Get-UnifiedEnvironmentPackage {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
@@ -57,10 +57,10 @@ function Get-UdeEnvironmentPackage {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $envObj = Get-UdeEnvironment -EnvironmentId $EnvironmentId -SkipVersionDetails | Select-Object -First 1
+        $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId -SkipVersionDetails | Select-Object -First 1
 
         if ($null -eq $envObj) {
-            $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UdeEnvironment</c>. Consider using wildcards if needed."
+            $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
 
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
@@ -112,7 +112,7 @@ function Get-UdeEnvironmentPackage {
         )
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-UdeEnvironmentPackage"
+            $resCol | Export-Excel -WorksheetName "Get-UnifiedEnvironmentPackage"
             return
         }
 

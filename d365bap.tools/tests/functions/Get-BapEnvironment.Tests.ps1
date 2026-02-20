@@ -24,9 +24,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter FnoEnabled' {
-			$parameter = (Get-Command Get-BapEnvironment).Parameters['FnoEnabled']
-			$parameter.Name | Should -Be 'FnoEnabled'
+		It 'Should have the expected parameter FscmEnabled' {
+			$parameter = (Get-Command Get-BapEnvironment).Parameters['FscmEnabled']
+			$parameter.Name | Should -Be 'FscmEnabled'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -EnvironmentId -FnoEnabled -AsExcelOutput
+		__AllParameterSets -EnvironmentId -FscmEnabled -AsExcelOutput
 		#>
 	}
 

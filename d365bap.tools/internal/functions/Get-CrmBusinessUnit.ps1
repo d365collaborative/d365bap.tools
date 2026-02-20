@@ -37,16 +37,25 @@ function Get-CrmBusinessUnit {
     }
 
     process {
-        $resBusinessUnits = Invoke-RestMethod `
+        $colBuRaw = Invoke-RestMethod `
             -Method Get `
             -Uri $($baseUri + '/api/data/v9.2/businessunits?$expand=business_unit_parent_business_unit') `
-            -Headers $headersWebApi 4> $null
+            -Headers $headersWebApi 4> $null | `
+            Select-Object -ExpandProperty value
 
-        $resBusinessUnits.value | Select-PSFObject -TypeName "D365Bap.Tools.BusinessUnit" -Property "businessunitid as Id",
+        $colBu = $colBuRaw
+
+        $colBu | Select-PSFObject -TypeName "D365Bap.Tools.BusinessUnit" -Property "businessunitid as Id",
         Name,
-        @{Name = "IsRoot"; Expression = { $null -eq $_.business_unit_parent_business_unit[0].businessunitid } },
-        @{Name = "ParentId"; Expression = { $_.business_unit_parent_business_unit[0].businessunitid } },
-        @{Name = "ParentName"; Expression = { $_.business_unit_parent_business_unit[0].name } },
+        @{Name = "IsRoot"; Expression = { $null -eq $_._parentbusinessunitid_value } },
+        @{Name = "ParentId"; Expression = { $_._parentbusinessunitid_value } },
+        @{Name = "ParentName"; Expression = {
+                $tmpId = $_._parentbusinessunitid_value;
+                ($colBuRaw | `
+                    Where-Object { $_.businessunitid -eq $tmpId }
+                    ).name
+            }
+        },
         "_organizationid_value as OrganizationId"
     }
 }

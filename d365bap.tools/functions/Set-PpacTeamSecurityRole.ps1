@@ -1,40 +1,42 @@
 ﻿
 <#
     .SYNOPSIS
-        Enables assignment of a user to a security role in the Power Platform environment.
+        Set Security Role for a team in a Power Platform environment.
         
     .DESCRIPTION
-        This cmdlet assigns a user to one or more security roles in the specified Power Platform environment.
+        This cmdlet allows you to set a Security Role for a team in a Power Platform environment. It can be used to configure a Security Role to a team.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against.
+        The ID of the environment to set the Security Role for.
         
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
-    .PARAMETER User
-        The user that you want to assign to the security role.
+    .PARAMETER Team
+        The name or ID of the team to set the Security Role for.
         
-        Can be either the User Principal Name (UPN) or the UserId of the user in the Power Platform environment.
+        Can be either the team name or the team ID.
         
     .PARAMETER Role
-        The security role that you want to assign to the user.
+        The name or ID of the Security Role to assign to the team.
         
         Can be either the role name or the role ID.
         
-    .EXAMPLE
-        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -User "alice" -Role "System Customizer"
-        
-        This will assign the user "alice" to the "System Customizer" security role in the environment with the id "env-123".
+        Multiple roles / array of roles are supported.
         
     .EXAMPLE
-        PS C:\> Add-PpacSecurityRoleMember -EnvironmentId "env-123" -User "alice@contoso.com" -Role "System Customizer", "Environment Maker"
+        PS C:\> Set-PpacTeamSecurityRole -EnvironmentId "ContosoEnv" -Team "ContosoTeam" -Role "ContosoRole"
         
-        This will assign the user "alice@contoso.com" to the "System Customizer" and "Environment Maker" security roles in the environment with the id "env-123".
+        This command sets the Security Role "ContosoRole" for the team "ContosoTeam" in the Power Platform environment "ContosoEnv".
+        
+    .EXAMPLE
+        PS C:\> Set-PpacTeamSecurityRole -EnvironmentId "ContosoEnv" -Team "ContosoTeam" -Role "ContosoRole1","ContosoRole2"
+        
+        This command sets the Security Roles "ContosoRole1" and "ContosoRole2" for the team "ContosoTeam" in the Power Platform environment "ContosoEnv".
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Add-PpacSecurityRoleMember {
+function Set-PpacTeamSecurityRole {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -42,7 +44,8 @@ function Add-PpacSecurityRoleMember {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
-        [string] $User,
+        [Alias('Name')]
+        [string] $Team,
 
         [Parameter (Mandatory = $true)]
         [Alias('RoleName')]
@@ -68,8 +71,15 @@ function Add-PpacSecurityRoleMember {
         $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
-        $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApiValue)"
+        $teamObj = Get-PpacTeam `
+            -EnvironmentId $envObj.PpacEnvId `
+            -Name $Team | `
+            Select-Object -First 1
+
+        if ($null -eq $teamObj) {
+            $messageString = "The supplied team name: <c='em'>$Team</c> didn't return any matching team details in the Power Platform environment. Please verify that the team name is correct - try running the <c='em'>Get-PpacTeam</c> cmdlet."
+            Write-PSFMessage -Level Important -Message $messageString
+            Stop-PSFFunction -Message "Stopping because team was NOT found based on the name." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
 
         $colSecurityRoles = Get-PpacSecurityRole `
@@ -81,18 +91,9 @@ function Add-PpacSecurityRoleMember {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $crmUser = Get-PpacUser `
-            -EnvironmentId $envObj.PpacEnvId `
-            -User $User | `
-            Select-Object -First 1
-
-        if (Test-PSFFunctionInterrupt) { return }
-
-        if ($null -eq $crmUser) {
-            $messageString = "The supplied User: <c='em'>$User</c> is not an user in the Power Platform environment. Please verify that the user exists in the environment - try running the <c='em'>Get-PpacUser</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because user was NOT found based on the UPN." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
+        $localHeaders = @{
+            "Authorization" = "Bearer $($tokenWebApiValue)"
+            "Content-Type"  = "application/json"
         }
 
         foreach ($roleName in $role) {
@@ -101,7 +102,7 @@ function Add-PpacSecurityRoleMember {
                 Select-Object -First 1
 
             if ($null -eq $roleObj) {
-                $messageString = "The supplied RoleName: <c='em'>$roleName</c> is not a valid Security Role in the Power Platform environment. Please verify that the role exists in the environment - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
+                $messageString = "The supplied role name: <c='em'>$roleName</c> didn't return any matching role details in the Power Platform environment. Please verify that the role name is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
                 Write-PSFMessage -Level Important -Message $messageString
                 continue
             }
@@ -111,26 +112,27 @@ function Add-PpacSecurityRoleMember {
                 "@odata.id" = $baseUri + "/api/data/v9.2/roles($($roleObj.PpacRoleId))"
             } | ConvertTo-Json -Depth 10
 
-            $localUri = $baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))/systemuserroles_association/`$ref"
-           
+            $localUri = $baseUri + "/api/data/v9.2/teams($($teamObj.PpacTeamId))/teamroles_association/`$ref"
+
             Invoke-RestMethod -Method Post `
                 -Uri $localUri `
-                -Headers $headersWebApi `
-                -ContentType "application/json" `
+                -Headers $localHeaders `
+                -ContentType $localHeaders."Content-Type" `
                 -Body $payload `
                 -StatusCodeVariable statusRole > $null 4> $null
 
             if (-not ($statusRole -like "2*")) {
-                $messageString = "Failed to assign the Security Role: <c='em'>$($roleObj[0].Name)</c> to the user in the Power Platform environment. Please try assigning the role manually via the Power Platform admin center - <c='em'>https://aka.ms/ppac</c>"
+                $messageString = "Failed to assign the security role to the team in the Power Platform environment. Please try assigning the role manually via the Power Platform admin center - <c='em'>https://aka.ms/ppac</c>"
                 Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because assigning the Security Role to the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                Stop-PSFFunction -Message "Stopping because assigning the security role to the team in the Power Platform environment failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
                 return
             }
         }
-
-        Get-PpacUser `
+        
+        Get-PpacTeam `
             -EnvironmentId $envObj.PpacEnvId `
-            -User $User
+            -Name $Team | `
+            Select-Object -First 1
     }
     
     end {

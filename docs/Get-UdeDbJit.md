@@ -64,7 +64,7 @@ It will use the specified reason "Needed for data migration".
 
 ### EXAMPLE 5
 ```
-Get-UdeEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
+Get-UnifiedEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
 ```
 
 This will retrieve the JIT database access information for the specified environment ID.

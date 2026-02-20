@@ -1,4 +1,4 @@
-﻿Describe "Get-FnOEnvironmentSecurityRoleMember Unit Tests" -Tag "Unit" {
+﻿Describe "Get-FscmSecurityRoleMember Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,11 +8,11 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Get-FnOEnvironmentSecurityRoleMember).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Get-FscmSecurityRoleMember).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
 		It 'Should have the expected parameter EnvironmentId' {
-			$parameter = (Get-Command Get-FnOEnvironmentSecurityRoleMember).Parameters['EnvironmentId']
+			$parameter = (Get-Command Get-FscmSecurityRoleMember).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -25,7 +25,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter Role' {
-			$parameter = (Get-Command Get-FnOEnvironmentSecurityRoleMember).Parameters['Role']
+			$parameter = (Get-Command Get-FscmSecurityRoleMember).Parameters['Role']
 			$parameter.Name | Should -Be 'Role'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -37,9 +37,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter UserId' {
-			$parameter = (Get-Command Get-FnOEnvironmentSecurityRoleMember).Parameters['UserId']
-			$parameter.Name | Should -Be 'UserId'
+		It 'Should have the expected parameter User' {
+			$parameter = (Get-Command Get-FscmSecurityRoleMember).Parameters['User']
+			$parameter.Name | Should -Be 'User'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -51,7 +51,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter AsExcelOutput' {
-			$parameter = (Get-Command Get-FnOEnvironmentSecurityRoleMember).Parameters['AsExcelOutput']
+			$parameter = (Get-Command Get-FscmSecurityRoleMember).Parameters['AsExcelOutput']
 			$parameter.Name | Should -Be 'AsExcelOutput'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
@@ -68,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Role
-		__AllParameterSets -EnvironmentId -Role -UserId -AsExcelOutput
+		__AllParameterSets -EnvironmentId -Role -User -AsExcelOutput
 		#>
 	}
 

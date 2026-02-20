@@ -1,4 +1,4 @@
-﻿Describe "Get-UdeEnvironmentOperationHistory Unit Tests" -Tag "Unit" {
+﻿Describe "Get-UnifiedEnvironmentOperationHistory Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,11 +8,11 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Get-UdeEnvironmentOperationHistory).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Get-UnifiedEnvironmentOperationHistory).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
 		It 'Should have the expected parameter EnvironmentId' {
-			$parameter = (Get-Command Get-UdeEnvironmentOperationHistory).Parameters['EnvironmentId']
+			$parameter = (Get-Command Get-UnifiedEnvironmentOperationHistory).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -25,7 +25,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter LatestOnly' {
-			$parameter = (Get-Command Get-UdeEnvironmentOperationHistory).Parameters['LatestOnly']
+			$parameter = (Get-Command Get-UnifiedEnvironmentOperationHistory).Parameters['LatestOnly']
 			$parameter.Name | Should -Be 'LatestOnly'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
@@ -38,7 +38,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter AsExcelOutput' {
-			$parameter = (Get-Command Get-UdeEnvironmentOperationHistory).Parameters['AsExcelOutput']
+			$parameter = (Get-Command Get-UnifiedEnvironmentOperationHistory).Parameters['AsExcelOutput']
 			$parameter.Name | Should -Be 'AsExcelOutput'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
@@ -51,7 +51,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter DownloadLog' {
-			$parameter = (Get-Command Get-UdeEnvironmentOperationHistory).Parameters['DownloadLog']
+			$parameter = (Get-Command Get-UnifiedEnvironmentOperationHistory).Parameters['DownloadLog']
 			$parameter.Name | Should -Be 'DownloadLog'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
@@ -64,7 +64,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter DownloadPath' {
-			$parameter = (Get-Command Get-UdeEnvironmentOperationHistory).Parameters['DownloadPath']
+			$parameter = (Get-Command Get-UnifiedEnvironmentOperationHistory).Parameters['DownloadPath']
 			$parameter.Name | Should -Be 'DownloadPath'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False

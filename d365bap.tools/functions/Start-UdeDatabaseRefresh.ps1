@@ -88,8 +88,8 @@ function Start-UdeDatabaseRefresh {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $envSource = Get-UdeEnvironment -EnvironmentId $SourceEnvironmentId | Select-Object -First 1
-        $envTarget = Get-UdeEnvironment -EnvironmentId $TargetEnvironmentId | Select-Object -First 1
+        $envSource = Get-UnifiedEnvironment -EnvironmentId $SourceEnvironmentId | Select-Object -First 1
+        $envTarget = Get-UnifiedEnvironment -EnvironmentId $TargetEnvironmentId | Select-Object -First 1
 
         if ($null -eq $envSource -or $null -eq $envTarget) {
             $messageString = "Could not find either <c='em'>source</c> or <c='em'>target</c> environments. Please verify the Ids and try again, or list available environments using <c='em'>Get-BapEnvironment</c>."
