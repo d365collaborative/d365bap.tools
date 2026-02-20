@@ -44,6 +44,10 @@
 	# Functions to export from this module
 	FunctionsToExport = @(
 		'Add-UdeWindowsDefenderRules'
+
+		, 'Add-FscmSecurityRoleMember'
+		, 'Add-FscmUser'
+		, 'Add-FscmUserFromSecurityGroup'
 		
 		, 'Add-PpacApplicationUser'
 		, 'Add-PpacSecurityRoleMember'
@@ -70,9 +74,11 @@
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		
-		, 'Get-FnOEnvironmentSecurityRole'
-		, 'Get-FnOEnvironmentSecurityRoleMember'
-		, 'Get-FnOEnvironmentUser'
+		, 'Get-FscmSecurityRole'
+		, 'Get-FscmSecurityRoleMember'
+		, 'Get-FscmUser'
+		
+		, 'Get-GraphGroupMember'
 		
 		, 'Get-PpacApplicationUser'
 		, 'Get-PpacD365App'
@@ -114,16 +120,14 @@
 		
 		, 'Set-BapAzCopyPath'
 		
-		, 'Set-BapEnvironmentAdminMode'
+		, 'Set-PpacAdminMode'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
-		, 'Set-BapEnvironmentSecurityRoleMember'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
-		, 'Set-FnOEnvironmentSecurityRoleMember'
-
 		, 'Set-PpacSecurityGroup'
-		
+		, 'Set-PpacTeamSecurityRole'
+
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'

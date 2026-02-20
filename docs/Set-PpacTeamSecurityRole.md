@@ -5,50 +5,42 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-PpacTeam
+# Set-PpacTeamSecurityRole
 
 ## SYNOPSIS
-Get team details from Power Platform environment.
+Set Security Role for a team in a Power Platform environment.
 
 ## SYNTAX
 
 ```
-Get-PpacTeam [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Set-PpacTeamSecurityRole [-EnvironmentId] <String> [-Team] <String> [-Role] <String[]>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-This cmdlet retrieves team details from a Power Platform environment.
-It allows filtering by team name or ID, and exporting the results to Excel.
+This cmdlet allows you to set a Security Role for a team in a Power Platform environment.
+It can be used to configure a Security Role to a team.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-PpacTeam -EnvironmentId "ContosoEnv" -Name "Contoso Team"
+Set-PpacTeamSecurityRole -EnvironmentId "ContosoEnv" -Team "ContosoTeam" -Role "ContosoRole"
 ```
 
-This command retrieves the team with the name "Contoso Team" from the environment "ContosoEnv" and displays its information in the console.
+This command sets the Security Role "ContosoRole" for the team "ContosoTeam" in the Power Platform environment "ContosoEnv".
 
 ### EXAMPLE 2
 ```
-Get-PpacTeam -EnvironmentId "ContosoEnv" -Name "*contoso*"
+Set-PpacTeamSecurityRole -EnvironmentId "ContosoEnv" -Team "ContosoTeam" -Role "ContosoRole1","ContosoRole2"
 ```
 
-This command retrieves all teams with names matching "*contoso*" from the environment "ContosoEnv" and displays their information in the console.
-
-### EXAMPLE 3
-```
-Get-PpacTeam -EnvironmentId "ContosoEnv" -AsExcelOutput
-```
-
-This command retrieves all teams from the environment "ContosoEnv".
-It will export the information to an Excel file.
+This command sets the Security Roles "ContosoRole1" and "ContosoRole2" for the team "ContosoTeam" in the Power Platform environment "ContosoEnv".
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The ID of the environment to retrieve team details from.
+The ID of the environment to set the Security Role for.
 
 Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
@@ -64,36 +56,38 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Name
-The name or ID of the team to retrieve details for.
+### -Team
+The name or ID of the team to set the Security Role for.
 
 Can be either the team name or the team ID.
-
-Supports wildcard characters for flexible matching.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: Team
+Aliases: Name
 
-Required: False
+Required: True
 Position: 2
-Default value: *
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AsExcelOutput
-Instructs the cmdlet to export the retrieved team information to an Excel file.
+### -Role
+The name or ID of the Security Role to assign to the team.
+
+Can be either the role name or the role ID.
+
+Multiple roles / array of roles are supported.
 
 ```yaml
-Type: SwitchParameter
+Type: String[]
 Parameter Sets: (All)
-Aliases:
+Aliases: RoleName
 
-Required: False
-Position: Named
-Default value: False
+Required: True
+Position: 3
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -120,7 +114,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-### System.Object[]
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 

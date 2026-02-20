@@ -8,7 +8,7 @@ schema: 2.0.0
 # Set-PpacSecurityGroup
 
 ## SYNOPSIS
-Set or remove Security Group linked to environment
+Set or remove Security Group for a Power Platform environment
 
 ## SYNTAX
 
@@ -18,36 +18,31 @@ Set-PpacSecurityGroup [-EnvironmentId] <String> [-SecurityGroup] <String> [-Forc
 ```
 
 ## DESCRIPTION
-Enables the user to set or remove a Security Group linked to the environment in Azure AD / Entra ID.
+This cmdlet allows you to set or remove a Security Group for a Power Platform environment.
+It can be used to configure a Security Group to an environment or remove an existing one.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup 12345678-90ab-cdef-1234-567890abcdef
+Set-PpacSecurityGroup -EnvironmentId "ContosoEnv" -SecurityGroup "ContosoAdmins"
 ```
 
-This will link the Security Group with SecurityGroup "12345678-90ab-cdef-1234-567890abcdef" to the environment with id containing "uat".
+This command sets the Security Group for the Power Platform environment "ContosoEnv" to "ContosoAdmins".
 
 ### EXAMPLE 2
 ```
-Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "My Security Group"
+Set-PpacSecurityGroup -EnvironmentId "ContosoEnv" -SecurityGroup "" -Force
 ```
 
-This will link the Security Group with Display Name "My Security Group" to the environment with id containing "uat".
-
-### EXAMPLE 3
-```
-Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "" -Force
-```
-
-This will remove any existing linked Security Group from the environment with id containing "uat".
-The cmdlet will not prompt for confirmation because of the -Force switch.
+This command removes any existing Security Group linked to the Power Platform environment "ContosoEnv" without additional confirmation.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-Id of the environment that you want to work against.
+The ID of the environment to set or remove the Security Group for.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -62,9 +57,9 @@ Accept wildcard characters: False
 ```
 
 ### -SecurityGroup
-The id (objectId) or Display Name of the Security Group in Azure AD / Entra ID that you want to link to the environment.
+The ID (objectId) or Display Name of the Security Group in Azure AD / Entra ID to link to the environment.
 
-If you want to remove any existing linked Security Group, simply provide an empty string.
+If you want to remove any existing linked Security Group, provide an empty string.
 
 ```yaml
 Type: String

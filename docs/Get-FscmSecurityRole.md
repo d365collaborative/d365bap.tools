@@ -5,56 +5,52 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-FnOEnvironmentSecurityRole
+# Get-FscmSecurityRole
 
 ## SYNOPSIS
-Get security roles in a Finance and Operations environment.
+Get information about Finance and Operations security roles in a given environment.
 
 ## SYNTAX
 
 ```
-Get-FnOEnvironmentSecurityRole [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput]
+Get-FscmSecurityRole [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to get security roles in a Finance and Operations environment.
+This cmdlet retrieves information about Finance and Operations security roles in a given environment.
+It allows filtering by role name or ID, and exporting the results to Excel.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-FnOEnvironmentSecurityRole -EnvironmentId *uat*
+Get-FscmSecurityRole -EnvironmentId "ContosoEnv" -Name "System Administrator"
 ```
 
-This will list all Security Roles from the Finance and Operations environment, by the EnvironmentId (Name/Wildcard).
+This command retrieves the Finance and Operations security role with the name "System Administrator" from the environment "ContosoEnv" and displays its information in the console.
 
 ### EXAMPLE 2
 ```
-Get-FnOEnvironmentSecurityRole -EnvironmentId *uat* -Name "*Administrator*"
+Get-FscmSecurityRole -EnvironmentId "ContosoEnv" -Name "*sys*admin*"
 ```
 
-This will list all Security Roles, which matches the "*Administrator*" pattern, from the Finance and Operations environment.
+This command retrieves all Finance and Operations security roles with names matching "*sys*admin*" from the environment "ContosoEnv" and displays their information in the console.
 
 ### EXAMPLE 3
 ```
-Get-FnOEnvironmentSecurityRole -EnvironmentId *uat* -Name "-SYSADMIN-"
+Get-FscmSecurityRole -EnvironmentId "ContosoEnv" -AsExcelOutput
 ```
 
-This will list the Security Role with the RoleId "-SYSADMIN-" from the Finance and Operations environment.
-
-### EXAMPLE 4
-```
-Get-FnOEnvironmentSecurityRole -EnvironmentId *uat* -AsExcelOutput
-```
-
-This will list all Security Roles from the Finance and Operations environment, by the EnvironmentId (Name/Wildcard).
-Will output all details into an Excel file, that will auto open on your machine.
+This command retrieves all Finance and Operations security roles from the environment "ContosoEnv".
+It will export the information to an Excel file.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against.
+The ID of the environment to retrieve security roles from.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -69,14 +65,16 @@ Accept wildcard characters: False
 ```
 
 ### -Name
-Name or RoleId of the security role to filter on.
+The name or ID of the security role to retrieve.
 
-Wildcards are supported.
+Can be either the role name or the role ID.
+
+Supports wildcard characters for flexible matching.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: Role
 
 Required: False
 Position: 2
@@ -86,7 +84,7 @@ Accept wildcard characters: False
 ```
 
 ### -AsExcelOutput
-Instruct the cmdlet to output all details directly to an Excel file.
+Instructs the cmdlet to export the retrieved security role information to an Excel file.
 
 ```yaml
 Type: SwitchParameter

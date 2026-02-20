@@ -1,55 +1,56 @@
 ﻿
 <#
     .SYNOPSIS
-        Add a team based on a Microsoft Entra Security Group to a Power Platform environment.
+        Enables assignment of a Microsoft Entra ID security group as a team in the Power Platform environment.
         
     .DESCRIPTION
-        Enables the user to add a team based on a Microsoft Entra Security Group to a Power Platform environment, and assign a security role to it.
+        This cmdlet assigns a Microsoft Entra ID security group as a team in the specified Power Platform environment and assigns a security role to the team.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
         
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+        
     .PARAMETER Name
-        The name of the team you want to create in the Power Platform environment.
+        The name of the team to create in the Power Platform environment.
         
     .PARAMETER SecurityGroup
-        The name or id of the Microsoft Entra Security Group that you want to link the team to.
+        The Microsoft Entra ID security group that you want to assign as a team in the Power Platform environment.
         
-        You can use either the name or the id of the Security Group, and the function will try to find a match in Microsoft Graph.
+        Can be either the name or the id (objectId) of the Microsoft Entra ID security group.
         
     .PARAMETER MembershipType
-        The membership type of the team in relation to the Microsoft Entra Security Group.
+        The membership type of the team.
         
-        Possible values are:
-        - Members and Guests
-        - Members
-        - Guests
-        - Owners
+        Can be either "Members and Guests", "Members", "Guests", or "Owners".
         
     .PARAMETER Role
-        The name of the security role that you want to assign to the team.
+        The security role that you want to assign to the team.
         
-    .PARAMETER AdminUpn
-        The User Principal Name (UPN) of the administrator who will be associated with the team.
+        Can be either the role name or the role ID.
         
-        If not supplied, the function will try to determine the UPN of the user running the function, and use that as the administrator.
+    .PARAMETER TeamAdmin
+        The User Principal Name (UPN) of the admin user in the Power Platform environment.
         
-    .EXAMPLE
-        PS C:\> Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales SG" -SecurityGroup "Contoso Sales SG" -MembershipType "Members" -Role "System Customizer"
+        This user needs to have sufficient permissions to create teams and assign security roles in the Power Platform environment.
         
-        This will create a team named "Contoso Sales Team" in the Power Platform environment with the id "env-123".
-        It will link the team to the Microsoft Entra Security Group named "Contoso Sales SG".
-        It will set the membership type to "Members".
-        It will assign the "System Customizer" security role to the team.
-        It will use the UPN of the user running the function as the administrator for the team.
+        If not provided, the cmdlet will use the account used to authenticate to Azure.
         
     .EXAMPLE
-        PS C:\> Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales SG" -SecurityGroup "Contoso Sales SG" -MembershipType "Members and Guests" -Role "System Customizer" -AdminUpn "admin@contoso.com"
+        PS C:\> Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer"
         
-        This will create a team named "Contoso Sales Team" in the Power Platform environment with the id "env-123".
-        It will link the team to the Microsoft Entra Security Group named "Contoso Sales SG".
-        It will set the membership type to "Members and Guests".
-        It will assign the "System Customizer" security role to the team.
+        This will add the Microsoft Entra ID security group "Contoso Sales Security Group" as a team in the Power Platform environment with the id "env-123".
+        The team will be named "Contoso Sales Team" and have the membership type "Members and Guests".
+        The "System Customizer" security role will be assigned to the team.
+        The administrator of the team will be the user running the cmdlet.
+        
+    .EXAMPLE
+        C:\> Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer" -TeamAdmin "admin@contoso.com"
+        
+        This will add the Microsoft Entra ID security group "Contoso Sales Security Group" as a team in the Power Platform environment with the id "env-123".
+        The team will be named "Contoso Sales Team" and have the membership type "Members and Guests".
+        The "System Customizer" security role will be assigned to the team.
+        The administrator of the team will be "admin@contoso.com".
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -62,6 +63,7 @@ function Add-PpacTeamOnSecurityGroup {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
+        [Alias('Team')]
         [string] $Name,
 
         [Parameter (Mandatory = $true)]
@@ -75,7 +77,7 @@ function Add-PpacTeamOnSecurityGroup {
         [Alias('RoleName')]
         [string] $Role,
 
-        [string] $AdminUpn
+        [string] $TeamAdmin
     )
     
     begin {
@@ -102,19 +104,21 @@ function Add-PpacTeamOnSecurityGroup {
         $secGrp = Get-GraphGroup `
             -Group $SecurityGroup
             
-        if ([System.String]::IsNullOrEmpty($AdminUpn)) {
-            $AdminUpn = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).UserId
+        if (Test-PSFFunctionInterrupt) { return }
+
+        if ([System.String]::IsNullOrEmpty($TeamAdmin)) {
+            $TeamAdmin = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).UserId
         }
         
         $userObj = Get-PpacUser `
             -EnvironmentId $envObj.PpacEnvId `
-            -Name $AdminUpn | `
+            -User $TeamAdmin | `
             Select-Object -First 1
         
         if ($null -eq $userObj) {
-            $messageString = "The supplied AdminUpn: <c='em'>$AdminUpn</c> didn't return any matching user details in the Power Platform environment. Please verify that the AdminUpn is correct and that the user exists in the environment."
+            $messageString = "The supplied TeamAdmin: <c='em'>$TeamAdmin</c> didn't return any matching user details in the Power Platform environment. Please verify that the TeamAdmin is correct and that the user exists in the environment."
             Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because no matching user was found for the supplied AdminUpn." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            Stop-PSFFunction -Message "Stopping because no matching user was found for the supplied TeamAdmin." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
         
         $secRoleObj = Get-PpacSecurityRole `
@@ -152,6 +156,7 @@ function Add-PpacTeamOnSecurityGroup {
 
         #First we need to get the default Business Unit
         $colBunits = Get-CrmBusinessUnit -BaseUri $baseUri
+
         $businessObj = $colBunits | `
             Where-Object IsRoot -eq $true | `
             Select-Object -First 1

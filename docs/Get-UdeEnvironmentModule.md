@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-UdeEnvironmentModule
+# Get-UnifiedEnvironmentModule
 
 ## SYNOPSIS
 Get UDE environment modules.
@@ -13,7 +13,7 @@ Get UDE environment modules.
 ## SYNTAX
 
 ```
-Get-UdeEnvironmentModule [-EnvironmentId] <String> [-LatestOnly] [-AsExcelOutput]
+Get-UnifiedEnvironmentModule [-EnvironmentId] <String> [-LatestOnly] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -24,14 +24,14 @@ Gets the UDE environment modules for a specified environment.
 
 ### EXAMPLE 1
 ```
-Get-UdeEnvironmentModule -EnvironmentId "env-123"
+Get-UnifiedEnvironmentModule -EnvironmentId "env-123"
 ```
 
 This will retrieve all UDE environment modules for the specified environment id.
 
 ### EXAMPLE 2
 ```
-Get-UdeEnvironmentModule -EnvironmentId "env-123" -LatestOnly
+Get-UnifiedEnvironmentModule -EnvironmentId "env-123" -LatestOnly
 ```
 
 This will retrieve only the latest UDE environment module for the specified environment id.
@@ -39,7 +39,7 @@ It is based on the modified date.
 
 ### EXAMPLE 3
 ```
-Get-UdeEnvironmentModule -EnvironmentId "env-123" -AsExcelOutput
+Get-UnifiedEnvironmentModule -EnvironmentId "env-123" -AsExcelOutput
 ```
 
 This will retrieve all UDE environment modules for the specified environment id.

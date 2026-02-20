@@ -5,42 +5,41 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-FnOEnvironmentUser
+# Get-GraphGroupMember
 
 ## SYNOPSIS
-Get users from a Finance and Operations environment.
+Get members of a Security Group from Azure AD / Entra ID.
 
 ## SYNTAX
 
 ```
-Get-FnOEnvironmentUser [-EnvironmentId] <String> [-AsExcelOutput] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Get-GraphGroupMember [-Group] <String> [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to get System Users from a Finance and Operations environment.
+Retrieves members of a Security Group from Azure AD / Entra ID based on the supplied GroupId.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-FnOEnvironmentUser -EnvironmentId *uat*
+Get-GraphGroupMember -Group "12345678-90ab-cdef-1234-567890abcdef"
 ```
 
-This will list all System Users from the Finance and Operations environment matching the "*uat*" pattern.
+This command retrieves the members of the Security Group with the specified ObjectId.
 
 ### EXAMPLE 2
 ```
-Get-FnOEnvironmentUser -EnvironmentId *uat* -AsExcelOutput
+Get-GraphGroupMember -Group "FO-PPE-ENV-ADMINS"
 ```
 
-This will list all System Users from the Finance and Operations environment matching the "*uat*" pattern.
-Will output all details into an Excel file, that will auto open on your machine.
+This command retrieves the members of the Security Group with the specified display name starting with "FO-PPE-ENV-ADMINS".
+If multiple groups match, it will take the first one returned by Graph API.
 
 ## PARAMETERS
 
-### -EnvironmentId
-The id of the environment that you want to work against.
+### -Group
+The ObjectId of the Security Group in Azure AD / Entra ID.
 
 ```yaml
 Type: String
@@ -50,21 +49,6 @@ Aliases:
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -AsExcelOutput
-Instruct the cmdlet to output all details directly to an Excel file.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -91,7 +75,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-### System.Object[]
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 

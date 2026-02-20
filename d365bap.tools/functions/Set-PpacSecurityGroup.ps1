@@ -1,37 +1,33 @@
 ﻿
 <#
     .SYNOPSIS
-        Set or remove Security Group linked to environment
+        Set or remove Security Group for a Power Platform environment
         
     .DESCRIPTION
-        Enables the user to set or remove a Security Group linked to the environment in Azure AD / Entra ID.
+        This cmdlet allows you to set or remove a Security Group for a Power Platform environment. It can be used to configure a Security Group to an environment or remove an existing one.
         
     .PARAMETER EnvironmentId
-        Id of the environment that you want to work against.
+        The ID of the environment to set or remove the Security Group for.
+        
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER SecurityGroup
-        The id (objectId) or Display Name of the Security Group in Azure AD / Entra ID that you want to link to the environment.
+        The ID (objectId) or Display Name of the Security Group in Azure AD / Entra ID to link to the environment.
         
-        If you want to remove any existing linked Security Group, simply provide an empty string.
+        If you want to remove any existing linked Security Group, provide an empty string.
         
     .PARAMETER Force
         Instructs the cmdlet to proceed with removing any existing linked Security Group without additional confirmation.
         
     .EXAMPLE
-        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup 12345678-90ab-cdef-1234-567890abcdef
+        PS C:\> Set-PpacSecurityGroup -EnvironmentId "ContosoEnv" -SecurityGroup "ContosoAdmins"
         
-        This will link the Security Group with SecurityGroup "12345678-90ab-cdef-1234-567890abcdef" to the environment with id containing "uat".
-        
-    .EXAMPLE
-        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "My Security Group"
-        
-        This will link the Security Group with Display Name "My Security Group" to the environment with id containing "uat".
+        This command sets the Security Group for the Power Platform environment "ContosoEnv" to "ContosoAdmins".
         
     .EXAMPLE
-        PS C:\> Set-PpacSecurityGroup -EnvironmentId *uat* -SecurityGroup "" -Force
+        PS C:\> Set-PpacSecurityGroup -EnvironmentId "ContosoEnv" -SecurityGroup "" -Force
         
-        This will remove any existing linked Security Group from the environment with id containing "uat".
-        The cmdlet will not prompt for confirmation because of the -Force switch.
+        This command removes any existing Security Group linked to the Power Platform environment "ContosoEnv" without additional confirmation.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -98,7 +94,7 @@ function Set-PpacSecurityGroup {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $payLoad = [PsCustomObject][ordered]@{
+        $payload = [PsCustomObject][ordered]@{
             properties = [PsCustomObject][ordered]@{
                 linkedEnvironmentMetadata = @{
                     securityGroupId = $SecurityGroupId
@@ -111,7 +107,7 @@ function Set-PpacSecurityGroup {
         Invoke-RestMethod -Method Patch `
             -Uri $localUri `
             -Headers $headersBapApi `
-            -Body $payLoad `
+            -Body $payload `
             -ContentType "application/json" > $null
     }
     
