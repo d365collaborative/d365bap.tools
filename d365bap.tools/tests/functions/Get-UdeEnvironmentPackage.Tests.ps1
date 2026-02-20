@@ -1,4 +1,4 @@
-﻿Describe "Get-UdeEnvironmentPackage Unit Tests" -Tag "Unit" {
+﻿Describe "Get-UnifiedEnvironmentPackage Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,11 +8,11 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Get-UdeEnvironmentPackage).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Get-UnifiedEnvironmentPackage).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
 		It 'Should have the expected parameter EnvironmentId' {
-			$parameter = (Get-Command Get-UdeEnvironmentPackage).Parameters['EnvironmentId']
+			$parameter = (Get-Command Get-UnifiedEnvironmentPackage).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -25,7 +25,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter LatestOnly' {
-			$parameter = (Get-Command Get-UdeEnvironmentPackage).Parameters['LatestOnly']
+			$parameter = (Get-Command Get-UnifiedEnvironmentPackage).Parameters['LatestOnly']
 			$parameter.Name | Should -Be 'LatestOnly'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
@@ -38,7 +38,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter AsExcelOutput' {
-			$parameter = (Get-Command Get-UdeEnvironmentPackage).Parameters['AsExcelOutput']
+			$parameter = (Get-Command Get-UnifiedEnvironmentPackage).Parameters['AsExcelOutput']
 			$parameter.Name | Should -Be 'AsExcelOutput'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False

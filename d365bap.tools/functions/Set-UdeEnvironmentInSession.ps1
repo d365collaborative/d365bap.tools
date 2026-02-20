@@ -19,7 +19,7 @@
         This will set the specified environment ID in the current PowerShell session.
         
     .EXAMPLE
-        PS C:\> Get-UdeEnvironment -EnvironmentId "env-123" | Set-UdeEnvironmentInSession
+        PS C:\> Get-UnifiedEnvironment -EnvironmentId "env-123" | Set-UdeEnvironmentInSession
         
         This will set the environment ID from the piped UDE environment object in the current PowerShell session.
         
@@ -38,12 +38,12 @@ function Set-UdeEnvironmentInSession {
     begin {}
 
     process {
-        $envObj = Get-UdeEnvironment -EnvironmentId $EnvironmentId `
+        $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId `
             -SkipVersionDetails | `
             Select-Object -First 1
 
         if ($null -eq $envObj) {
-            $messageString = "Could not find environment with Id '<c='em'>$EnvironmentId</c>'. Please verify the Id and try again, or list available environments using <c='em'>Get-UdeEnvironment</c>. Consider using wildcards if needed."
+            $messageString = "Could not find environment with Id '<c='em'>$EnvironmentId</c>'. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
 
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
