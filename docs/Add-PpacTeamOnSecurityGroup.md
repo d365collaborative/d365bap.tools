@@ -68,7 +68,7 @@ The name of the team to create in the Power Platform environment.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: Team
 
 Required: True
 Position: 2

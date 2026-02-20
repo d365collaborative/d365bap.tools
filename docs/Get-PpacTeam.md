@@ -74,7 +74,7 @@ Supports wildcard characters for flexible matching.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: Team
 
 Required: False
 Position: 2

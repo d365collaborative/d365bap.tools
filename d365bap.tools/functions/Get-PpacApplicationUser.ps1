@@ -1,4 +1,60 @@
-﻿function Get-PpacApplicationUser {
+﻿
+<#
+    .SYNOPSIS
+        Get application users in Power Platform environment.
+        
+    .DESCRIPTION
+        Enables the user to get application users in the environment.
+        
+    .PARAMETER EnvironmentId
+        The id of the environment that you want to work against.
+        
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+        
+    .PARAMETER User
+        The user to filter the results on.
+        
+        Wildcards are supported.
+        
+        You can filter on the systemuserid, fullname or applicationid properties of the users.
+        
+    .PARAMETER IncludePpacApplications
+        Instructs the cmdlet to also include PPAC applications in the output. By default, these are filtered out as they are not relevant for most use cases.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to export the retrieved security role information to an Excel file.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacApplicationUser -EnvironmentId "env-123"
+        
+        This will retrieve all application users in the Power Platform environment.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacApplicationUser -EnvironmentId "env-123" -User "00000000-0000-0000-0000-000000000000"
+        
+        This will retrieve the application user with the specified systemuserid in the Power Platform environment.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacApplicationUser -EnvironmentId "env-123" -User "My App*"
+        
+        This will retrieve all application users with a fullname starting with "My App" in the Power Platform environment.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacApplicationUser -EnvironmentId "env-123" -IncludePpacApplications
+        
+        This will retrieve all application users in the Power Platform environment.
+        It will include PPAC applications.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacApplicationUser -EnvironmentId "env-123" -AsExcelOutput
+        
+        This will retrieve all application users in the Power Platform environment.
+        It will export the information to an Excel file.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+#>
+function Get-PpacApplicationUser {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (

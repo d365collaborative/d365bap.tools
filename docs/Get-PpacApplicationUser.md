@@ -8,82 +8,63 @@ schema: 2.0.0
 # Get-PpacApplicationUser
 
 ## SYNOPSIS
-Get application user from environment
+Get application users in Power Platform environment.
 
 ## SYNTAX
 
 ```
-Get-PpacApplicationUser [-EnvironmentId] <String> [[-Name] <String>] [-IncludePpacApplications]
+Get-PpacApplicationUser [-EnvironmentId] <String> [[-User] <String>] [-IncludePpacApplications]
  [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Retrieves application users from the environment.
-
-By default, it will exclude "hidden" PPAC applications
+Enables the user to get application users in the environment.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-PpacApplicationUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
+Get-PpacApplicationUser -EnvironmentId "env-123"
 ```
 
-This will fetch all ApplicationUsers from the environment.
-
-Sample output:
-PpacSystemUserId                     PpacAppName                    PpacAppId                            State
-----------------                     -----------                    ---------                            -----
-b6e52ceb-f771-41ff-bd99-917523b28eaf Power Apps Checker Application 3bafba76-60bf-413d-a4c4-5c49ccabfb12 Active
-21ceaf7c-054c-43f6-8b14-ef6d04b90a21 Microsoft Forms Pro            560c9a6c-4535-4066-a415-480d1493cf98 Active
-c76313fd-5c6f-4f1f-9869-c884fa7fe226 # PowerPlatform-essence-uat    d88a3535-ebf0-4b2b-ad23-90e686660a64 Active
-29494271-7e38-4433-8bf8-06d335299a17 # PowerPlatform-essence-uat    8bf8862f-5036-42b0-a4f8-1b638db7896b Active
+This will retrieve all application users in the Power Platform environment.
 
 ### EXAMPLE 2
 ```
-Get-PpacApplicationUser -EnvironmentId *test*
+Get-PpacApplicationUser -EnvironmentId "env-123" -User "00000000-0000-0000-0000-000000000000"
 ```
 
-This will fetch all ApplicationUsers from the environment.
-
-Sample output:
-PpacSystemUserId                     PpacAppName                    PpacAppId                            State
-----------------                     -----------                    ---------                            -----
-b6e52ceb-f771-41ff-bd99-917523b28eaf Power Apps Checker Application 3bafba76-60bf-413d-a4c4-5c49ccabfb12 Active
-21ceaf7c-054c-43f6-8b14-ef6d04b90a21 Microsoft Forms Pro            560c9a6c-4535-4066-a415-480d1493cf98 Active
-c76313fd-5c6f-4f1f-9869-c884fa7fe226 # PowerPlatform-essence-uat    d88a3535-ebf0-4b2b-ad23-90e686660a64 Active
-29494271-7e38-4433-8bf8-06d335299a17 # PowerPlatform-essence-uat    8bf8862f-5036-42b0-a4f8-1b638db7896b Active
+This will retrieve the application user with the specified systemuserid in the Power Platform environment.
 
 ### EXAMPLE 3
 ```
-Get-PpacApplicationUser -EnvironmentId *test* -IncludePpacApplications
+Get-PpacApplicationUser -EnvironmentId "env-123" -User "My App*"
 ```
 
-This will fetch all ApplicationUsers from the environment.
-It will include all "hidden" PPAC applications in the output.
-
-Sample output:
-PpacSystemUserId                     PpacAppName                    PpacAppId                            State
-----------------                     -----------                    ---------                            -----
-b6e52ceb-f771-41ff-bd99-917523b28eaf Power Apps Checker Application 3bafba76-60bf-413d-a4c4-5c49ccabfb12 Active
-21ceaf7c-054c-43f6-8b14-ef6d04b90a21 Microsoft Forms Pro            560c9a6c-4535-4066-a415-480d1493cf98 Active
-d88a3535-ebf0-4b2b-ad23-90e686660a64 # URAssignment                 c76313fd-5c6f-4f1f-9869-c884fa7fe226 Active
-8bf8862f-5036-42b0-a4f8-1b638db7896b # UnifiedRoutingForRecord_App  29494271-7e38-4433-8bf8-06d335299a17 Active
+This will retrieve all application users with a fullname starting with "My App" in the Power Platform environment.
 
 ### EXAMPLE 4
 ```
-Get-PpacApplicationUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
+Get-PpacApplicationUser -EnvironmentId "env-123" -IncludePpacApplications
 ```
 
-This will fetch all ApplicationUsers from the environment.
-Will output all details into an Excel file, that will auto open on your machine.
+This will retrieve all application users in the Power Platform environment.
+It will include PPAC applications.
+
+### EXAMPLE 5
+```
+Get-PpacApplicationUser -EnvironmentId "env-123" -AsExcelOutput
+```
+
+This will retrieve all application users in the Power Platform environment.
+It will export the information to an Excel file.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against
+The id of the environment that you want to work against.
 
-This can be obtained from the Get-BapEnvironment cmdlet
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
@@ -97,16 +78,17 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Name
-Name of the application user that you want to retrieve.
+### -User
+The user to filter the results on.
 
-This can be either the systemuserid, fullname or applicationid of the application user.
-Wildcards are accepted, and it will search in all three properties for a match.
+Wildcards are supported.
+
+You can filter on the systemuserid, fullname or applicationid properties of the users.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: Upn
 
 Required: False
 Position: 2
@@ -116,9 +98,8 @@ Accept wildcard characters: False
 ```
 
 ### -IncludePpacApplications
-Instruct the cmdlet to include all PPAC applications in the output
-
-This will include all applications that are "hidden", but utilized by the PPAC Environment
+Instructs the cmdlet to also include PPAC applications in the output.
+By default, these are filtered out as they are not relevant for most use cases.
 
 ```yaml
 Type: SwitchParameter
@@ -133,9 +114,7 @@ Accept wildcard characters: False
 ```
 
 ### -AsExcelOutput
-Instruct the cmdlet to output all details directly to an Excel file
-
-This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
+Instructs the cmdlet to export the retrieved security role information to an Excel file.
 
 ```yaml
 Type: SwitchParameter

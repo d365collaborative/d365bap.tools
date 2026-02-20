@@ -19,7 +19,7 @@
         
         This command retrieves the members of the Security Group with the specified display name starting with "FO-PPE-ENV-ADMINS".
         If multiple groups match, it will take the first one returned by Graph API.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

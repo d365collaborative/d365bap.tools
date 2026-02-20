@@ -81,7 +81,7 @@ Can be either the role name or the role ID.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: SecurityRoleId, Name
+Aliases: Name
 
 Required: True
 Position: 2

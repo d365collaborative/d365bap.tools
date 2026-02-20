@@ -64,7 +64,7 @@ Can be either the team name or the team ID.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: Name
 
 Required: True
 Position: 2
