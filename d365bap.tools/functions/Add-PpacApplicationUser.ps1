@@ -180,7 +180,7 @@ function Add-PpacApplicationUser {
 
         Get-PpacApplicationUser `
             -EnvironmentId $envObj.PpacEnvId `
-            -Name $ServicePrincipal
+            -User $ServicePrincipal
     }
     
     end {
