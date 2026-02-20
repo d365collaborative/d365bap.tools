@@ -46,6 +46,7 @@
 		'Add-UdeWindowsDefenderRules'
 
 		, 'Add-FscmSecurityRoleMember'
+		, 'Add-FscmUser'
 		, 'Add-FscmUserFromSecurityGroup'
 		
 		, 'Add-PpacApplicationUser'
@@ -76,6 +77,8 @@
 		, 'Get-FscmSecurityRole'
 		, 'Get-FscmSecurityRoleMember'
 		, 'Get-FscmUser'
+		
+		, 'Get-GraphGroupMember'
 		
 		, 'Get-PpacApplicationUser'
 		, 'Get-PpacD365App'

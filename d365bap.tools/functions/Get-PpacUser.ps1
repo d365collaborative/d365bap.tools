@@ -61,6 +61,7 @@ function Get-PpacUser {
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
+        [Alias('Upn')]
         [string] $User = "*",
 
         [switch] $IncludeAppIds,

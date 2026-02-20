@@ -44,6 +44,7 @@ function Set-PpacTeamSecurityRole {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
+        [Alias('Name')]
         [string] $Team,
 
         [Parameter (Mandatory = $true)]
@@ -99,6 +100,12 @@ function Set-PpacTeamSecurityRole {
             $roleObj = $colSecurityRoles | `
                 Where-Object Name -eq $roleName | `
                 Select-Object -First 1
+
+            if ($null -eq $roleObj) {
+                $messageString = "The supplied role name: <c='em'>$roleName</c> didn't return any matching role details in the Power Platform environment. Please verify that the role name is correct - try running the <c='em'>Get-PpacSecurityRole</c> cmdlet."
+                Write-PSFMessage -Level Important -Message $messageString
+                continue
+            }
 
             # Now we need to assign the Security Role to the application user in the Power Platform environment using the Web API
             $payload = [PsCustomObject][ordered]@{

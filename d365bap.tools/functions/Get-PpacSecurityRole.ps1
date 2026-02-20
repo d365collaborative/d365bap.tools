@@ -62,6 +62,7 @@ function Get-PpacSecurityRole {
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
+        [Alias("Role")]
         [string] $Name = "*",
 
         [switch] $IncludeAll,

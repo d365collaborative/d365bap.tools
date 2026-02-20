@@ -61,8 +61,7 @@ function Get-PpacSecurityRoleMember {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
-        [Alias("Name")]
-        [Alias("SecurityRoleId")]
+        [Alias('Name')]
         [string] $Role,
 
         [string] $User = "*",

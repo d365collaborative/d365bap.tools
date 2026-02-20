@@ -172,6 +172,9 @@
                                 <PropertyName>State</PropertyName>
                             </ListItem>
                             <ListItem>
+                                <PropertyName>SecurityGroupId</PropertyName>
+                            </ListItem>
+                            <ListItem>
                                 <PropertyName>PpacRegion</PropertyName>
                             </ListItem>
                             <ListItem>

@@ -70,6 +70,7 @@ function Add-FscmSecurityRoleMember {
 
         $headersFnO = @{
             "Authorization" = "Bearer $($tokenFnoOdataValue)"
+            "Content-Type"  = "application/json;charset=utf-8"
         }
 
         $colSecurityRoles = Get-FscmSecurityRole `
@@ -106,6 +107,18 @@ function Add-FscmSecurityRoleMember {
                 continue
             }
 
+            $colAssignedUsers = Get-FscmSecurityRoleMember `
+                -EnvironmentId $envObj.PpacEnvId `
+                -Role $roleObj.FscmRoleId
+            
+            if ($userObj.FscmUserId -in $colAssignedUsers.FscmUserId) {
+                continue
+            }
+
+            if ($userObj.FscmUserId -eq 'Admin') {
+                continue
+            }
+            
             $payload = [PsCustomObject][ordered]@{
                 "SecurityRoleIdentifier" = $roleObj.FscmRoleId
                 "UserId"                 = $userObj.FscmUserId
@@ -127,7 +140,6 @@ function Add-FscmSecurityRoleMember {
                 Write-PSFMessage -Level Warning -Message $messageString
                 continue
             }
-
         }
     }
     

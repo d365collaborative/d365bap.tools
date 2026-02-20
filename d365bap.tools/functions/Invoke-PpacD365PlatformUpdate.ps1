@@ -43,6 +43,10 @@ function Invoke-PpacD365PlatformUpdate {
     )
     
     begin {
+        # Has to be empty - as we want to support pipe inputs.
+    }
+    
+    process {
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
         $envObj = Get-BapEnvironment `
             -EnvironmentId $EnvironmentId | `
@@ -71,7 +75,9 @@ function Invoke-PpacD365PlatformUpdate {
         #>
         $tmpVersion = $Version.ToString().Substring(0, 7)
         $colVersions = Get-PpacD365PlatformUpdate -EnvironmentId $EnvironmentId
-        $deployVersion = $colVersions | Where-Object Platform -eq $tmpVersion
+        $deployVersion = $colVersions | `
+            Where-Object Platform -eq $tmpVersion | `
+            Select-Object -First 1
 
         if ($null -eq $deployVersion) {
             $messageString = "The specified version <c='em'>$Version</c> was not valid for the environment. Please verify the available versions using the <c='em'>Get-PpacD365PlatformUpdate</c> cmdlet."
@@ -79,15 +85,13 @@ function Invoke-PpacD365PlatformUpdate {
             Stop-PSFFunction -Message "The specified version was not valid for the environment." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
         }
-    }
-    
-    process {
+
         if (Test-PSFFunctionInterrupt) { return }
         
         $localUri = $baseUri + '/api/data/v9.2/msprov_queuefnoinstallorupdate'
         
         $payload = [PsCustomObject][ordered]@{
-            "payload" = "ApplicationVersion=$deployVersion"
+            "payload" = "ApplicationVersion=$($deployVersion.Version)"
         } | ConvertTo-Json -Depth 3
 
         Invoke-RestMethod -Method Post `

@@ -29,7 +29,7 @@
         
         Can be either the role name or the role ID.
         
-    .PARAMETER AdminUpn
+    .PARAMETER TeamAdmin
         The User Principal Name (UPN) of the admin user in the Power Platform environment.
         
         This user needs to have sufficient permissions to create teams and assign security roles in the Power Platform environment.
@@ -45,7 +45,7 @@
         The administrator of the team will be the user running the cmdlet.
         
     .EXAMPLE
-        C:\> Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer" -AdminUpn "admin@contoso.com"
+        C:\> Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer" -TeamAdmin "admin@contoso.com"
         
         This will add the Microsoft Entra ID security group "Contoso Sales Security Group" as a team in the Power Platform environment with the id "env-123".
         The team will be named "Contoso Sales Team" and have the membership type "Members and Guests".
@@ -63,6 +63,7 @@ function Add-PpacTeamOnSecurityGroup {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
+        [Alias('Team')]
         [string] $Name,
 
         [Parameter (Mandatory = $true)]
@@ -76,7 +77,7 @@ function Add-PpacTeamOnSecurityGroup {
         [Alias('RoleName')]
         [string] $Role,
 
-        [string] $AdminUpn
+        [string] $TeamAdmin
     )
     
     begin {
@@ -105,19 +106,19 @@ function Add-PpacTeamOnSecurityGroup {
             
         if (Test-PSFFunctionInterrupt) { return }
 
-        if ([System.String]::IsNullOrEmpty($AdminUpn)) {
-            $AdminUpn = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).UserId
+        if ([System.String]::IsNullOrEmpty($TeamAdmin)) {
+            $TeamAdmin = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).UserId
         }
         
         $userObj = Get-PpacUser `
             -EnvironmentId $envObj.PpacEnvId `
-            -User $AdminUpn | `
+            -User $TeamAdmin | `
             Select-Object -First 1
         
         if ($null -eq $userObj) {
-            $messageString = "The supplied AdminUpn: <c='em'>$AdminUpn</c> didn't return any matching user details in the Power Platform environment. Please verify that the AdminUpn is correct and that the user exists in the environment."
+            $messageString = "The supplied TeamAdmin: <c='em'>$TeamAdmin</c> didn't return any matching user details in the Power Platform environment. Please verify that the TeamAdmin is correct and that the user exists in the environment."
             Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because no matching user was found for the supplied AdminUpn." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            Stop-PSFFunction -Message "Stopping because no matching user was found for the supplied TeamAdmin." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
         }
         
         $secRoleObj = Get-PpacSecurityRole `
@@ -155,6 +156,7 @@ function Add-PpacTeamOnSecurityGroup {
 
         #First we need to get the default Business Unit
         $colBunits = Get-CrmBusinessUnit -BaseUri $baseUri
+
         $businessObj = $colBunits | `
             Where-Object IsRoot -eq $true | `
             Select-Object -First 1

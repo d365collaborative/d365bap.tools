@@ -285,7 +285,9 @@ function New-UnifiedEnvironment {
             #>
             $tmpVersion = $Version.ToString().Substring(0, 7)
             $colVersions = Get-PpacD365PlatformUpdate -EnvironmentId $Name
-            $deployVersion = $colVersions | Where-Object Platform -eq $tmpVersion
+            $deployVersion = $colVersions | `
+                Where-Object Platform -eq $tmpVersion | `
+                Select-Object -First 1
 
             if ($null -eq $deployVersion) {
                 $messageString = "The specified version <c='em'>$Version</c> was not valid for the environment. Please verify the available versions using the <c='em'>Get-PpacD365PlatformUpdate</c> cmdlet."

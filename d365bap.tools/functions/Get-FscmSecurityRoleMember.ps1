@@ -54,7 +54,6 @@ function Get-FscmSecurityRoleMember {
 
         [Parameter (Mandatory = $true)]
         [Alias("Name")]
-        [Alias("SecurityRoleId")]
         [string] $Role,
 
         [string] $User = "*",

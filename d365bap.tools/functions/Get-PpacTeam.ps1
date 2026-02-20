@@ -47,6 +47,7 @@ function Get-PpacTeam {
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
+        [Alias('Team')]
         [string] $Name = "*",
 
         [switch] $AsExcelOutput

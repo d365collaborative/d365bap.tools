@@ -88,7 +88,7 @@ function Add-FscmUserFromSecurityGroup {
         if (Test-PSFFunctionInterrupt) { return }
         
         $colMembersRaw = Get-GraphGroupMember `
-            -GroupId $secGrp.id
+            -Group $secGrp.id
 
         $colMembers = $colMembersRaw | Where-Object {
             $_.'@odata.type' -eq "#microsoft.graph.user"
@@ -118,24 +118,32 @@ function Add-FscmUserFromSecurityGroup {
 
         foreach ($usrObj in $colMembers) {
             $matchedUser = $colUsers | Where-Object {
-                $_.Upn -eq $usrObj.userPrincipalName
+                $_.Upn -eq $usrObj.userPrincipalName `
+                    -or $_.Upn -eq $usrObj.mail
             } | Select-Object -First 1
 
             if ($null -eq $matchedUser) {
-                $tmpId = $usrObj.userPrincipalName.Split('@')[0]
+                $tenantExternal = ''
+                $tmpId = $usrObj.mail.Split('@')[0]
                 
                 if ($tmpId -in $colUsers.UserId -and (-not $RemapExisting)) {
-                    $messageString = "The member: <c='em'>$($usrObj.userPrincipalName)</c> from the Security Group: <c='em'>$($secGrp.displayName)</c> was not found as a user in the Dynamics 365 ERP environment based on the UPN. However, a user with the same UserId: <c='em'>$tmpId</c> exists in the environment. Skipping the user - if you want to remap the existing user to the new UPN, please run the command with the <c='em'>-RemapExisting</c> switch."
+                    $messageString = "The member: <c='em'>$($usrObj.userPrincipalName) | $($usrObj.mail)</c> from the Security Group: <c='em'>$($secGrp.displayName)</c> was not found as a user in the Dynamics 365 ERP environment based on the UPN. However, a user with the same UserId: <c='em'>$tmpId</c> exists in the environment. Skipping the user - if you want to remap the existing user to the new UPN, please run the command with the <c='em'>-RemapExisting</c> switch."
                     Write-PSFMessage -Level Warning -Message $messageString
 
                     continue
                 }
 
+                if ($usrObj.userPrincipalName -ne $usrObj.mail) {
+                    $tenantExternal = $usrObj.mail.Split('@')[1] + "/"
+                }
+
                 if ($tmpId -in $colUsers.UserId) {
                     $payloadUser = [PsCustomObject][ordered]@{
-                        "Email"   = $usrObj.userPrincipalName
-                        "Alias"   = $usrObj.userPrincipalName
-                        "Enabled" = $true
+                        "NetworkDomain" = "https://sts.windows.net/$tenantExternal"
+                        "UserName"      = $usrObj.displayName
+                        "Email"         = $usrObj.mail
+                        "Alias"         = $usrObj.mail
+                        "Enabled"       = $true
                     } | ConvertTo-Json
                     
                     $parmsUser = @{
@@ -145,14 +153,14 @@ function Add-FscmUserFromSecurityGroup {
                 }
                 else {
                     $payloadUser = [PsCustomObject][ordered]@{
-                        "UserID"            = $usrObj.userPrincipalName.Split('@')[0]
-                        "NetworkDomain"     = "https://sts.windows.net/"
+                        "UserID"            = $usrObj.mail.Split('@')[0]
+                        "NetworkDomain"     = "https://sts.windows.net/$tenantExternal"
                         "UserInfo_language" = "en-us"
                         "Helplanguage"      = "en-us"
-                        "UserName"          = $usrObj.userPrincipalName.Split('@')[0]
-                        "Email"             = $usrObj.userPrincipalName
+                        "UserName"          = $usrObj.displayName
+                        "Email"             = $usrObj.mail
                         "Company"           = "DAT"
-                        "Alias"             = $usrObj.userPrincipalName
+                        "Alias"             = $usrObj.mail
                         "AccountType"       = "ClaimsUser"
                         "Theme"             = "Theme1"
                         "Enabled"           = $true
@@ -171,7 +179,7 @@ function Add-FscmUserFromSecurityGroup {
                     -StatusCodeVariable statusUser > $null 4> $null
 
                 if (-not $statusUser -like "2*" ) {
-                    $messageString = "Something went wrong when creating/updating the user: <c='em'>$($usrObj.userPrincipalName)</c> in the Dynamics 365 ERP environment. HTTP Status Code: <c='em'>$statusUser</c>. Please investigate."
+                    $messageString = "Something went wrong when creating/updating the user: <c='em'>$($usrObj.mail)</c> in the Dynamics 365 ERP environment. HTTP Status Code: <c='em'>$statusUser</c>. Please investigate."
                     Write-PSFMessage -Level Warning -Message $messageString
 
                     continue
@@ -187,7 +195,10 @@ function Add-FscmUserFromSecurityGroup {
             -Role $secRoleObj.FscmRoleId
 
         foreach ($usrObj in $colMembers) {
-            $matchedUser = $colUsers | Where-Object { $_.Upn -eq $usrObj.userPrincipalName } | Select-Object -First 1
+            $matchedUser = $colUsers | Where-Object {
+                $_.Upn -eq $usrObj.userPrincipalName `
+                    -or $_.Upn -eq $usrObj.mail
+            } | Select-Object -First 1
             
             if ($null -eq $matchedUser) {
                 continue

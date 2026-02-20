@@ -123,6 +123,7 @@ function Get-BapEnvironment {
         "Properties.linkedAppMetadata.url as LinkedAppLcsEnvUri",
         "Properties.linkedEnvironmentMetadata.resourceId as LinkedMetaPpacOrgId",
         "Properties.linkedEnvironmentMetadata.uniqueName as LinkedMetaPpacUniqueId",
+        "Properties.linkedEnvironmentMetadata.securityGroupId as SecurityGroupId",
         @{Name = "LinkedMetaPpacEnvUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceUrl -replace "com/", "com" } },
         @{Name = "LinkedMetaPpacEnvApiUri"; Expression = { $_.Properties.linkedEnvironmentMetadata.instanceApiUrl -replace "com/", "com" } },
         "Properties.linkedEnvironmentMetadata.baseLanguage as LinkedMetaPpacEnvLanguage",
@@ -146,11 +147,11 @@ function Get-BapEnvironment {
             }
         },
         @{Name = "FnOEnvType"; Expression = {
-                $uri = $_.Properties.linkedAppMetadata.url
+                $uri = $_.Properties.linkedAppMetadata.url;
                 switch ($_.Properties.linkedAppMetadata.type) {
                     "Internal" { "UDE/USE" }
                     "Linked" {
-                        if ($uri -like "*axcloud*") {
+                        if ($uri -like "*axcloud*" -or $uri -like "*cloudax*") {
                             "LcsDevbox"
                         }
                         elseif ($uri -like "*sandbox*") {

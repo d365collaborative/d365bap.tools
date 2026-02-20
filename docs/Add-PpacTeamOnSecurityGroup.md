@@ -14,7 +14,7 @@ Enables assignment of a Microsoft Entra ID security group as a team in the Power
 
 ```
 Add-PpacTeamOnSecurityGroup [-EnvironmentId] <String> [-Name] <String> [-SecurityGroup] <String>
- [[-MembershipType] <String>] [-Role] <String> [[-AdminUpn] <String>] [-ProgressAction <ActionPreference>]
+ [[-MembershipType] <String>] [-Role] <String> [[-TeamAdmin] <String>] [-ProgressAction <ActionPreference>]
  [<CommonParameters>]
 ```
 
@@ -35,7 +35,7 @@ The administrator of the team will be the user running the cmdlet.
 
 ### EXAMPLE 2
 ```
-Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer" -AdminUpn "admin@contoso.com"
+Add-PpacTeamOnSecurityGroup -EnvironmentId "env-123" -Name "Contoso Sales Team" -SecurityGroup "Contoso Sales Security Group" -MembershipType "Members and Guests" -Role "System Customizer" -TeamAdmin "admin@contoso.com"
 ```
 
 This will add the Microsoft Entra ID security group "Contoso Sales Security Group" as a team in the Power Platform environment with the id "env-123".
@@ -128,7 +128,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AdminUpn
+### -TeamAdmin
 The User Principal Name (UPN) of the admin user in the Power Platform environment.
 
 This user needs to have sufficient permissions to create teams and assign security roles in the Power Platform environment.

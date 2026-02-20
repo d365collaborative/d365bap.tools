@@ -1,91 +1,12 @@
-﻿
-<#
-    .SYNOPSIS
-        Get application user from environment
-        
-    .DESCRIPTION
-        Retrieves application users from the environment.
-        
-        By default, it will exclude "hidden" PPAC applications
-        
-    .PARAMETER EnvironmentId
-        The id of the environment that you want to work against
-        
-        This can be obtained from the Get-BapEnvironment cmdlet
-        
-    .PARAMETER Name
-        Name of the application user that you want to retrieve.
-        
-        This can be either the systemuserid, fullname or applicationid of the application user.
-        Wildcards are accepted, and it will search in all three properties for a match.
-        
-    .PARAMETER IncludePpacApplications
-        Instruct the cmdlet to include all PPAC applications in the output
-        
-        This will include all applications that are "hidden", but utilized by the PPAC Environment
-        
-    .PARAMETER AsExcelOutput
-        Instruct the cmdlet to output all details directly to an Excel file
-        
-        This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
-        
-    .EXAMPLE
-        PS C:\> Get-PpacApplicationUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
-        
-        This will fetch all ApplicationUsers from the environment.
-        
-        Sample output:
-        PpacSystemUserId                     PpacAppName                    PpacAppId                            State
-        ----------------                     -----------                    ---------                            -----
-        b6e52ceb-f771-41ff-bd99-917523b28eaf Power Apps Checker Application 3bafba76-60bf-413d-a4c4-5c49ccabfb12 Active
-        21ceaf7c-054c-43f6-8b14-ef6d04b90a21 Microsoft Forms Pro            560c9a6c-4535-4066-a415-480d1493cf98 Active
-        c76313fd-5c6f-4f1f-9869-c884fa7fe226 # PowerPlatform-essence-uat    d88a3535-ebf0-4b2b-ad23-90e686660a64 Active
-        29494271-7e38-4433-8bf8-06d335299a17 # PowerPlatform-essence-uat    8bf8862f-5036-42b0-a4f8-1b638db7896b Active
-        
-    .EXAMPLE
-        PS C:\> Get-PpacApplicationUser -EnvironmentId *test*
-        
-        This will fetch all ApplicationUsers from the environment.
-        
-        Sample output:
-        PpacSystemUserId                     PpacAppName                    PpacAppId                            State
-        ----------------                     -----------                    ---------                            -----
-        b6e52ceb-f771-41ff-bd99-917523b28eaf Power Apps Checker Application 3bafba76-60bf-413d-a4c4-5c49ccabfb12 Active
-        21ceaf7c-054c-43f6-8b14-ef6d04b90a21 Microsoft Forms Pro            560c9a6c-4535-4066-a415-480d1493cf98 Active
-        c76313fd-5c6f-4f1f-9869-c884fa7fe226 # PowerPlatform-essence-uat    d88a3535-ebf0-4b2b-ad23-90e686660a64 Active
-        29494271-7e38-4433-8bf8-06d335299a17 # PowerPlatform-essence-uat    8bf8862f-5036-42b0-a4f8-1b638db7896b Active
-        
-    .EXAMPLE
-        PS C:\> Get-PpacApplicationUser -EnvironmentId *test* -IncludePpacApplications
-        
-        This will fetch all ApplicationUsers from the environment.
-        It will include all "hidden" PPAC applications in the output.
-        
-        Sample output:
-        PpacSystemUserId                     PpacAppName                    PpacAppId                            State
-        ----------------                     -----------                    ---------                            -----
-        b6e52ceb-f771-41ff-bd99-917523b28eaf Power Apps Checker Application 3bafba76-60bf-413d-a4c4-5c49ccabfb12 Active
-        21ceaf7c-054c-43f6-8b14-ef6d04b90a21 Microsoft Forms Pro            560c9a6c-4535-4066-a415-480d1493cf98 Active
-        d88a3535-ebf0-4b2b-ad23-90e686660a64 # URAssignment                 c76313fd-5c6f-4f1f-9869-c884fa7fe226 Active
-        8bf8862f-5036-42b0-a4f8-1b638db7896b # UnifiedRoutingForRecord_App  29494271-7e38-4433-8bf8-06d335299a17 Active
-        
-    .EXAMPLE
-        PS C:\> Get-PpacApplicationUser -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -AsExcelOutput
-        
-        This will fetch all ApplicationUsers from the environment.
-        Will output all details into an Excel file, that will auto open on your machine.
-        
-    .NOTES
-        Author: Mötz Jensen (@Splaxi)
-#>
-function Get-PpacApplicationUser {
+﻿function Get-PpacApplicationUser {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
-        [string] $Name = "*",
+        [Alias('Upn')]
+        [string] $User = "*",
 
         [switch] $IncludePpacApplications,
 
@@ -125,9 +46,9 @@ function Get-PpacApplicationUser {
             -Headers $headersWebApi 4> $null
         
         $colUsersRaw = $resSystemUsers.value | Where-Object {
-            ($_.systemuserid -like $Name -or $_.systemuserid -eq $Name) `
-                -or ($_.fullname -like $Name -or $_.fullname -eq $Name) `
-                -or ($_.applicationid -like $Name -or $_.applicationid -eq $Name)
+            ($_.systemuserid -like $User -or $_.systemuserid -eq $User) `
+                -or ($_.fullname -like $User -or $_.fullname -eq $User) `
+                -or ($_.applicationid -like $User -or $_.applicationid -eq $User)
         } | Sort-Object -Property fullname -Descending
 
         if (-not $IncludePpacApplications) {
