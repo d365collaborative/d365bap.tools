@@ -1,4 +1,4 @@
-﻿Describe "Set-BapEnvironmentSecurityRoleMember Unit Tests" -Tag "Unit" {
+﻿Describe "Add-FscmUserFromSecurityGroup Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,11 +8,11 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Set-BapEnvironmentSecurityRoleMember).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Add-FscmUserFromSecurityGroup).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
 		It 'Should have the expected parameter EnvironmentId' {
-			$parameter = (Get-Command Set-BapEnvironmentSecurityRoleMember).Parameters['EnvironmentId']
+			$parameter = (Get-Command Add-FscmUserFromSecurityGroup).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -24,9 +24,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter ObjectId' {
-			$parameter = (Get-Command Set-BapEnvironmentSecurityRoleMember).Parameters['ObjectId']
-			$parameter.Name | Should -Be 'ObjectId'
+		It 'Should have the expected parameter SecurityGroup' {
+			$parameter = (Get-Command Add-FscmUserFromSecurityGroup).Parameters['SecurityGroup']
+			$parameter.Name | Should -Be 'SecurityGroup'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -38,14 +38,27 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter Role' {
-			$parameter = (Get-Command Set-BapEnvironmentSecurityRoleMember).Parameters['Role']
+			$parameter = (Get-Command Add-FscmUserFromSecurityGroup).Parameters['Role']
 			$parameter.Name | Should -Be 'Role'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
 			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
-			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $True
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be 2
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
+		It 'Should have the expected parameter RemapExisting' {
+			$parameter = (Get-Command Add-FscmUserFromSecurityGroup).Parameters['RemapExisting']
+			$parameter.Name | Should -Be 'RemapExisting'
+			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
@@ -54,8 +67,8 @@
 	
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
-		__AllParameterSets -EnvironmentId -ObjectId -Role
-		__AllParameterSets -EnvironmentId -ObjectId -Role
+		__AllParameterSets -EnvironmentId -SecurityGroup
+		__AllParameterSets -EnvironmentId -SecurityGroup -Role -RemapExisting
 		#>
 	}
 

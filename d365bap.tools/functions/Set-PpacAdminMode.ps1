@@ -1,37 +1,39 @@
 ﻿
 <#
     .SYNOPSIS
-        Set environment admin mode
+        Set the admin mode for a Power Platform environment.
         
     .DESCRIPTION
-        Enables the user to set the Power Platform environment into Admin Mode or User Mode.
+        This cmdlet sets the admin mode for a Power Platform environment. It allows switching between User Mode and Admin Mode, which can be useful for troubleshooting and support scenarios.
         
-        Admin Mode allows only users with the System Administrator role to access the environment, needed for specific maintenance tasks.
-        
-        User Mode allows all users with appropriate permissions to access the environment.
+        Is the same as the administrative mode in LCS.
         
     .PARAMETER EnvironmentId
-        Id of the environment that you want to work against.
+        The ID of the environment to set the admin mode for.
+        
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER Mode
-        Specifies the mode to set for the environment.
+        The mode to set for the environment.
         
         Valid values are "UserMode" and "AdminMode".
         
     .EXAMPLE
-        PS C:\> Set-BapEnvironmentAdminMode -EnvironmentId *uat* -Mode AdminMode
+        PS C:\> Set-PpacAdminMode -EnvironmentId "ContosoEnv" -Mode "AdminMode"
         
-        This will set the environment with id containing "uat" into Admin Mode.
+        This command sets the admin mode for the Power Platform environment "ContosoEnv" to "AdminMode".
+        Now the environment is an admin-only mode.
         
     .EXAMPLE
-        PS C:\> Set-BapEnvironmentAdminMode -EnvironmentId *prod* -Mode UserMode
+        PS C:\> Set-PpacAdminMode -EnvironmentId "ContosoEnv" -Mode "UserMode"
         
-        This will set the environment with id containing "prod" into User Mode.
+        This command sets the admin mode for the Power Platform environment "ContosoEnv" to "UserMode".
+        Now the environment is in normal user mode and accessible for all users with permissions.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Set-BapEnvironmentAdminMode {
+function Set-PpacAdminMode {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -44,7 +46,9 @@ function Set-BapEnvironmentAdminMode {
     
     begin {
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        $envObj = Get-BapEnvironment `
+            -EnvironmentId $EnvironmentId | `
+            Select-Object -First 1
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
@@ -65,7 +69,7 @@ function Set-BapEnvironmentAdminMode {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $payLoad = [PsCustomObject][ordered]@{
+        $payload = [PsCustomObject][ordered]@{
             properties = [PsCustomObject][ordered]@{
                 states = @{
                     runtime = @{
@@ -80,7 +84,7 @@ function Set-BapEnvironmentAdminMode {
         Invoke-RestMethod -Method Patch `
             -Uri $localUri `
             -Headers $headersBapApi `
-            -Body $payLoad `
+            -Body $payload `
             -ContentType "application/json" > $null
     }
     

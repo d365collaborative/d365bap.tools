@@ -92,7 +92,7 @@ The ID of the environment to retrieve.
 
 Supports wildcard patterns.
 
-Can be either the environment name or the environment GUID.
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String

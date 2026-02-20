@@ -1,96 +1,54 @@
 ﻿
 <#
     .SYNOPSIS
-        Get users/members from security role
-        
+        Get information about Finance and Operations security role members in a given environment.
         
     .DESCRIPTION
-        Enables the user to fetch all users/members from the security role in the environment
-        
-        Utilizes the built-in "roles" OData entity
-        
-        Allows the user to include all users/members, based on those who has the ApplicationId property filled
+        This cmdlet retrieves information about Finance and Operations security role members in a given environment. It allows filtering by role name or ID, user name or ID, and exporting the results to Excel.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against
+        The ID of the environment to retrieve security role members from.
         
-        This can be obtained from the Get-BapEnvironment cmdlet
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER Role
-        Name or RoleId of the security role that you want to work against
+        The name or ID of the security role to retrieve members from.
         
-        This can be obtained from the Get-PpacSecurityRole cmdlet
+        Can be either the role name or the role ID.
         
-    .PARAMETER UserId
-        The (SystemUser)Id or email of the user that you want to filter on
+    .PARAMETER User
+        The name or ID of the user to filter the security role members by.
         
-        This can be obtained from the Get-PpacUser cmdlet
+        Can be either the user name or user ID.
         
-        Default value is "*" - which translates into all available users/members
-        
-        Wildcard search is supported
+        Supports wildcard characters for flexible matching.
         
     .PARAMETER IncludePpacApplications
-        Instruct the cmdlet to include all users that are members of the security role
-        
-        Simply includes those who has the ApplicationId property filled
+        Instructs the cmdlet to include service principals (applications) in the results, in addition to user principals.
         
     .PARAMETER AsExcelOutput
-        Instruct the cmdlet to output all details directly to an Excel file
-        
-        This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state
+        Instructs the cmdlet to export the retrieved security role member information to an Excel file.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -Role 'System Administrator'
+        PS C:\> Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer"
         
-        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
-        
-        Sample output:
-        Email                          Name                           AppId                SystemUserId
-        -----                          ----                           -----                ------------
-        d365admin@contoso.com          # D365Admin                                         58879b65-65ca-45f7-bf8e-9550e241083e
-        crmoln2@microsoft.com          Delegated Admin                                     58879b65-65ca-47f5-bf8e-9550e241083e
+        This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv" and displays their information in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator'
+        PS C:\> Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer" -User "*john*"
         
-        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
-        
-        Sample output:
-        Email                          Name                           AppId                SystemUserId
-        -----                          ----                           -----                ------------
-        d365admin@contoso.com          # D365Admin                                         58879b65-65ca-45f7-bf8e-9550e241083e
-        crmoln2@microsoft.com          Delegated Admin                                     58879b65-65ca-47f5-bf8e-9550e241083e
+        This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv" and filters the members to those with user names or user IDs matching "*john*". The information is displayed in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -UserId '*@contoso.com'
+        PS C:\> Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer" -IncludePpacApplications
         
-        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
-        It will only include the ones that have an email address that contains '@contoso.com'.
-        
-        Sample output:
-        Email                          Name                           AppId                SystemUserId
-        -----                          ----                           -----                ------------
-        d365admin@contoso.com          # D365Admin                                         58879b65-65ca-45f7-bf8e-9550e241083e
+        This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv" and includes service principals (applications) in the results, in addition to user principals. The information is displayed in the console.
         
     .EXAMPLE
-        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -IncludePpacApplications
+        PS C:\> Get-FscmSecurityRoleMember -EnvironmentId "ContosoEnv" -Role "System Customizer" -AsExcelOutput
         
-        This will fetch all users that are members of the security role 'System Administrator' from the environment.
-        It will include the ones with the ApplicationId property filled.
-        
-        Sample output:
-        Email                          Name                           AppId                SystemUserId
-        -----                          ----                           -----                ------------
-        CatalogServiceEur@onmicrosoft… # CatalogServiceEur            ac22509c-8d51-4169-… 330297ba-cbf6-ed11-8849-6045bd8e42bc
-        CCaaSCRMClient@onmicrosoft.com # CCaaSCRMClient               edfdd43b-45b9-498b-… f4f45a4b-f8b7-ed11-9886-6045bd8e42bc
-        d365admin@contoso.com          # D365Admin                                         58879b65-56ca-45f7-bf8e-9550e241083e
-        
-    .EXAMPLE
-        PS C:\> Get-PpacSecurityRoleMember -EnvironmentId *uat* -Role 'System Administrator' -AsExcelOutput
-        
-        This will fetch all ordinary users that are members of the security role 'System Administrator' from the environment.
-        Will output all details into an Excel file, that will auto open on your machine.
+        This command retrieves the members of the Finance and Operations security role with the name "System Customizer" from the environment "ContosoEnv".
+        It will export the information to an Excel file.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -103,12 +61,10 @@ function Get-PpacSecurityRoleMember {
         [string] $EnvironmentId,
 
         [Parameter (Mandatory = $true)]
-        [Alias("Name")]
-        [Alias("SecurityRoleId")]
+        [Alias('Name')]
         [string] $Role,
 
-        [Alias("Email")]
-        [string] $UserId = "*",
+        [string] $User = "*",
 
         [switch] $IncludePpacApplications,
 
@@ -157,29 +113,32 @@ function Get-PpacSecurityRoleMember {
             -Uri $localUri `
             -Headers $headersWebApi
 
+        
         $resCol = @(
             $resRoleObj.systemuserroles_association | Select-PSFObject -TypeName "D365Bap.Tools.PpacUser" `
                 -ExcludeProperty "@odata.etag" `
                 -Property "systemuserid as PpacSystemUserId",
             "internalemailaddress as Email",
+            "internalemailaddress as Upn",
             "fullname as Name",
             "applicationid as PpacAppId",
             "azureactivedirectoryobjectid as EntraObjectId",
             @{Name = "NameSortable"; Expression = { $_.fullname.Replace("# ", "") } },
             *
         )
-
+            
         $resCol = $resCol | Sort-Object -Property NameSortable
          
         if (-not $IncludePpacApplications) {
             $resCol = $resCol | Where-Object PpacAppId -eq $null
         }
 
-        if ($UserId.Contains("@")) {
-            $resCol = $resCol | Where-Object Email -like $UserId
-        }
-        else {
-            $resCol = $resCol | Where-Object PpacSystemUserId -like $UserId
+        $resCol = $resCol | Where-Object {
+            ($_.Name -like $User -or $_.Name -eq $User) `
+                -or ($_.PpacSystemUserId -like $User -or $_.PpacSystemUserId -eq $User) `
+                -or ($_.PpacAppId -like $User -or $_.PpacAppId -eq $User) `
+                -or ($_.EntraObjectId -like $User -or $_.EntraObjectId -eq $User) `
+                -or ($_.Upn -like $User -or $_.Upn -eq $User)
         }
 
         if ($AsExcelOutput) {

@@ -1,4 +1,4 @@
-﻿Describe "Get-PpacSecurityRoleMember Unit Tests" -Tag "Unit" {
+﻿Describe "Add-FscmUser Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,11 +8,11 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Get-PpacSecurityRoleMember).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Add-FscmUser).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
 		It 'Should have the expected parameter EnvironmentId' {
-			$parameter = (Get-Command Get-PpacSecurityRoleMember).Parameters['EnvironmentId']
+			$parameter = (Get-Command Add-FscmUser).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -24,9 +24,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter Role' {
-			$parameter = (Get-Command Get-PpacSecurityRoleMember).Parameters['Role']
-			$parameter.Name | Should -Be 'Role'
+		It 'Should have the expected parameter User' {
+			$parameter = (Get-Command Add-FscmUser).Parameters['User']
+			$parameter.Name | Should -Be 'User'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -37,9 +37,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter User' {
-			$parameter = (Get-Command Get-PpacSecurityRoleMember).Parameters['User']
-			$parameter.Name | Should -Be 'User'
+		It 'Should have the expected parameter Role' {
+			$parameter = (Get-Command Add-FscmUser).Parameters['Role']
+			$parameter.Name | Should -Be 'Role'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -50,22 +50,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter IncludePpacApplications' {
-			$parameter = (Get-Command Get-PpacSecurityRoleMember).Parameters['IncludePpacApplications']
-			$parameter.Name | Should -Be 'IncludePpacApplications'
-			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
-			$parameter.IsDynamic | Should -Be $False
-			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
-			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
-			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
-			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
-			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
-			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
-			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
-		}
-		It 'Should have the expected parameter AsExcelOutput' {
-			$parameter = (Get-Command Get-PpacSecurityRoleMember).Parameters['AsExcelOutput']
-			$parameter.Name | Should -Be 'AsExcelOutput'
+		It 'Should have the expected parameter RemapExisting' {
+			$parameter = (Get-Command Add-FscmUser).Parameters['RemapExisting']
+			$parameter.Name | Should -Be 'RemapExisting'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -80,8 +67,8 @@
 	
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
-		__AllParameterSets -EnvironmentId -Role
-		__AllParameterSets -EnvironmentId -Role -User -IncludePpacApplications -AsExcelOutput
+		__AllParameterSets -EnvironmentId -User
+		__AllParameterSets -EnvironmentId -User -Role -RemapExisting
 		#>
 	}
 

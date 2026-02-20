@@ -45,6 +45,8 @@ It will then assign the "System Administrator" security role to it in the Power 
 ### -EnvironmentId
 The id of the environment that you want to work against.
 
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+
 ```yaml
 Type: String
 Parameter Sets: (All)

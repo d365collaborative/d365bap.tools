@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-UdeEnvironmentOperationHistory
+# Get-UnifiedEnvironmentOperationHistory
 
 ## SYNOPSIS
 Get UDE environment operation history.
@@ -13,7 +13,7 @@ Get UDE environment operation history.
 ## SYNTAX
 
 ```
-Get-UdeEnvironmentOperationHistory [-EnvironmentId] <String> [-LatestOnly] [-AsExcelOutput] [-DownloadLog]
+Get-UnifiedEnvironmentOperationHistory [-EnvironmentId] <String> [-LatestOnly] [-AsExcelOutput] [-DownloadLog]
  [[-DownloadPath] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -24,14 +24,14 @@ Gets the UDE environment operation history for a specified environment.
 
 ### EXAMPLE 1
 ```
-Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123"
+Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123"
 ```
 
 This will retrieve all UDE environment operation history for the specified environment id.
 
 ### EXAMPLE 2
 ```
-Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -LatestOnly
+Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123" -LatestOnly
 ```
 
 This will retrieve only the latest UDE environment operation history for the specified environment id.
@@ -39,7 +39,7 @@ It is based on the modified date.
 
 ### EXAMPLE 3
 ```
-Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -AsExcelOutput
+Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123" -AsExcelOutput
 ```
 
 This will retrieve all UDE environment operation history for the specified environment id.
@@ -47,7 +47,7 @@ Will output all details into an Excel file, that will auto open on your machine.
 
 ### EXAMPLE 4
 ```
-Get-UdeEnvironmentOperationHistory -EnvironmentId "env-123" -DownloadLog -DownloadPath "C:\Logs"
+Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123" -DownloadLog -DownloadPath "C:\Logs"
 ```
 
 This will retrieve all UDE environment operation history for the specified environment id.

@@ -33,7 +33,7 @@ It will include the custom source code from "C:\CustomSourceCode".
 
 ### EXAMPLE 2
 ```
-Get-UdeEnvironment -EnvironmentId "env-123" | Set-UdeConfig -Path "C:\CustomSourceCode"
+Get-UnifiedEnvironment -EnvironmentId "env-123" | Set-UdeConfig -Path "C:\CustomSourceCode"
 ```
 
 This will set the UDE configuration for the environment with the ID "env-123".

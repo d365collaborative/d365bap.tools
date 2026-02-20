@@ -76,9 +76,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter AdminUpn' {
-			$parameter = (Get-Command Add-PpacTeamOnSecurityGroup).Parameters['AdminUpn']
-			$parameter.Name | Should -Be 'AdminUpn'
+		It 'Should have the expected parameter TeamAdmin' {
+			$parameter = (Get-Command Add-PpacTeamOnSecurityGroup).Parameters['TeamAdmin']
+			$parameter.Name | Should -Be 'TeamAdmin'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -94,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Name -SecurityGroup -Role
-		__AllParameterSets -EnvironmentId -Name -SecurityGroup -MembershipType -Role -AdminUpn
+		__AllParameterSets -EnvironmentId -Name -SecurityGroup -MembershipType -Role -TeamAdmin
 		#>
 	}
 
