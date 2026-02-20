@@ -8,7 +8,7 @@ schema: 2.0.0
 # Get-BapEnvironment
 
 ## SYNOPSIS
-Get information about Power Platform environments as listed in the Power Platform Admin Center (PPAC).
+Retrieves information about Power Platform environments.
 
 ## SYNTAX
 
@@ -18,7 +18,8 @@ Get-BapEnvironment [[-EnvironmentId] <String>] [-FscmEnabled] [-AsExcelOutput]
 ```
 
 ## DESCRIPTION
-This cmdlet retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC).
+This function retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC).
+
 It allows filtering by environment ID, checking for Finance and Operations enabled environments, and exporting the results to Excel.
 
 ## EXAMPLES
@@ -28,38 +29,36 @@ It allows filtering by environment ID, checking for Finance and Operations enabl
 Get-BapEnvironment
 ```
 
-This command retrieves all Power Platform environments listed in the Power Platform Admin Center (PPAC) and displays their information in the console.
+This will return all environments in the Power Platform tenant.
 
 ### EXAMPLE 2
 ```
-Get-BapEnvironment -EnvironmentId "Contoso*"
+Get-BapEnvironment -EnvironmentId "env-123"
 ```
 
-This command retrieves all Power Platform environments matching "Contoso*" and displays their information in the console.
-It will match environments with names, display names, or linked app metadata IDs against "Contoso*".
+This will return the environment with the id "env-123".
 
 ### EXAMPLE 3
 ```
 Get-BapEnvironment -FscmEnabled
 ```
 
-This command retrieves all Power Platform environments that are enabled for Finance and Operations and displays their information in the console.
+This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
 
 ### EXAMPLE 4
 ```
-Get-BapEnvironment -AsExcelOutput
+Get-BapEnvironment -FscmEnabled -AsExcelOutput
 ```
 
-This command retrieves all Power Platform environments and exports their information to an Excel file.
+This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
+It will export the results to an Excel file.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The ID of the environment to retrieve.
+The id of the environment that you want to work against.
 
 Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
-Supports wildcard characters for flexible matching.
 
 ```yaml
 Type: String
@@ -74,7 +73,7 @@ Accept wildcard characters: False
 ```
 
 ### -FscmEnabled
-Instructs the cmdlet to filter and return only environments that are enabled for Finance and Operations.
+Instructs the function to only return environments that have Dynamics 365 ERP suite capabilities (environments that is either linked or provisioned as an unified environment).
 
 ```yaml
 Type: SwitchParameter
@@ -89,7 +88,7 @@ Accept wildcard characters: False
 ```
 
 ### -AsExcelOutput
-Instructs the cmdlet to export the retrieved environment information to an Excel file.
+Instructs the function to export the results to an Excel file.
 
 ```yaml
 Type: SwitchParameter

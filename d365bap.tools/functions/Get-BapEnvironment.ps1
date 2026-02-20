@@ -1,46 +1,47 @@
-﻿<#
-.SYNOPSIS
-    Retrieves information about Power Platform environments.
-
-.DESCRIPTION
-    This function retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC).
-    
-    It allows filtering by environment ID, checking for Finance and Operations enabled environments, and exporting the results to Excel.
-
-.PARAMETER EnvironmentId
+﻿
+<#
+    .SYNOPSIS
+        Retrieves information about Power Platform environments.
+        
+    .DESCRIPTION
+        This function retrieves information about Power Platform environments from the Power Platform Admin Center (PPAC).
+        
+        It allows filtering by environment ID, checking for Finance and Operations enabled environments, and exporting the results to Excel.
+        
+    .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
         
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
-.PARAMETER FscmEnabled
-Instructs the function to only return environments that have Dynamics 365 ERP suite capabilities (environments that is either linked or provisioned as an unified environment).
-
-.PARAMETER AsExcelOutput
-Instructs the function to export the results to an Excel file.
-
-.EXAMPLE
-PS C:\> Get-BapEnvironment
-
-This will return all environments in the Power Platform tenant.
-
-.EXAMPLE
-PS C:\> Get-BapEnvironment -EnvironmentId "env-123"
-
-This will return the environment with the id "env-123".
-
-.EXAMPLE
-PS C:\> Get-BapEnvironment -FscmEnabled
-
-This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
-
-.EXAMPLE
-PS C:\> Get-BapEnvironment -FscmEnabled -AsExcelOutput
-
-This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
-It will export the results to an Excel file.
-
-.NOTES
-Author: Mötz Jensen (@Splaxi)
+        
+    .PARAMETER FscmEnabled
+        Instructs the function to only return environments that have Dynamics 365 ERP suite capabilities (environments that is either linked or provisioned as an unified environment).
+        
+    .PARAMETER AsExcelOutput
+        Instructs the function to export the results to an Excel file.
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment
+        
+        This will return all environments in the Power Platform tenant.
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -EnvironmentId "env-123"
+        
+        This will return the environment with the id "env-123".
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -FscmEnabled
+        
+        This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
+        
+    .EXAMPLE
+        PS C:\> Get-BapEnvironment -FscmEnabled -AsExcelOutput
+        
+        This will return all environments in the Power Platform tenant that have Dynamics 365 ERP suite capabilities.
+        It will export the results to an Excel file.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
 #>
 function Get-BapEnvironment {
     [CmdletBinding()]
