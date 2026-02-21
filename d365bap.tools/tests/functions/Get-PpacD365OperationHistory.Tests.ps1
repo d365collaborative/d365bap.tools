@@ -1,4 +1,4 @@
-﻿Describe "Get-UnifiedEnvironmentPackage Unit Tests" -Tag "Unit" {
+﻿Describe "Get-PpacD365OperationHistory Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,11 +8,11 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Get-UnifiedEnvironmentPackage).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Get-PpacD365OperationHistory).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
 		It 'Should have the expected parameter EnvironmentId' {
-			$parameter = (Get-Command Get-UnifiedEnvironmentPackage).Parameters['EnvironmentId']
+			$parameter = (Get-Command Get-PpacD365OperationHistory).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -25,7 +25,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter LatestOnly' {
-			$parameter = (Get-Command Get-UnifiedEnvironmentPackage).Parameters['LatestOnly']
+			$parameter = (Get-Command Get-PpacD365OperationHistory).Parameters['LatestOnly']
 			$parameter.Name | Should -Be 'LatestOnly'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
@@ -38,7 +38,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter AsExcelOutput' {
-			$parameter = (Get-Command Get-UnifiedEnvironmentPackage).Parameters['AsExcelOutput']
+			$parameter = (Get-Command Get-PpacD365OperationHistory).Parameters['AsExcelOutput']
 			$parameter.Name | Should -Be 'AsExcelOutput'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
@@ -50,12 +50,38 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
+		It 'Should have the expected parameter DownloadLog' {
+			$parameter = (Get-Command Get-PpacD365OperationHistory).Parameters['DownloadLog']
+			$parameter.Name | Should -Be 'DownloadLog'
+			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
+		It 'Should have the expected parameter DownloadPath' {
+			$parameter = (Get-Command Get-PpacD365OperationHistory).Parameters['DownloadPath']
+			$parameter.Name | Should -Be 'DownloadPath'
+			$parameter.ParameterType.ToString() | Should -Be System.String
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be 1
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
 	}
 	
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -LatestOnly -AsExcelOutput
+		__AllParameterSets -EnvironmentId -LatestOnly -AsExcelOutput -DownloadLog -DownloadPath
 		#>
 	}
 

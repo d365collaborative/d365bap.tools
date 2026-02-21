@@ -1088,9 +1088,9 @@
             </TableControl>
         </View>
         <View>
-            <Name>D365Bap.Tools.UdeEnvironmentOperation</Name>
+            <Name>D365Bap.Tools.PpacD365OperationHistory</Name>
             <ViewSelectedBy>
-                <TypeName>D365Bap.Tools.UdeEnvironmentOperation</TypeName>
+                <TypeName>D365Bap.Tools.PpacD365OperationHistory</TypeName>
             </ViewSelectedBy>
             <TableControl>
                 <TableHeaders>
@@ -1146,9 +1146,9 @@
             </TableControl>
         </View>
         <View>
-            <Name>D365Bap.Tools.UdeEnvironmentOperation</Name>
+            <Name>D365Bap.Tools.PpacD365OperationHistory</Name>
             <ViewSelectedBy>
-                <TypeName>D365Bap.Tools.UdeEnvironmentOperation</TypeName>
+                <TypeName>D365Bap.Tools.PpacD365OperationHistory</TypeName>
             </ViewSelectedBy>
             <ListControl>
                 <ListEntries>
@@ -1174,6 +1174,9 @@
                             </ListItem>
                             <ListItem>
                                 <PropertyName>CreatedBy</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ProvVersion</PropertyName>
                             </ListItem>
                         </ListItems>
                     </ListEntry>

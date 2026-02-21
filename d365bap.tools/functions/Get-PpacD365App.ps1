@@ -7,7 +7,9 @@
         Retrieves available D365 applications from the environment as they are shown in the Power Platform Admin Center (PPAC).
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against
+        The id of the environment that you want to work against.
+        
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER Name
         Name of the D365 application that you want to retrieve.
