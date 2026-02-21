@@ -1,55 +1,66 @@
 ﻿
 <#
     .SYNOPSIS
-        Get UDE environment operation history.
+        Get operation history for a given Unified environment from PPAC.
         
     .DESCRIPTION
-        Gets the UDE environment operation history for a specified environment.
+        Retrieves the operation history for a specified Unified environment from the Power Platform Admin Center (PPAC). This includes details such as operation name, description, correlation ID, status, and more.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against
+        The id of the environment that you want to work against.
+        
+        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .PARAMETER LatestOnly
-        Instructs the cmdlet to return only the latest operation history.
-        
-        Is based on the modified date.
+        Instructs the cmdlet to only return the latest operation from the history.
         
     .PARAMETER AsExcelOutput
-        Instructs the function to export the results to an Excel file.
+        Instructs the cmdlet to output the results as an Excel file.
         
     .PARAMETER DownloadLog
-        Instructs the function to download the operation log.
+        Instructs the cmdlet to attempt to download the operation logs for each operation in the history.
+        
+        Note that not all operations will have logs available, and for some operations (e.g. FnO DB Sql Jit) there are no logs at all.
         
     .PARAMETER DownloadPath
-        Specifies the path where the operation log will be downloaded.
+        Specifies the path where the downloaded logs will be saved.
+        
+        The default path is "C:\Temp\d365bap.tools\PpacD365OperationHistory".
+        
+        Logs will be organized in subfolders for each environment based on the environment name.
         
     .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123"
+        PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
         
-        This will retrieve all UDE environment operation history for the specified environment id.
-        
-    .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123" -LatestOnly
-        
-        This will retrieve only the latest UDE environment operation history for the specified environment id.
-        It is based on the modified date.
+        This will fetch the operation history for the specified environment.
         
     .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123" -AsExcelOutput
+        PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2a-a4c7-4e1d-b8ed-f62acc9c74c6" -LatestOnly
         
-        This will retrieve all UDE environment operation history for the specified environment id.
-        Will output all details into an Excel file, that will auto open on your machine.
+        This will fetch only the latest operation from the operation history for the specified environment.
         
     .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentOperationHistory -EnvironmentId "env-123" -DownloadLog -DownloadPath "C:\Logs"
+        PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2a-a4c7-4e1d-b8ed-f62acc9c74c6" -AsExcelOutput
         
-        This will retrieve all UDE environment operation history for the specified environment id.
-        Will download the operation logs into the specified path.
+        This will fetch the operation history for the specified environment.
+        It will output the results directly into an Excel file, that will automatically open on your machine.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2a-a4c7-4e1d-b8ed-f62acc9c74c6" -DownloadLog
+        
+        This will fetch the operation history for the specified environment.
+        It will attempt to download the operation logs for each operation in the history, and save them to the default download path.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2a-a4c7-4e1d-b8ed-f62acc9c74c6" -DownloadLog -DownloadPath "C:\Temp\MyLogs"
+        
+        This will fetch the operation history for the specified environment.
+        It will attempt to download the operation logs for each operation in the history, and save them to "C:\Temp\MyLogs".
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Get-UnifiedEnvironmentOperationHistory {
+function Get-PpacD365OperationHistory {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
@@ -64,16 +75,20 @@ function Get-UnifiedEnvironmentOperationHistory {
 
         [switch] $DownloadLog,
 
-        [string] $DownloadPath = "C:\Temp\d365bap.tools\UdeEnvironmentOperation"
+        [string] $DownloadPath = "C:\Temp\d365bap.tools\PpacD365OperationHistory"
     )
     
     begin {
+        # Needs to be empty for support of pipe input
     }
     
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId -SkipVersionDetails | Select-Object -First 1
+        $envObj = Get-UnifiedEnvironment `
+            -EnvironmentId $EnvironmentId `
+            -SkipVersionDetails | `
+            Select-Object -First 1
 
         if ($null -eq $envObj) {
             $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
@@ -117,15 +132,9 @@ function Get-UnifiedEnvironmentOperationHistory {
             $colModules = $colModules | Select-Object -First 1
         }
 
-        foreach ($opsObj in $colModules) {
-            foreach ($prop in ($opsObj.msprov_operationproperties | Where-Object { $null -ne $_ } |`
-                        ConvertFrom-Json -Depth 10).PsObject.Properties) {
-                $opsObj | Add-Member -NotePropertyName "prop_$($prop.Name)" -NotePropertyValue $prop.Value -Force
-            }
-        }
-
         $resCol = @(
-            $colModules | Select-PSFObject -TypeName 'D365Bap.Tools.UdeEnvironmentOperation' `
+            $colModules | Select-PSFObject -TypeName 'D365Bap.Tools.PpacD365OperationHistory' `
+                -ExcludeProperty '@odata.etag' `
                 -Property "msprov_name As Name",
             "msprov_description As Description",
             "msprov_correlationid As CorrelationId",
@@ -137,13 +146,36 @@ function Get-UnifiedEnvironmentOperationHistory {
             "createdon As Created",
             "modifiedon As Modified",
             "versionnumber As Version",
-            * `
-                -ExcludeProperty '@odata.etag'
+            @{ Name = "msprov_UserId"; Expression = {
+                    if ($null -ne $_.msprov_operationproperties) {
+                        if (Test-Json -Json $_.msprov_operationproperties -ErrorAction SilentlyContinue) {
+                            ($_.msprov_operationproperties | ConvertFrom-Json -Depth 10).UserId
+                        }
+                    }
+                }
+            },
+            @{ Name = "msprov_Payload"; Expression = {
+                    if ($null -ne $_.msprov_operationproperties) {
+                        if (Test-Json -Json $_.msprov_operationproperties -ErrorAction SilentlyContinue) {
+                            ($_.msprov_operationproperties | ConvertFrom-Json -Depth 10).Payload
+                        }
+                    }
+                }
+            },
+            @{ Name = "ProvVersion"; Expression = {
+                    if ($null -ne $_.msprov_operationproperties) {
+                        if (Test-Json -Json $_.msprov_operationproperties -ErrorAction SilentlyContinue) {
+                            ($_.msprov_operationproperties | ConvertFrom-Json -Depth 10).Payload.Split("|")[0].Split("=")[1]
+                        }
+                    }
+                }
+            },
+            *
         )
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel `
-                -WorksheetName "Get-UnifiedEnvironmentOperationHistory" `
+                -WorksheetName "Get-PpacD365OperationHistory" `
                 -WarningAction SilentlyContinue
             
             return
@@ -165,7 +197,7 @@ function Get-UnifiedEnvironmentOperationHistory {
                         -Method Get `
                         -Headers $headers `
                         -OutFile $downloadFilePath `
-                        -SkipHttpErrorCheck
+                        -SkipHttpErrorCheck 4> $null
                 }
             }
 

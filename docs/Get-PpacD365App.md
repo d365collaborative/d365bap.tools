@@ -48,7 +48,9 @@ It will output the results directly into an Excel file, that will automatically 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against
+The id of the environment that you want to work against.
+
+Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
 
 ```yaml
 Type: String
