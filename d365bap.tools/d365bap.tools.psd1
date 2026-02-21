@@ -100,7 +100,7 @@
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
 		, 'Get-UdeEnvironmentModule'
-		, 'Get-UdeEnvironmentOperationHistory'
+		, 'Get-PpacD365OperationHistory'
 		, 'Get-UdeEnvironmentPackage'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
