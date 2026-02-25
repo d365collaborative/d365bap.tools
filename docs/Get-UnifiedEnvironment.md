@@ -48,21 +48,21 @@ Support D365 Finance and Operations, either Developer Edition (UDE) or Unified S
 Get-UnifiedEnvironment
 ```
 
-This will retrieve all available UDE/USE environments.
+This will retrieve all available UDE/USE/UPE environments.
 
 ### EXAMPLE 2
 ```
 Get-UnifiedEnvironment -EnvironmentId "env-123"
 ```
 
-This will retrieve the UDE/USE environment with the specified environment ID.
+This will retrieve the UDE/USE/UPE environment with the specified environment ID.
 
 ### EXAMPLE 3
 ```
 Get-UnifiedEnvironment -SkipVersionDetails
 ```
 
-This will retrieve all available UDE/USE environments without version details.
+This will retrieve all available UDE/USE/UPE environments without version details.
 
 ### EXAMPLE 4
 ```
@@ -83,7 +83,7 @@ This will retrieve only USE environments.
 Get-UnifiedEnvironment -AsExcelOutput
 ```
 
-This will export the retrieved UDE/USE environments to an Excel file.
+This will export the retrieved UDE/USE/UPE environments to an Excel file.
 
 ## PARAMETERS
 
