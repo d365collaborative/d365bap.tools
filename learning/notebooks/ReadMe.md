@@ -1,12 +1,10 @@
 # About the notebooks
 
-This folder contains [Jupyter](https://jupyter.org/) notebooks to learn in an interactive way how to use the d365bap.tools PowerShell module.
+This folder contains [Jupyter](https://jupyter.org/) notebooks to learn how to use the d365bap.tools PowerShell module.
 
-The notebooks can be viewed directly on GitHub or other clients that support viewing the Jupyter notebook format. It is however recommended to run them interactively. The easiest way to do so is to use the preconfigured GitHub Codespaces environment: 
+The notebooks can be viewed directly on GitHub or other clients that support viewing the Jupyter notebook format. 
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/d365collaborative/d365bap.tools)
-
-To run the notebooks locally, open them in Visual Studio Code with the [Polyglot](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode) extension installed.
+The notebooks used to be able to be run interactively in Visual Studio Code with the [Polyglot](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.dotnet-interactive-vscode) extension installed. Unfortunately, Microsoft has deprecated the extension. While the extension is still available, it may no longer work. They are kept for reference, but are no longer being maintained.
 
 ## Notebooks
 

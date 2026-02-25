@@ -120,7 +120,16 @@ function Add-FscmUserFromSecurityGroup {
 
             if ($null -eq $matchedUser) {
                 $tenantExternal = ''
-                $tmpId = $usrObj.mail.Split('@')[0]
+                $tmpMail = ''
+
+                if ($null -eq $usrObj.mail) {
+                    $tmpId = $usrObj.userPrincipalName.Split('@')[0]
+                    $tmpMail = $usrObj.userPrincipalName
+                }
+                else {
+                    $tmpId = $usrObj.mail.Split('@')[0]
+                    $tmpMail = $usrObj.mail
+                }
                 
                 if ($tmpId -in $colUsers.UserId -and (-not $RemapExisting)) {
                     $messageString = "The member: <c='em'>$($usrObj.userPrincipalName) | $($usrObj.mail)</c> from the Security Group: <c='em'>$($secGrp.displayName)</c> was not found as a user in the Dynamics 365 ERP environment based on the UPN. However, a user with the same UserId: <c='em'>$tmpId</c> exists in the environment. Skipping the user - if you want to remap the existing user to the new UPN, please run the command with the <c='em'>-RemapExisting</c> switch."
@@ -129,7 +138,9 @@ function Add-FscmUserFromSecurityGroup {
                     continue
                 }
 
-                if ($usrObj.userPrincipalName -ne $usrObj.mail) {
+                if ((-not [System.String]::IsNullOrEmpty($usrObj.mail)) `
+                        -and $usrObj.mail -ne $usrObj.userPrincipalName) {
+
                     $tenantExternal = $usrObj.mail.Split('@')[1] + "/"
                 }
 
@@ -137,8 +148,8 @@ function Add-FscmUserFromSecurityGroup {
                     $payloadUser = [PsCustomObject][ordered]@{
                         "NetworkDomain" = "https://sts.windows.net/$tenantExternal"
                         "UserName"      = $usrObj.displayName
-                        "Email"         = $usrObj.mail
-                        "Alias"         = $usrObj.mail
+                        "Email"         = $tmpMail
+                        "Alias"         = $tmpMail
                         "Enabled"       = $true
                     } | ConvertTo-Json
                     
@@ -149,14 +160,14 @@ function Add-FscmUserFromSecurityGroup {
                 }
                 else {
                     $payloadUser = [PsCustomObject][ordered]@{
-                        "UserID"            = $usrObj.mail.Split('@')[0]
+                        "UserID"            = $tmpMail.Split('@')[0]
                         "NetworkDomain"     = "https://sts.windows.net/$tenantExternal"
                         "UserInfo_language" = "en-us"
                         "Helplanguage"      = "en-us"
                         "UserName"          = $usrObj.displayName
-                        "Email"             = $usrObj.mail
+                        "Email"             = $tmpMail
                         "Company"           = "DAT"
-                        "Alias"             = $usrObj.mail
+                        "Alias"             = $tmpMail
                         "AccountType"       = "ClaimsUser"
                         "Theme"             = "Theme1"
                         "Enabled"           = $true
@@ -175,7 +186,7 @@ function Add-FscmUserFromSecurityGroup {
                     -StatusCodeVariable statusUser > $null 4> $null
 
                 if (-not $statusUser -like "2*" ) {
-                    $messageString = "Something went wrong when creating/updating the user: <c='em'>$($usrObj.mail)</c> in the Dynamics 365 ERP environment. HTTP Status Code: <c='em'>$statusUser</c>. Please investigate."
+                    $messageString = "Something went wrong when creating/updating the user: <c='em'>$tmpMail</c> in the Dynamics 365 ERP environment. HTTP Status Code: <c='em'>$statusUser</c>. Please investigate."
                     Write-PSFMessage -Level Warning -Message $messageString
 
                     continue
