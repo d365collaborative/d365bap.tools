@@ -101,9 +101,14 @@ function Set-FscmUser {
             }
         
             $tmpId = $matchedUser.UserId
-        
+            
+            $enable = $false
+            if ($State -eq "Enabled") {
+                $enable = $true
+            }
+            
             $payloadUser = [PsCustomObject][ordered]@{
-                "Enabled" = $State -eq "Enabled" ? $true : $false
+                "Enabled" = $enable
             } | ConvertTo-Json
                     
             $parmsUser = @{
