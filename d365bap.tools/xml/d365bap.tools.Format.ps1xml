@@ -137,7 +137,7 @@
                                 <PropertyName>EnvId</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <PropertyName>FnOEnvType</PropertyName>
+                                <PropertyName>EnvType</PropertyName>
                             </TableColumnItem>
                         </TableColumnItems>
                     </TableRowEntry>
@@ -178,7 +178,7 @@
                                 <PropertyName>PpacRegion</PropertyName>
                             </ListItem>
                             <ListItem>
-                                <PropertyName>FnOEnvType</PropertyName>
+                                <PropertyName>EnvType</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>FnOEnvUri</PropertyName>
@@ -646,7 +646,7 @@
                                 <PropertyName>FinOpsApp</PropertyName>
                             </ListItem>
                             <ListItem>
-                                <PropertyName>FnOEnvType</PropertyName>
+                                <PropertyName>EnvType</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>PpacProvApp</PropertyName>

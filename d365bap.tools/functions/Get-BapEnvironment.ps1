@@ -146,10 +146,10 @@ function Get-BapEnvironment {
                 }
             }
         },
-        @{Name = "FnOEnvType"; Expression = {
+        @{Name = "EnvType"; Expression = {
                 $uri = $_.Properties.linkedAppMetadata.url;
                 switch ($_.Properties.linkedAppMetadata.type) {
-                    "Internal" { "UDE/USE" }
+                    "Internal" { "Unified" }
                     "Linked" {
                         if ($uri -like "*axcloud*" -or $uri -like "*cloudax*") {
                             "LcsDevbox"

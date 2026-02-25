@@ -32,17 +32,17 @@
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironment
         
-        This will retrieve all available UDE/USE environments.
+        This will retrieve all available UDE/USE/UPE environments.
         
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironment -EnvironmentId "env-123"
         
-        This will retrieve the UDE/USE environment with the specified environment ID.
+        This will retrieve the UDE/USE/UPE environment with the specified environment ID.
         
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironment -SkipVersionDetails
         
-        This will retrieve all available UDE/USE environments without version details.
+        This will retrieve all available UDE/USE/UPE environments without version details.
         
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironment -UdeOnly
@@ -57,7 +57,7 @@
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironment -AsExcelOutput
         
-        This will export the retrieved UDE/USE environments to an Excel file.
+        This will export the retrieved UDE/USE/UPE environments to an Excel file.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -153,12 +153,12 @@ function Get-UnifiedEnvironment {
             $envObj | Add-Member -NotePropertyName "FinOpsApp" -NotePropertyValue $appProvision.InstalledVersion
 
             $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `
-                -ExcludeProperty FnOEnvType `
+                -ExcludeProperty EnvType `
                 -Property "ProvisioningAppVersion as PpacProvApp",
             "ProvisioningPlatVersion as PpacProvPlatform",
             "ProvisioningState as PpacProvState",
             "ProvisioningType as PpacProvType",
-            @{Name = "FnOEnvType"; Expression = {
+            @{Name = "EnvType"; Expression = {
                     switch ($_.ProvisioningType) {
                         "OnlineDev" { "UDE" }
                         "Sandbox" { "USE" }
@@ -170,10 +170,10 @@ function Get-UnifiedEnvironment {
         }
 
         if ($UdeOnly) {
-            $resCol = $resCol | Where-Object FnOEnvType -eq "UDE"
+            $resCol = $resCol | Where-Object EnvType -eq "UDE"
         }
         elseif ($UseOnly) {
-            $resCol = $resCol | Where-Object FnOEnvType -eq "USE"
+            $resCol = $resCol | Where-Object EnvType -eq "USE"
         }
 
         if ($AsExcelOutput) {
