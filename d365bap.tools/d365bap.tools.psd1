@@ -120,6 +120,8 @@
 		
 		, 'Set-BapAzCopyPath'
 		
+		, 'Set-FscmUser'
+		
 		, 'Set-PpacAdminMode'
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
 		, 'Set-BapEnvironmentVirtualEntity'
