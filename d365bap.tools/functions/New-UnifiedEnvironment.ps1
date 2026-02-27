@@ -150,10 +150,12 @@ function New-UnifiedEnvironment {
         $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
     
-        $SecurityGroupId = Get-GraphGroup `
-            -Group $SecurityGroup | `
-            Select-Object -ExpandProperty id
-
+        if ($SecurityGroup) {
+            $SecurityGroupId = Get-GraphGroup `
+                -Group $SecurityGroup | `
+                Select-Object -ExpandProperty id
+        }
+        
         if (Test-PSFFunctionInterrupt) { return }
     }
     
