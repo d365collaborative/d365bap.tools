@@ -285,12 +285,22 @@ function New-UnifiedEnvironment {
                 Platform version is 10.0.X for humans, but the application package version is 10.0.X.Y,
                 so we need to get the latest available version and find the matching one.
             #>
-            $tmpVersion = $Version.ToString().Substring(0, 7)
-            $colVersions = Get-PpacD365PlatformUpdate -EnvironmentId $Name
-            $deployVersion = $colVersions | `
-                Where-Object Platform -eq $tmpVersion | `
-                Select-Object -First 1
+            if (-not [System.String]::IsNullOrWhiteSpace($Version)) {
+                $tmpVersion = $Version.ToString().Substring(0, 7)
+                $colVersions = Get-PpacD365PlatformUpdate `
+                    -EnvironmentId $Name
 
+                $deployVersion = $colVersions | `
+                    Where-Object Platform -eq $tmpVersion | `
+                    Select-Object -First 1
+            }
+            else {
+                $deployVersion = Get-PpacD365PlatformUpdate `
+                    -EnvironmentId $Name `
+                    -Latest | `
+                    Select-Object -First 1
+            }
+            
             if ($null -eq $deployVersion) {
                 $messageString = "The specified version <c='em'>$Version</c> was not valid for the environment. Please verify the available versions using the <c='em'>Get-PpacD365PlatformUpdate</c> cmdlet."
                 Write-PSFMessage -Level Important -Message $messageString
