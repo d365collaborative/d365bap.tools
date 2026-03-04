@@ -14,7 +14,7 @@ Gets UDE developer files for a specified environment.
 
 ```
 Get-UdeDeveloperFile [-EnvironmentId] <String> [[-Path] <String>] [[-Files] <String[]>] [-Download]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-ClearSystemPackages] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -35,6 +35,21 @@ Get-UdeDeveloperFile -EnvironmentId "env-123" -Download
 ```
 
 This will download the UDE developer files for the specified environment ID to the default path.
+
+### EXAMPLE 3
+```
+Get-UdeDeveloperFile -EnvironmentId "env-123" -Download -Files "SystemMetadata","TraceParser"
+```
+
+This will download only the SystemMetadata and TraceParser UDE developer files for the specified environment ID to the default path.
+
+### EXAMPLE 4
+```
+Get-UdeDeveloperFile -EnvironmentId "env-123" -Download -ClearSystemPackages
+```
+
+This will download the UDE developer files for the specified environment ID to the default path.
+It will clear the existing PackagesLocalDirectory before extracting the SystemMetadata file, ensuring a clean state for the extraction.
 
 ## PARAMETERS
 
@@ -95,6 +110,25 @@ Accept wildcard characters: False
 
 ### -Download
 Instructs the function to download the developer files to the specified path.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ClearSystemPackages
+Instructs the function to clear the existing PackagesLocalDirectory before extracting the SystemMetadata file.
+
+Use with caution as it will delete existing files.
+
+Can be useful when the extraction has failed previously and you want to ensure a clean state for the extraction.
 
 ```yaml
 Type: SwitchParameter

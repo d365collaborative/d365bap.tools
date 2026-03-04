@@ -79,7 +79,7 @@ function Get-PpacD365PlatformUpdate {
         
         $resVersions = Invoke-RestMethod -Method Get `
             -Uri $localUri `
-            -Headers $headersWebApi | `
+            -Headers $headersWebApi 4> $null | `
             Select-Object -ExpandProperty Response | `
             ConvertFrom-Json
 

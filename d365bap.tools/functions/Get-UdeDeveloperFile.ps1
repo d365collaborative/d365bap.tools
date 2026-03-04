@@ -28,6 +28,13 @@
     .PARAMETER Download
         Instructs the function to download the developer files to the specified path.
         
+    .PARAMETER ClearSystemPackages
+        Instructs the function to clear the existing PackagesLocalDirectory before extracting the SystemMetadata file.
+        
+        Use with caution as it will delete existing files.
+        
+        Can be useful when the extraction has failed previously and you want to ensure a clean state for the extraction.
+        
     .EXAMPLE
         PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123"
         
@@ -37,6 +44,17 @@
         PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123" -Download
         
         This will download the UDE developer files for the specified environment ID to the default path.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123" -Download -Files "SystemMetadata","TraceParser"
+        
+        This will download only the SystemMetadata and TraceParser UDE developer files for the specified environment ID to the default path.
+        
+    .EXAMPLE
+        PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123" -Download -ClearSystemPackages
+        
+        This will download the UDE developer files for the specified environment ID to the default path.
+        It will clear the existing PackagesLocalDirectory before extracting the SystemMetadata file, ensuring a clean state for the extraction.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -55,7 +73,9 @@ function Get-UdeDeveloperFile {
         [ValidateSet('All', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference')]
         [string[]] $Files = 'All',
 
-        [switch] $Download
+        [switch] $Download,
+
+        [switch] $ClearSystemPackages
     )
     
     begin {
@@ -138,26 +158,31 @@ function Get-UdeDeveloperFile {
 
         Write-PSFMessage -Level Important -Message "Will start the download of the files. It will open a separate PowerShell window for each:"
 
-        $processes = @()
+        $retryCount = 0
+        $maxRetries = 5
 
-        # Start a new PowerShell window for each download to allow parallel downloads
-        # Each window will remain open after download to allow user to validate the download
-        foreach ($fileObj in $colFiles) {
-            $uriQuery = Split-Path $fileObj.Uri -Leaf
-            $fileName = $uriQuery.Split("?")[0]
-            $outputPath = Join-Path $downloadDir $fileName
+        do {
+            $retryCount++
+            $processes = @()
 
-            $fileObj | Add-Member -NotePropertyName "Path" -NotePropertyValue $outputPath
+            # Start a new PowerShell window for each download to allow parallel downloads
+            # Each window will remain open after download to allow user to validate the download
+            foreach ($fileObj in $colFiles) {
+                $uriQuery = Split-Path $fileObj.Uri -Leaf
+                $fileName = $uriQuery.Split("?")[0]
+                $outputPath = Join-Path $downloadDir $fileName
 
-            if ([System.IO.Path]::Exists($outputPath)) {
-                Write-PSFMessage -Level Important -Message " - Skipping <c='em'>$fileName</c> as it already <c='em'>exists</c>"
-                continue
-            }
+                $fileObj | Add-Member -NotePropertyName "Path" -NotePropertyValue $outputPath -Force
 
-            Write-PSFMessage -Level Important -Message " - <c='em'>$fileName</c>"
+                if ([System.IO.Path]::Exists($outputPath)) {
+                    Write-PSFMessage -Level Important -Message " - Skipping <c='em'>$fileName</c> as it already <c='em'>exists</c>"
+                    continue
+                }
 
-            # Command to run in new window: azcopy copy, then pause for validation
-            $command = @"
+                Write-PSFMessage -Level Important -Message " - <c='em'>$fileName</c>"
+
+                # Command to run in new window: azcopy copy, then pause for validation
+                $command = @"
 $executable copy '$($fileObj.Uri)' '$outputPath';
 if(-not [System.IO.File]::Exists('$outputPath')){
     Write-Host 'Download failed. Review the logs for more information.' -ForegroundColor Red
@@ -165,29 +190,47 @@ if(-not [System.IO.File]::Exists('$outputPath')){
 };
 
 "@
-            $process = Start-Process -FilePath "powershell.exe" `
-                -ArgumentList "-Command", $command `
-                -WindowStyle Normal `
-                -PassThru
+                $process = Start-Process -FilePath "powershell.exe" `
+                    -ArgumentList "-Command", $command `
+                    -WindowStyle Normal `
+                    -PassThru
 
-            $processes += $process
-        }
+                $processes += $process
+            }
 
-        Write-PSFMessage -Level Important -Message "Will await the completion of <c='em'>all</c> file downloads."
+            Write-PSFMessage -Level Important -Message "Will await the completion of <c='em'>all</c> file downloads."
 
-        if ($processes.Count -gt 0 ) {
-            Wait-Process -Id $processes.Id > $null
-        }
+            if ($processes.Count -gt 0 ) {
+                Wait-Process -Id $processes.Id > $null
+            }
+        } while (
+            ($colFiles | `
+                Where-Object { -not [System.IO.File]::Exists($_.Path) }) `
+                -and $retryCount -lt $maxRetries
+        )
         
         foreach ($fileObj in $colFiles) {
+            if (-not [System.IO.File]::Exists($fileObj.Path)) {
+                Write-PSFMessage -Level Important -Message "File <c='em'>$($fileObj.Path)</c> does not exist. It seems the download failed. Please review the logs in the respective PowerShell window for more information."
+                Stop-PSFFunction -Message "Stopping because at least one file download failed." `
+                    -Exception $([System.Exception]::new("File $($fileObj.Path) does not exist. Download failed. Please review the logs in the respective PowerShell window for more information."))
+                continue
+            }
+            
             Unblock-File -Path $fileObj.Path
         }
-        
+
+        if (Test-PSFFunctionInterrupt) { return }
+                    
         # Output the details to the user
         $colFiles
             
         # If we downloaded the SystemMetadata, we extract it - otherwise it is useless
-        $zipPackages = $colFiles | Where-Object type -eq 'SystemMetadata' | Select-Object -First 1 -ExpandProperty Path
+        $zipFile = $colFiles | `
+            Where-Object type -eq 'SystemMetadata' | `
+            Select-Object -First 1 `
+            -ExpandProperty Path
+
         $pathPackages = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$build"
 
         if (-not [System.IO.Path]::Exists("$pathPackages\PackagesLocalDirectory")) {
@@ -195,14 +238,33 @@ if(-not [System.IO.File]::Exists('$outputPath')){
                 -ItemType Directory `
                 -Force `
                 -WarningAction SilentlyContinue > $null
+        }
+        elseif (-not $ClearSystemPackages) {
+            $zipObj = [IO.Compression.ZipFile]::OpenRead($zipFile)
+            $zipPackages = ($zipObj.Entries | `
+                    Where-Object Length -eq 0 | `
+                    Where-Object FullName -match '^[^/]+/$'
+            ).Count
 
-            Write-PSFMessage -Level Important -Message "Will extract the <c='em'>PackagesLocalDirectory.zip</c> file. It will take some minutes..."
-            [IO.Compression.ZipFile]::ExtractToDirectory($zipPackages, "$pathPackages\PackagesLocalDirectory")
-            Write-PSFMessage -Level Important -Message "Extraction completed..."
+            $localPackages = (Get-ChildItem -Path "$pathPackages\PackagesLocalDirectory" -Directory).Count
 
+            $zipObj.Dispose()
             [GC]::Collect()
             [GC]::WaitForPendingFinalizers()
+
+            Write-PSFMessage -Level Important -Message "The PackagesLocalDirectory already exists. If you want to re-extract the file, please run this command again with the switch <c='em'>-ClearSystemPackages</c>."
+            Write-PSFMessage -Level Important -Message "Current number of packages in the zip file: <c='em'>$zipPackages</c>. Current number of packages in the local directory: <c='em'>$localPackages</c>."
+            Stop-PSFFunction -Message "Stopping as PackagesLocalDirectory already exists." `
+                -Exception $([System.Exception]::new("PackagesLocalDirectory already exists. If you want to re-extract the file, please run this command again with the switch -ClearSystemPackages."))
+            return
         }
+
+        Write-PSFMessage -Level Important -Message "Will extract the <c='em'>PackagesLocalDirectory.zip</c> file. It will take some minutes..."
+        [IO.Compression.ZipFile]::ExtractToDirectory($zipFile, "$pathPackages\PackagesLocalDirectory", $true)
+        Write-PSFMessage -Level Important -Message "Extraction completed..."
+
+        [GC]::Collect()
+        [GC]::WaitForPendingFinalizers()
     }
 
     end {
