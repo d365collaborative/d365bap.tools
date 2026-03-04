@@ -52,22 +52,30 @@ function Switch-BapTenant {
         }
         
         $obj = $hashTenants."$Id"
-        $contextObj = (Get-AzContext -ListAvailable | Where-Object { $_.tenant.id -eq $obj.Tenant } | Where-Object { $_.Account.Id -eq $obj.User })
+        $contextObj = (Get-AzContext -ListAvailable | `
+                Where-Object { $_.tenant.id -eq $obj.Tenant } | `
+                Where-Object { $_.Account.Id -eq $obj.User } | `
+                Select-Object -First 1)
 
         Select-AzContext -InputObject $contextObj > $null
 
-        $fake = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString -ErrorAction SilentlyContinue).Token
+        $fake = (Get-AzAccessToken `
+                -ResourceUrl "https://service.powerapps.com/" `
+                -AsSecureString -ErrorAction SilentlyContinue).Token
         
         if ([string]::IsNullOrWhiteSpace($fake)) {
             Write-PSFMessage -Level Important -Message "It seems that your credentials/cache has <c='sub'>expired</c>. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
             
             Start-Sleep -Seconds 2
-            Connect-AzAccount -Tenant $obj.Tenant -AccountId $obj.User
-        }elseif ($Force) {
+            Connect-AzAccount -Tenant $obj.Tenant `
+                -AccountId $obj.User
+        }
+        elseif ($Force) {
             Write-PSFMessage -Level Verbose -Message "Force flag is set. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
             
             Start-Sleep -Seconds 2
-            Connect-AzAccount -Tenant $obj.Tenant -AccountId $obj.User
+            Connect-AzAccount -Tenant $obj.Tenant `
+                -AccountId $obj.User
         }
     }
     
