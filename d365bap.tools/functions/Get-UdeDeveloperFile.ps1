@@ -32,9 +32,9 @@
         Instructs the function to clear the existing PackagesLocalDirectory before extracting the SystemMetadata file.
         
         Use with caution as it will delete existing files.
-
+        
         Can be useful when the extraction has failed previously and you want to ensure a clean state for the extraction.
-
+        
     .EXAMPLE
         PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123"
         
@@ -49,13 +49,13 @@
         PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123" -Download -Files "SystemMetadata","TraceParser"
         
         This will download only the SystemMetadata and TraceParser UDE developer files for the specified environment ID to the default path.
-
-        .EXAMPLE
+        
+    .EXAMPLE
         PS C:\> Get-UdeDeveloperFile -EnvironmentId "env-123" -Download -ClearSystemPackages
-
+        
         This will download the UDE developer files for the specified environment ID to the default path.
         It will clear the existing PackagesLocalDirectory before extracting the SystemMetadata file, ensuring a clean state for the extraction.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
