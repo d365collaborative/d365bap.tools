@@ -80,7 +80,7 @@ function Get-PpacD365App {
         $appsAvailable = Invoke-RestMethod `
             -Method Get `
             -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" `
-            -Headers $headersPowerApi | `
+            -Headers $headersPowerApi 4> $null | `
             Select-Object -ExpandProperty Value
     }
     
