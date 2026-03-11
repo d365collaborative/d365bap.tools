@@ -33,10 +33,13 @@ function Get-UdeConnection {
     )
 
     begin {
-        $curConfig = Get-ChildItem -Path "$Path\*.config" | Select-Object -First 1 -ExpandProperty FullName
+        $curConfig = Get-ChildItem `
+            -Path "$Path\*.config" `
+            -ErrorAction SilentlyContinue | `
+            Select-Object -First 1 -ExpandProperty FullName
 
         if ($null -eq $curConfig) {
-            $messageString = "The configuration file was not found. Make sure that the <c='em'>'$Path'</c> is pointing to the correct location of the CRMDeveloperToolKit."
+            $messageString = "The configuration file was not found. This usually means that the CRMDeveloperToolKit has been <c='em'>wiped</c> using <c='em'>Clear-UdeCredentialCache -Force</c>. Please connect to an environment using the <c='em'>Tools -> Connect to Dataverse...</c> in Visual Studio to recreate the configuration file, and then run this command again."
 
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because the configuration file was not found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
