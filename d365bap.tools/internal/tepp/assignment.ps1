@@ -16,3 +16,5 @@ Register-PSFTeppArgumentCompleter -Command Get-PpacDeployLocation -Parameter Nam
 
 Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironment -Parameter Location -Name "d365bap.tools.tepp.bap.locations"
 Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironment -Parameter Region -Name "d365bap.tools.tepp.bap.regions"
+
+Register-PSFTeppArgumentCompleter -Command Invoke-PpacD365PlatformUpdate -Parameter Version -Name "d365bap.tools.tepp.env.temp.versions"
