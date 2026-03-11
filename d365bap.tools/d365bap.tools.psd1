@@ -123,7 +123,6 @@
 		
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
 		, 'Set-BapEnvironmentVirtualEntity'
-		, 'Set-BapSession'
 		, 'Set-BapTenantDetail'
 		
 		, 'Set-FscmUser'
