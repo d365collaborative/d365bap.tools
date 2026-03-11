@@ -82,7 +82,7 @@ function Get-BapTenantDetail {
     process {
         $hashTenants = [hashtable](Get-PSFConfigValue -FullName "d365bap.tools.tenant.details")
         
-        $resCol = @(
+        $colTenants = @(
             foreach ($key in $hashTenants.Keys) {
                 $obj = $hashTenants."$key"
                 
@@ -91,10 +91,13 @@ function Get-BapTenantDetail {
                 if (-not ($obj.Tenant -like $TenantId)) { continue }
                 if (-not ($obj.FriendlyName -like $FriendlyName)) { continue }
                 
-                $obj | Select-PSFObject -TypeName "D365Bap.Tools.TenantDetail" `
-                    -Property *
+                $obj
             }
         )
+
+
+        $resCol = $colTenants | Select-PSFObject -TypeName "D365Bap.Tools.TenantDetail" `
+            -Property *
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-BapTenantDetail"
