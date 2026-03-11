@@ -43,15 +43,15 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
-		'Add-UdeWindowsDefenderRules'
-
-		, 'Add-FscmSecurityRoleMember'
+		'Add-FscmSecurityRoleMember'
 		, 'Add-FscmUser'
 		, 'Add-FscmUserFromSecurityGroup'
 		
 		, 'Add-PpacApplicationUser'
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
+		
+		, 'Add-UdeWindowsDefenderRules'
 		
 		, 'Clear-UdeCredentialCache'
 		, 'Clear-UdeDbJitCache'
@@ -60,8 +60,8 @@
 		, 'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
 		, 'Compare-BapEnvironmentVirtualEntity'
-		, 'Confirm-BapEnvironmentIntegration'
 		
+		, 'Confirm-BapEnvironmentIntegration'
 		, 'Confirm-UdeVs2022Installation'
 		
 		, 'Get-BapEnvironment'
@@ -82,6 +82,7 @@
 		
 		, 'Get-PpacApplicationUser'
 		, 'Get-PpacD365App'
+		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacSecurityRole'
@@ -95,19 +96,17 @@
 		, 'Get-UdeConfig'
 		, 'Get-UdeConnection'
 		, 'Get-UdeCredentialCache'
-		
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
 		, 'Get-UdeEnvironmentModule'
-		, 'Get-PpacD365OperationHistory'
 		, 'Get-UdeEnvironmentPackage'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
 		, 'Get-UnifiedEnvironment'
-
+		
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 		
@@ -118,18 +117,21 @@
 		
 		, 'New-UnifiedEnvironment'
 		
+		, 'Remove-BapTenantDetail'
+		
 		, 'Set-BapAzCopyPath'
+		
+		, 'Set-BapEnvironmentLinkEnterprisePolicy'
+		, 'Set-BapEnvironmentVirtualEntity'
+		, 'Set-BapSession'
+		, 'Set-BapTenantDetail'
 		
 		, 'Set-FscmUser'
 		
 		, 'Set-PpacAdminMode'
-		, 'Set-BapEnvironmentLinkEnterprisePolicy'
-		, 'Set-BapEnvironmentVirtualEntity'
-		, 'Set-BapTenantDetail'
-		
 		, 'Set-PpacSecurityGroup'
 		, 'Set-PpacTeamSecurityRole'
-
+		
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'

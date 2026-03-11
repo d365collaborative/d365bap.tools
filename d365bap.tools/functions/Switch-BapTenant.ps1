@@ -77,6 +77,10 @@ function Switch-BapTenant {
             Connect-AzAccount -Tenant $obj.Tenant `
                 -AccountId $obj.User
         }
+
+        Register-PSFTaskEngineTask -Name EnvironmentRefresh -Interval (New-TimeSpan -Minutes 15) -ResetTask -ScriptBlock {
+            Set-PSFTaskEngineCache -Module d365bap.tools -Name Environments -Value (Get-BapEnvironment -FscmEnabled:$FscmEnabled).EnvName
+        }
     }
     
     end {
