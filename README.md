@@ -55,10 +55,20 @@ So you will need to sign in with an user account with enough permissions / privi
 Login-AzAccount -TenantId abd...
 ```
 
-Depending on which PowerShell console (v5 / v7+) - you will have different sign-in experiences. There are different ways to utilized the Web Browser experience (Device Authentication), which allows for saved credentials to be utilized while authenticating.
+Depending on many factors - you will have different sign-in experiences. There are different ways to utilized the Web Browser experience (Device Authentication), which allows for saved credentials to be utilized while authenticating.
 
 ```
 Login-AzAccount -UseDeviceAuthentication -TenantId abd...
+```
+
+### Service Principal
+If you have configured a Service Principal, AKA - App Registration, with enough permissions - you can utilize that as well for authentication.
+
+```
+$secPass = ConvertTo-SecureString $secretAsText -AsPlainText -Force
+$creds = [System.Management.Automation.PSCredential]::new($clientId, $secPass)
+
+Login-AzAccount -TenantId $tenantId -Credential $creds -ServicePrincipal
 ```
 
 ## Getting help
