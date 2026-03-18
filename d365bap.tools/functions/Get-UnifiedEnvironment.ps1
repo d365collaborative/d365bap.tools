@@ -177,7 +177,9 @@ function Get-UnifiedEnvironment {
         }
 
         if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-UnifiedEnvironment"
+            $resCol | Export-Excel `
+                -WorksheetName "Get-UnifiedEnvironment" `
+                -NoNumberConversion FinOpsApp,PpacProvApp,PpacProvPlatform,ProvisioningAppVersion,ProvisioningPlatVersion
             return
         }
 
