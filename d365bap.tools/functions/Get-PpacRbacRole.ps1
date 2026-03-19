@@ -1,21 +1,36 @@
-﻿<#
-.SYNOPSIS
-Short description
-
-.DESCRIPTION
-Long description
-
-.PARAMETER Role
-Parameter description
-
-.PARAMETER AsExcelOutput
-Parameter description
-
-.EXAMPLE
-An example
-
-.NOTES
-General notes
+﻿
+<#
+    .SYNOPSIS
+        Get PPAC RBAC roles available in the tenant.
+        
+    .DESCRIPTION
+        Gets PPAC RBAC roles available in the tenant. This command is used to retrieve the list of available PPAC RBAC roles, which can then be used for role assignments in Power Platform.
+        
+    .PARAMETER Role
+        The name, id or description of the PPAC RBAC role to retrieve.
+        
+        Use wildcards (*) for partial matches. If not specified, all roles will be returned.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the command to output the results to an Excel file instead of the console.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacRbacRole -Role "Power Platform *"
+        
+        This command retrieves all PPAC RBAC roles with names starting with "Power Platform".
+        
+    .EXAMPLE
+        PS C:\> Get-PpacRbacRole -Role "*admin*" -AsExcelOutput
+        
+        This command retrieves all PPAC RBAC roles with names or descriptions containing "admin".
+        The results will be exported to an Excel file instead of being displayed in the console.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+        
+        Based on:
+        https://learn.microsoft.com/en-us/power-platform/admin/programmability-tutorial-rbac-role-assignment?tabs=PowerShell
+        https://learn.microsoft.com/en-us/power-platform/admin/programmability-authentication-v2?tabs=powershell%2Cpowershell-interactive%2Cpowershell-confidential
 #>
 function Get-PpacRbacRole {
     [CmdletBinding()]

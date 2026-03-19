@@ -1,27 +1,41 @@
-﻿<#
-.SYNOPSIS
-Short description
-
-.DESCRIPTION
-Long description
-
-.PARAMETER ServicePrincipalId
-Parameter description
-
-.PARAMETER Role
-Parameter description
-
-.PARAMETER AsExcelOutput
-Parameter description
-
-.EXAMPLE
-An example
-
-.NOTES
-General notes
-Based on:
-https://learn.microsoft.com/en-us/power-platform/admin/programmability-tutorial-rbac-role-assignment?tabs=PowerShell
-https://learn.microsoft.com/en-us/power-platform/admin/programmability-authentication-v2?tabs=powershell%2Cpowershell-interactive%2Cpowershell-confidential
+﻿
+<#
+    .SYNOPSIS
+        Get members of PPAC RBAC roles in the tenant.
+        
+    .DESCRIPTION
+        Gets members of PPAC RBAC roles in the tenant. This command is used to retrieve the list of service principals that are assigned to PPAC RBAC roles in Power Platform.
+        
+    .PARAMETER ServicePrincipalId
+        The object id of the service principal to filter by.
+        
+        You can use wildcards (*) for partial matches. If not specified, members of all service principals will be returned.
+        
+    .PARAMETER Role
+        The name, id or description of the PPAC RBAC role to filter by.
+        
+        You can use wildcards (*) for partial matches. If not specified, members of all roles will be returned.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the command to output the results to an Excel file instead of the console.
+        
+    .EXAMPLE
+        PS C:\> Get-PpacRbacRoleMember -Role "*admin*"
+        
+        This command retrieves all members of PPAC RBAC roles with names or descriptions containing "admin".
+        
+    .EXAMPLE
+        PS C:\> Get-PpacRbacRoleMember -ServicePrincipalId "00000000-0000-0000-0000-000000000000" -AsExcelOutput
+        
+        This command retrieves all PPAC RBAC role assignments for the service principal with object id "00000000-0000-0000-0000-000000000000".
+        The results will be exported to an Excel file instead of being displayed in the console.
+        
+    .NOTES
+        Author: Mötz Jensen (@Splaxi)
+        
+        Based on:
+        https://learn.microsoft.com/en-us/power-platform/admin/programmability-tutorial-rbac-role-assignment?tabs=PowerShell
+        https://learn.microsoft.com/en-us/power-platform/admin/programmability-authentication-v2?tabs=powershell%2Cpowershell-interactive%2Cpowershell-confidential
 #>
 function Get-PpacRbacRoleMember {
     [CmdletBinding()]
