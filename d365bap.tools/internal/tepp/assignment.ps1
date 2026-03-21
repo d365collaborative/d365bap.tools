@@ -18,3 +18,18 @@ Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironment -Parameter Loc
 Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironment -Parameter Region -Name "d365bap.tools.tepp.bap.regions"
 
 Register-PSFTeppArgumentCompleter -Command Invoke-PpacD365PlatformUpdate -Parameter Version -Name "d365bap.tools.tepp.env.temp.versions"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Add-PpacRbacRoleMember `
+    -Parameter Role `
+    -Name "d365bap.tools.tepp.ppac.rbac.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacRbacRoleMember `
+    -Parameter Role `
+    -Name "d365bap.tools.tepp.ppac.rbac.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Add-PpacRbacRoleMember `
+    -Parameter Scope `
+    -Name "d365bap.tools.tepp.ppac.rbac.role.temp.scopes"

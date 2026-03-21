@@ -40,3 +40,9 @@ Set-PSFConfig -FullName "d365bap.tools.bap.deploy.locations" -Value @{
     "SouthAfrica"              = @("SouthAfricaNorth")
     "Sweden"                   = @("SwedenCentral")
 } -Initialize -Description "Object that stores different BAP deploy locations and their details."
+
+Set-PSFConfig `
+    -FullName "d365bap.tools.internal.misc.path" `
+    -Value "$($script:ModuleRoot)\internal\misc" `
+    -Initialize `
+    -Description "Path to the root of the module. This is used for various internal operations, such as reading static files that are included in the module."

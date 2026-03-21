@@ -47,7 +47,9 @@
 		, 'Add-FscmUser'
 		, 'Add-FscmUserFromSecurityGroup'
 		
+		, 'Add-PpacAdminManagementApplication'
 		, 'Add-PpacApplicationUser'
+		
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
 		
@@ -80,11 +82,15 @@
 		
 		, 'Get-GraphGroupMember'
 		
+		, 'Get-PpacAdminManagementApplication'
 		, 'Get-PpacApplicationUser'
 		, 'Get-PpacD365App'
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacRbacRole'
+		, 'Get-PpacRbacRoleMember'
+
 		, 'Get-PpacSecurityRole'
 		, 'Get-PpacSecurityRoleMember'
 		, 'Get-PpacTeam'
@@ -129,6 +135,10 @@
 		, 'Set-FscmUser'
 		
 		, 'Set-PpacAdminMode'
+
+		, 'Set-PpacRbacContext'
+		, 'Add-PpacRbacRoleMember'
+
 		, 'Set-PpacSecurityGroup'
 		, 'Set-PpacTeamSecurityRole'
 		
