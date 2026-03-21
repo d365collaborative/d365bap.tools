@@ -1,12 +1,12 @@
-﻿$scriptBlock = { Get-BapTenantDetail | Sort-Object Id | Select-Object -ExpandProperty Id }
+﻿$scbTenant = { Get-BapTenantDetail | Sort-Object Id | Select-Object -ExpandProperty Id }
+Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.tenant.details" -ScriptBlock $scbTenant -Mode Simple
 
-Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.tenant.details" -ScriptBlock $scriptBlock -Mode Simple
 
-$scriptBlock = { Get-UdeDbJitCache | Sort-Object Id | Select-Object -ExpandProperty Id }
+$scbUdeDbJit = { Get-UdeDbJitCache | Sort-Object Id | Select-Object -ExpandProperty Id }
+Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.ude.dbjit.credentials" -ScriptBlock $scbUdeDbJit -Mode Simple
 
-Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.ude.dbjit.credentials" -ScriptBlock $scriptBlock -Mode Simple
 
-$scriptBlock = {
+$scbBapRegions = {
     param (
         $commandName,
         $parameterName,
@@ -34,15 +34,15 @@ $scriptBlock = {
     }
 }
 
-Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.regions" -ScriptBlock $scriptBlock -Mode Full
+Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.regions" -ScriptBlock $scbBapRegions -Mode Full
 
-$scriptBlock = {
+$scbBapLocations = {
     $azureRegions = Get-PSFConfigValue -FullName "d365bap.tools.bap.deploy.locations"
 
     @($azureRegions.Keys | Sort-Object)
 }
 
-Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.locations" -ScriptBlock $scriptBlock -Mode Simple
+Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.bap.locations" -ScriptBlock $scbBapLocations -Mode Simple
 
 <#
     Autocompletion for environments is a bit more complex as it needs to be refreshed based on the tenant that is currently set in context.
@@ -65,7 +65,7 @@ foreach ($command in $commands) {
 <#
     Auto lookup the version for the environment
 #>
-$scriptBlock = {
+$scbEnvVersion = {
     param (
         $commandName,
         $parameterName,
@@ -90,4 +90,57 @@ $scriptBlock = {
     }
 }
 
-Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.env.temp.versions" -ScriptBlock $scriptBlock -Mode Full
+Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.env.temp.versions" -ScriptBlock $scbEnvVersion -Mode Full
+
+<#
+    For PPAC RBAC roles, we will read the roles from a static JSON file that is included in the module. This is because the list of roles is not expected to change frequently, and it avoids the need for making API calls during autocompletion which can be slow and may have throttling issues.
+#>
+$scbPpacRbacRoles = {
+    $pathMisc = Get-PSFConfigValue -FullName "d365bap.tools.internal.misc.path"
+
+    $rbacRoles = Get-Content `
+        -Path "$pathMisc\Ppac.Rbac.Roles.json" `
+        -Raw | ConvertFrom-Json
+
+    $rbacRoles.roleDefinitionName | Sort-Object
+}
+
+Register-PSFTeppScriptblock `
+    -Name "d365bap.tools.tepp.ppac.rbac.roles" `
+    -ScriptBlock $scbPpacRbacRoles `
+    -Mode Simple
+
+$scbRbacRoleScopes = {
+    param (
+        $commandName,
+        $parameterName,
+        $wordToComplete,
+        $commandAst,
+        $fakeBoundParameter
+    )
+    
+    # Get the value of the previous parameter (-Role)
+    $roleName = $fakeBoundParameter['Role']
+
+    # If no role is specified yet, return nothing or a default set (adjust as needed)
+    if (-not $roleName) {
+        return
+    }
+
+    $pathMisc = Get-PSFConfigValue -FullName "d365bap.tools.internal.misc.path"
+    $rbacRoles = Get-Content `
+        -Path "$pathMisc\Ppac.Rbac.Roles.json" `
+        -Raw | ConvertFrom-Json
+
+    $role = $rbacRoles | `
+        Where-Object { $_.roleDefinitionName -eq $roleName } | `
+        Select-Object -First 1
+
+    foreach ($item in $role.assignableScopes) {
+        New-PSFTeppCompletionResult -CompletionText $item -ToolTip $item
+    }
+}
+
+Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.ppac.rbac.role.temp.scopes" `
+    -ScriptBlock $scbRbacRoleScopes `
+    -Mode Full
