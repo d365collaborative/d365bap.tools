@@ -84,6 +84,7 @@ function Get-BapTenant {
     process {
         $cachedCreds = @(
             (Get-AzContext -ListAvailable | `
+                Where-Object { $null -ne $_.Tenant.Id  } | `
                 Group-Object Tenant, account) | `
                 ForEach-Object { $_.Group[0] }
         )
