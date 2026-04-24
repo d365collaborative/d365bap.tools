@@ -43,7 +43,8 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
-		'Add-FscmSecurityRoleMember'
+		'Add-FscmEntraApplication'
+		, 'Add-FscmSecurityRoleMember'
 		, 'Add-FscmUser'
 		, 'Add-FscmUserFromSecurityGroup'
 		
@@ -76,6 +77,9 @@
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		
+		, 'Get-FscmEntraApplication'
+		, 'Get-FscmOdata'
+		, 'Get-FscmOdataEntity'
 		, 'Get-FscmSecurityRole'
 		, 'Get-FscmSecurityRoleMember'
 		, 'Get-FscmUser'
