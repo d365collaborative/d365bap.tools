@@ -104,8 +104,7 @@ function Get-FscmOdataEntity {
         $resCol = $colMetadataRaw | Where-Object {
             ($_.Name -like $Name -or $_.Name -eq $Name) `
                 -or ($_.EntitySetName -like $Name -or $_.EntitySetName -eq $Name)
-        }
-        | Sort-Object -Property 'Name' `
+        } | Sort-Object -Property 'Name' `
         | Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataEntity" `
             -ExcludeProperty "@odata.etag", `
             -Property "Name as EntityName",
