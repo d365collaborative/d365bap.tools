@@ -16,8 +16,6 @@
     .PARAMETER Entity
         The OData entity name to query, e.g. "SysAADClients" or "SystemUsers".
 
-        Accepts the alias "Name".
-
     .PARAMETER ODataQuery
         An optional OData query string to append to the request, e.g. "`$filter=IsActive eq true&`$select=UserId,Name".
 
@@ -82,7 +80,6 @@ function Get-FscmOdata {
 
         [Parameter(Mandatory = $true, ParameterSetName = "Default")]
         [Parameter(ParameterSetName = "NextLink")]
-        [Alias('Name')]
         [string] $Entity,
 
         [string] $ODataQuery,
