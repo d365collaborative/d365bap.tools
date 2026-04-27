@@ -71,7 +71,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmOdata {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType('System.Object[]')]
     param (
 
