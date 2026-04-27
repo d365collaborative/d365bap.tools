@@ -138,6 +138,7 @@ function Get-FscmOdata {
         $localUri = $odataEndpoint.Uri.AbsoluteUri
 
         $429Attempts = 0
+        $maxRetries = 3
 
         do {
             $429Retry = $false
@@ -146,37 +147,44 @@ function Get-FscmOdata {
                 $resGet = Invoke-RestMethod -Method Get `
                     -Uri $localUri `
                     -Headers $headersFnO
+
+                $429Attempts = 0
+                $resArray.AddRange($resGet.Value)
+
+                if ($($resGet.'@odata.nextLink') -match ".*(/data/.*)") {
+                    $localUri = "$baseUri$($Matches[1])"
+                }
+
+                if ($ThrottleSeed) {
+                    Start-Sleep -Seconds $(Get-Random -Minimum 1 -Maximum $ThrottleSeed)
+                }
             }
             catch [System.Net.WebException] {
                 if ($_.exception.response.statuscode -eq 429) {
                     $429Retry = $true
-                    
+                    $429Attempts++
+
                     $retryWaitSec = $_.exception.response.Headers["Retry-After"]
 
                     if (-not ($retryWaitSec -gt 0)) {
                         $retryWaitSec = 10
                     }
 
-                    Write-PSFMessage -Level Host -Message "Hit a 429 status code. Will wait for: <c='em'>$retryWaitSec</c> seconds before trying again. Attempt (<c='em'>$429Attempts</c>)"
+                    Write-PSFMessage -Level Host -Message "Hit a 429 status code. Will wait for: <c='em'>$retryWaitSec</c> seconds before trying again. Attempt (<c='em'>$429Attempts</c> of <c='em'>$maxRetries</c>)"
+
+                    if ($429Attempts -ge $maxRetries) {
+                        Write-PSFMessage -Level Warning -Message "Reached maximum of <c='em'>$maxRetries</c> retry attempts due to throttling. Returning <c='em'>$($resArray.Count)</c> collected records."
+                        break
+                    }
+
                     Start-Sleep -Seconds $retryWaitSec
-                    $429Attempts++
                 }
                 else {
                     Throw
                 }
             }
 
-            $resArray.AddRange($resGet.Value)
-                
-            if ($($resGet.'@odata.nextLink') -match ".*(/data/.*)") {
-                $localUri = "$baseUri$($Matches[1])"
-            }
-
-            if ($ThrottleSeed) {
-                Start-Sleep -Seconds $(Get-Random -Minimum 1 -Maximum $ThrottleSeed)
-            }
-
-        } while ($TraverseNextLink -and $resGet.'@odata.nextLink')
+        } while ($429Retry -or ($TraverseNextLink -and $resGet.'@odata.nextLink'))
 
         if ($resArray.Count -gt 0) {
             $res = $resArray.ToArray()
