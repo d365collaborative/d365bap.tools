@@ -2,51 +2,51 @@
 <#
     .SYNOPSIS
         Add a registered Entra (AAD) application to a Finance and Operations environment.
-
+        
     .DESCRIPTION
         Registers an Entra (Azure AD) application in the Finance and Operations environment by creating a record in the SysAADClients OData entity.
-
+        
         Before creating the record, the cmdlet validates that:
         - The MappedUser exists as a user in the Finance and Operations environment.
         - The ClientId is not already registered in the environment.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to register the Entra application in.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER ClientId
         The AAD Client ID (application ID GUID) of the Entra application to register.
-
+        
         Must not already be registered in the environment.
-
+        
     .PARAMETER Name
         The display name to assign to the registered Entra application.
-
+        
         If empty, the Name will be the same as the ClientId.
-
+        
     .PARAMETER MappedUser
         The Finance and Operations user to map the Entra application to.
-
+        
         Can be either the user name, user ID or user principal name (UPN).
-
+        
         Must exist as a user in the Finance and Operations environment.
-
+        
     .EXAMPLE
         PS C:\> Add-FscmEntraApplication -EnvironmentId "ContosoEnv" -ClientId "00000000-0000-0000-0000-000000000001" -MappedUser "svc-integration"
-
+        
         This command registers the Entra application with client ID "00000000-0000-0000-0000-000000000001", mapped to the user "svc-integration", in the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Add-FscmEntraApplication -EnvironmentId "ContosoEnv" -ClientId "00000000-0000-0000-0000-000000000001" -MappedUser "svc-integration@contoso.com"
-
+        
         This command registers the Entra application with client ID "00000000-0000-0000-0000-000000000001", mapped to the user with UPN "svc-integration@contoso.com", in the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Add-FscmEntraApplication -EnvironmentId "ContosoEnv" -ClientId "00000000-0000-0000-0000-000000000001" -Name "Contoso Integration App" -MappedUser "svc-integration"
-
+        
         This command registers the Entra application with client ID "00000000-0000-0000-0000-000000000001" and display name "Contoso Integration App", mapped to the user "svc-integration", in the environment "ContosoEnv".
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

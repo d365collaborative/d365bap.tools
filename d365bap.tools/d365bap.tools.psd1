@@ -135,7 +135,7 @@
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
-		, 'Set-FscmUser'
+		, 'Set-FscmUserAccess'
 		
 		, 'Set-PpacAdminMode'
 

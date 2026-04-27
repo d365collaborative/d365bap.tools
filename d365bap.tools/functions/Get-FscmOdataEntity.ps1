@@ -2,58 +2,58 @@
 <#
     .SYNOPSIS
         Get OData entity metadata from a Finance and Operations environment.
-
+        
     .DESCRIPTION
         Retrieves entity metadata from the Finance and Operations /metadata/PublicEntities endpoint, returning schema information for each published OData entity.
-
+        
         Results include the entity name, collection name, read-only state, configuration status, and joined lists of property names and navigation property names.
-
+        
         Supports wildcard and exact matching against the Name and CollectionName (EntitySetName) fields.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve OData entity metadata from.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER Name
         The value to filter the results by.
-
+        
         Filters against the entity Name and the CollectionName (EntitySetName) fields — any match on either will include the record.
-
+        
         Supports wildcard characters for flexible matching.
-
+        
         Default value is "*", which returns all published OData entities.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the retrieved entity metadata to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-FscmOdataEntity -EnvironmentId "ContosoEnv"
-
+        
         This command retrieves metadata for all published OData entities in the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-FscmOdataEntity -EnvironmentId "ContosoEnv" -Name "SysAADClients"
-
+        
         This command retrieves metadata for the OData entity named "SysAADClients" from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-FscmOdataEntity -EnvironmentId "ContosoEnv" -Name "*Customer*"
-
+        
         This command retrieves metadata for all OData entities whose Name or CollectionName contains "Customer" from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-FscmOdataEntity -EnvironmentId "ContosoEnv" -Name "CustomersV3"
-
+        
         This command retrieves metadata for the OData entity with the CollectionName "CustomersV3" from the environment "ContosoEnv".
-
+        
         The filter matches against both the entity Name and the CollectionName (EntitySetName).
-
+        
     .EXAMPLE
         PS C:\> Get-FscmOdataEntity -EnvironmentId "ContosoEnv" -AsExcelOutput
-
+        
         This command retrieves metadata for all published OData entities in the environment "ContosoEnv" and exports the results to an Excel file.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
