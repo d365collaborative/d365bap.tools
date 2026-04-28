@@ -26,5 +26,4 @@ foreach ($dependency in $data.RequiredModules) {
 
 Write-Host "Installing modules - $(Get-Date)" -ForegroundColor Cyan
 iwr bit.ly/modulefast | iex
-Import-Module ModuleFast
 $modules | Install-ModuleFast
