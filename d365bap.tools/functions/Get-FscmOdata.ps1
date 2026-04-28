@@ -79,7 +79,7 @@ function Get-FscmOdata {
         [string] $EnvironmentId,
 
         [Parameter(Mandatory = $true, ParameterSetName = "Default")]
-        [Parameter(ParameterSetName = "NextLink")]
+        [Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
         [string] $Entity,
 
         [string] $ODataQuery,
