@@ -19,7 +19,7 @@ foreach ($dependency in $data.RequiredModules) {
 }
 
 foreach ($module in $modules) {
-    Write-Host "Installing $module" -ForegroundColor Cyan
+    Write-Host "Installing $module - $(Get-Date)" -ForegroundColor Cyan
     Install-Module $module -Force -SkipPublisherCheck -Repository $Repository
     Import-Module $module -Force -PassThru
 }

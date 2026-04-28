@@ -43,7 +43,8 @@
 	
 	# Functions to export from this module
 	FunctionsToExport = @(
-		'Add-FscmSecurityRoleMember'
+		'Add-FscmEntraApplication'
+		, 'Add-FscmSecurityRoleMember'
 		, 'Add-FscmUser'
 		, 'Add-FscmUserFromSecurityGroup'
 		
@@ -76,6 +77,9 @@
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		
+		, 'Get-FscmEntraApplication'
+		, 'Get-FscmOdata'
+		, 'Get-FscmOdataEntity'
 		, 'Get-FscmSecurityRole'
 		, 'Get-FscmSecurityRoleMember'
 		, 'Get-FscmUser'
@@ -105,13 +109,13 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
-		, 'Get-UdeEnvironmentModule'
-		, 'Get-UdeEnvironmentPackage'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
 		, 'Get-UnifiedEnvironment'
+		, 'Get-UnifiedEnvironmentModule'
+		, 'Get-UnifiedEnvironmentPackage'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
@@ -131,7 +135,7 @@
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		
-		, 'Set-FscmUser'
+		, 'Set-FscmUserAccess'
 		
 		, 'Set-PpacAdminMode'
 

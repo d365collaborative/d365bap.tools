@@ -1,45 +1,48 @@
 ﻿
 <#
     .SYNOPSIS
-        Enables or disables a user in a Finance and Operations environment.
+        Enable or disable user access in a Dynamics 365 Finance & Operations environment
         
     .DESCRIPTION
-        This function enables or disables a user in a Finance and Operations environment by calling the appropriate API in the environment.
+        Updates the Enabled flag on one or more users in the SystemUsers OData endpoint of a Dynamics 365 Finance & Operations (FSCM) environment.
         
-        The user can be specified by their UPN, alias, email, name or UserId in the environment.
+        Users can be identified by their FscmUserId, UPN, alias, email address, or display name.
+        Use -Enabled to grant access; omit it (or use -Enabled:$false) to revoke access.
         
     .PARAMETER EnvironmentId
-        The id of the environment that you want to work against.
+        The id of the environment you want to update users in.
         
-        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+        This can be obtained from the Get-BapEnvironment cmdlet.
         
     .PARAMETER User
-        The user(s) to enable or disable in the Finance and Operations environment.
+        The user(s) to update.
         
-        You can specify one or more users by their UPN, alias, email, name or UserId in the environment.
+        Accepts one or more identifiers per user. Each value is matched against: FscmUserId, UPN, alias, email address, and display name — in that order.
         
-    .PARAMETER State
-        Instructs the function to either enable or disable the specified user(s).
+    .PARAMETER Enabled
+        Switch to enable the user account(s).
         
-    .EXAMPLE
-        PS C:\> Set-FscmUser -EnvironmentId "env-123" -User "alice@contoso.com" -State Enabled
-        
-        This will enable the user with the UPN "alice@contoso.com" in the specified environment.
+        Omit this switch (default) to disable the user account(s).
         
     .EXAMPLE
-        PS C:\> Set-FscmUser -EnvironmentId "env-123" -User "alice" -State Disabled
+        PS C:\> Set-FscmUserAccess -EnvironmentId "eec2c631-a3ec-4b02-8ebc-b67f89e77ba0" -User "john.doe@contoso.com" -Enabled
         
-        This will disable the user with the UserId "alice" in the specified environment.
+        Enables user john.doe@contoso.com in the specified environment.
         
     .EXAMPLE
-        PS C:\> Set-FscmUser -EnvironmentId "env-123" -User "alice","bob" -State Enabled
+        PS C:\> Set-FscmUserAccess -EnvironmentId "eec2c631-a3ec-4b02-8ebc-b67f89e77ba0" -User "john.doe@contoso.com"
         
-        This will enable the users with the UserId "alice" and "bob" in the specified environment.
+        Disables user john.doe@contoso.com in the specified environment.
+        
+    .EXAMPLE
+        PS C:\> Set-FscmUserAccess -EnvironmentId "eec2c631-a3ec-4b02-8ebc-b67f89e77ba0" -User "john.doe@contoso.com","jane.doe@contoso.com" -Enabled
+        
+        Enables both john.doe and jane.doe in the specified environment.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
-function Set-FscmUser {
+function Set-FscmUserAccess {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
@@ -49,9 +52,7 @@ function Set-FscmUser {
         [Parameter (Mandatory = $true)]
         [string[]] $User,
 
-        [Parameter (Mandatory = $true)]
-        [ValidateSet("Enabled", "Disabled")]
-        [string] $State
+        [switch] $Enabled
     )
     
     begin {
@@ -102,13 +103,8 @@ function Set-FscmUser {
         
             $tmpId = $matchedUser.UserId
             
-            $enable = $false
-            if ($State -eq "Enabled") {
-                $enable = $true
-            }
-            
             $payloadUser = [PsCustomObject][ordered]@{
-                "Enabled" = $enable
+                "Enabled" = [bool]$Enabled
             } | ConvertTo-Json
                     
             $parmsUser = @{
