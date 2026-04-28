@@ -25,4 +25,5 @@ foreach ($dependency in $data.RequiredModules) {
 # }
 
 Write-Host "Installing modules - $(Get-Date)" -ForegroundColor Cyan
-& ([scriptblock]::Create((iwr 'bit.ly/modulefast'))) -Specification $modules
+iwr bit.ly/modulefast | iex
+Get-Help Install-ModuleFast -Full
