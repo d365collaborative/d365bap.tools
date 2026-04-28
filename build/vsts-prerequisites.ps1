@@ -25,6 +25,10 @@ foreach ($dependency in $data.RequiredModules) {
 # }
 
 Write-Host "Installing modules - $(Get-Date)" -ForegroundColor Cyan
-Install-Module -Name ModuleFast
+Install-Module -Name ModuleFast `
+    -Scope CurrentUser `
+    -Force `
+    -Confirm:$false
+
 Import-Module ModuleFast
 Install-ModuleFast 'Pester', 'PSFramework', 'PSModuleDevelopment', 'PSScriptAnalyzer', 'ImportExcel', 'Az.Accounts'
