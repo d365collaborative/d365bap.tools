@@ -18,6 +18,16 @@ foreach ($dependency in $data.RequiredModules) {
     }
 }
 
+Install-Module -Name 'InstallModuleFromGitHub' `
+    -Force `
+    -SkipPublisherCheck `
+    -Repository $Repository
+
+Import-Module 'InstallModuleFromGitHub' `
+    -Force `
+    -PassThru
+
+    
 foreach ($module in $modules) {
     Write-Host "Installing $module - $(Get-Date)" -ForegroundColor Cyan
     Install-Module $module -Force -SkipPublisherCheck -Repository $Repository
