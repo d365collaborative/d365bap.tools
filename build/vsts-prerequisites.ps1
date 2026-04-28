@@ -18,17 +18,8 @@ foreach ($dependency in $data.RequiredModules) {
     }
 }
 
-# foreach ($module in $modules) {
-#     Write-Host "Installing $module - $(Get-Date)" -ForegroundColor Cyan
-#     Install-Module $module -Force -SkipPublisherCheck -Repository $Repository
-#     Import-Module $module -Force -PassThru
-# }
-
-Write-Host "Installing modules - $(Get-Date)" -ForegroundColor Cyan
-Install-Module -Name ModuleFast `
-    -Scope CurrentUser `
-    -Force `
-    -Confirm:$false
-
-Import-Module ModuleFast
-Install-ModuleFast 'Pester', 'PSFramework', 'PSModuleDevelopment', 'PSScriptAnalyzer', 'ImportExcel', 'Az.Accounts'
+foreach ($module in $modules) {
+    Write-Host "Installing $module - $(Get-Date)" -ForegroundColor Cyan
+    Install-Module $module -Force -SkipPublisherCheck -Repository $Repository
+    Import-Module $module -Force -PassThru
+}
