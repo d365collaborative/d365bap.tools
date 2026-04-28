@@ -109,13 +109,13 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
-		, 'Get-UdeEnvironmentModule'
-		, 'Get-UdeEnvironmentPackage'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
 		
 		, 'Get-UnifiedEnvironment'
+		, 'Get-UnifiedEnvironmentModule'
+		, 'Get-UnifiedEnvironmentPackage'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
