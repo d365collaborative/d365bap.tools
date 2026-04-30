@@ -24,5 +24,5 @@ function Update-ModuleVariables {
 
     Update-PsfConfigVariables
 
-    $Script:AADOAuthEndpoint = Get-PSFConfigValue -FullName "d365fo.tools.azure.common.oauth.token"
+    $Script:AADOAuthEndpoint = Get-PSFConfigValue -FullName "d365bap.tools.azure.common.oauth.token"
 }
