@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpeOdataEntity</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpeOdataEntity</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>EntityName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>CollectionName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>SchemaName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>IsCustomEntity</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>IsManaged</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>IsValidForAdvancedFind</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>

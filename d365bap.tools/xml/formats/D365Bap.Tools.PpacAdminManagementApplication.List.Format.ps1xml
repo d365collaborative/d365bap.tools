@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpacAdminManagementApplication</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpacAdminManagementApplication</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>ServicePrincipalId</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ServicePrincipalName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AppId</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AppName</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>
