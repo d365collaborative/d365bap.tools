@@ -38,7 +38,7 @@ jobs:
     runs-on: windows-latest
     needs: prerequisites
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v1
     - name: Cache Powershell Modules
       id: cache-powershell-modules
       uses: actions/cache@v4
