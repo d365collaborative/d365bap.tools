@@ -9,14 +9,14 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: Cache PowerShell modules
-      id: cacher
+      id: cache-powershell-modules
       uses: actions/cache@v4
       with:
         path: ~\Documents\WindowsPowerShell\Modules
         key: ps-modules-${{ runner.os }}-v1
 
     - name: Install Prerequisites
-      if: steps.cacher.outputs.cache-hit != 'true'
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
       shell: powershell
       run: |
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
@@ -47,7 +47,7 @@ jobs:
         key: ps-modules-${{ runner.os }}-v1
 
     - name: Prerequisites
-      if: steps.cacher.outputs.cache-hit != 'true'
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
       shell: powershell
       run: |
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
@@ -90,7 +90,7 @@ jobs:
         key: ps-modules-${{ runner.os }}-v1
 
     - name: Prerequisites
-      if: steps.cacher.outputs.cache-hit != 'true'
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
       shell: powershell
       run: |
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
