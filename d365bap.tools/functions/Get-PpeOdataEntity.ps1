@@ -108,6 +108,7 @@ function Get-PpeOdataEntity {
         | Select-PSFObject -TypeName "D365Bap.Tools.PpeOdataEntity" `
             -ExcludeProperty "@odata.etag", "MetadataId" `
             -Property "LogicalName as EntityName",
+        "LogicalName as Name",
         "EntitySetName as CollectionName",
         *
 

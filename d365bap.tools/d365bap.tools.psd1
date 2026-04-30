@@ -40,78 +40,67 @@
 	
 	# Format files (.ps1xml) to be loaded when importing this module
 	FormatsToProcess  = @(
-		'xml\formats\D365Bap.Tools.BapD365App.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.BapD365App.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.BapEnvironmentOperation.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.BapEnvironmentOperation.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.BapEnvironmentOperation.Table.Format.ps1xml',
-		
-		'xml\formats\D365Bap.Tools.Compare.PpacD365App.Table.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.Compare.PpacUser.Table.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.Compare.VirtualEntity.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.Compare.PpacD365App.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.Compare.PpacUser.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.Compare.VirtualEntity.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.DeployTemplate.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.DeployTemplate.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.Environment.Integration.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.Environment.Integration.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.FnOSecurityRoleMember.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.FnOSecurityRoleMember.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.FnOSecurityRoleMember.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.FscmEntraApplication.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.FscmEntraApplication.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.FscmOdataEntity.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.FscmRole.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.FscmUser.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.FscmOdataEntity.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.FscmOdataEntity.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacApplicationUser.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacD365App.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacD365OperationHistory.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacEnvironment.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacLocation.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacPowerApp.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacRbacRoleAssignment.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacRole.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacSolution.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacTeam.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacUser.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.FscmRole.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.FscmRole.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpeOdataEntity.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.FscmUser.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.UdeConfig.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.UdeEnvironmentModule.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.UdeEnvironmentPackage.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacAdminManagementApplication.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.PpacApplicationUser.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.VirtualEntity.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacD365OperationHistory.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.PpacD365OperationHistory.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.VsPackageDeploy.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.VsPpacExtensionHistory.Table.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacEnvironment.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.PpacEnvironment.Table.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.BapEnvironmentOperation.List.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacLocation.Table.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.FnOSecurityRoleMember.List.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacPowerApp.Table.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.FscmOdataEntity.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.FscmRole.List.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacRbacRole.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.PpacRbacRoleAssignment.Table.Format.ps1xml',
-		
-		'xml\formats\D365Bap.Tools.PpacRole.Table.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.PpacAdminManagementApplication.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.PpacD365OperationHistory.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.PpacEnvironment.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.PpacRbacRole.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.PpacTeam.List.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacSolution.Table.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.PpeOdataEntity.List.Format.ps1xml',
 
-		'xml\formats\D365Bap.Tools.PpacTeam.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.PpacTeam.Table.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.PpacUser.Table.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.PpeOdataEntity.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.PpeOdataEntity.Table.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.UdeConfig.Table.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.UdeCredentialCache.List.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.UdeDatabaseJit.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.UdeDeveloperFile.List.Format.ps1xml',
-		
-		'xml\formats\D365Bap.Tools.UdeEnvironment.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.UdeEnvironmentModule.Table.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.UdeEnvironmentPackage.List.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.UdeEnvironmentPackage.Table.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.VirtualEntity.Table.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.VsPackageDeploy.Table.Format.ps1xml',
-		'xml\formats\D365Bap.Tools.VsPpacExtensionHistory.Table.Format.ps1xml',
-
-		'xml\formats\D365Bap.Tools.PpacD365App.Table.Format.ps1xml'
+		'xml\formats\list\D365Bap.Tools.UdeCredentialCache.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.UdeDatabaseJit.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.UdeDeveloperFile.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.UdeEnvironment.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.UdeEnvironmentPackage.List.Format.ps1xml'
 	)
 	
 	# Functions to export from this module
@@ -173,7 +162,9 @@
 		, 'Get-PpacTeam'
 		, 'Get-PpacUser'
 		
+		, 'Get-PpeOdata'
 		, 'Get-PpeOdataEntity'
+		
 		, 'Get-PpeSolution'
 		, 'Get-PpeSolutionHistory'
 		
