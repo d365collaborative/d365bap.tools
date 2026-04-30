@@ -2,58 +2,58 @@
 <#
     .SYNOPSIS
         Get OData entity metadata from a Power Platform / Dataverse environment.
-
+        
     .DESCRIPTION
         Retrieves entity metadata from the Dataverse /api/data/v9.2/EntityDefinitions endpoint, returning schema information for each published OData entity.
-
+        
         Results include the entity logical name, collection name, schema name, and whether the entity is a custom entity or managed solution component.
-
+        
         Supports wildcard and exact matching against the LogicalName and EntitySetName fields.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve OData entity metadata from.
-
+        
         Can be either the environment name or the environment GUID (PPAC).
-
+        
     .PARAMETER Name
         The value to filter the results by.
-
+        
         Filters against the entity LogicalName and the EntitySetName (OData collection name) fields — any match on either will include the record.
-
+        
         Supports wildcard characters for flexible matching.
-
+        
         Default value is "*", which returns all OData entities.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the retrieved entity metadata to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdataEntity -EnvironmentId "ContosoEnv"
-
+        
         This command retrieves metadata for all OData entities in the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdataEntity -EnvironmentId "ContosoEnv" -Name "account"
-
+        
         This command retrieves metadata for the OData entity named "account" from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdataEntity -EnvironmentId "ContosoEnv" -Name "*customer*"
-
+        
         This command retrieves metadata for all OData entities whose LogicalName or EntitySetName contains "customer" from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdataEntity -EnvironmentId "ContosoEnv" -Name "accounts"
-
+        
         This command retrieves metadata for the OData entity with the EntitySetName "accounts" from the environment "ContosoEnv".
-
+        
         The filter matches against both the entity LogicalName and the EntitySetName.
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdataEntity -EnvironmentId "ContosoEnv" -AsExcelOutput
-
+        
         This command retrieves metadata for all OData entities in the environment "ContosoEnv" and exports the results to an Excel file.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

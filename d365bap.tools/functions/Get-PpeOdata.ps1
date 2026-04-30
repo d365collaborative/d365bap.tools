@@ -1,64 +1,64 @@
-
+﻿
 <#
     .SYNOPSIS
         Query an OData entity from a Power Platform / Dataverse environment.
-
+        
     .DESCRIPTION
         Invokes a GET request against the Dataverse Web API OData endpoint for the specified entity, handling authentication, optional query filters, and automatic pagination via nextLink traversal.
-
+        
         Includes built-in retry logic for 429 (Too Many Requests) responses.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to query.
-
+        
         Can be either the environment name or the environment GUID (PPAC).
-
+        
     .PARAMETER Entity
         The OData entity (plural name) to query, e.g. "accounts" or "systemusers".
-
+        
     .PARAMETER ODataQuery
         An optional OData query string to append to the request, e.g. "`$filter=statecode eq 0&`$select=name,accountid".
-
+        
         Do not include the leading "?".
-
+        
     .PARAMETER TraverseNextLink
         Instructs the cmdlet to follow "@odata.nextLink" pagination and accumulate all pages into the result.
-
+        
         Must be used together with the NextLink parameter set.
-
+        
     .PARAMETER ThrottleSeed
         When specified, introduces a random delay between 1 and ThrottleSeed seconds after each page request to reduce throttling risk.
-
+        
         Only valid when TraverseNextLink is also specified.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the retrieved records to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts"
-
+        
         This command retrieves all records from the accounts entity in the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "systemusers" -ODataQuery "`$filter=isdisabled eq false&`$select=fullname,systemuserid"
-
+        
         This command retrieves all enabled system users, returning only the fullname and systemuserid fields.
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -TraverseNextLink
-
+        
         This command retrieves all records from the accounts entity, following pagination links until all pages are returned.
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -TraverseNextLink -ThrottleSeed 3
-
+        
         This command retrieves all pages from the accounts entity, pausing between 1 and 3 seconds between each page request to reduce the risk of throttling.
-
+        
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -AsExcelOutput
-
+        
         This command retrieves all records from the accounts entity in the environment "ContosoEnv" and exports the results to an Excel file.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
