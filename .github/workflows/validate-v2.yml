@@ -1,0 +1,77 @@
+﻿on: [pull_request]
+
+jobs:
+  prerequisites:
+    name: Prerequisites
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Cache PowerShell modules
+      id: cacher
+      uses: actions/cache@v4
+      with:
+        path: ~\Documents\WindowsPowerShell\Modules
+        key: ps-modules-${{ runner.os }}-v1
+
+    - name: Install Prerequisites
+      if: steps.cacher.outputs.cache-hit != 'true'
+      shell: powershell
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @(
+          'Pester',
+          'PSFramework',
+          'PSModuleDevelopment',
+          'PSScriptAnalyzer',
+          'ImportExcel',
+          'Az.Accounts'
+        )
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+  general-unit-tests:
+    name: Validate General Unit Tests
+    runs-on: windows-latest
+    needs: prerequisites
+    steps:
+    - uses: actions/checkout@v4
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v4
+      with:
+        path: ~\Documents\WindowsPowerShell\Modules
+        key: ps-modules-${{ runner.os }}-v1
+
+    - name: Prerequisites
+      if: steps.cacher.outputs.cache-hit != 'true'
+      shell: powershell
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @(
+          'Pester',
+          'PSFramework',
+          'PSModuleDevelopment',
+          'PSScriptAnalyzer',
+          'ImportExcel',
+          'Az.Accounts'
+        )
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+    - name: Validate
+      shell: powershell
+      run: build\vsts-validate.ps1 -TestGeneral $true -TestFunctions $false -Exclude "PSScriptAnalyzer.Tests.ps1"
+
+    - name: Publish Test Results **/TEST-*.xml
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      with:
+        files: '**/TEST-*.xml'
+        check_name: 'General Unit Tests Results'
+        comment_mode: 'off'
