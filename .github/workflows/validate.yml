@@ -1,15 +1,189 @@
 ﻿on: [pull_request]
 
 jobs:
-  validate:
-
+  prerequisites:
+    name: Prerequisites
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Cache PowerShell modules
+      id: cache-powershell-modules
+      uses: actions/cache@v4
+      with:
+        path: ~\Documents\WindowsPowerShell\Modules
+        key: ps-modules-${{ runner.os }}-v1
+
     - name: Install Prerequisites
-      run: .\build\vsts-prerequisites.ps1
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
       shell: powershell
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @(
+          'Pester',
+          'PSFramework',
+          'PSModuleDevelopment',
+          'PSScriptAnalyzer',
+          'ImportExcel',
+          'Az.Accounts'
+        )
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+  general-unit-tests:
+    name: Validate General Unit Tests
+    runs-on: windows-latest
+    needs: prerequisites
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v4
+      with:
+        path: ~\Documents\WindowsPowerShell\Modules
+        key: ps-modules-${{ runner.os }}-v1
+
+    - name: Prerequisites
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+      shell: powershell
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @(
+          'Pester',
+          'PSFramework',
+          'PSModuleDevelopment',
+          'PSScriptAnalyzer',
+          'ImportExcel',
+          'Az.Accounts'
+        )
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
     - name: Validate
-      run: .\build\vsts-validate.ps1
       shell: powershell
+      run: build\vsts-validate-v2.ps1 -TestGeneral $true -TestFunctions $false -Exclude "PSScriptAnalyzer.Tests.ps1"
+
+  public-functions-unit-tests:
+    name: Validate Public Functions using PSScriptAnalyzer Unit Tests
+    runs-on: windows-latest
+    needs: prerequisites
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v4
+      with:
+        path: ~\Documents\WindowsPowerShell\Modules
+        key: ps-modules-${{ runner.os }}-v1
+
+    - name: Prerequisites
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+      shell: powershell
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @(
+          'Pester',
+          'PSFramework',
+          'PSModuleDevelopment',
+          'PSScriptAnalyzer',
+          'ImportExcel',
+          'Az.Accounts'
+        )
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+    - name: Validate
+      shell: powershell
+      run: build\vsts-validate-psscriptanalyzer.ps1 -TestPublic $true -TestInternal $false
+
+  internal-functions-unit-tests:
+    name: Validate Internal Functions using PSScriptAnalyzer Unit Tests
+    runs-on: windows-latest
+    needs: prerequisites
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v4
+      with:
+        path: ~\Documents\WindowsPowerShell\Modules
+        key: ps-modules-${{ runner.os }}-v1
+
+    - name: Prerequisites
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+      shell: powershell
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @(
+          'Pester',
+          'PSFramework',
+          'PSModuleDevelopment',
+          'PSScriptAnalyzer',
+          'ImportExcel',
+          'Az.Accounts'
+        )
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+    - name: Validate
+      shell: powershell
+      run: build\vsts-validate-psscriptanalyzer.ps1 -TestPublic $false -TestInternal $true
+
+  individual-unit-tests:
+    name: Validate Individual Unit Tests
+    runs-on: windows-latest
+    needs: prerequisites
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v4
+      with:
+        path: ~\Documents\WindowsPowerShell\Modules
+        key: ps-modules-${{ runner.os }}-v1
+
+    - name: Prerequisites
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+      shell: powershell
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @(
+          'Pester',
+          'PSFramework',
+          'PSModuleDevelopment',
+          'PSScriptAnalyzer',
+          'ImportExcel',
+          'Az.Accounts'
+        )
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+    - name: Validate
+      shell: powershell
+      run: build\vsts-validate-v2.ps1 -TestGeneral $false -TestFunctions $true
+    
