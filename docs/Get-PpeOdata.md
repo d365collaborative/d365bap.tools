@@ -5,28 +5,27 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-FscmOdata
+# Get-PpeOdata
 
 ## SYNOPSIS
-Query an OData entity from a Finance and Operations environment.
+Query an OData entity from a Power Platform / Dataverse environment.
 
 ## SYNTAX
 
 ### Default (Default)
 ```
-Get-FscmOdata -EnvironmentId <String> -Entity <String> [-ODataQuery <String>] [-CrossCompany] [-AsExcelOutput]
+Get-PpeOdata -EnvironmentId <String> -Entity <String> [-ODataQuery <String>] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### NextLink
 ```
-Get-FscmOdata -EnvironmentId <String> -Entity <String> [-ODataQuery <String>] [-CrossCompany]
- [-TraverseNextLink] [-ThrottleSeed <Int32>] [-AsExcelOutput] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Get-PpeOdata -EnvironmentId <String> -Entity <String> [-ODataQuery <String>] [-TraverseNextLink]
+ [-ThrottleSeed <Int32>] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Invokes a GET request against the Finance and Operations OData endpoint for the specified entity, handling authentication, optional query filters, cross-company access, and automatic pagination via nextLink traversal.
+Invokes a GET request against the Dataverse Web API OData endpoint for the specified entity, handling authentication, optional query filters, and automatic pagination via nextLink traversal.
 
 Includes built-in retry logic for 429 (Too Many Requests) responses.
 
@@ -34,52 +33,45 @@ Includes built-in retry logic for 429 (Too Many Requests) responses.
 
 ### EXAMPLE 1
 ```
-Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients"
+Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts"
 ```
 
-This command retrieves all records from the SysAADClients OData entity in the environment "ContosoEnv".
+This command retrieves all records from the accounts entity in the environment "ContosoEnv".
 
 ### EXAMPLE 2
 ```
-Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SystemUsers" -ODataQuery "`$filter=IsActive eq true"
+Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "systemusers" -ODataQuery "`$filter=isdisabled eq false&`$select=fullname,systemuserid"
 ```
 
-This command retrieves all active system users from the environment "ContosoEnv" using an OData filter.
+This command retrieves all enabled system users, returning only the fullname and systemuserid fields.
 
 ### EXAMPLE 3
 ```
-Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SystemUsers" -CrossCompany
+Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -TraverseNextLink
 ```
 
-This command retrieves system users across all legal entities in the environment "ContosoEnv".
+This command retrieves all records from the accounts entity, following pagination links until all pages are returned.
 
 ### EXAMPLE 4
 ```
-Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients" -TraverseNextLink
+Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -TraverseNextLink -ThrottleSeed 3
 ```
 
-This command retrieves all records from the SysAADClients entity, following pagination links until all pages are returned.
+This command retrieves all pages from the accounts entity, pausing between 1 and 3 seconds between each page request to reduce the risk of throttling.
 
 ### EXAMPLE 5
 ```
-Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients" -TraverseNextLink -ThrottleSeed 3
+Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -AsExcelOutput
 ```
 
-This command retrieves all pages from the SysAADClients entity, pausing between 1 and 3 seconds between each page request to reduce the risk of throttling.
-
-### EXAMPLE 6
-```
-Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients" -AsExcelOutput
-```
-
-This command retrieves all records from the SysAADClients entity in the environment "ContosoEnv" and exports the results to an Excel file.
+This command retrieves all records from the accounts entity in the environment "ContosoEnv" and exports the results to an Excel file.
 
 ## PARAMETERS
 
 ### -EnvironmentId
 The ID of the environment to query.
 
-Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+Can be either the environment name or the environment GUID (PPAC).
 
 ```yaml
 Type: String
@@ -94,8 +86,8 @@ Accept wildcard characters: False
 ```
 
 ### -Entity
-The OData entity name to query, e.g.
-"SysAADClients" or "SystemUsers".
+The OData entity (plural name) to query, e.g.
+"accounts" or "systemusers".
 
 ```yaml
 Type: String
@@ -111,7 +103,7 @@ Accept wildcard characters: False
 
 ### -ODataQuery
 An optional OData query string to append to the request, e.g.
-"\`$filter=IsActive eq true&\`$select=UserId,Name".
+"\`$filter=statecode eq 0&\`$select=name,accountid".
 
 Do not include the leading "?".
 
@@ -123,21 +115,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -CrossCompany
-Instructs the cmdlet to append "cross-company=true" to the request, returning records across all legal entities.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.UdeDatabaseJit</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.UdeDatabaseJit</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>Server</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Database</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Username</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Password</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Expiration</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Role</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>EnvironmentId</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>
