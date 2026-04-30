@@ -11,6 +11,9 @@ Write-PSFMessage -Level Important -Message "Starting Tests"
 
 Write-PSFMessage -Level Important -Message "Importing Module"
 
+$global:testroot = $PSScriptRoot
+$global:__pester_data = @{ }
+
 Remove-Module d365bap.tools -ErrorAction Ignore
 Import-Module "$PSScriptRoot\..\d365bap.tools.psd1"
 Import-Module "$PSScriptRoot\..\d365bap.tools.psm1" -Force
