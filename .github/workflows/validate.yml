@@ -1,4 +1,6 @@
-﻿on: [pull_request]
+﻿name: validate
+
+on: [pull_request]
 
 jobs:
   prerequisites:
