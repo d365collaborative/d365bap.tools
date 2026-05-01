@@ -53,6 +53,7 @@
 
 		'xml\formats\table\D365Bap.Tools.FnOSecurityRoleMember.Table.Format.ps1xml',
 
+		'xml\formats\table\D365Bap.Tools.FscmDmfEntity.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.FscmEntraApplication.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.FscmOdataEntity.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.FscmRole.Table.Format.ps1xml',
@@ -85,6 +86,7 @@
 
 		'xml\formats\list\D365Bap.Tools.FnOSecurityRoleMember.List.Format.ps1xml',
 
+		'xml\formats\list\D365Bap.Tools.FscmDmfEntity.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmOdataEntity.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmRole.List.Format.ps1xml',
 
@@ -139,6 +141,7 @@
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		
+		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
 		, 'Get-FscmOdata'
 		, 'Get-FscmOdataEntity'
