@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, dev]
   schedule:
-    - cron: '0 6 * * 1'   # weekly, Monday 06:00 UTC
+    - cron: '0 6 * * 3,6' # Wednesday and Saturday 06:00 UTC
   workflow_dispatch:
 
 jobs:
