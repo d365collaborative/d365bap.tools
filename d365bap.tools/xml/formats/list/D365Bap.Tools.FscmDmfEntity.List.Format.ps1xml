@@ -25,9 +25,6 @@
                             <ListItem>
                                 <PropertyName>IsPublic</PropertyName>
                             </ListItem>
-                            <ListItem>
-                                <PropertyName>FieldsList</PropertyName>
-                            </ListItem>
                         </ListItems>
                     </ListEntry>
                 </ListEntries>

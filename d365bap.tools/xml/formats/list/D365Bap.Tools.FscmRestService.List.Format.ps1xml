@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.FscmRestService</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.FscmRestService</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>ServiceGroup</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Service</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Operation</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Parameter</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ParameterType</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ParametersList</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ReturnType</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>ErrorMessage</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>
