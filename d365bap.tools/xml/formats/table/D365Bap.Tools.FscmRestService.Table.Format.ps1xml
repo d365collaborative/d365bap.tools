@@ -9,10 +9,10 @@
             <TableControl>
                 <TableHeaders>
                     <TableColumnHeader>
-                        <Width>40</Width>
+                        <Width>25</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
-                        <Width>35</Width>
+                        <Width>30</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Width>35</Width>
@@ -34,7 +34,7 @@
                                 <PropertyName>Operation</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <PropertyName>Parameter</PropertyName>
+                                <PropertyName>Endpoint</PropertyName>
                             </TableColumnItem>
                         </TableColumnItems>
                     </TableRowEntry>

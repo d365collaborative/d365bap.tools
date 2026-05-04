@@ -1,4 +1,4 @@
-<#
+﻿<#
     Autocompletion for environments is a bit more complex as it needs to be refreshed based on the tenant that is currently set in context.
     The below implementation will refresh the environments every 15 minutes, but this can be adjusted as needed.
 #>

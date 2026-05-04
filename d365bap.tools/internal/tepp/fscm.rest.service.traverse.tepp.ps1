@@ -1,4 +1,4 @@
-$scbRestTraverse = {
+﻿$scbRestTraverse = {
     $values = "ServiceGroup", "Service", "Operation", "Detail"
 
     # Generate completion results

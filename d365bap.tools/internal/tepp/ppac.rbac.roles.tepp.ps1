@@ -1,4 +1,4 @@
-$scbPpacRbacRoles = {
+﻿$scbPpacRbacRoles = {
     $pathMisc = Get-PSFConfigValue -FullName "d365bap.tools.internal.misc.path"
 
     $rbacRoles = Get-Content `

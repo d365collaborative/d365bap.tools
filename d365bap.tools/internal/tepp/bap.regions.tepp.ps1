@@ -1,4 +1,4 @@
-$scbBapRegions = {
+﻿$scbBapRegions = {
     param (
         $commandName,
         $parameterName,

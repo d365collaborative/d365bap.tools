@@ -1,4 +1,4 @@
-$scbEnvVersion = {
+﻿$scbEnvVersion = {
     param (
         $commandName,
         $parameterName,

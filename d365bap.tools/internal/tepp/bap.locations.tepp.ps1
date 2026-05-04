@@ -1,4 +1,4 @@
-$scbBapLocations = {
+﻿$scbBapLocations = {
     $azureRegions = Get-PSFConfigValue -FullName "d365bap.tools.bap.deploy.locations"
 
     @($azureRegions.Keys | Sort-Object)

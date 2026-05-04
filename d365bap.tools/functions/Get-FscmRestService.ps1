@@ -118,20 +118,19 @@ function Get-FscmRestService {
 
         if ($resStatusCode -ne 200) {
             [PSCustomObject]@{
-                PSTypeName     = "D365Bap.Tools.FscmRestService"
-                ServiceGroup   = $null
-                Service        = $null
-                Operation      = $null
-                Parameter      = $null
-                ParameterType  = $null
-                ParametersList = $null
-                ReturnType     = $null
-                ErrorMessage   = $responseRoot | ConvertTo-Json -Depth 10
+                PSTypeName    = "D365Bap.Tools.FscmRestService"
+                ServiceGroup  = $null
+                Service       = $null
+                Operation     = $null
+                Parameter     = $null
+                ParameterType = $null
+                ReturnType    = $null
+                ErrorMessage  = $responseRoot | ConvertTo-Json -Depth 10
             }
             return
         }
 
-        $resCol = $responseRoot | Select-Object -ExpandProperty ServiceGroups | Where-Object {
+        $resColRaw = $responseRoot | Select-Object -ExpandProperty ServiceGroups | Where-Object {
             $_.Name -like $Name
         } | ForEach-Object -Parallel {
             $serviceGroup = $_
@@ -139,18 +138,13 @@ function Get-FscmRestService {
             $headersFnO = $using:headersFnO
             $TraverseTo = $using:TraverseTo
 
+            $objHash = [Ordered]@{
+                ServiceGroup = $serviceGroup.Name
+                ErrorMessage = ''
+            }
+
             if ($TraverseTo -eq "ServiceGroup") {
-                [PSCustomObject]@{
-                    PSTypeName     = "D365Bap.Tools.FscmRestService"
-                    ServiceGroup   = $serviceGroup.Name
-                    Service        = $null
-                    Operation      = $null
-                    Parameter      = $null
-                    ParameterType  = $null
-                    ParametersList = $null
-                    ReturnType     = $null
-                    ErrorMessage   = $null
-                }
+                [PSCustomObject]$objHash
                 return
             }
 
@@ -163,33 +157,17 @@ function Get-FscmRestService {
                 -SkipHttpErrorCheck
 
             if ($resStatusCode -ne 200) {
-                [PSCustomObject]@{
-                    PSTypeName     = "D365Bap.Tools.FscmRestService"
-                    ServiceGroup   = $serviceGroup.Name
-                    Service        = $null
-                    Operation      = $null
-                    Parameter      = $null
-                    ParameterType  = $null
-                    ParametersList = $null
-                    ReturnType     = $null
-                    ErrorMessage   = $responseGroup | ConvertTo-Json -Depth 10
-                }
+                $objHash.ErrorMessage = $responseGroup | ConvertTo-Json -Depth 10
+
+                [PSCustomObject]$objHash
                 return
             }
 
             foreach ($service in ($responseGroup | Select-Object -ExpandProperty Services)) {
+                $objHash.Service = $service.Name
+
                 if ($TraverseTo -eq "Service") {
-                    [PSCustomObject]@{
-                        PSTypeName     = "D365Bap.Tools.FscmRestService"
-                        ServiceGroup   = $serviceGroup.Name
-                        Service        = $service.Name
-                        Operation      = $null
-                        Parameter      = $null
-                        ParameterType  = $null
-                        ParametersList = $null
-                        ReturnType     = $null
-                        ErrorMessage   = $null
-                    }
+                    [PSCustomObject]$objHash
                     continue
                 }
 
@@ -202,33 +180,18 @@ function Get-FscmRestService {
                     -SkipHttpErrorCheck
 
                 if ($resStatusCode -ne 200) {
-                    [PSCustomObject]@{
-                        PSTypeName     = "D365Bap.Tools.FscmRestService"
-                        ServiceGroup   = $serviceGroup.Name
-                        Service        = $service.Name
-                        Operation      = $null
-                        Parameter      = $null
-                        ParameterType  = $null
-                        ParametersList = $null
-                        ReturnType     = $null
-                        ErrorMessage   = $responseService | ConvertTo-Json -Depth 10
-                    }
+                    $objHash.ErrorMessage = $responseService | ConvertTo-Json -Depth 10
+
+                    [PSCustomObject]$objHash
                     continue
                 }
 
                 foreach ($operation in ($responseService | Select-Object -ExpandProperty Operations)) {
+                    $objHash.Operation = $operation.Name
+                    $objHash.ReturnType = $operation.ReturnType
+                        
                     if ($TraverseTo -eq "Operation") {
-                        [PSCustomObject]@{
-                            PSTypeName     = "D365Bap.Tools.FscmRestService"
-                            ServiceGroup   = $serviceGroup.Name
-                            Service        = $service.Name
-                            Operation      = $operation.Name
-                            Parameter      = $null
-                            ParameterType  = $null
-                            ParametersList = $operation.Parameters.Name -join ", "
-                            ReturnType     = $operation.ReturnType
-                            ErrorMessage   = $null
-                        }
+                        [PSCustomObject]$objHash
                         continue
                     }
 
@@ -241,38 +204,32 @@ function Get-FscmRestService {
                         -SkipHttpErrorCheck
 
                     if ($resStatusCode -ne 200) {
-                        [PSCustomObject]@{
-                            PSTypeName     = "D365Bap.Tools.FscmRestService"
-                            ServiceGroup   = $serviceGroup.Name
-                            Service        = $service.Name
-                            Operation      = $operation.Name
-                            Parameter      = $null
-                            ParameterType  = $null
-                            ParametersList = $null
-                            ReturnType     = $null
-                            ErrorMessage   = $responseOperation | ConvertTo-Json -Depth 10
-                        }
+                        $objHash.ErrorMessage = $responseOperation | ConvertTo-Json -Depth 10
+
+                        [PSCustomObject]$objHash
                         continue
                     }
-
+                        
                     foreach ($parameter in $responseOperation.Parameters) {
-                        [PSCustomObject]@{
-                            PSTypeName     = "D365Bap.Tools.FscmRestService"
-                            ServiceGroup   = $serviceGroup.Name
-                            Service        = $service.Name
-                            Operation      = $operation.Name
-                            Parameter      = $parameter.Name
-                            ParameterType  = $parameter.Type
-                            ParametersList = $null
-                            ReturnType     = $responseOperation.ReturnType
-                            ErrorMessage   = $null
-                        }
+                        $objHash.Parameter = $parameter.Name
+                        $objHash.ParameterType = $parameter.Type
+                    
+                        [PSCustomObject]$objHash
+                        continue
                     }
                 }
             }
         } -ThrottleLimit 10
 
-        $resCol = $resCol | Sort-Object -Property 'ServiceGroup', 'Service', 'Operation', 'Parameter'
+        $resCol = $resColRaw | Select-PSFObject `
+            -TypeName "D365Bap.Tools.FscmRestService" `
+            -Property ServiceGroup `
+            , Service `
+            , Operation `
+            , ReturnType `
+            , Parameter `
+            , ParameterType `
+            , ErrorMessage | Sort-Object -Property 'ServiceGroup', 'Service', 'Operation', 'Parameter'
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-FscmRestService"

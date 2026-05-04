@@ -1,4 +1,4 @@
-$scbRbacRoleScopes = {
+﻿$scbRbacRoleScopes = {
     param (
         $commandName,
         $parameterName,

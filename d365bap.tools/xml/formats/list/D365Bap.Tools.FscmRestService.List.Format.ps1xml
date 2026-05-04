@@ -20,13 +20,13 @@
                                 <PropertyName>Operation</PropertyName>
                             </ListItem>
                             <ListItem>
+                                <PropertyName>Endpoint</PropertyName>
+                            </ListItem>
+                            <ListItem>
                                 <PropertyName>Parameter</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>ParameterType</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>ParametersList</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>ReturnType</PropertyName>
