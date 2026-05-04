@@ -190,6 +190,7 @@
 		
 		, 'Invoke-PpePublishAllCustomizations'
 		
+		, 'New-D365DevConfig',
 		, 'New-UnifiedEnvironment'
 		
 		, 'Remove-BapTenantDetail'
