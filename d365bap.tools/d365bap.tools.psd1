@@ -190,7 +190,9 @@
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
-		
+
+		, 'Invoke-FscmRestService'
+
 		, 'Invoke-PpacD365AppInstall'
 		, 'Invoke-PpacD365PlatformUpdate'
 		
