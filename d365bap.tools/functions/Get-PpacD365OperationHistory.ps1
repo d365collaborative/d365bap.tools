@@ -202,7 +202,8 @@ function Get-PpacD365OperationHistory {
             }
 
             Write-PSFMessage -Level Important -Message "Operation logs downloaded to:"
-            Write-PSFHostColor -String "- '<c='em'>$downloadDir</c>'"
+            Write-PSFHostColor -String "- " -NoNewLine
+            Write-PSFHostColor -String "'$downloadDir'" -DefaultColor $(Get-PSFConfigValue -FullName 'PSFramework.Message.Info.Color.Emphasis')
         }
 
         $resCol
