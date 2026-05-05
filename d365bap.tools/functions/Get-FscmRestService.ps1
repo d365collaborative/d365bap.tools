@@ -140,6 +140,7 @@ function Get-FscmRestService {
 
             $objHash = [Ordered]@{
                 ServiceGroup = $serviceGroup.Name
+                Endpoint     = ''
                 ErrorMessage = ''
             }
 
@@ -188,6 +189,7 @@ function Get-FscmRestService {
 
                 foreach ($operation in ($responseService | Select-Object -ExpandProperty Operations)) {
                     $objHash.Operation = $operation.Name
+                    $objHash.Endpoint  = "$($serviceGroup.Name)/$($service.Name)/$($operation.Name)"
                     $objHash.ReturnType = $operation.ReturnType
                         
                     if ($TraverseTo -eq "Operation") {
@@ -226,6 +228,7 @@ function Get-FscmRestService {
             -Property ServiceGroup `
             , Service `
             , Operation `
+            , Endpoint `
             , ReturnType `
             , Parameter `
             , ParameterType `
