@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Invokes a REST service operation in Finance and Supply Chain Management (FSCM).
 
