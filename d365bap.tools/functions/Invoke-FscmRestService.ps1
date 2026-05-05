@@ -33,7 +33,12 @@
     .EXAMPLE
         PS C:\> Invoke-FscmRestService -EnvironmentId "eec2c631-a74f-4f7c-b5a4-67d0ee4c0b3c" -Endpoint "MyServiceGroup/MyService/GetData"
 
-        This will call the GetData operation using the default POST method, without a payload.
+        This will call the GetData operation using the default Post method, without a payload.
+
+    .EXAMPLE
+        PS C:\> Invoke-FscmRestService -EnvironmentId "eec2c631-a74f-4f7c-b5a4-67d0ee4c0b3c" -Endpoint "MyServiceGroup/MyService/GetData" -Method Get
+
+        This will call the GetData operation using the default Get method, without a payload.
 
     .EXAMPLE
         PS C:\> $payload = '{"_contract": {"CustomerAccount": "US-001"}}'
