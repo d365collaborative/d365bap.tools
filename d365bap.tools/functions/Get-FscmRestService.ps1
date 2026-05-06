@@ -2,68 +2,68 @@
 <#
     .SYNOPSIS
         Get REST service metadata from a Finance and Operations environment.
-
+        
     .DESCRIPTION
         Retrieves service metadata from the Finance and Operations /api/services endpoint.
-
+        
         Services are organized in a four-level hierarchy: service groups → services → operations → operation parameters.
-
+        
         The TraverseTo parameter controls how deep into the hierarchy the results are expanded. Each returned object represents a single node at the requested level, with all higher-level identifier fields always populated.
-
+        
         Supports wildcard and exact matching against the ServiceGroupName, ServiceName, OperationName, and ParameterName fields — any match on a populated field will include the record.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve REST service metadata from.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER Name
         The value to filter the results by.
-
+        
         Filters against ServiceGroupName, ServiceName, OperationName, and ParameterName — any match on a populated field at the current traversal level will include the record.
-
+        
         Supports wildcard characters for flexible matching.
-
+        
         Default value is "*", which returns all items at the requested traversal level.
-
+        
     .PARAMETER TraverseTo
         Controls how deep into the service hierarchy the results are expanded.
-
+        
         ServiceGroup: Returns one object per service group. This is the default.
         Service: Returns one object per service within each group.
         Operation: Returns one object per operation within each service, including a joined list of parameter names and the return type.
         Detail: Returns one object per parameter within each operation, including the parameter type.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the retrieved service metadata to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv"
-
+        
         This command retrieves all service groups from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Service
-
+        
         This command retrieves all services within every service group from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Operation -Name "*Sales*"
-
+        
         This command retrieves all operations whose service group name, service name, or operation name contains "Sales" from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Detail -Name "SalesOrderService"
-
+        
         This command retrieves all operation parameter details within the "SalesOrderService" service group from the environment "ContosoEnv".
-
+        
         The filter matches against ServiceGroupName, ServiceName, OperationName, and ParameterName.
-
+        
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Detail -AsExcelOutput
-
+        
         This command retrieves full parameter details for all REST services in the environment "ContosoEnv" and exports the results to an Excel file.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -140,6 +140,7 @@ function Get-FscmRestService {
 
             $objHash = [Ordered]@{
                 ServiceGroup = $serviceGroup.Name
+                Endpoint     = ''
                 ErrorMessage = ''
             }
 
@@ -188,6 +189,7 @@ function Get-FscmRestService {
 
                 foreach ($operation in ($responseService | Select-Object -ExpandProperty Operations)) {
                     $objHash.Operation = $operation.Name
+                    $objHash.Endpoint  = "$($serviceGroup.Name)/$($service.Name)/$($operation.Name)"
                     $objHash.ReturnType = $operation.ReturnType
                         
                     if ($TraverseTo -eq "Operation") {
@@ -226,6 +228,7 @@ function Get-FscmRestService {
             -Property ServiceGroup `
             , Service `
             , Operation `
+            , Endpoint `
             , ReturnType `
             , Parameter `
             , ParameterType `
