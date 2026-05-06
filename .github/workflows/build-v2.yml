@@ -1,4 +1,4 @@
-# Build and release the d365bap.tools PowerShell module on every push to main.
+﻿# Build and release the d365bap.tools PowerShell module on every push to main.
 # Validation jobs run in parallel with module caching; build-and-release runs after all pass.
 
 on:
@@ -161,7 +161,7 @@ jobs:
         "VERSION=$githubReleaseVersion" >> $env:GITHUB_ENV
 
     - name: Create GitHub release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         name: ${{ env.VERSION }}
         tag_name: ${{ env.VERSION }}
