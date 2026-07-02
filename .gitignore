@@ -20,3 +20,5 @@ TestResults/*
 
 # ignore the publishing Directory
 publish/*
+agent-tools
+terminals

@@ -76,6 +76,8 @@
 
 		'xml\formats\table\D365Bap.Tools.UdeConfig.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.UdeEnvironmentModule.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.UdeModelLabel.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.UdePackageLocalDirectory.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.UdeEnvironmentPackage.Table.Format.ps1xml',
 
 		'xml\formats\table\D365Bap.Tools.VirtualEntity.Table.Format.ps1xml',
@@ -133,6 +135,8 @@
 		, 'Confirm-BapEnvironmentIntegration'
 		, 'Confirm-UdeVs2022Installation'
 		
+		, 'Export-UdeModelLabel'
+		
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentD365App'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
@@ -180,6 +184,7 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
+		, 'Get-UdePackageLocalDirectory'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
