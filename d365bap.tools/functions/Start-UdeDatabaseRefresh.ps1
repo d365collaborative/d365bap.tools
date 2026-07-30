@@ -127,8 +127,8 @@ function Start-UdeDatabaseRefresh {
         } | ConvertTo-Json -Depth 10
 
         $payload
-        return
-        $localUri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/$($envSource.PpacEnvId)/copyTo?api-version=2021-04-01"
+        # return
+        $localUri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/$($envTarget.PpacEnvId)/copyTo?api-version=2021-04-01"
         
         Invoke-RestMethod -Method Post `
             -Uri $localUri `
