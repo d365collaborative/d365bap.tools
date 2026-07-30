@@ -8,6 +8,8 @@
         
         Support D365 Finance and Operations, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
         
+        Creates the environment with a documented FinOps ERP template (default: D365_FinOps_Finance)
+        
     .PARAMETER Type
         Instructs the cmdlet to create either a Unified Sandbox Environment (USE) or a Unified Developer Environment (UDE).
         
@@ -50,10 +52,22 @@
     .PARAMETER SecurityGroup
         Entra Groups security group to restrict access to the new environment.
         
-    .EXAMPLE
-        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe"
+    .PARAMETER Template
+        The single Dynamics 365 FinOps ERP template to provision with the environment.
         
-        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        Valid values are:
+        - "D365_FinOps_Finance" (default)
+        - "D365_FinOps_SCM"
+        - "D365_FinOps_ProjOps"
+        - "D365_FinOps_Commerce" (trials only)
+        
+        Only one FinOps ERP template is supported per environment.
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "unitedstates"
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the United States location.
+        It will use the D365_FinOps_Finance template.
         It will include a demo database by default.
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
@@ -66,6 +80,7 @@
         
         This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
         It will deploy into the "West Europe" region.
+        It will use the D365_FinOps_Finance template.
         It will include a demo database.
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
@@ -75,6 +90,7 @@
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -CustomDomainName "myudeenv"
         
         This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        It will use the D365_FinOps_Finance template.
         It will include a demo database by default.
         It will get the custom domain name "myudeenv".
         It will take the latest available version of Finance and Operations.
@@ -84,6 +100,7 @@
         PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -NoDemoDb
         
         This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
+        It will use the D365_FinOps_Finance template.
         It will not include a demo database.
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
@@ -93,6 +110,7 @@
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -Version "10.0.44"
         
         This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        It will use the D365_FinOps_Finance template.
         It will include a demo database by default.
         It will get a default/unique domain name assigned by Power Platform.
         It will install version 10.0.44 of Finance and Operations.
@@ -102,10 +120,19 @@
         PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -SecurityGroup "MySecurityGroup"
         
         This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
+        It will use the D365_FinOps_Finance template.
         It will include a demo database by default.
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
         It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "unitedstates" -Template "D365_FinOps_ProjOps"
+        
+        This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the United States location.
+        It will use the D365_FinOps_ProjOps template for Dynamics 365 Project Operations.
+        It will include a demo database by default.
+        It will take the latest available version of Finance and Operations.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -134,7 +161,15 @@ function New-UnifiedEnvironment {
         [version] $Version,
 
         [Alias('EntraGroup')]
-        [string] $SecurityGroup
+        [string] $SecurityGroup,
+
+        [ValidateSet(
+            "D365_FinOps_Finance",
+            "D365_FinOps_SCM",
+            "D365_FinOps_ProjOps",
+            "D365_FinOps_Commerce"
+        )]
+        [string] $Template = "D365_FinOps_Finance"
     )
     
     begin {
@@ -163,6 +198,19 @@ function New-UnifiedEnvironment {
         if (Test-PSFFunctionInterrupt) { return }
         
         $localUri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments?api-version=2024-05-01'
+
+        $devToolsEnabled = ($Type -eq 'UDE').ToString().ToLowerInvariant()
+        $demoDataEnabled = (-not $NoDemoDb).ToString().ToLowerInvariant()
+        $provisionParameters = "DevToolsEnabled=$devToolsEnabled|DemoDataEnabled=$demoDataEnabled"
+
+        $templateMetadata = [PsCustomObject][ordered]@{
+            PostProvisioningPackages = @(
+                [PsCustomObject][ordered]@{
+                    applicationUniqueName = "msdyn_FinanceAndOperationsProvisioningAppAnchor"
+                    parameters            = $provisionParameters
+                }
+            )
+        }
         
         $config = [PsCustomObject][ordered]@{
             location   = $Location
@@ -172,9 +220,10 @@ function New-UnifiedEnvironment {
                 displayName               = $Name
                 environmentSku            = "Sandbox" # UDE & USE - Can only be Sandbox
                 linkedEnvironmentMetadata = [PsCustomObject][ordered]@{
-                    baseLanguage = "" # Maybe it selects the TenantDefault
-                    currency     = $null # Maybe it selects the TenantDefault
-                    templates    = @("D365_DeveloperEdition")
+                    baseLanguage     = "" # Maybe it selects the TenantDefault
+                    currency         = $null # Maybe it selects the TenantDefault
+                    templates        = @($Template)
+                    templateMetadata = $templateMetadata
                 }
             }
         }
@@ -216,7 +265,9 @@ function New-UnifiedEnvironment {
         
         $payload = $config | ConvertTo-Json -Depth 10
         
-        # Deploys the shell environment
+        # Deploys the environment with the selected FinOps ERP template
+        Write-PSFMessage -Level Verbose -Message "Creating unified environment '$Name' with template '$Template' ($provisionParameters)."
+
         Invoke-RestMethod -Method Post `
             -Uri $localUri `
             -Headers $headersBapApi `
@@ -237,114 +288,115 @@ function New-UnifiedEnvironment {
                 $envProvisioned = $envObj.State -eq "Ready"
             } until ($envProvisioned -eq $true)
 
-            $appPlatform = Get-PpacD365App `
-                -EnvironmentId $Name `
-                -Name 'Dynamics 365 Finance and Operations Platform Tools' `
-            | Select-Object -First 1
-
-            $headersLocal = @{
-                "Authorization" = "Bearer $($tokenPowerApiValue)"
-                "Content-Type"  = "application/json"
-            }
-
-            # Installing the platform application package
-            $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2022-03-01-preview" `
-                -f $envObj.PpacEnvId `
-                , $appPlatform.PpacPackageName
-
-            Invoke-RestMethod `
-                -Method Post `
-                -Uri $localUri `
-                -Headers $headersLocal `
-                -Body "{}" `
-                -SkipHttpErrorCheck `
-                -StatusCodeVariable 'statusPlat' > $null 4>$null
-
-            if (-not ($statusPlat -like "2**")) {
-                $messageString = "Failed to install the platform application package: <c='em'>$($appPlatform.PpacPackageName)</c>. Please check the environment and try installing the package manually."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because installing the platform application package failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
-                return
-            }
-
-            $appPlatformInstalled = $false
-
-            do {
-                Write-PSFMessage -Level Verbose -Message "Waiting for platform app to be installed ..."
-                Start-Sleep -Seconds 20
-
-                $appObj = Get-PpacD365App `
-                    -EnvironmentId $Name `
-                    -Name 'Dynamics 365 Finance and Operations Platform Tools' `
-                | Select-Object -First 1
-
-                $appPlatformInstalled = $appObj.Status -eq "Installed"
-            } until ($appPlatformInstalled -eq $true)
-
             <#
+                When a specific Version is requested, queue an install/update after the shell + template apps are Ready.
                 Platform version is 10.0.X for humans, but the application package version is 10.0.X.Y,
                 so we need to get the latest available version and find the matching one.
             #>
             if (-not [System.String]::IsNullOrWhiteSpace($Version)) {
-                $tmpVersion = $Version.ToString().Substring(0, 7)
+                $appPlatform = Get-PpacD365App `
+                    -EnvironmentId $Name `
+                    -Name 'Dynamics 365 Finance and Operations Platform Tools' `
+                | Select-Object -First 1
+
+                if ($null -eq $appPlatform -or [System.String]::IsNullOrWhiteSpace($appPlatform.PpacPackageName)) {
+                    $messageString = "Could not resolve the platform application package <c='em'>Dynamics 365 Finance and Operations Platform Tools</c> in environment <c='em'>$Name</c>."
+                    Write-PSFMessage -Level Important -Message $messageString
+                    Stop-PSFFunction -Message "Stopping because the platform application package was not found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
+                    return
+                }
+
+                if ($appPlatform.Status -ne "Installed") {
+                    $headersLocal = @{
+                        "Authorization" = "Bearer $($tokenPowerApiValue)"
+                        "Content-Type"  = "application/json"
+                    }
+
+                    # Installing the platform application package (required before version-targeted queue)
+                    $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2024-10-01" `
+                        -f $envObj.PpacEnvId `
+                        , $appPlatform.PpacPackageName
+
+                    Invoke-RestMethod `
+                        -Method Post `
+                        -Uri $localUri `
+                        -Headers $headersLocal `
+                        -Body "{}" `
+                        -SkipHttpErrorCheck `
+                        -StatusCodeVariable 'statusPlat' > $null 4>$null
+
+                    if (-not ($statusPlat -like "2**")) {
+                        $messageString = "Failed to install the platform application package: <c='em'>$($appPlatform.PpacPackageName)</c>. Please check the environment and try installing the package manually."
+                        Write-PSFMessage -Level Important -Message $messageString
+                        Stop-PSFFunction -Message "Stopping because installing the platform application package failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
+                        return
+                    }
+
+                    do {
+                        Write-PSFMessage -Level Verbose -Message "Waiting for platform app to be installed ..."
+                        Start-Sleep -Seconds 20
+
+                        $appPlatform = Get-PpacD365App `
+                            -EnvironmentId $Name `
+                            -Name 'Dynamics 365 Finance and Operations Platform Tools' `
+                        | Select-Object -First 1
+                    } until ($appPlatform.Status -eq "Installed")
+                }
+
+                $tmpVersion = $Version.ToString().Substring(0, [Math]::Min(7, $Version.ToString().Length))
                 $colVersions = Get-PpacD365PlatformUpdate `
                     -EnvironmentId $Name
 
                 $deployVersion = $colVersions | `
                     Where-Object Platform -eq $tmpVersion | `
                     Select-Object -First 1
-            }
-            else {
-                $deployVersion = Get-PpacD365PlatformUpdate `
-                    -EnvironmentId $Name `
-                    -Latest | `
-                    Select-Object -First 1
-            }
+                
+                if ($null -eq $deployVersion) {
+                    $messageString = "The specified version <c='em'>$Version</c> was not valid for the environment. Please verify the available versions using the <c='em'>Get-PpacD365PlatformUpdate</c> cmdlet."
+                    Write-PSFMessage -Level Important -Message $messageString
+                    Stop-PSFFunction -Message "The specified version was not valid for the environment." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                    return
+                }
+
+                $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
+                $baseUri = $envObj.PpacEnvUri
+
+                $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+                $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
+                $headersWebApi = @{
+                    "Authorization" = "Bearer $($tokenWebApiValue)"
+                    "Content-Type"  = "application/json"
+                }
             
-            if ($null -eq $deployVersion) {
-                $messageString = "The specified version <c='em'>$Version</c> was not valid for the environment. Please verify the available versions using the <c='em'>Get-PpacD365PlatformUpdate</c> cmdlet."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "The specified version was not valid for the environment." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                return
-            }
+                $localUri = $baseUri + '/api/data/v9.2/msprov_queuefnoinstallorupdate'
 
-            $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
-            $baseUri = $envObj.PpacEnvUri
+                $queuePayload = [PsCustomObject][ordered]@{
+                    "payload" = "ApplicationVersion=$($deployVersion.Version)|DevToolsEnabled=$devToolsEnabled|DemoDataEnabled=$demoDataEnabled"
+                } | ConvertTo-Json -Depth 3
 
-            $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
-            $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+                <#
+                    Installing / updating to the specified version of the D365 platform
+                #>
+                Invoke-RestMethod -Method Post `
+                    -Uri $localUri `
+                    -Headers $headersWebApi `
+                    -Body $queuePayload `
+                    -ContentType $headersWebApi."Content-Type" `
+                    -SkipHttpErrorCheck `
+                    -StatusCodeVariable 'statusProvision' > $null 4>$null
 
-            $headersWebApi = @{
-                "Authorization" = "Bearer $($tokenWebApiValue)"
-                "Content-Type"  = "application/json"
-            }
-        
-            $localUri = $baseUri + '/api/data/v9.2/msprov_queuefnoinstallorupdate'
-
-            $payload = [PsCustomObject][ordered]@{
-                "payload" = "ApplicationVersion=$($deployVersion.Version)|DevToolsEnabled=$($Type -eq 'UDE')|DemoDataEnabled=$(-not $NoDemoDb)"
-            } | ConvertTo-Json -Depth 3
-
-            <#
-                Installing the specified version of the D365 platform
-            #>
-            Invoke-RestMethod -Method Post `
-                -Uri $localUri `
-                -Headers $headersWebApi `
-                -Body $payload `
-                -ContentType $headersWebApi."Content-Type" `
-                -SkipHttpErrorCheck `
-                -StatusCodeVariable 'statusProvision' > $null 4>$null
-
-            if (-not ($statusProvision -like "2**")) {
-                $messageString = "Failed to provision the environment with the specified version: <c='em'>$($deployVersion.Version)</c>. Please check the environment and try provisioning manually."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because provisioning the environment with the specified version failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                return
+                if (-not ($statusProvision -like "2**")) {
+                    $messageString = "Failed to provision the environment with the specified version: <c='em'>$($deployVersion.Version)</c>. Please check the environment and try provisioning manually."
+                    Write-PSFMessage -Level Important -Message $messageString
+                    Stop-PSFFunction -Message "Stopping because provisioning the environment with the specified version failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                    return
+                }
             }
             
             <#
-                First we wait to make sure that the provisioning installation is queued
+                Wait until the Finance and Operations Provisioning App is present / installed.
+                TemplateMetadata queues this for the default (latest) path; -Version queues/updates it explicitly.
             #>
             do {
                 Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be queued ..."
@@ -352,24 +404,28 @@ function New-UnifiedEnvironment {
                 
                 $appObj = Get-PpacD365App `
                     -EnvironmentId $Name `
-                    -Name 'Dynamics 365 Finance and Operations Provisioning App'
-            }while (-not $appObj.StateIsInstalled)
+                    -Name 'Dynamics 365 Finance and Operations Provisioning App' `
+                | Select-Object -First 1
+            } while (($null -eq $appObj) -or (-not $appObj.StateIsInstalled))
             
-            <#
-                Then we wait for the provisioning installation to be completed.
-                ... If requested by the user ... using the WaitForCompletion
-            #>
-            while ($WaitForCompletion -and $appObj.Status -ne "Installed") {
+            while ($appObj.Status -ne "Installed") {
                 Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be completed ..."
                 Start-Sleep -Seconds 20
                 
                 $appObj = Get-PpacD365App `
                     -EnvironmentId $Name `
-                    -Name 'Dynamics 365 Finance and Operations Provisioning App'
+                    -Name 'Dynamics 365 Finance and Operations Provisioning App' `
+                | Select-Object -First 1
             }
 
             # Output the app details, for the user to see
             $appObj
+        }
+        else {
+            $messageString = "Failed to create environment <c='em'>$Name</c>. HTTP status: <c='em'>$statusEnv</c>. Verify template '<c='em'>$Template</c>', location, capacity, and license entitlements."
+            Write-PSFMessage -Level Important -Message $messageString
+            Stop-PSFFunction -Message "Stopping because environment creation failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            return
         }
     }
     
