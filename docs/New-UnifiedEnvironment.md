@@ -14,7 +14,7 @@ Deploy a new Unified Environment in Power Platform Admin Center (PPAC).
 
 ```
 New-UnifiedEnvironment [-Type] <String> [-Name] <String> [[-CustomDomainName] <String>] [-Location] <String>
- [[-Region] <String>] [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>]
+ [[-Region] <String>] [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>] [[-Template] <String>]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -22,6 +22,9 @@ New-UnifiedEnvironment [-Type] <String> [-Name] <String> [[-CustomDomainName] <S
 Deploys a new Unified Environment in Power Platform Admin Center (PPAC).
 
 Support D365 Finance and Operations, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
+
+Creates the environment with a documented FinOps ERP template (default: D365_FinOps_Finance)
+and queues finance and operations provisioning via TemplateMetadata / PostProvisioningPackages.
 
 ## EXAMPLES
 
@@ -89,10 +92,21 @@ New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -Security
 ```
 
 This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
+It will use the D365_FinOps_Finance template.
 It will include a demo database by default.
 It will get a default/unique domain name assigned by Power Platform.
 It will take the latest available version of Finance and Operations.
 It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
+
+### EXAMPLE 7
+```
+New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -Template "D365_FinOps_SCM"
+```
+
+This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
+It will use the D365_FinOps_SCM template.
+It will include a demo database by default.
+It will take the latest available version of Finance and Operations.
 
 ## PARAMETERS
 
@@ -208,6 +222,9 @@ Accept wildcard characters: False
 ### -Version
 The version of the Finance and Operations application to be installed in the new environment.
 
+When omitted, the latest available version is provisioned via the ERP template post-provisioning package.
+When specified, the cmdlet queues an install/update for that platform version after the environment is Ready.
+
 ```yaml
 Type: Version
 Parameter Sets: (All)
@@ -231,6 +248,29 @@ Aliases: EntraGroup
 Required: False
 Position: 7
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Template
+The single Dynamics 365 FinOps ERP template to provision with the environment.
+
+Valid values are:
+- "D365_FinOps_Finance" (default)
+- "D365_FinOps_SCM"
+- "D365_FinOps_ProjOps"
+- "D365_FinOps_Commerce" (trials only)
+
+Only one FinOps ERP template is supported per environment.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 8
+Default value: D365_FinOps_Finance
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

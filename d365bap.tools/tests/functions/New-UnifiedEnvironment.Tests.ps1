@@ -115,12 +115,28 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
+		It 'Should have the expected parameter Template' {
+			$parameter = (Get-Command New-UnifiedEnvironment).Parameters['Template']
+			$parameter.Name | Should -Be 'Template'
+			$parameter.ParameterType.ToString() | Should -Be System.String
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be 7
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+			$parameter.Attributes | Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] } | ForEach-Object {
+				$_.ValidValues | Should -Be @('D365_FinOps_Finance', 'D365_FinOps_SCM', 'D365_FinOps_ProjOps', 'D365_FinOps_Commerce')
+			}
+		}
 	}
 	
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Type -Name -Location
-		__AllParameterSets -Type -Name -CustomDomainName -Location -Region -NoDemoDb -Version -SecurityGroup
+		__AllParameterSets -Type -Name -CustomDomainName -Location -Region -NoDemoDb -Version -SecurityGroup -Template
 		#>
 	}
 
