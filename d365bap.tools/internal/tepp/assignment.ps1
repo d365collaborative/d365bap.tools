@@ -77,3 +77,33 @@ Register-PSFTeppArgumentCompleter `
     -Command Get-FscmRestService `
     -Parameter TraverseTo `
     -Name "d365bap.tools.tepp.fscm.rest.service.traverse"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacSecurityRole `
+    -Parameter Name `
+    -Name "d365bap.tools.tepp.ppac.security.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacSecurityRoleTable `
+    -Parameter Role `
+    -Name "d365bap.tools.tepp.ppac.security.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Set-PpacSecurityRoleTable `
+    -Parameter Role `
+    -Name "d365bap.tools.tepp.ppac.security.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacSecurityRoleTable `
+    -Parameter Name `
+    -Name "d365bap.tools.tepp.ppac.tables"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Set-PpacSecurityRoleTable `
+    -Parameter Table `
+    -Name "d365bap.tools.tepp.ppac.tables"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacTable `
+    -Parameter Name `
+    -Name "d365bap.tools.tepp.ppac.tables"

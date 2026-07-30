@@ -68,6 +68,8 @@
 		'xml\formats\table\D365Bap.Tools.PpacPowerApp.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacRbacRoleAssignment.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacRole.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacRoleTable.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacTable.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacSolution.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacTeam.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacUser.Table.Format.ps1xml',
@@ -169,6 +171,8 @@
 
 		, 'Get-PpacSecurityRole'
 		, 'Get-PpacSecurityRoleMember'
+		, 'Get-PpacSecurityRoleTable'
+		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
 		, 'Get-PpacUser'
 		
@@ -203,6 +207,8 @@
 		
 		, 'Invoke-PpePublishAllCustomizations'
 		
+		, 'New-PpacSecurityRole'
+
 		, 'New-UnifiedEnvironment'
 		
 		, 'Remove-BapTenantDetail'
@@ -221,6 +227,7 @@
 		, 'Add-PpacRbacRoleMember'
 
 		, 'Set-PpacSecurityGroup'
+		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
 		
 		, 'Set-UdeConfig'
