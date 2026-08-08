@@ -49,6 +49,19 @@
         
     .PARAMETER SecurityGroup
         Entra Groups security group to restrict access to the new environment.
+
+    .PARAMETER PostProvisionDelaySeconds
+        Additional delay (in seconds) after the shell environment reports as ready.
+
+        This pause helps ensure the platform application package endpoint is fully ready before install is attempted.
+
+    .PARAMETER ReadyStateTimeoutMinutes
+        Maximum number of minutes to wait for the environment to reach state 'Ready'.
+
+        Prevents endless waiting when an environment is stuck in a non-ready state.
+
+    .PARAMETER WaitForCompletion
+        Instructs the cmdlet to wait until the final provisioning app installation is completed.
         
     .EXAMPLE
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe"
@@ -134,7 +147,15 @@ function New-UnifiedEnvironment {
         [version] $Version,
 
         [Alias('EntraGroup')]
-        [string] $SecurityGroup
+        [string] $SecurityGroup,
+
+        [ValidateRange(0, 300)]
+        [int] $PostProvisionDelaySeconds = 60,
+
+        [ValidateRange(1, 720)]
+        [int] $ReadyStateTimeoutMinutes = 60,
+
+        [switch] $WaitForCompletion
     )
     
     begin {
@@ -161,212 +182,49 @@ function New-UnifiedEnvironment {
     
     process {
         if (Test-PSFFunctionInterrupt) { return }
-        
-        $localUri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments?api-version=2024-05-01'
-        
-        $config = [PsCustomObject][ordered]@{
-            location   = $Location
-            properties = [PsCustomObject][ordered]@{
-                databaseType              = "CommonDataService"
-                description               = ""
-                displayName               = $Name
-                environmentSku            = "Sandbox" # UDE & USE - Can only be Sandbox
-                linkedEnvironmentMetadata = [PsCustomObject][ordered]@{
-                    baseLanguage = "" # Maybe it selects the TenantDefault
-                    currency     = $null # Maybe it selects the TenantDefault
-                    templates    = @("D365_DeveloperEdition")
-                }
-            }
+
+        $shellEnvironmentParams = @{
+            Name                     = $Name
+            HeadersBapApi            = $headersBapApi
+            Location                 = $Location
+            Region                   = $Region
+            CustomDomainName         = $CustomDomainName
+            SecurityGroupId          = $SecurityGroupId
+            PostProvisionDelaySeconds = $PostProvisionDelaySeconds
+            ReadyStateTimeoutMinutes = $ReadyStateTimeoutMinutes
         }
 
-        <#
-            Region is about the physical location of the data center where the environment will be hosted,
-            while Location is more about data residency and compliance requirements.
-            Depending on the Location selected, there might be a subset of Regions available.
-        #>
-        if ($Region) {
-            $config.properties | `
-                Add-Member -MemberType NoteProperty `
-                -Name azureRegion `
-                -Value $Region
-        }
+        $shellEnvironment = New-ShellEnvironment @shellEnvironmentParams
 
-        <#
-            Custom domain is about the URL of the environment,
-            and it needs to be unique across the Power Platform environment landscape,
-            so it might require some trial and error to find an available one.
-        #>
-        if ($CustomDomainName) {
-            $config.properties.linkedEnvironmentMetadata | `
-                Add-Member -MemberType NoteProperty `
-                -Name domainName `
-                -Value $CustomDomainName
-        }
+        if ($null -eq $shellEnvironment) { return }
 
-        <#
-            Security group is about restricting access to the environment to only members of a specific Entra Groups security group.
-            This is important for controlling who can access the environment, especially in a production scenario.
-        #>
-        if ($null -ne $SecurityGroupId) {
-            $config.properties.linkedEnvironmentMetadata | `
-                Add-Member -MemberType NoteProperty `
-                -Name securityGroupId `
-                -Value $SecurityGroupId
-        }
-        
-        $payload = $config | ConvertTo-Json -Depth 10
-        
-        # Deploys the shell environment
-        Invoke-RestMethod -Method Post `
-            -Uri $localUri `
-            -Headers $headersBapApi `
-            -Body $payload `
-            -ContentType "application/json" `
-            -SkipHttpErrorCheck `
-            -StatusCodeVariable 'statusEnv' > $null 4>$null
+        $environmentExists = $shellEnvironment.EnvironmentExists
+        $environmentReady = $shellEnvironment.EnvironmentReady
+        $envObj = $shellEnvironment.Environment
 
-        if ($statusEnv -like "2**") {
-            $envProvisioned = $false
-            
-            do {
-                Write-PSFMessage -Level Verbose -Message "Waiting for environment '$Name' to be provisioned..."
-                Start-Sleep -Seconds 20
-                $envObj = Get-BapEnvironment -EnvironmentId $Name | `
-                    Select-Object -First 1
+        if ($environmentExists -and $environmentReady) {
 
-                $envProvisioned = $envObj.State -eq "Ready"
-            } until ($envProvisioned -eq $true)
-
-            $appPlatform = Get-PpacD365App `
-                -EnvironmentId $Name `
-                -Name 'Dynamics 365 Finance and Operations Platform Tools' `
-            | Select-Object -First 1
-
-            $headersLocal = @{
-                "Authorization" = "Bearer $($tokenPowerApiValue)"
-                "Content-Type"  = "application/json"
+            $platformInstallParams = @{
+                Name               = $Name
+                Environment        = $envObj
+                TokenPowerApiValue = $tokenPowerApiValue
             }
 
-            # Installing the platform application package
-            $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2022-03-01-preview" `
-                -f $envObj.PpacEnvId `
-                , $appPlatform.PpacPackageName
+            $appObj = Install-PlatformApplicationPackage @platformInstallParams
 
-            Invoke-RestMethod `
-                -Method Post `
-                -Uri $localUri `
-                -Headers $headersLocal `
-                -Body "{}" `
-                -SkipHttpErrorCheck `
-                -StatusCodeVariable 'statusPlat' > $null 4>$null
+            if ($null -eq $appObj) { return }
 
-            if (-not ($statusPlat -like "2**")) {
-                $messageString = "Failed to install the platform application package: <c='em'>$($appPlatform.PpacPackageName)</c>. Please check the environment and try installing the package manually."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because installing the platform application package failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
-                return
+            $provisioningParams = @{
+                Name              = $Name
+                Type              = $Type
+                NoDemoDb          = $NoDemoDb.IsPresent
+                Version           = $Version
+                WaitForCompletion = $WaitForCompletion.IsPresent
             }
 
-            $appPlatformInstalled = $false
+            $appObj = Start-PlatformProvisioning @provisioningParams
 
-            do {
-                Write-PSFMessage -Level Verbose -Message "Waiting for platform app to be installed ..."
-                Start-Sleep -Seconds 20
-
-                $appObj = Get-PpacD365App `
-                    -EnvironmentId $Name `
-                    -Name 'Dynamics 365 Finance and Operations Platform Tools' `
-                | Select-Object -First 1
-
-                $appPlatformInstalled = $appObj.Status -eq "Installed"
-            } until ($appPlatformInstalled -eq $true)
-
-            <#
-                Platform version is 10.0.X for humans, but the application package version is 10.0.X.Y,
-                so we need to get the latest available version and find the matching one.
-            #>
-            if (-not [System.String]::IsNullOrWhiteSpace($Version)) {
-                $tmpVersion = $Version.ToString().Substring(0, 7)
-                $colVersions = Get-PpacD365PlatformUpdate `
-                    -EnvironmentId $Name
-
-                $deployVersion = $colVersions | `
-                    Where-Object Platform -eq $tmpVersion | `
-                    Select-Object -First 1
-            }
-            else {
-                $deployVersion = Get-PpacD365PlatformUpdate `
-                    -EnvironmentId $Name `
-                    -Latest | `
-                    Select-Object -First 1
-            }
-            
-            if ($null -eq $deployVersion) {
-                $messageString = "The specified version <c='em'>$Version</c> was not valid for the environment. Please verify the available versions using the <c='em'>Get-PpacD365PlatformUpdate</c> cmdlet."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "The specified version was not valid for the environment." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                return
-            }
-
-            $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
-            $baseUri = $envObj.PpacEnvUri
-
-            $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
-            $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
-
-            $headersWebApi = @{
-                "Authorization" = "Bearer $($tokenWebApiValue)"
-                "Content-Type"  = "application/json"
-            }
-        
-            $localUri = $baseUri + '/api/data/v9.2/msprov_queuefnoinstallorupdate'
-
-            $payload = [PsCustomObject][ordered]@{
-                "payload" = "ApplicationVersion=$($deployVersion.Version)|DevToolsEnabled=$($Type -eq 'UDE')|DemoDataEnabled=$(-not $NoDemoDb)"
-            } | ConvertTo-Json -Depth 3
-
-            <#
-                Installing the specified version of the D365 platform
-            #>
-            Invoke-RestMethod -Method Post `
-                -Uri $localUri `
-                -Headers $headersWebApi `
-                -Body $payload `
-                -ContentType $headersWebApi."Content-Type" `
-                -SkipHttpErrorCheck `
-                -StatusCodeVariable 'statusProvision' > $null 4>$null
-
-            if (-not ($statusProvision -like "2**")) {
-                $messageString = "Failed to provision the environment with the specified version: <c='em'>$($deployVersion.Version)</c>. Please check the environment and try provisioning manually."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because provisioning the environment with the specified version failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                return
-            }
-            
-            <#
-                First we wait to make sure that the provisioning installation is queued
-            #>
-            do {
-                Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be queued ..."
-                Start-Sleep -Seconds 20
-                
-                $appObj = Get-PpacD365App `
-                    -EnvironmentId $Name `
-                    -Name 'Dynamics 365 Finance and Operations Provisioning App'
-            }while (-not $appObj.StateIsInstalled)
-            
-            <#
-                Then we wait for the provisioning installation to be completed.
-                ... If requested by the user ... using the WaitForCompletion
-            #>
-            while ($WaitForCompletion -and $appObj.Status -ne "Installed") {
-                Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be completed ..."
-                Start-Sleep -Seconds 20
-                
-                $appObj = Get-PpacD365App `
-                    -EnvironmentId $Name `
-                    -Name 'Dynamics 365 Finance and Operations Provisioning App'
-            }
+            if ($null -eq $appObj) { return }
 
             # Output the app details, for the user to see
             $appObj
@@ -376,4 +234,340 @@ function New-UnifiedEnvironment {
     end {
         
     }
+}
+
+function New-ShellEnvironment {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string] $Name,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable] $HeadersBapApi,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Location,
+
+        [string] $Region,
+
+        [string] $CustomDomainName,
+
+        [string] $SecurityGroupId,
+
+        [Parameter(Mandatory = $true)]
+        [int] $PostProvisionDelaySeconds,
+
+        [Parameter(Mandatory = $true)]
+        [int] $ReadyStateTimeoutMinutes
+    )
+
+    $localUri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments?api-version=2024-05-01'
+
+    $config = [PsCustomObject][ordered]@{
+        location   = $Location
+        properties = [PsCustomObject][ordered]@{
+            databaseType              = "CommonDataService"
+            description               = ""
+            displayName               = $Name
+            environmentSku            = "Sandbox" # UDE & USE - Can only be Sandbox
+            linkedEnvironmentMetadata = [PsCustomObject][ordered]@{
+                baseLanguage = "" # Maybe it selects the TenantDefault
+                currency     = $null # Maybe it selects the TenantDefault
+                templates    = @("D365_DeveloperEdition")
+            }
+        }
+    }
+
+    if ($Region) {
+        $config.properties | `
+            Add-Member -MemberType NoteProperty `
+            -Name azureRegion `
+            -Value $Region
+    }
+
+    if ($CustomDomainName) {
+        $config.properties.linkedEnvironmentMetadata | `
+            Add-Member -MemberType NoteProperty `
+            -Name domainName `
+            -Value $CustomDomainName
+    }
+
+    if ($null -ne $SecurityGroupId) {
+        $config.properties.linkedEnvironmentMetadata | `
+            Add-Member -MemberType NoteProperty `
+            -Name securityGroupId `
+            -Value $SecurityGroupId
+    }
+
+    $payload = $config | ConvertTo-Json -Depth 10
+
+    $environmentExists = $false
+    $environmentReady = $false
+    $statusEnv = $null
+    $envObj = $null
+
+    # Phase 1: Ensure environment exists
+    $envObj = Get-BapEnvironment -EnvironmentId $Name | `
+        Select-Object -First 1
+
+    if ($null -ne $envObj) {
+        $environmentExists = $true
+        Write-PSFMessage -Level Verbose -Message "Environment '$Name' already exists. Skipping shell provisioning and moving to readiness checks."
+    }
+    else {
+        $createEnvironmentParams = @{
+            Method            = 'Post'
+            Uri               = $localUri
+            Headers           = $HeadersBapApi
+            Body              = $payload
+            ContentType       = 'application/json'
+            SkipHttpErrorCheck = $true
+            StatusCodeVariable = 'statusEnv'
+        }
+
+        Invoke-RestMethod @createEnvironmentParams > $null 4>$null
+
+        if ($statusEnv -like "2**") {
+            $environmentExists = $true
+        }
+    }
+
+    # Phase 2: Ensure environment is ready
+    if ($environmentExists) {
+        $readyStateDeadline = (Get-Date).AddMinutes($ReadyStateTimeoutMinutes)
+
+        do {
+            $envObj = Get-BapEnvironment -EnvironmentId $Name | `
+                Select-Object -First 1
+
+            if ($null -eq $envObj) {
+                Stop-PSFFunction -Message "Environment '$Name' could not be found while waiting for it to become ready."
+                return
+            }
+
+            $environmentReady = $envObj.State -eq "Ready"
+
+            if (-not $environmentReady) {
+                if ((Get-Date) -ge $readyStateDeadline) {
+                    $messageString = "Environment '$Name' did not reach state 'Ready' within $ReadyStateTimeoutMinutes minutes. Last known state was '$($envObj.State)'."
+                    Write-PSFMessage -Level Important -Message $messageString
+                    Stop-PSFFunction -Message "Stopping because environment readiness timed out." -Exception $([System.Exception]::new($messageString))
+                    return
+                }
+
+                Write-PSFMessage -Level Verbose -Message "Waiting for environment '$Name' to be provisioned and reach state 'Ready'..."
+                Start-Sleep -Seconds 20
+            }
+        } until ($environmentReady)
+
+        if ($statusEnv -like "2**" -and $PostProvisionDelaySeconds -gt 0) {
+            $progressActivity = "Waiting for Microsoft to finish provisioning the environment '$Name' and for the platform package endpoint to be ready..."
+            for ($secondsElapsed = 0; $secondsElapsed -lt $PostProvisionDelaySeconds; $secondsElapsed++) {
+                $secondsRemaining = $PostProvisionDelaySeconds - $secondsElapsed
+                $percentComplete = [Math]::Floor(($secondsElapsed / $PostProvisionDelaySeconds) * 100)
+
+                Write-Progress `
+                    -Activity $progressActivity `
+                    -Status "Give it a minute... $secondsRemaining sec remaining" `
+                    -PercentComplete $percentComplete
+
+                Start-Sleep -Seconds 1
+            }
+
+            Write-Progress `
+                -Activity $progressActivity `
+                -Status "Installing platform package next." `
+                -PercentComplete 100 `
+                -Completed
+        }
+
+        Write-PSFMessage -Level Verbose -Message "Environment '$Name' is ready for provisioning and platform package installation."
+    }
+
+    [PsCustomObject]@{
+        EnvironmentExists = $environmentExists
+        EnvironmentReady  = $environmentReady
+        Environment       = $envObj
+        StatusCode        = $statusEnv
+    }
+}
+
+function Install-PlatformApplicationPackage {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string] $Name,
+
+        [Parameter(Mandatory = $true)]
+        [psobject] $Environment,
+
+        [Parameter(Mandatory = $true)]
+        [string] $TokenPowerApiValue
+    )
+
+    $platformAppParams = @{
+        EnvironmentId = $Name
+        Name          = 'Dynamics 365 Finance and Operations Platform Tools'
+    }
+
+    $appPlatform = Get-PpacD365App @platformAppParams | Select-Object -First 1
+
+    $headersLocal = @{
+        "Authorization" = "Bearer $($TokenPowerApiValue)"
+        "Content-Type"  = "application/json"
+    }
+
+    $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2022-03-01-preview" `
+        -f $Environment.PpacEnvId `
+        , $appPlatform.PpacPackageName
+
+    $statusPlat = $null
+    $platformInstallMaxAttempts = 3
+
+    for ($platformInstallAttempt = 1; $platformInstallAttempt -le $platformInstallMaxAttempts; $platformInstallAttempt++) {
+        Write-PSFMessage -Level Verbose -Message "Installing platform package '$($appPlatform.PpacPackageName)' (attempt $platformInstallAttempt of $platformInstallMaxAttempts)..."
+
+        $platformInstallParams = @{
+            Method            = 'Post'
+            Uri               = $localUri
+            Headers           = $headersLocal
+            Body              = '{}'
+            SkipHttpErrorCheck = $true
+            StatusCodeVariable = 'statusPlat'
+        }
+
+        Invoke-RestMethod @platformInstallParams > $null 4>$null
+
+        if ($statusPlat -like "2**") {
+            break
+        }
+
+        if ($platformInstallAttempt -lt $platformInstallMaxAttempts) {
+            Write-PSFMessage -Level Verbose -Message "Platform package install attempt failed with status '$statusPlat'. Retrying in 10 seconds..."
+            Start-Sleep -Seconds 10
+        }
+    }
+
+    if (-not ($statusPlat -like "2**")) {
+        $messageString = "Failed to install the platform application package: <c='em'>$($appPlatform.PpacPackageName)</c>. Please check the environment and try installing the package manually."
+        Write-PSFMessage -Level Important -Message $messageString
+        Stop-PSFFunction -Message "Stopping because installing the platform application package failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
+        return
+    }
+
+    $appPlatformInstalled = $false
+
+    do {
+        Write-PSFMessage -Level Verbose -Message "Waiting for platform app to be installed ..."
+        Start-Sleep -Seconds 20
+
+        $appObj = Get-PpacD365App @platformAppParams | Select-Object -First 1
+
+        $appPlatformInstalled = $appObj.Status -eq "Installed"
+    } until ($appPlatformInstalled -eq $true)
+
+    $appObj
+}
+
+function Start-PlatformProvisioning {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string] $Name,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("UDE", "USE")]
+        [string] $Type,
+
+        [Parameter(Mandatory = $true)]
+        [switch] $NoDemoDb,
+
+        [version] $Version,
+
+        [switch] $WaitForCompletion
+    )
+
+    <#
+        Platform version is 10.0.X for humans, but the application package version is 10.0.X.Y,
+        so we need to get the latest available version and find the matching one.
+    #>
+    if (-not [System.String]::IsNullOrWhiteSpace($Version)) {
+        $tmpVersion = $Version.ToString().Substring(0, 7)
+        $colVersions = Get-PpacD365PlatformUpdate `
+            -EnvironmentId $Name
+
+        $deployVersion = $colVersions | `
+            Where-Object Platform -eq $tmpVersion | `
+            Select-Object -First 1
+    }
+    else {
+        $deployVersion = Get-PpacD365PlatformUpdate `
+            -EnvironmentId $Name `
+            -Latest | `
+            Select-Object -First 1
+    }
+    
+    if ($null -eq $deployVersion) {
+        $messageString = "The specified version <c='em'>$Version</c> was not valid for the environment. Please verify the available versions using the <c='em'>Get-PpacD365PlatformUpdate</c> cmdlet."
+        Write-PSFMessage -Level Important -Message $messageString
+        Stop-PSFFunction -Message "The specified version was not valid for the environment." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+        return
+    }
+
+    $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
+    $baseUri = $envObj.PpacEnvUri
+
+    $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+    $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+
+    $headersWebApi = @{
+        "Authorization" = "Bearer $($tokenWebApiValue)"
+        "Content-Type"  = "application/json"
+    }
+
+    $localUri = $baseUri + '/api/data/v9.2/msprov_queuefnoinstallorupdate'
+
+    $payload = [PsCustomObject][ordered]@{
+        "payload" = "ApplicationVersion=$($deployVersion.Version)|DevToolsEnabled=$($Type -eq 'UDE')|DemoDataEnabled=$(-not $NoDemoDb)"
+    } | ConvertTo-Json -Depth 3
+
+    $provisioningRequestParams = @{
+        Method             = 'Post'
+        Uri                = $localUri
+        Headers            = $headersWebApi
+        Body               = $payload
+        ContentType        = $headersWebApi.'Content-Type'
+        SkipHttpErrorCheck = $true
+        StatusCodeVariable = 'statusProvision'
+    }
+
+    Invoke-RestMethod @provisioningRequestParams > $null 4>$null
+
+    if (-not ($statusProvision -like "2**")) {
+        $messageString = "Failed to provision the environment with the specified version: <c='em'>$($deployVersion.Version)</c>. Please check the environment and try provisioning manually."
+        Write-PSFMessage -Level Important -Message $messageString
+        Stop-PSFFunction -Message "Stopping because provisioning the environment with the specified version failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+        return
+    }
+
+    $provisioningAppParams = @{
+        EnvironmentId = $Name
+        Name          = 'Dynamics 365 Finance and Operations Provisioning App'
+    }
+
+    do {
+        Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be queued ..."
+        Start-Sleep -Seconds 20
+
+        $appObj = Get-PpacD365App @provisioningAppParams
+    } while (-not $appObj.StateIsInstalled)
+
+    while ($WaitForCompletion -and $appObj.Status -ne "Installed") {
+        Write-PSFMessage -Level Verbose -Message "Waiting for provisioning installation to be completed ..."
+        Start-Sleep -Seconds 20
+
+        $appObj = Get-PpacD365App @provisioningAppParams
+    }
+
+    $appObj
 }
