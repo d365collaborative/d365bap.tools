@@ -237,6 +237,7 @@ function New-UnifiedEnvironment {
 }
 
 function New-ShellEnvironment {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -470,6 +471,7 @@ function Install-PlatformApplicationPackage {
 }
 
 function Start-PlatformProvisioning {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
