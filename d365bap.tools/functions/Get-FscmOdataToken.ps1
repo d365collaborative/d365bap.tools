@@ -6,7 +6,7 @@
     .DESCRIPTION
         Acquires an Azure access token scoped to the Finance and Operations (FnO) OData resource of the specified environment, using the cached credentials in the local Azure PowerShell context.
         
-        Returns both the raw token and a ready-to-use bearer token string, so the token can be inspected or reused in custom REST calls against the FnO endpoints.
+        By default, outputs only the raw token string. Use -AsBearerToken to output the "Bearer" prefix token string, or -AsObject to output a typed object with both Token and BearerToken properties.
         
         The token is returned in plain text. Handle the output accordingly.
         
@@ -15,26 +15,45 @@
         
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
+    .PARAMETER AsBearerToken
+        Output the token as a "Bearer" prefix string, ready to use in an Authorization header.
+        
+    .PARAMETER AsObject
+        Output a typed PSCustomObject with Token and BearerToken properties.
+        
     .EXAMPLE
         PS C:\> Get-FscmOdataToken -EnvironmentId "ContosoEnv"
         
-        This command acquires an OData access token for the environment "ContosoEnv" and returns an object with the raw Token and a ready-to-use BearerToken.
+        This command acquires an OData access token for the environment "ContosoEnv" and returns the raw token string.
         
     .EXAMPLE
-        PS C:\> $token = Get-FscmOdataToken -EnvironmentId "ContosoEnv"
+        PS C:\> Get-FscmOdataToken -EnvironmentId "ContosoEnv" -AsBearerToken
+        
+        This command acquires an OData access token for the environment "ContosoEnv" and returns it as a bearer token string, ready to use directly in an Authorization header.
+        
+    .EXAMPLE
+        PS C:\> $token = Get-FscmOdataToken -EnvironmentId "ContosoEnv" -AsObject
         PS C:\> Invoke-RestMethod -Uri $uri -Headers @{ Authorization = $token.BearerToken }
         
-        This command acquires an OData access token for the environment "ContosoEnv" and uses the BearerToken property directly in the Authorization header of a custom REST call.
+        This command acquires an OData access token for the environment "ContosoEnv" and returns a typed object with both Token and BearerToken properties.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmOdataToken {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType('System.Object[]')]
     param (
-        [Parameter (Mandatory = $true)]
-        [string] $EnvironmentId
+        [Parameter (Mandatory = $true, ParameterSetName = 'Default')]
+        [Parameter (Mandatory = $true, ParameterSetName = 'BearerToken')]
+        [Parameter (Mandatory = $true, ParameterSetName = 'Object')]
+        [string] $EnvironmentId,
+
+        [Parameter (Mandatory = $true, ParameterSetName = 'BearerToken')]
+        [switch] $AsBearerToken,
+
+        [Parameter (Mandatory = $true, ParameterSetName = 'Object')]
+        [switch] $AsObject
     )
     
     begin {
@@ -60,10 +79,22 @@ function Get-FscmOdataToken {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        [PSCustomObject]@{ Token = $tokenValue } | `
-            Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataToken" `
-            -Property "Token",
-        @{ Name = "BearerToken"; Expression = { "Bearer $($_.Token)" } }
+        switch ($PSCmdlet.ParameterSetName) {
+            'Default' {
+                $tokenValue
+            }
+
+            'BearerToken' {
+                "Bearer $tokenValue"
+            }
+
+            'Object' {
+                [PSCustomObject]@{ Token = $tokenValue } | `
+                    Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataToken" `
+                    -Property "Token",
+                @{ Name = "BearerToken"; Expression = { "Bearer $($_.Token)" } }
+            }
+        }
     }
     
     end {
