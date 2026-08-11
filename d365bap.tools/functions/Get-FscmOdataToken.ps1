@@ -6,8 +6,6 @@
     .DESCRIPTION
         Acquires an Azure access token scoped to the Finance and Operations (FnO) OData resource of the specified environment, using the cached credentials in the local Azure PowerShell context.
         
-        By default, outputs only the raw token string. Use -AsBearerToken to output the "Bearer" prefix token string, or -AsObject to output a typed object with both Token and BearerToken properties.
-        
         The token is returned in plain text. Handle the output accordingly.
         
     .PARAMETER EnvironmentId
