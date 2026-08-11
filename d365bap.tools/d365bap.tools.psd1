@@ -91,6 +91,7 @@
 
 		'xml\formats\list\D365Bap.Tools.FscmDmfEntity.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmOdataEntity.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.FscmOdataToken.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmRestService.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmRole.List.Format.ps1xml',
 
@@ -151,6 +152,7 @@
 		, 'Get-FscmEntraApplication'
 		, 'Get-FscmOdata'
 		, 'Get-FscmOdataEntity'
+		, 'Get-FscmOdataToken'
 		, 'Get-FscmRestService'
 		, 'Get-FscmSecurityRole'
 		, 'Get-FscmSecurityRoleMember'
