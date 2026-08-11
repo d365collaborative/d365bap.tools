@@ -169,12 +169,12 @@ git commit -m "feat: add list format for D365Bap.Tools.FscmOdataToken"
 
 ---
 
-## Task 3: Register the Format file in the manifest
+## Task 3: Register the format file and export the function in the manifest
 
 **Files:**
-- Modify: `d365bap.tools/d365bap.tools.psd1` (insert one line after the `FscmOdataEntity` list entry, around line 92)
+- Modify: `d365bap.tools/d365bap.tools.psd1` (two insertions: one in `FormatsToProcess`, one in `FunctionsToExport`)
 
-- [ ] **Step 1: Add the registration line**
+- [ ] **Step 1: Add the format registration line**
 
 In `d365bap.tools/d365bap.tools.psd1`, find this line in the `FormatsToProcess` array:
 
@@ -191,16 +191,35 @@ Insert a new line immediately after it so the two lines read:
 
 Preserve the existing tab indentation used in the file.
 
-- [ ] **Step 2: Verify the manifest still loads**
+- [ ] **Step 2: Add the function export line**
 
-Run: `pwsh -NoProfile -Command "$null = Import-PowerShellDataFile 'd365bap.tools/d365bap.tools.psd1'; 'OK'"`
-Expected: `OK` (the manifest parses as valid PowerShell data).
+In the same file, find these lines in the `FunctionsToExport` array (note the leading-comma style):
 
-- [ ] **Step 3: Commit**
+```
+		, 'Get-FscmOdata'
+		, 'Get-FscmOdataEntity'
+```
+
+Insert a new line immediately after `'Get-FscmOdataEntity'` so the three lines read:
+
+```
+		, 'Get-FscmOdata'
+		, 'Get-FscmOdataEntity'
+		, 'Get-FscmOdataToken'
+```
+
+Preserve the existing tab indentation and the leading-comma style.
+
+- [ ] **Step 3: Verify the manifest still loads**
+
+Run: `pwsh -NoProfile -Command "$m = Import-PowerShellDataFile 'd365bap.tools/d365bap.tools.psd1'; if ($m.FunctionsToExport -notcontains 'Get-FscmOdataToken') { throw 'not exported' }; 'OK'"`
+Expected: `OK` (the manifest parses and now exports the function).
+
+- [ ] **Step 4: Commit**
 
 ```bash
 git add d365bap.tools/d365bap.tools.psd1
-git commit -m "feat: register Get-FscmOdataToken list format in manifest"
+git commit -m "feat: register Get-FscmOdataToken format and export in manifest"
 ```
 
 ---
