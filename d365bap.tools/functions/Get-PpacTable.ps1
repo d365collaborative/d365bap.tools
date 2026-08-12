@@ -2,55 +2,55 @@
 <#
     .SYNOPSIS
         Get the tables (entities) from a given environment.
-
+        
     .DESCRIPTION
         This cmdlet retrieves all tables (entities) from a given Power Platform environment.
-
+        
         It mimics the "Tables" view in the Power Apps maker portal, showing the table display name, logical name, type, managed state and customizability.
-
+        
         It is not specific to any security role - use the Get-PpacSecurityRoleTable cmdlet to see the tables assigned to a security role.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve the tables from.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER Name
         The name of the table to filter the tables by.
-
+        
         Can be either the table display name or the logical name.
-
+        
         Supports wildcard characters for flexible matching.
-
+        
     .PARAMETER OnlyCustom
         Instructs the cmdlet to only include custom tables in the results.
-
+        
         This matches the "Custom" filter in the Power Apps maker portal.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the retrieved table information to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacTable -EnvironmentId "ContosoEnv"
-
+        
         This command retrieves all tables from the environment "ContosoEnv" and displays their information in the console.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacTable -EnvironmentId "ContosoEnv" -Name "*account*"
-
+        
         This command retrieves all tables with display names or logical names matching "*account*" from the environment "ContosoEnv" and displays their information in the console.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacTable -EnvironmentId "ContosoEnv" -OnlyCustom
-
+        
         This command retrieves only the custom tables from the environment "ContosoEnv" and displays their information in the console.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacTable -EnvironmentId "ContosoEnv" -AsExcelOutput
-
+        
         This command retrieves all tables from the environment "ContosoEnv".
         It will export the information to an Excel file.
-
+        
     .NOTES
         Author: Trygve Bechsgaard
 #>
