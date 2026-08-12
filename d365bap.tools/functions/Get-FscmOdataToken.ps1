@@ -40,7 +40,9 @@
 #>
 function Get-FscmOdataToken {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
-    [OutputType('System.Object[]')]
+    [OutputType([System.String], ParameterSetName = 'Default')]
+    [OutputType([System.String], ParameterSetName = 'BearerToken')]
+    [OutputType([System.Management.Automation.PSObject], ParameterSetName = 'Object')]
     param (
         [Parameter (Mandatory = $true, ParameterSetName = 'Default')]
         [Parameter (Mandatory = $true, ParameterSetName = 'BearerToken')]
@@ -77,21 +79,19 @@ function Get-FscmOdataToken {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        switch ($PSCmdlet.ParameterSetName) {
-            'Default' {
-                $tokenValue
-            }
-
-            'BearerToken' {
-                "Bearer $tokenValue"
-            }
-
-            'Object' {
-                [PSCustomObject]@{ Token = $tokenValue } | `
-                    Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataToken" `
-                    -Property "Token",
-                @{ Name = "BearerToken"; Expression = { "Bearer $($_.Token)" } }
-            }
+        # Branch on the switch parameters so PSScriptAnalyzer sees them as used
+        # (parameter sets alone do not count as usage for PSReviewUnusedParameter).
+        if ($AsObject) {
+            [PSCustomObject]@{ Token = $tokenValue } | `
+                Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataToken" `
+                -Property "Token",
+            @{ Name = "BearerToken"; Expression = { "Bearer $($_.Token)" } }
+        }
+        elseif ($AsBearerToken) {
+            "Bearer $tokenValue"
+        }
+        else {
+            $tokenValue
         }
     }
     
