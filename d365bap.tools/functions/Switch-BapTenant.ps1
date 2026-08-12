@@ -63,19 +63,61 @@ function Switch-BapTenant {
                 -ResourceUrl "https://service.powerapps.com/" `
                 -AsSecureString -ErrorAction SilentlyContinue).Token
         
-        if ([string]::IsNullOrWhiteSpace($fake)) {
-            Write-PSFMessage -Level Important -Message "It seems that your credentials/cache has <c='sub'>expired</c>. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
+        if ([string]::IsNullOrWhiteSpace($fake) -or $Force) {
+            if ([string]::IsNullOrWhiteSpace($fake)) {
+                Write-PSFMessage -Level Important -Message "It seems that your credentials/cache has <c='sub'>expired</c>. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
+            }
+            else {
+                Write-PSFMessage -Level Verbose -Message "Force flag is set. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
+            }
             
             Start-Sleep -Seconds 2
-            Connect-AzAccount -Tenant $obj.Tenant `
-                -AccountId $obj.User
-        }
-        elseif ($Force) {
-            Write-PSFMessage -Level Verbose -Message "Force flag is set. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
-            
-            Start-Sleep -Seconds 2
-            Connect-AzAccount -Tenant $obj.Tenant `
-                -AccountId $obj.User
+
+            # Subscription selection is irrelevant for BAP tenant auth (Power Platform tokens).
+            # Process-scoped LoginExperienceV2 Off avoids the interactive tenant/subscription picker.
+            # Warning (3) and Information (6) streams are discarded so Connect-AzAccount does not print:
+            # "Please select the account...", "Retrieving subscriptions...", or DefaultSubscriptionForLogin guidance.
+            $loginExperienceOverridden = $false
+            $previousWarningPreference = $WarningPreference
+            $previousInformationPreference = $InformationPreference
+            try {
+                $currentLoginExperience = (Get-AzConfig -LoginExperienceV2 -ErrorAction SilentlyContinue).Value
+                if ("$currentLoginExperience" -ne 'Off') {
+                    $null = Update-AzConfig -LoginExperienceV2 Off -Scope Process -ErrorAction SilentlyContinue
+                    $loginExperienceOverridden = $true
+                }
+
+                $WarningPreference = 'SilentlyContinue'
+                $InformationPreference = 'SilentlyContinue'
+
+                $connectParams = @{
+                    Tenant                = $obj.Tenant
+                    AccountId             = $obj.User
+                    SkipContextPopulation = $true
+                    WarningAction         = 'SilentlyContinue'
+                    InformationAction     = 'SilentlyContinue'
+                }
+
+                # Prefer an already-known subscription so Az skips multi-subscription selection logic.
+                $knownSubscriptionId = $null
+                if ($null -ne $contextObj -and $null -ne $contextObj.Subscription) {
+                    $knownSubscriptionId = $contextObj.Subscription.Id
+                }
+                if (-not [string]::IsNullOrWhiteSpace($knownSubscriptionId)) {
+                    $connectParams['Subscription'] = $knownSubscriptionId
+                }
+
+                # 3 = Warning stream, 6 = Information stream (Az login status lines).
+                $null = Connect-AzAccount @connectParams 3>$null 6>$null
+            }
+            finally {
+                $WarningPreference = $previousWarningPreference
+                $InformationPreference = $previousInformationPreference
+
+                if ($loginExperienceOverridden) {
+                    $null = Clear-AzConfig -LoginExperienceV2 -Scope Process -ErrorAction SilentlyContinue
+                }
+            }
         }
 
         Register-PSFTaskEngineTask -Name EnvironmentRefresh -Interval (New-TimeSpan -Minutes 15) -ResetTask -ScriptBlock {
