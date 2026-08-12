@@ -49,17 +49,17 @@
         
     .PARAMETER SecurityGroup
         Entra Groups security group to restrict access to the new environment.
-
+        
     .PARAMETER PostProvisionDelaySeconds
         Additional delay (in seconds) after the shell environment reports as ready.
-
+        
         This pause helps ensure the platform application package endpoint is fully ready before install is attempted.
-
+        
     .PARAMETER ReadyStateTimeoutMinutes
         Maximum number of minutes to wait for the environment to reach state 'Ready'.
-
+        
         Prevents endless waiting when an environment is stuck in a non-ready state.
-
+        
     .PARAMETER WaitForCompletion
         Instructs the cmdlet to wait until the final provisioning app installation is completed.
         

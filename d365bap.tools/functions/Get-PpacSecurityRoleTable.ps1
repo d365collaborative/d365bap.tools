@@ -2,55 +2,55 @@
 <#
     .SYNOPSIS
         Get the tables assigned to a security role in a given environment.
-
+        
     .DESCRIPTION
         This cmdlet retrieves the tables (entities) that have privileges assigned to a security role in a given Power Platform environment.
-
+        
         For each table it outputs the access level for each of the privilege types: Create, Read, Write, Delete, Append, AppendTo, Assign and Share.
-
+        
         The access levels are displayed with the Power Platform admin center naming: None, User, Business Unit, Parent: Child Business Unit, Organization.
-
+        
         It mimics the "Tables" view of the security role editor in the Power Platform admin center, with the "Show only assigned tables" filter applied.
-
+        
         Use the Get-PpacTable cmdlet to see all tables available in the environment.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve the security role tables from.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER Role
         The security role that you want to work against.
-
+        
         Can be either the role name or the role ID.
-
+        
     .PARAMETER Name
         The name of the table to filter the tables by.
-
+        
         Can be either the table display name or the logical name.
-
+        
         Supports wildcard characters for flexible matching.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the retrieved table information to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacSecurityRoleTable -EnvironmentId "ContosoEnv" -Role "Monitoring Reader"
-
+        
         This command retrieves the tables that have privileges assigned to the security role "Monitoring Reader" in the environment "ContosoEnv".
         It will show the access level for each privilege type on each table.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacSecurityRoleTable -EnvironmentId "ContosoEnv" -Role "Monitoring Reader" -Name "*business*"
-
+        
         This command retrieves the tables with display names or logical names matching "*business*", that have privileges assigned to the security role "Monitoring Reader" in the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpacSecurityRoleTable -EnvironmentId "ContosoEnv" -Role "Monitoring Reader" -AsExcelOutput
-
+        
         This command retrieves the tables that have privileges assigned to the security role "Monitoring Reader" in the environment "ContosoEnv".
         It will export the information to an Excel file.
-
+        
     .NOTES
         Author: Trygve Bechsgaard
 #>

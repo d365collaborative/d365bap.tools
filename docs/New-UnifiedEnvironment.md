@@ -15,6 +15,7 @@ Deploy a new Unified Environment in Power Platform Admin Center (PPAC).
 ```
 New-UnifiedEnvironment [-Type] <String> [-Name] <String> [[-CustomDomainName] <String>] [-Location] <String>
  [[-Region] <String>] [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>]
+ [[-PostProvisionDelaySeconds] <Int32>] [[-ReadyStateTimeoutMinutes] <Int32>] [-WaitForCompletion]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -231,6 +232,55 @@ Aliases: EntraGroup
 Required: False
 Position: 7
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PostProvisionDelaySeconds
+Additional delay (in seconds) after the shell environment reports as ready.
+
+This pause helps ensure the platform application package endpoint is fully ready before install is attempted.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 8
+Default value: 60
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ReadyStateTimeoutMinutes
+Maximum number of minutes to wait for the environment to reach state 'Ready'.
+
+Prevents endless waiting when an environment is stuck in a non-ready state.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 9
+Default value: 60
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WaitForCompletion
+Instructs the cmdlet to wait until the final provisioning app installation is completed.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
