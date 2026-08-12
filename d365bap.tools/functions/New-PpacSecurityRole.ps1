@@ -2,64 +2,64 @@
 <#
     .SYNOPSIS
         Create a new security role in a given environment.
-
+        
     .DESCRIPTION
         This cmdlet creates a new security role in a given Power Platform environment.
-
+        
         It mimics the "Create New Role" experience of the security role editor in the Power Platform admin center, including the member privilege inheritance option and the option to include the App Opener privileges needed for running Model-Driven apps.
-
+        
         The role is created in the root business unit of the environment, which makes the role available across all business units. Only roles in the root business unit can be modified.
-
+        
         The role is created without any table privileges, unless the App Opener privileges are included.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to create the security role in.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER Name
         The name of the security role that you want to create.
-
+        
     .PARAMETER Description
         The description of the security role.
-
+        
     .PARAMETER AppliesTo
         The description of the type of users the security role applies to.
-
+        
     .PARAMETER SummaryOfCoreTablePrivileges
         The summary of the core table privileges of the security role.
-
+        
         It is saved in the "summaryofcoretablepermissions" column of the security role.
-
+        
     .PARAMETER MemberPrivilegeInheritance
         The member privilege inheritance that is used when the security role is assigned to a team.
-
+        
         Valid options:
         "DirectUserAndTeamPrivileges" - Team members can inherit team privileges directly, based on the Direct User (Basic) access level.
         "TeamPrivilegesOnly" - Team members get all team privileges by default.
-
+        
         The default value is "DirectUserAndTeamPrivileges".
-
+        
     .PARAMETER IncludeAppOpenerPrivileges
         Instructs the cmdlet to include the App Opener privileges for running Model-Driven apps.
-
+        
         The privileges are copied from the built-in "App Opener" security role in the environment.
-
+        
     .EXAMPLE
         PS C:\> New-PpacSecurityRole -EnvironmentId "ContosoEnv" -Name "Monitoring Reader" -Description "Read access for monitoring" -AppliesTo "Monitoring users" -SummaryOfCoreTablePrivileges "Read access to monitoring tables"
-
+        
         This command creates the security role "Monitoring Reader" in the environment "ContosoEnv".
         The role is created in the root business unit of the environment.
         The role is documented with a description, the type of users it applies to and a summary of its core table privileges.
         The role is created without any table privileges.
-
+        
     .EXAMPLE
         PS C:\> New-PpacSecurityRole -EnvironmentId "ContosoEnv" -Name "Monitoring Reader" -Description "Read access for monitoring" -AppliesTo "Monitoring users" -SummaryOfCoreTablePrivileges "Read access to monitoring tables" -MemberPrivilegeInheritance "TeamPrivilegesOnly" -IncludeAppOpenerPrivileges
-
+        
         This command creates the security role "Monitoring Reader" in the environment "ContosoEnv".
         Team members will get all team privileges by default, when the role is assigned to a team.
         It will include the App Opener privileges for running Model-Driven apps, copied from the built-in "App Opener" security role.
-
+        
     .NOTES
         Author: Trygve Bechsgaard
 #>
