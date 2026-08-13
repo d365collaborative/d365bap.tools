@@ -134,7 +134,6 @@
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
         It will not restrict access to the environment.
-        It will wait until the final provisioning app installation is completed before returning control to the user.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
