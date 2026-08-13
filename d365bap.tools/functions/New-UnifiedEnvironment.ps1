@@ -62,6 +62,11 @@
         
     .PARAMETER WaitForCompletion
         Instructs the cmdlet to wait until the final provisioning app installation is completed.
+
+    .PARAMETER EarlyRelease
+        Instructs the cmdlet to create the environment in the early release cycle.
+
+        Note that not all locations/regions support early release environments.
         
     .EXAMPLE
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe"
@@ -119,9 +124,21 @@
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
         It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
+
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        The environment will be in the early release cycle.
+        It will include a demo database by default.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will not restrict access to the environment.
+        It will wait until the final provisioning app installation is completed before returning control to the user.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
+        Author: Florian Hopfner (@FH-Inway)
         
 #>
 function New-UnifiedEnvironment {
@@ -155,7 +172,9 @@ function New-UnifiedEnvironment {
         [ValidateRange(1, 720)]
         [int] $ReadyStateTimeoutMinutes = 60,
 
-        [switch] $WaitForCompletion
+        [switch] $WaitForCompletion,
+
+        [switch] $EarlyRelease
     )
     
     begin {
@@ -191,7 +210,8 @@ function New-UnifiedEnvironment {
             CustomDomainName         = $CustomDomainName
             SecurityGroupId          = $SecurityGroupId
             PostProvisionDelaySeconds = $PostProvisionDelaySeconds
-            ReadyStateTimeoutMinutes = $ReadyStateTimeoutMinutes
+            ReadyStateTimeoutMinutes  = $ReadyStateTimeoutMinutes
+            EarlyRelease              = $EarlyRelease.IsPresent
         }
 
         $shellEnvironment = New-ShellEnvironment @shellEnvironmentParams
@@ -259,7 +279,9 @@ function New-ShellEnvironment {
         [int] $PostProvisionDelaySeconds,
 
         [Parameter(Mandatory = $true)]
-        [int] $ReadyStateTimeoutMinutes
+        [int] $ReadyStateTimeoutMinutes,
+
+        [switch] $EarlyRelease
     )
 
     $localUri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments?api-version=2024-05-01'
@@ -298,6 +320,15 @@ function New-ShellEnvironment {
             Add-Member -MemberType NoteProperty `
             -Name securityGroupId `
             -Value $SecurityGroupId
+    }
+
+    if ($EarlyRelease.IsPresent) {
+        $config.properties 
+            | Add-Member -MemberType NoteProperty `
+                -Name cluster `
+                -Value ([PsCustomObject][ordered]@{
+                    category = "FirstRelease"
+                })
     }
 
     $payload = $config | ConvertTo-Json -Depth 10
