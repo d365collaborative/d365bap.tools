@@ -323,8 +323,8 @@ function New-ShellEnvironment {
     }
 
     if ($EarlyRelease.IsPresent) {
-        $config.properties 
-            | Add-Member -MemberType NoteProperty `
+        $config.properties | `
+            Add-Member -MemberType NoteProperty `
                 -Name cluster `
                 -Value ([PsCustomObject][ordered]@{
                     category = "FirstRelease"
