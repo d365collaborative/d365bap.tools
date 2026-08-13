@@ -210,7 +210,7 @@ function New-UnifiedEnvironment {
             SecurityGroupId          = $SecurityGroupId
             PostProvisionDelaySeconds = $PostProvisionDelaySeconds
             ReadyStateTimeoutMinutes  = $ReadyStateTimeoutMinutes
-            EarlyRelease              = $EarlyRelease.IsPresent
+            EarlyRelease              = $EarlyRelease
         }
 
         $shellEnvironment = New-ShellEnvironment @shellEnvironmentParams
@@ -236,9 +236,9 @@ function New-UnifiedEnvironment {
             $provisioningParams = @{
                 Name              = $Name
                 Type              = $Type
-                NoDemoDb          = $NoDemoDb.IsPresent
+                NoDemoDb          = $NoDemoDb
                 Version           = $Version
-                WaitForCompletion = $WaitForCompletion.IsPresent
+                WaitForCompletion = $WaitForCompletion
             }
 
             $appObj = Start-PlatformProvisioning @provisioningParams
@@ -321,7 +321,7 @@ function New-ShellEnvironment {
             -Value $SecurityGroupId
     }
 
-    if ($EarlyRelease.IsPresent) {
+    if ($EarlyRelease) {
         $config.properties | `
             Add-Member -MemberType NoteProperty `
                 -Name cluster `
