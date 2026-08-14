@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get Entra (AAD) registered applications from a Finance and Operations environment.

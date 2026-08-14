@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Retrieves UDE database JIT access credentials from the local cache.

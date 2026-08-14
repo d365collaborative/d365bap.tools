@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Query an OData entity from a Power Platform / Dataverse environment.

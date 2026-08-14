@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Add application user to Power Platform environment.

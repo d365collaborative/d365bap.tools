@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get OData entity metadata from a Power Platform / Dataverse environment.

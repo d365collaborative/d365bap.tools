@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Deploy a new Unified Environment in Power Platform Admin Center (PPAC).
@@ -62,10 +62,10 @@
         
     .PARAMETER WaitForCompletion
         Instructs the cmdlet to wait until the final provisioning app installation is completed.
-
+        
     .PARAMETER EarlyRelease
         Instructs the cmdlet to create the environment in the early release cycle.
-
+        
         Note that not all locations/regions support early release environments.
         
     .EXAMPLE
@@ -124,7 +124,7 @@
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
         It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
-
+        
     .EXAMPLE
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
         

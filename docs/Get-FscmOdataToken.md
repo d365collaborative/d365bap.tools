@@ -130,7 +130,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
-### System.Object[]
+### System.String
+### System.String
+### System.Management.Automation.PSObject
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
 

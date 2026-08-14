@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get solutions from Power Platform environment.

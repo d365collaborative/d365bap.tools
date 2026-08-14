@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get solution history from Power Platform environment.

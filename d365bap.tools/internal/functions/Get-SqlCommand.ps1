@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Gets a configured SqlCommand object for local SQL Server LocalDB access.

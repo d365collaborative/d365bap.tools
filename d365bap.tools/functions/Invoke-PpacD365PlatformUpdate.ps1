@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Start D365 Platform update.

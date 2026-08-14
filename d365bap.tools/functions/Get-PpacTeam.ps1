@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get team details from Power Platform environment.

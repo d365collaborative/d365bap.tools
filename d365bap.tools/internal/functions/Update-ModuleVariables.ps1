@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Update module variables

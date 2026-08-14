@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get information about users in a Power Platform environment.

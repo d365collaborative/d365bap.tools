@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get operation history for a given Unified environment from PPAC.

@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Clears the JIT cache for the UDE database.

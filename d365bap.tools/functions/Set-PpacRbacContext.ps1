@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Authenticate for PPAC RBAC operations by obtaining an access token using user credentials.

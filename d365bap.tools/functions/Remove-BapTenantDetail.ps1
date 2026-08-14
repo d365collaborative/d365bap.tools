@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Removes tenant details for a specified BAP tenant from the local configuration.

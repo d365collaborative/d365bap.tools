@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Sets the UDE environment in the current PowerShell session.

@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Add a service principal as a member of a PPAC RBAC role in a specific scope.

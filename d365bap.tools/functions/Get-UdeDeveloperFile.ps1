@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Gets UDE developer files for a specified environment.

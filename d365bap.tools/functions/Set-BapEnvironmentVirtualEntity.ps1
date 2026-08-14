@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Set Virtual Entity configuration in environment

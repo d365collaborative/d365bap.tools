@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get information about Power Platform security roles in a given environment.

@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get a Service Principal from Azure AD / Entra ID.

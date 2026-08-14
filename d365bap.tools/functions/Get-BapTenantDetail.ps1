@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Gets detailed information about a BAP tenant.

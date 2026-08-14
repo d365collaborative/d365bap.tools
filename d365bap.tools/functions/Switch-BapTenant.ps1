@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Switches the current context to a specified BAP tenant.

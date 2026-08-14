@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Retrieves information about Power Platform environments.

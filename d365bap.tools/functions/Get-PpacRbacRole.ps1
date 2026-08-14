@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get PPAC RBAC roles available in the tenant.

@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Start the publish all customizations process for a given environment.

@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Set Security Role for a team in a Power Platform environment.

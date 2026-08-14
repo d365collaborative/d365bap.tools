@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Create a new security role in a given environment.

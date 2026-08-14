@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Enables assignment of a Microsoft Entra ID security group as a team in the Power Platform environment.

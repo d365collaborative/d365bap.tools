@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Retrieves the UDE connection information.

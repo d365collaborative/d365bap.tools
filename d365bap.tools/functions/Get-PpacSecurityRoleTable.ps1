@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get the tables assigned to a security role in a given environment.

@@ -1,4 +1,4 @@
-﻿
+
 <#
     .SYNOPSIS
         Get DMF entity metadata from a Finance and Operations environment.

@@ -76,30 +76,43 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
+		It 'Should have the expected parameter ProgressAction' {
+			$parameter = (Get-Command Get-UnifiedEnvironment).Parameters['ProgressAction']
+			$parameter.Name | Should -Be 'ProgressAction'
+			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.ActionPreference
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
 	}
 	
 	Describe "Testing parameterset Default" {
 		<#
 		Default -
-		Default -EnvironmentId -AsExcelOutput
+		Default -EnvironmentId -AsExcelOutput -ProgressAction
 		#>
 	}
  	Describe "Testing parameterset SkipVersion" {
 		<#
 		SkipVersion -
-		SkipVersion -EnvironmentId -SkipVersionDetails -AsExcelOutput
+		SkipVersion -EnvironmentId -SkipVersionDetails -AsExcelOutput -ProgressAction
 		#>
 	}
  	Describe "Testing parameterset UdeOnly" {
 		<#
 		UdeOnly -
-		UdeOnly -EnvironmentId -UdeOnly -AsExcelOutput
+		UdeOnly -EnvironmentId -UdeOnly -AsExcelOutput -ProgressAction
 		#>
 	}
  	Describe "Testing parameterset UseOnly" {
 		<#
 		UseOnly -
-		UseOnly -EnvironmentId -UseOnly -AsExcelOutput
+		UseOnly -EnvironmentId -UseOnly -AsExcelOutput -ProgressAction
 		#>
 	}
 
