@@ -45,10 +45,22 @@ $files.AddRange($filesPublic)
 $filesInternal = Get-ChildItem -Path "$path\internal\functions\*.ps1"
 $files.AddRange($filesInternal)
 
+# -Encoding UTF8 means "no BOM" on PowerShell 7, so write the files explicitly with a BOM instead
+$utf8Bom = New-Object System.Text.UTF8Encoding($true)
+$newLine = [System.Environment]::NewLine
+
 foreach ($file in $files) {
     $text = ($file | Get-Content -Raw).Trim()
-    Set-Content -Path $file.FullName -Encoding UTF8 -Value (Get-Header $text).TrimEnd()
-    Add-Content -Path $file.FullName -Encoding UTF8 -Value "<#".Trim()
-    Add-Content -Path $file.FullName -Encoding UTF8 -Value (Format-Help $text)
-    Add-Content -Path $file.FullName -Encoding UTF8 -Value (Get-Body $text).TrimEnd() -NoNewline
+
+    $builder = New-Object System.Text.StringBuilder
+    $null = $builder.Append((Get-Header $text).TrimEnd()).Append($newLine)
+    $null = $builder.Append("<#").Append($newLine)
+
+    foreach ($line in (Format-Help $text)) {
+        $null = $builder.Append($line).Append($newLine)
+    }
+
+    $null = $builder.Append((Get-Body $text).TrimEnd())
+
+    [System.IO.File]::WriteAllText($file.FullName, $builder.ToString(), $utf8Bom)
 }
