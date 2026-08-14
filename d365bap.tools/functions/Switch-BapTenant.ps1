@@ -74,10 +74,14 @@ function Switch-BapTenant {
             Start-Sleep -Seconds 2
 
             # Subscription selection is irrelevant for BAP tenant auth (Power Platform tokens).
+            # Do not pass -Subscription: a cached or current Az context may still hold SubA from
+            # another tenant, and Connect-AzAccount then fails when that sub is not in the target tenant.
             # Process-scoped LoginExperienceV2 Off avoids the interactive tenant/subscription picker.
+            # Process-scoped empty DefaultSubscriptionForLogin stops Az inheriting SubA from Get-AzConfig.
             # Warning (3) and Information (6) streams are discarded so Connect-AzAccount does not print:
             # "Please select the account...", "Retrieving subscriptions...", or DefaultSubscriptionForLogin guidance.
             $loginExperienceOverridden = $false
+            $defaultSubscriptionOverridden = $false
             $previousWarningPreference = $WarningPreference
             $previousInformationPreference = $InformationPreference
             try {
@@ -85,6 +89,12 @@ function Switch-BapTenant {
                 if ("$currentLoginExperience" -ne 'Off') {
                     $null = Update-AzConfig -LoginExperienceV2 Off -Scope Process -ErrorAction SilentlyContinue
                     $loginExperienceOverridden = $true
+                }
+
+                $currentDefaultSubscription = (Get-AzConfig -DefaultSubscriptionForLogin -ErrorAction SilentlyContinue).Value
+                if (-not [string]::IsNullOrWhiteSpace("$currentDefaultSubscription")) {
+                    $null = Update-AzConfig -DefaultSubscriptionForLogin '' -Scope Process -ErrorAction SilentlyContinue
+                    $defaultSubscriptionOverridden = $true
                 }
 
                 $WarningPreference = 'SilentlyContinue'
@@ -98,15 +108,6 @@ function Switch-BapTenant {
                     InformationAction     = 'SilentlyContinue'
                 }
 
-                # Prefer an already-known subscription so Az skips multi-subscription selection logic.
-                $knownSubscriptionId = $null
-                if ($null -ne $contextObj -and $null -ne $contextObj.Subscription) {
-                    $knownSubscriptionId = $contextObj.Subscription.Id
-                }
-                if (-not [string]::IsNullOrWhiteSpace($knownSubscriptionId)) {
-                    $connectParams['Subscription'] = $knownSubscriptionId
-                }
-
                 # 3 = Warning stream, 6 = Information stream (Az login status lines).
                 $null = Connect-AzAccount @connectParams 3>$null 6>$null
             }
@@ -116,6 +117,10 @@ function Switch-BapTenant {
 
                 if ($loginExperienceOverridden) {
                     $null = Clear-AzConfig -LoginExperienceV2 -Scope Process -ErrorAction SilentlyContinue
+                }
+
+                if ($defaultSubscriptionOverridden) {
+                    $null = Clear-AzConfig -DefaultSubscriptionForLogin -Scope Process -ErrorAction SilentlyContinue
                 }
             }
         }
