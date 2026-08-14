@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Installs AzCopy by downloading it from the official Microsoft URL.

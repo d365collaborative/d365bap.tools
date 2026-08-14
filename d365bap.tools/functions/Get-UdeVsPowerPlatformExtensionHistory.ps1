@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get UDE VS Power Platform extension history.

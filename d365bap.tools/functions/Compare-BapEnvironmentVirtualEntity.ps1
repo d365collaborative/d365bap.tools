@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Compare environment Virtual Entities

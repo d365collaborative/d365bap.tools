@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Compare the environment users

@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get PowerApps from environment

@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Add a user to a Finance and Operations environment and assign them a security role.

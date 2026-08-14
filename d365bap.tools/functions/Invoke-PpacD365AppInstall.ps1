@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Installs D365 applications in the environment.

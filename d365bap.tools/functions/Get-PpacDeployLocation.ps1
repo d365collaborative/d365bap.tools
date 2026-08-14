@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get the available deployment locations for Power Platform environments.

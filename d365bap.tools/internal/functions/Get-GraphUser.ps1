@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get a User from Azure AD / Entra ID.

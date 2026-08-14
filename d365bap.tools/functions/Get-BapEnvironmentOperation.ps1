@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get environment life cycle operation info

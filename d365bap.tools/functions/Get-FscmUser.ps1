@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get information about Finance and Operations users in a given environment.

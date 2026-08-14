@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get REST service metadata from a Finance and Operations environment.

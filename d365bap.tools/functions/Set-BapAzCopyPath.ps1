@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Sets the path to the AzCopy executable.

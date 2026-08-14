@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Start a database refresh between two environments

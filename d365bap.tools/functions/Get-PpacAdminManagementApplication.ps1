@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Retrieves information about the Power Platform Admin Management Application(s)

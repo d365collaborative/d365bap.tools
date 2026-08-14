@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get members of a Security Group from Azure AD / Entra ID.

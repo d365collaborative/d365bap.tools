@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Add application to the list of admin management applications in Power Platform Admin Center (PPAC).

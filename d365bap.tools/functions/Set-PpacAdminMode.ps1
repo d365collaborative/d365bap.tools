@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Set the admin mode for a Power Platform environment.

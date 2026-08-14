@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Enables creation of users from an Entra Security Group in the Dynamics 365 ERP environment.

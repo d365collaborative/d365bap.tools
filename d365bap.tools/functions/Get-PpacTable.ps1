@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get the tables (entities) from a given environment.

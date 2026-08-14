@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Enables assignment of a user to a security role in the Dynamics 365 ERP environment.

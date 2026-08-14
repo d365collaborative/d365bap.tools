@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Confirms the installation of Visual Studio 2022.

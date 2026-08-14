@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Set the table privileges of a security role in a given environment.

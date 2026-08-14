@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Query an OData entity from a Finance and Operations environment.

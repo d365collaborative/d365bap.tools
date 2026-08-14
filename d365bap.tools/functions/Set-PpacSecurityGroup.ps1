@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Set or remove Security Group for a Power Platform environment

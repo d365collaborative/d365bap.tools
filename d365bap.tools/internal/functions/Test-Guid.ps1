@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Validates a given input string and checks string is a valid GUID

@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Starts SQL Server Management Studio (SSMS) with the specified JIT access credentials.

@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get an OData access token for a Finance and Operations environment.

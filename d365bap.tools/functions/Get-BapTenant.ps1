@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Retrieves information about the available azure tenant.

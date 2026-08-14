@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get D365 application that are available in the environment.

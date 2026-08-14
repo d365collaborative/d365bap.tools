@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Enable or disable user access in a Dynamics 365 Finance & Operations environment

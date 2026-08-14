@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Adds Windows Defender exclusion rules for UDE development tools and environments.

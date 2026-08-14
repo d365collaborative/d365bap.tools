@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get information about Finance and Operations security roles in a given environment.

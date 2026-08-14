@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get D365 platform update information for the environment.

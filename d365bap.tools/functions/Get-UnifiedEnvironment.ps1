@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get Unified Environment in Power Platform Admin Center (PPAC).

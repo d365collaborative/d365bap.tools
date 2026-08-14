@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Add a registered Entra (AAD) application to a Finance and Operations environment.

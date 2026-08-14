@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Update the module variables based on the PSF Configuration store

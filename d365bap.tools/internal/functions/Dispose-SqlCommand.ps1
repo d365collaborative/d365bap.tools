@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Disposes a SqlCommand object and closes its connection.
