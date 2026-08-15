@@ -72,12 +72,9 @@ function Get-PpacEnvironmentGroup {
                 -Property "id as Id",
             "displayName as DisplayName",
             "description as Description",
-            "parentGroupId as ParentGroupId",
-            @{Name = "ChildrenGroupIds"; Expression = { $_.childrenGroupIds } },
-            @{Name = "ChildrenGroupIdsList"; Expression = { $_.childrenGroupIds -join ", " } },
-            @{Name = "CreatedBy"; Expression = { $_.createdBy.displayName } },
+            "createdBy.id as CreatedBy",
             "createdTime as CreatedTime",
-            @{Name = "LastModifiedBy"; Expression = { $_.lastModifiedBy.displayName } },
+            "lastModifiedBy.id as LastModifiedBy",
             "lastModifiedTime as LastModifiedTime"
         )
 
