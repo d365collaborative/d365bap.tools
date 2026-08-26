@@ -10,7 +10,7 @@
         The unique identifier for the JIT access credentials.
         
     .PARAMETER Version
-        The version of SSMS to use (20 or 21).
+        The version of SSMS to use (20, 21 or 22).
         
     .EXAMPLE
         PS C:\> Start-UdeDbSsms -Id "demo"
@@ -21,6 +21,11 @@
         PS C:\> Start-UdeDbSsms -Id "demo" -Version 21
         
         This will start SSMS version 21 and connect to the database using the JIT access credentials for the ID "demo".
+        
+    .EXAMPLE
+        PS C:\> Start-UdeDbSsms -Id "demo" -Version 22
+        
+        This will start SSMS version 22 and connect to the database using the JIT access credentials for the ID "demo".
         
     .NOTES
         You need to have persisted JIT credentials using Set-UdeDbJitCache before using this function.
@@ -35,7 +40,7 @@ function Start-UdeDbSsms {
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [string] $Id,
 
-        [ValidateSet(20, 21)]
+        [ValidateSet(20, 21, 22)]
         [int] $Version = 20
     )
 
@@ -50,11 +55,14 @@ function Start-UdeDbSsms {
         }
 
         # Hack to get the SSMS executable path from the registry
+        # SSMS 20/21 registers a "ssms.<version>" progid, while SSMS 22
+        # registers a hashed "SSMS.sql.<hash>" progid, hence the two patterns.
         $ssmsInstalled = Get-ChildItem `
-            -Path Registry::HKEY_CLASSES_ROOT\ssms.*\shell\Open\Command | `
+            -Path Registry::HKEY_CLASSES_ROOT\ssms.*\shell\Open\Command, `
+                Registry::HKEY_CLASSES_ROOT\SSMS.sql.*\shell\Open\Command | `
             Select-Object -ExpandProperty PsPath | `
             ForEach-Object { (Get-ItemProperty -Path $_)."(Default)" } | `
-            Select-String -Pattern '^[\"]?(.*ssms\.exe)["]?\s*"%1"' | `
+            Select-String -Pattern '^[\"]?(.*ssms\.exe)["]?\s*("%1"|/dde)' | `
             ForEach-Object { $_.Matches.Groups[1].Value } | Select-Object -Unique
 
         $executablePath = $ssmsInstalled | `
