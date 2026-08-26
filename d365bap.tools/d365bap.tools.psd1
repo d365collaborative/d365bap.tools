@@ -168,6 +168,7 @@
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacRbacRole'
 		, 'Get-PpacRbacRoleMember'
 
