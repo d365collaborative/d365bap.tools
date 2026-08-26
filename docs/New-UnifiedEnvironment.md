@@ -16,7 +16,7 @@ Deploy a new Unified Environment in Power Platform Admin Center (PPAC).
 New-UnifiedEnvironment [-Type] <String> [-Name] <String> [[-CustomDomainName] <String>] [-Location] <String>
  [[-Region] <String>] [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>]
  [[-PostProvisionDelaySeconds] <Int32>] [[-ReadyStateTimeoutMinutes] <Int32>] [-WaitForCompletion]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-EarlyRelease] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -94,6 +94,18 @@ It will include a demo database by default.
 It will get a default/unique domain name assigned by Power Platform.
 It will take the latest available version of Finance and Operations.
 It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
+
+### EXAMPLE 7
+```
+New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
+```
+
+This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+The environment will be in the early release cycle.
+It will include a demo database by default.
+It will get a default/unique domain name assigned by Power Platform.
+It will take the latest available version of Finance and Operations.
+It will not restrict access to the environment.
 
 ## PARAMETERS
 
@@ -285,6 +297,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -EarlyRelease
+Instructs the cmdlet to create the environment in the early release cycle.
+
+Note that not all locations/regions support early release environments.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -ProgressAction
 {{ Fill ProgressAction Description }}
 
@@ -309,5 +338,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
+Author: Florian Hopfner (@FH-Inway)
 
 ## RELATED LINKS
