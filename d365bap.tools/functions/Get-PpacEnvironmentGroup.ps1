@@ -1,33 +1,34 @@
+﻿
 <#
     .SYNOPSIS
         Retrieves Power Platform environment groups.
-
+        
     .DESCRIPTION
         Retrieves environment groups from the Power Platform API.
-
+        
     .PARAMETER EnvironmentGroup
         Filters environment groups by ID, display name, or description.
-
+        
         Supports wildcard characters.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the output to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroup
-
+        
         Retrieves all environment groups available to the current tenant.
-
+        
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroup -EnvironmentGroup "*Production*"
-
+        
         Retrieves environment groups whose ID, display name, or description contains "Production".
-
+        
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroup -AsExcelOutput
-
+        
         Retrieves all environment groups and exports them to an Excel file.
-
+        
     .NOTES
         Author: Florian Hopfner (@FH-Inway)
 #>

@@ -49,10 +49,10 @@
         
     .PARAMETER SecurityGroup
         Entra Groups security group to restrict access to the new environment.
-
+        
     .PARAMETER EnvironmentGroup
         The ID or display name of the environment group in which to create the shell environment.
-
+        
         Note that this will make the environment a managed environment.
         
     .PARAMETER PostProvisionDelaySeconds
@@ -129,7 +129,7 @@
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
         It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
-
+        
     .EXAMPLE
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EnvironmentGroup "D365FO"
         
