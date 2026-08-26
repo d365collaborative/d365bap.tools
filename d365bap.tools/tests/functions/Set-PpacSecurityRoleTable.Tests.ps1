@@ -163,4 +163,88 @@
 		#>
 	}
 
+	Describe "Regression - access level translation must not write back into validated parameters" {
+		It 'Should not assign to any ValidateSet bound access level parameter variable' {
+			# A validation attribute stays bound to the parameter variable for the entire function
+			# scope, so assigning a translated depth value (e.g. "Global") back into e.g. $Read is
+			# re-validated against the ValidateSet and throws a MetadataError at runtime.
+			$validatedParameters = @('Create', 'Read', 'Write', 'Delete', 'Append', 'AppendTo', 'Assign', 'Share')
+
+			$offendingAssignments = (Get-Command Set-PpacSecurityRoleTable).ScriptBlock.Ast.FindAll({
+					param ($node)
+					$node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+					$node.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+					$node.Left.VariablePath.UserPath -in $validatedParameters
+				}, $true)
+
+			$offendingAssignments | Should -BeNullOrEmpty
+		}
+
+		# The function body requires PowerShell 7 (ConvertFrom-SecureString -AsPlainText,
+		# Invoke-RestMethod -StatusCodeVariable), so the invocation test is skipped on Windows PowerShell.
+		It 'Should translate the access level to the depth naming in the request payload' -Skip:($PSVersionTable.PSVersion.Major -lt 7) {
+			InModuleScope d365bap.tools {
+				Mock -CommandName Get-BapEnvironment -MockWith {
+					[PsCustomObject][ordered]@{
+						PpacEnvUri = "https://contoso.crm.dynamics.com"
+						PpacEnvId  = "00000000-0000-0000-0000-000000000001"
+					}
+				}
+
+				Mock -CommandName Get-AzAccessToken -MockWith {
+					[PsCustomObject][ordered]@{
+						Token = $(ConvertTo-SecureString -String "DummyToken" -AsPlainText -Force)
+					}
+				}
+
+				Mock -CommandName Get-PpacSecurityRole -MockWith {
+					[PsCustomObject][ordered]@{
+						PpacRoleId          = "00000000-0000-0000-0000-000000000002"
+						Name                = "Monitoring Reader"
+						_parentroleid_value = $null
+					}
+				}
+
+				Mock -CommandName Get-PpacSecurityRoleTable -MockWith { }
+
+				Mock -CommandName Invoke-RestMethod -MockWith {
+					if ($Method -eq 'Get' -and $Uri -like "*EntityDefinitions*") {
+						[PsCustomObject][ordered]@{
+							value = @(
+								[PsCustomObject][ordered]@{
+									LogicalName = "contosotable"
+									SchemaName  = "ContosoTable"
+									DisplayName = [PsCustomObject]@{ UserLocalizedLabel = [PsCustomObject]@{ Label = "Contoso Table" } }
+									Privileges  = @(
+										[PsCustomObject][ordered]@{
+											PrivilegeId   = "00000000-0000-0000-0000-00000000000a"
+											PrivilegeType = "Read"
+										}
+									)
+								}
+							)
+						}
+					}
+					elseif ($Method -eq 'Get' -and $Uri -like "*RetrieveRolePrivilegesRole*") {
+						[PsCustomObject][ordered]@{
+							RolePrivileges = @()
+						}
+					}
+				}
+
+				# The mocked Invoke-RestMethod cannot populate the -StatusCodeVariable of the POST call,
+				# so the function logs its "Failed to set the privileges" warning after the POST - expected noise.
+				{
+					Set-PpacSecurityRoleTable -EnvironmentId "ContosoEnv" -Role "Monitoring Reader" -Table "contosotable" -Read "Organization"
+				} | Should -Not -Throw
+
+				# The POSTed payload must carry the depth naming ("Global") - the untranslated
+				# access level naming ("Organization") is rejected by the Dataverse Web API.
+				Should -Invoke -CommandName Invoke-RestMethod -Times 1 -Exactly -ParameterFilter {
+					$Method -eq 'Post' -and $Uri -like "*AddPrivilegesRole*" -and $Body -match '"Depth":\s*"Global"'
+				}
+			}
+		}
+	}
+
 }

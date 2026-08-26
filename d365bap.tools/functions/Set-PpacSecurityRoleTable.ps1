@@ -157,16 +157,26 @@ function Set-PpacSecurityRoleTable {
     begin {
         # Translate the Power Platform admin center access level naming to the
         # Dataverse privilege depth naming - only the depth naming is accepted by the Web API.
+        # The translated values must be stored in a separate hashtable - the ValidateSet attribute
+        # stays bound to the parameter variables, so assigning a depth value back into them throws.
         $depthTranslation = Get-PSFConfigValue -FullName "d365bap.tools.ppac.security.accesslevels"
 
-        if ($depthTranslation.ContainsKey($Create)) { $Create = $depthTranslation[$Create] }
-        if ($depthTranslation.ContainsKey($Read)) { $Read = $depthTranslation[$Read] }
-        if ($depthTranslation.ContainsKey($Write)) { $Write = $depthTranslation[$Write] }
-        if ($depthTranslation.ContainsKey($Delete)) { $Delete = $depthTranslation[$Delete] }
-        if ($depthTranslation.ContainsKey($Append)) { $Append = $depthTranslation[$Append] }
-        if ($depthTranslation.ContainsKey($AppendTo)) { $AppendTo = $depthTranslation[$AppendTo] }
-        if ($depthTranslation.ContainsKey($Assign)) { $Assign = $depthTranslation[$Assign] }
-        if ($depthTranslation.ContainsKey($Share)) { $Share = $depthTranslation[$Share] }
+        $requestedAccessLevels = [ordered]@{
+            "Create"   = $Create
+            "Read"     = $Read
+            "Write"    = $Write
+            "Delete"   = $Delete
+            "Append"   = $Append
+            "AppendTo" = $AppendTo
+            "Assign"   = $Assign
+            "Share"    = $Share
+        }
+
+        foreach ($privilegeType in @($requestedAccessLevels.Keys)) {
+            if ($depthTranslation.ContainsKey($requestedAccessLevels[$privilegeType])) {
+                $requestedAccessLevels[$privilegeType] = $depthTranslation[$requestedAccessLevels[$privilegeType]]
+            }
+        }
 
         # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
         $envObj = Get-BapEnvironment `
@@ -238,17 +248,6 @@ function Set-PpacSecurityRoleTable {
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because table doesn't support privilege assignment." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
-        }
-
-        $requestedAccessLevels = [ordered]@{
-            "Create"   = $Create
-            "Read"     = $Read
-            "Write"    = $Write
-            "Delete"   = $Delete
-            "Append"   = $Append
-            "AppendTo" = $AppendTo
-            "Assign"   = $Assign
-            "Share"    = $Share
         }
 
         $desiredPrivileges = @()
