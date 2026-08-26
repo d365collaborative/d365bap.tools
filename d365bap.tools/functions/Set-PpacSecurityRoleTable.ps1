@@ -2,114 +2,114 @@
 <#
     .SYNOPSIS
         Set the table privileges of a security role in a given environment.
-
+        
     .DESCRIPTION
         This cmdlet sets the privileges of a table (entity) on a security role in a given Power Platform environment.
-
+        
         It mimics editing the table permissions in the security role editor in the Power Platform admin center, where each privilege type (Create, Read, Write, Delete, Append, AppendTo, Assign and Share) can be configured with an access level.
-
+        
         The access levels use the Power Platform admin center naming and are translated automatically to the Dataverse privilege depths accepted by the Web API:
         "User" - Basic
         "BusinessUnit" - Local
         "ParentChildBusinessUnit" - Deep
         "Organization" - Global
         "None" - None
-
+        
         Privilege types that are not supplied (or set to "None") are removed from the role for the table. Access levels of already assigned privileges are updated to the supplied values.
-
+        
         It uses the AddPrivilegesRole and ReplacePrivilegesRole actions of the Dataverse Web API, against the root record of the security role - the inherited business unit copies of the role are managed by Dataverse.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to work against.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER Role
         The security role that you want to work against.
-
+        
         Can be either the role name or the role ID.
-
+        
     .PARAMETER Table
         The table (entity) that you want to set the privileges for.
-
+        
         Can be either the table display name, the logical name or the schema name.
-
+        
     .PARAMETER Create
         The access level for the Create privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .PARAMETER Read
         The access level for the Read privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .PARAMETER Write
         The access level for the Write privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .PARAMETER Delete
         The access level for the Delete privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .PARAMETER Append
         The access level for the Append privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .PARAMETER AppendTo
         The access level for the AppendTo privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .PARAMETER Assign
         The access level for the Assign privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .PARAMETER Share
         The access level for the Share privilege of the table.
-
+        
         Valid options: "None", "User", "BusinessUnit", "ParentChildBusinessUnit", "Organization".
-
+        
         The default value is "None".
-
+        
     .EXAMPLE
         PS C:\> Set-PpacSecurityRoleTable -EnvironmentId "ContosoEnv" -Role "Monitoring Reader" -Table "businessunit" -Read "Organization"
-
+        
         This command sets the privileges of the table "businessunit" on the security role "Monitoring Reader" in the environment "ContosoEnv".
         The Read privilege is set to the "Organization" access level.
         All other privileges of the table are removed from the role.
-
+        
     .EXAMPLE
         PS C:\> Set-PpacSecurityRoleTable -EnvironmentId "ContosoEnv" -Role "Monitoring Reader" -Table "Sharepoint Document" -Create "User" -Read "Organization" -Write "User" -Append "User" -AppendTo "User"
-
+        
         This command sets the privileges of the table "Sharepoint Document" on the security role "Monitoring Reader" in the environment "ContosoEnv".
         The Read privilege is set to the "Organization" access level.
         The Create, Write, Append and AppendTo privileges are set to the "User" access level.
         The Delete, Assign and Share privileges are removed from the role.
-
+        
     .EXAMPLE
         PS C:\> Set-PpacSecurityRoleTable -EnvironmentId "ContosoEnv" -Role "Monitoring Reader" -Table "businessunit"
-
+        
         This command removes all privileges of the table "businessunit" from the security role "Monitoring Reader" in the environment "ContosoEnv".
-
+        
     .NOTES
         Author: Trygve Bechsgaard
 #>

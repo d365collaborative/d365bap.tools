@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-
+	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Set-PpacSecurityRoleTable).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
-
+		
 		It 'Should have the expected parameter EnvironmentId' {
 			$parameter = (Get-Command Set-PpacSecurityRoleTable).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
@@ -155,7 +155,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-
+	
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Role -Table
