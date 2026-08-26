@@ -50,6 +50,11 @@
     .PARAMETER SecurityGroup
         Entra Groups security group to restrict access to the new environment.
         
+    .PARAMETER EnvironmentGroup
+        The ID or display name of the environment group in which to create the shell environment.
+        
+        Note that this will make the environment a managed environment.
+        
     .PARAMETER PostProvisionDelaySeconds
         Additional delay (in seconds) after the shell environment reports as ready.
         
@@ -62,6 +67,11 @@
         
     .PARAMETER WaitForCompletion
         Instructs the cmdlet to wait until the final provisioning app installation is completed.
+        
+    .PARAMETER EarlyRelease
+        Instructs the cmdlet to create the environment in the early release cycle.
+        
+        Note that not all locations/regions support early release environments.
         
     .EXAMPLE
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe"
@@ -120,8 +130,38 @@
         It will take the latest available version of Finance and Operations.
         It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
         
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EnvironmentGroup "D365FO"
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        It will include a demo database by default.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will deploy into the "D365FO" environment group. The environment group could also be specified by its ID (a guid like "12345678-1234-1234-1234-123456789abc").
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        The environment will be in the early release cycle.
+        It will include a demo database by default.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will not restrict access to the environment.
+        
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+        The environment will be in the early release cycle.
+        It will include a demo database by default.
+        It will get a default/unique domain name assigned by Power Platform.
+        It will take the latest available version of Finance and Operations.
+        It will not restrict access to the environment.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
+        Author: Florian Hopfner (@FH-Inway)
         
 #>
 function New-UnifiedEnvironment {
@@ -149,17 +189,23 @@ function New-UnifiedEnvironment {
         [Alias('EntraGroup')]
         [string] $SecurityGroup,
 
+        [Alias('EnvironmentGroupId', 'EnvironmentGroupName')]
+        [string] $EnvironmentGroup,
+
         [ValidateRange(0, 300)]
         [int] $PostProvisionDelaySeconds = 60,
 
         [ValidateRange(1, 720)]
         [int] $ReadyStateTimeoutMinutes = 60,
 
-        [switch] $WaitForCompletion
+        [switch] $WaitForCompletion,
+
+        [switch] $EarlyRelease
     )
     
     begin {
         $SecurityGroupId = $null
+        $EnvironmentGroupId = $null
 
         $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
@@ -176,6 +222,31 @@ function New-UnifiedEnvironment {
                 -Group $SecurityGroup | `
                 Select-Object -ExpandProperty id
         }
+
+        if ($EnvironmentGroup) {
+            $environmentGroupGuid = [guid]::Empty
+
+            if ([guid]::TryParse($EnvironmentGroup, [ref] $environmentGroupGuid)) {
+                $EnvironmentGroupId = $environmentGroupGuid.ToString()
+            }
+            else {
+                $matchingEnvironmentGroups = @(Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroup | Where-Object {
+                    $_.DisplayName -eq $EnvironmentGroup
+                })
+
+                if ($matchingEnvironmentGroups.Count -eq 0) {
+                    Stop-PSFFunction -Message "Environment group '$EnvironmentGroup' was not found. Use Get-PpacEnvironmentGroup to list available environment groups."
+                    return
+                }
+
+                if ($matchingEnvironmentGroups.Count -gt 1) {
+                    Stop-PSFFunction -Message "Environment group name '$EnvironmentGroup' is ambiguous. Specify the environment group ID instead. Use Get-PpacEnvironmentGroup to list available environment groups."
+                    return
+                }
+
+                $EnvironmentGroupId = $matchingEnvironmentGroups[0].Id
+            }
+        }
         
         if (Test-PSFFunctionInterrupt) { return }
     }
@@ -190,8 +261,10 @@ function New-UnifiedEnvironment {
             Region                   = $Region
             CustomDomainName         = $CustomDomainName
             SecurityGroupId          = $SecurityGroupId
+            EnvironmentGroupId       = $EnvironmentGroupId
             PostProvisionDelaySeconds = $PostProvisionDelaySeconds
-            ReadyStateTimeoutMinutes = $ReadyStateTimeoutMinutes
+            ReadyStateTimeoutMinutes  = $ReadyStateTimeoutMinutes
+            EarlyRelease              = $EarlyRelease
         }
 
         $shellEnvironment = New-ShellEnvironment @shellEnvironmentParams
@@ -217,9 +290,9 @@ function New-UnifiedEnvironment {
             $provisioningParams = @{
                 Name              = $Name
                 Type              = $Type
-                NoDemoDb          = $NoDemoDb.IsPresent
+                NoDemoDb          = $NoDemoDb
                 Version           = $Version
-                WaitForCompletion = $WaitForCompletion.IsPresent
+                WaitForCompletion = $WaitForCompletion
             }
 
             $appObj = Start-PlatformProvisioning @provisioningParams
@@ -255,11 +328,15 @@ function New-ShellEnvironment {
 
         [string] $SecurityGroupId,
 
+        [string] $EnvironmentGroupId,
+
         [Parameter(Mandatory = $true)]
         [int] $PostProvisionDelaySeconds,
 
         [Parameter(Mandatory = $true)]
-        [int] $ReadyStateTimeoutMinutes
+        [int] $ReadyStateTimeoutMinutes,
+
+        [switch] $EarlyRelease
     )
 
     $localUri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments?api-version=2024-05-01'
@@ -298,6 +375,24 @@ function New-ShellEnvironment {
             Add-Member -MemberType NoteProperty `
             -Name securityGroupId `
             -Value $SecurityGroupId
+    }
+
+    if ($EarlyRelease) {
+        $config.properties | `
+            Add-Member -MemberType NoteProperty `
+                -Name cluster `
+                -Value ([PsCustomObject][ordered]@{
+                    category = "FirstRelease"
+                })
+    }
+
+    if ($EnvironmentGroupId) {
+        $config.properties | `
+            Add-Member -MemberType NoteProperty `
+            -Name parentEnvironmentGroup `
+            -Value ([PsCustomObject]@{
+                id = $EnvironmentGroupId
+            })
     }
 
     $payload = $config | ConvertTo-Json -Depth 10

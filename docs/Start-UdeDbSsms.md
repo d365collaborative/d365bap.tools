@@ -35,6 +35,13 @@ Start-UdeDbSsms -Id "demo" -Version 21
 
 This will start SSMS version 21 and connect to the database using the JIT access credentials for the ID "demo".
 
+### EXAMPLE 3
+```
+Start-UdeDbSsms -Id "demo" -Version 22
+```
+
+This will start SSMS version 22 and connect to the database using the JIT access credentials for the ID "demo".
+
 ## PARAMETERS
 
 ### -Id
@@ -53,7 +60,7 @@ Accept wildcard characters: False
 ```
 
 ### -Version
-The version of SSMS to use (20 or 21).
+The version of SSMS to use (20, 21 or 22).
 
 ```yaml
 Type: Int32

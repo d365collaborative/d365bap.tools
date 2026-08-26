@@ -1,4 +1,4 @@
-﻿Describe "Confirm-UdeVs2022Installation Unit Tests" -Tag "Unit" {
+﻿Describe "Get-PpacEnvironmentGroup Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,12 +8,12 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Confirm-UdeVs2022Installation).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Get-PpacEnvironmentGroup).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
-		It 'Should have the expected parameter Path' {
-			$parameter = (Get-Command Confirm-UdeVs2022Installation).Parameters['Path']
-			$parameter.Name | Should -Be 'Path'
+		It 'Should have the expected parameter EnvironmentGroup' {
+			$parameter = (Get-Command Get-PpacEnvironmentGroup).Parameters['EnvironmentGroup']
+			$parameter.Name | Should -Be 'EnvironmentGroup'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -24,9 +24,9 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter Latest' {
-			$parameter = (Get-Command Confirm-UdeVs2022Installation).Parameters['Latest']
-			$parameter.Name | Should -Be 'Latest'
+		It 'Should have the expected parameter AsExcelOutput' {
+			$parameter = (Get-Command Get-PpacEnvironmentGroup).Parameters['AsExcelOutput']
+			$parameter.Name | Should -Be 'AsExcelOutput'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.SwitchParameter
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
@@ -38,7 +38,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter ProgressAction' {
-			$parameter = (Get-Command Confirm-UdeVs2022Installation).Parameters['ProgressAction']
+			$parameter = (Get-Command Get-PpacEnvironmentGroup).Parameters['ProgressAction']
 			$parameter.Name | Should -Be 'ProgressAction'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.ActionPreference
 			$parameter.IsDynamic | Should -Be $False
@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -Path -Latest -ProgressAction
+		__AllParameterSets -EnvironmentGroup -AsExcelOutput -ProgressAction
 		#>
 	}
 
