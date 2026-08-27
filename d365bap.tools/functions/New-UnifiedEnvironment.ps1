@@ -360,7 +360,7 @@ function New-ShellEnvironment {
             -Value $CustomDomainName
     }
 
-    if ($null -ne $SecurityGroupId) {
+    if ($SecurityGroupId) {
         $config.properties.linkedEnvironmentMetadata | `
             Add-Member -MemberType NoteProperty `
             -Name securityGroupId `
