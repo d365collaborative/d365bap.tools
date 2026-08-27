@@ -149,16 +149,6 @@
         It will take the latest available version of Finance and Operations.
         It will not restrict access to the environment.
         
-    .EXAMPLE
-        PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
-        
-        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
-        The environment will be in the early release cycle.
-        It will include a demo database by default.
-        It will get a default/unique domain name assigned by Power Platform.
-        It will take the latest available version of Finance and Operations.
-        It will not restrict access to the environment.
-        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
         Author: Florian Hopfner (@FH-Inway)
@@ -370,7 +360,7 @@ function New-ShellEnvironment {
             -Value $CustomDomainName
     }
 
-    if ($null -ne $SecurityGroupId) {
+    if ($SecurityGroupId) {
         $config.properties.linkedEnvironmentMetadata | `
             Add-Member -MemberType NoteProperty `
             -Name securityGroupId `
