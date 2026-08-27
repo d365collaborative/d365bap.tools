@@ -57,12 +57,16 @@ function Switch-BapTenant {
                 Where-Object { $_.Account.Id -eq $obj.User } | `
                 Select-Object -First 1)
 
-        Select-AzContext -InputObject $contextObj > $null
+        $fake = ''
 
-        $fake = (Get-AzAccessToken `
-                -ResourceUrl "https://service.powerapps.com/" `
-                -AsSecureString -ErrorAction SilentlyContinue).Token
-        
+        if (-not $null -eq $contextObj) {
+            Select-AzContext -InputObject $contextObj > $null
+
+            $fake = (Get-AzAccessToken `
+                    -ResourceUrl "https://service.powerapps.com/" `
+                    -AsSecureString -ErrorAction SilentlyContinue).Token
+        }
+
         if ([string]::IsNullOrWhiteSpace($fake) -or $Force) {
             if ([string]::IsNullOrWhiteSpace($fake)) {
                 Write-PSFMessage -Level Important -Message "It seems that your credentials/cache has <c='sub'>expired</c>. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
