@@ -1,10 +1,8 @@
-﻿# Build and release the d365bap.tools PowerShell module on every push to main.
+﻿# Build and release the d365bap.tools PowerShell module.
 # Validation jobs run in parallel with module caching; build-and-release runs after all pass.
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   general-unit-tests:
