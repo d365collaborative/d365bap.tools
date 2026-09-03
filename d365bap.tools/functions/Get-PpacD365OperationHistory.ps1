@@ -14,9 +14,13 @@
     .PARAMETER LatestOnly
         Instructs the cmdlet to only return the latest operation from the history.
         
-    .PARAMETER AsExcelOutput
-        Instructs the cmdlet to output the results as an Excel file.
-        
+    .PARAMETER Id
+        The id of the operation history entry that you want to retrieve.
+
+        The value is converted to lower case prior filtering.
+
+        Supports wildcard characters for flexible matching against the operation history id.
+
     .PARAMETER DownloadLog
         Instructs the cmdlet to attempt to download the operation logs for each operation in the history.
         
@@ -28,13 +32,9 @@
         The default path is "C:\Temp\d365bap.tools\PpacD365OperationHistory".
         
         Logs will be organized in subfolders for each environment based on the environment name.
-        
-    .PARAMETER Id
-        The id of the operation history entry that you want to retrieve.
 
-        The value is converted to lower case prior filtering.
-
-        Supports wildcard characters for flexible matching against the operation history id.
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
 
     .EXAMPLE
         PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
@@ -84,13 +84,13 @@ function Get-PpacD365OperationHistory {
 
         [switch] $LatestOnly,
 
-        [switch] $AsExcelOutput,
+        [string] $Id = "*",
 
         [switch] $DownloadLog,
 
         [string] $DownloadPath = "C:\Temp\d365bap.tools\PpacD365OperationHistory",
 
-        [string] $Id = "*"
+        [switch] $AsExcelOutput
     )
     
     begin {
