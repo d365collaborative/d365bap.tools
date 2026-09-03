@@ -15,7 +15,8 @@ Deploy a new Unified Environment in Power Platform Admin Center (PPAC).
 ```
 New-UnifiedEnvironment [-Type] <String> [-Name] <String> [[-CustomDomainName] <String>] [-Location] <String>
  [[-Region] <String>] [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [[-EnvironmentGroup] <String>] [[-PostProvisionDelaySeconds] <Int32>] [[-ReadyStateTimeoutMinutes] <Int32>]
+ [-WaitForCompletion] [-EarlyRelease] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -93,6 +94,42 @@ It will include a demo database by default.
 It will get a default/unique domain name assigned by Power Platform.
 It will take the latest available version of Finance and Operations.
 It will restrict access to the environment to members of the specified Entra Groups security group "MySecurityGroup".
+
+### EXAMPLE 7
+```
+New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EnvironmentGroup "D365FO"
+```
+
+This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+It will include a demo database by default.
+It will get a default/unique domain name assigned by Power Platform.
+It will take the latest available version of Finance and Operations.
+It will deploy into the "D365FO" environment group.
+The environment group could also be specified by its ID (a guid like "12345678-1234-1234-1234-123456789abc").
+
+### EXAMPLE 8
+```
+New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
+```
+
+This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+The environment will be in the early release cycle.
+It will include a demo database by default.
+It will get a default/unique domain name assigned by Power Platform.
+It will take the latest available version of Finance and Operations.
+It will not restrict access to the environment.
+
+### EXAMPLE 9
+```
+New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe" -EarlyRelease
+```
+
+This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "Europe" location.
+The environment will be in the early release cycle.
+It will include a demo database by default.
+It will get a default/unique domain name assigned by Power Platform.
+It will take the latest available version of Finance and Operations.
+It will not restrict access to the environment.
 
 ## PARAMETERS
 
@@ -235,6 +272,89 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -EnvironmentGroup
+The ID or display name of the environment group in which to create the shell environment.
+
+Note that this will make the environment a managed environment.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: EnvironmentGroupId, EnvironmentGroupName
+
+Required: False
+Position: 8
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PostProvisionDelaySeconds
+Additional delay (in seconds) after the shell environment reports as ready.
+
+This pause helps ensure the platform application package endpoint is fully ready before install is attempted.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 9
+Default value: 60
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ReadyStateTimeoutMinutes
+Maximum number of minutes to wait for the environment to reach state 'Ready'.
+
+Prevents endless waiting when an environment is stuck in a non-ready state.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 10
+Default value: 60
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WaitForCompletion
+Instructs the cmdlet to wait until the final provisioning app installation is completed.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -EarlyRelease
+Instructs the cmdlet to create the environment in the early release cycle.
+
+Note that not all locations/regions support early release environments.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -ProgressAction
 {{ Fill ProgressAction Description }}
 
@@ -259,5 +379,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## NOTES
 Author: Mötz Jensen (@Splaxi)
+Author: Florian Hopfner (@FH-Inway)
 
 ## RELATED LINKS

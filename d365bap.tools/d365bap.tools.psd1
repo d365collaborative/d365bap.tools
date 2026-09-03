@@ -68,6 +68,8 @@
 		'xml\formats\table\D365Bap.Tools.PpacPowerApp.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacRbacRoleAssignment.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacRole.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacRoleTable.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpacTable.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacSolution.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacTeam.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.PpacUser.Table.Format.ps1xml',
@@ -76,6 +78,8 @@
 
 		'xml\formats\table\D365Bap.Tools.UdeConfig.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.UdeEnvironmentModule.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.UdeModelLabel.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.UdePackageLocalDirectory.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.UdeEnvironmentPackage.Table.Format.ps1xml',
 
 		'xml\formats\table\D365Bap.Tools.VirtualEntity.Table.Format.ps1xml',
@@ -89,6 +93,7 @@
 
 		'xml\formats\list\D365Bap.Tools.FscmDmfEntity.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmOdataEntity.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.FscmOdataToken.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmRestService.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.FscmRole.List.Format.ps1xml',
 
@@ -133,6 +138,8 @@
 		, 'Confirm-BapEnvironmentIntegration'
 		, 'Confirm-UdeVs2022Installation'
 		
+		, 'Export-UdeModelLabel'
+		
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentD365App'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
@@ -147,6 +154,7 @@
 		, 'Get-FscmEntraApplication'
 		, 'Get-FscmOdata'
 		, 'Get-FscmOdataEntity'
+		, 'Get-FscmOdataToken'
 		, 'Get-FscmRestService'
 		, 'Get-FscmSecurityRole'
 		, 'Get-FscmSecurityRoleMember'
@@ -160,11 +168,14 @@
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacRbacRole'
 		, 'Get-PpacRbacRoleMember'
 
 		, 'Get-PpacSecurityRole'
 		, 'Get-PpacSecurityRoleMember'
+		, 'Get-PpacSecurityRoleTable'
+		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
 		, 'Get-PpacUser'
 		
@@ -180,6 +191,7 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
+		, 'Get-UdePackageLocalDirectory'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
@@ -198,6 +210,8 @@
 		
 		, 'Invoke-PpePublishAllCustomizations'
 		
+		, 'New-PpacSecurityRole'
+
 		, 'New-UnifiedEnvironment'
 		
 		, 'Remove-BapTenantDetail'
@@ -216,6 +230,7 @@
 		, 'Add-PpacRbacRoleMember'
 
 		, 'Set-PpacSecurityGroup'
+		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
 		
 		, 'Set-UdeConfig'

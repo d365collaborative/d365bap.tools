@@ -156,6 +156,13 @@ function Get-UdeDeveloperFile {
             return
         }
 
+        if (-not [System.IO.File]::Exists($executable)) {
+            $messageString = "AzCopy executable not found at <c='em'>$executable</c>. Please install AzCopy using <c='em'>Invoke-BapInstallAzCopy</c> or configure the path using <c='em'>Set-BapAzCopyPath</c>."
+            Write-PSFMessage -Level Important -Message $messageString
+            Stop-PSFFunction -Message "Stopping because AzCopy executable was not found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            return
+        }
+
         Write-PSFMessage -Level Important -Message "Will start the download of the files. It will open a separate PowerShell window for each:"
 
         $retryCount = 0

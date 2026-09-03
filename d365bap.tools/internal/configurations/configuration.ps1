@@ -46,3 +46,21 @@ Set-PSFConfig `
     -Value "$($script:ModuleRoot)\internal\misc" `
     -Initialize `
     -Description "Path to the root of the module. This is used for various internal operations, such as reading static files that are included in the module."
+
+Set-PSFConfig -FullName "d365bap.tools.ppac.security.accesslevels" -Value @{
+    "User"                    = "Basic"
+    "BusinessUnit"            = "Local"
+    "ParentChildBusinessUnit" = "Deep"
+    "Organization"            = "Global"
+} -Initialize -Description "Object that translates the Power Platform admin center access level naming to the Dataverse privilege depth naming, which is the only naming accepted by the Dataverse Web API."
+
+Set-PSFConfig -FullName "d365bap.tools.ppac.security.depths" -Value @{
+    "0"      = "User"
+    "1"      = "Business Unit"
+    "2"      = "Parent: Child Business Unit"
+    "3"      = "Organization"
+    "Basic"  = "User"
+    "Local"  = "Business Unit"
+    "Deep"   = "Parent: Child Business Unit"
+    "Global" = "Organization"
+} -Initialize -Description "Object that translates the Dataverse privilege depth values to the Power Platform admin center access level naming, used when displaying the table privileges of a security role."

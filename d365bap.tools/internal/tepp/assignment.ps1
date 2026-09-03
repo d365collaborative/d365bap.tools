@@ -9,6 +9,21 @@ Register-PSFTeppArgumentCompleter `
     -Name "d365bap.tools.tepp.tenant.details"
 
 Register-PSFTeppArgumentCompleter `
+    -Command Get-BapTenantDetail `
+    -Parameter Upn `
+    -Name "d365bap.tools.tepp.tenant.details.upn"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-BapTenantDetail `
+    -Parameter TenantId `
+    -Name "d365bap.tools.tepp.tenant.details.tenantid"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-BapTenantDetail `
+    -Parameter FriendlyName `
+    -Name "d365bap.tools.tepp.tenant.details.friendly"
+
+Register-PSFTeppArgumentCompleter `
     -Command Set-BapTenantDetail `
     -Parameter Id `
     -Name "d365bap.tools.tepp.tenant.details"
@@ -22,6 +37,16 @@ Register-PSFTeppArgumentCompleter `
     -Command Remove-BapTenantDetail `
     -Parameter Id `
     -Name "d365bap.tools.tepp.tenant.details"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-BapTenant `
+    -Parameter Upn `
+    -Name "d365bap.tools.tepp.bap.tenant.upn"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-BapTenant `
+    -Parameter TenantId `
+    -Name "d365bap.tools.tepp.bap.tenant.tenantid"
 
 Register-PSFTeppArgumentCompleter `
     -Command Get-UdeDbJitCache `
@@ -77,3 +102,33 @@ Register-PSFTeppArgumentCompleter `
     -Command Get-FscmRestService `
     -Parameter TraverseTo `
     -Name "d365bap.tools.tepp.fscm.rest.service.traverse"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacSecurityRole `
+    -Parameter Name `
+    -Name "d365bap.tools.tepp.ppac.security.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacSecurityRoleTable `
+    -Parameter Role `
+    -Name "d365bap.tools.tepp.ppac.security.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Set-PpacSecurityRoleTable `
+    -Parameter Role `
+    -Name "d365bap.tools.tepp.ppac.security.roles"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacSecurityRoleTable `
+    -Parameter Name `
+    -Name "d365bap.tools.tepp.ppac.tables"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Set-PpacSecurityRoleTable `
+    -Parameter Table `
+    -Name "d365bap.tools.tepp.ppac.tables"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacTable `
+    -Parameter Name `
+    -Name "d365bap.tools.tepp.ppac.tables"
