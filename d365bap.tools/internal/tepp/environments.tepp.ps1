@@ -10,8 +10,12 @@ Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.environments" -ScriptBlock
     Get-PSFTaskEngineCache -Module d365bap.tools -Name Environments
 }
 
-$commands = Get-Command -Module d365bap.tools | Where-Object { $_.Parameters.Keys -contains "EnvironmentId" }
+$teppParameters = @("EnvironmentId", "SourceEnvironmentId", "DestinationEnvironmentId")
 
-foreach ($command in $commands) {
-    Register-PSFTeppArgumentCompleter -Command $command.Name -Parameter EnvironmentId -Name "d365bap.tools.tepp.environments"
+foreach ($paramName in $teppParameters) {
+    $commands = Get-Command -Module d365bap.tools | Where-Object { $_.Parameters.Keys -contains $paramName }
+
+    foreach ($command in $commands) {
+        Register-PSFTeppArgumentCompleter -Command $command.Name -Parameter $paramName -Name "d365bap.tools.tepp.environments"
+    }
 }

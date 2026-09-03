@@ -14,6 +14,22 @@
     .PARAMETER DestinationEnvironmentId
         Environment Id of the destination environment that you want to validate against the baseline (source)
         
+    .PARAMETER Name
+        The name of the virtual entity that you are looking for
+        
+        The parameter supports wildcards, but will resolve them into a strategy that matches best practice from Microsoft documentation
+        
+        It means that you can only have a single search phrase. E.g.
+        * -Name "*Retail"
+        * -Name "Retail*"
+        * -Name "*Retail*"
+        
+        Multiple search phrases are not going to produce an output, as it will be striped into an invalid search string. E.g.
+        ! -Name "*Retail*Entity*" -> "RetailEntity"
+        ! -Name "Retail*Entity" -> "RetailEntity"
+        ! -Name "*Retail*Entity" -> "RetailEntity"
+        ! -Name "Retail*Entity*" -> "RetailEntity"
+        
     .PARAMETER ShowDiffOnly
         Instruct the cmdlet to only output the differences that are not aligned between the source and destination
         
@@ -51,6 +67,12 @@
         WMHEOutboundQueueEntity        True            False                       False       False
         
     .EXAMPLE
+        PS C:\> Compare-BapEnvironmentVirtualEntity -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -Name "Retail*"
+        
+        This will get all enabled / visible Virtual Entities that contains the "Retail" text in the name, from the Source Environment.
+        It will iterate over all of them, and validate against the Destination Environment.
+        
+    .EXAMPLE
         PS C:\> Compare-BapEnvironmentVirtualEntity -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1
         
         This will get all enabled / visible Virtual Entities from the Source Environment.
@@ -68,6 +90,8 @@ function Compare-BapEnvironmentVirtualEntity {
 
         [Parameter (Mandatory = $true)]
         [string] $DestinationEnvironmentId,
+
+        [string] $Name = "*",
 
         [switch] $ShowDiffOnly,
 
@@ -95,7 +119,7 @@ function Compare-BapEnvironmentVirtualEntity {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $entitiesSourceEnvironment = @(Get-BapEnvironmentVirtualEntity -EnvironmentId $SourceEnvironmentId -VisibleOnly)
+        $entitiesSourceEnvironment = @(Get-BapEnvironmentVirtualEntity -EnvironmentId $SourceEnvironmentId -VisibleOnly -Name $Name)
         $entitiesDestinationEnvironment = @(
             foreach ($entName in $entitiesSourceEnvironment.EntityName) {
                 Get-BapEnvironmentVirtualEntity -EnvironmentId $DestinationEnvironmentId -Name $entName
