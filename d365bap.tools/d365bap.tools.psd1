@@ -203,6 +203,7 @@
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 
+		, 'Invoke-FscmDmfEntityMetadataRefresh'
 		, 'Invoke-FscmRestService'
 
 		, 'Invoke-PpacD365AppInstall'
