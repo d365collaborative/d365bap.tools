@@ -13,8 +13,8 @@ Get operation history for a given Unified environment from PPAC.
 ## SYNTAX
 
 ```
-Get-PpacD365OperationHistory [-EnvironmentId] <String> [-LatestOnly] [-AsExcelOutput] [-DownloadLog]
- [[-DownloadPath] <String>] [[-Id] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-PpacD365OperationHistory [-EnvironmentId] <String> [-LatestOnly] [[-Id] <String>] [-DownloadLog]
+ [[-DownloadPath] <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -103,17 +103,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AsExcelOutput
-Instructs the cmdlet to output the results as an Excel file.
+### -Id
+The id of the operation history entry that you want to retrieve.
+
+The value is converted to lower case prior filtering.
+
+Supports wildcard characters for flexible matching against the operation history id.
 
 ```yaml
-Type: SwitchParameter
+Type: String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
-Default value: False
+Position: 2
+Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -149,27 +153,23 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 2
+Position: 3
 Default value: C:\Temp\d365bap.tools\PpacD365OperationHistory
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Id
-The id of the operation history entry that you want to retrieve.
-
-The value is converted to lower case prior filtering.
-
-Supports wildcard characters for flexible matching against the operation history id.
+### -AsExcelOutput
+Instructs the cmdlet to output the results as an Excel file.
 
 ```yaml
-Type: String
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 3
-Default value: *
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
