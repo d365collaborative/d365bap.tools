@@ -5,7 +5,7 @@ $path = "$PSScriptRoot\.."
 
 Import-Module "$path\d365bap.tools" -Force
 
-Remove-Item -Path "$path\docs\*.md"
+Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" | Remove-Item -Force
 $null = New-MarkdownHelp -Module d365bap.tools -OutputFolder "$path\docs" -Force
 
 Get-ChildItem -Path "$path\docs" -Recurse -File | Set-PSMDEncoding
