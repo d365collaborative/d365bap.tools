@@ -75,6 +75,7 @@
 		'xml\formats\table\D365Bap.Tools.PpacUser.Table.Format.ps1xml',
 
 		'xml\formats\table\D365Bap.Tools.PpeOdataEntity.Table.Format.ps1xml',
+		'xml\formats\table\D365Bap.Tools.PpeCustomApi.Table.Format.ps1xml',
 
 		'xml\formats\table\D365Bap.Tools.UdeConfig.Table.Format.ps1xml',
 		'xml\formats\table\D365Bap.Tools.UdeEnvironmentModule.Table.Format.ps1xml',
@@ -104,6 +105,7 @@
 		'xml\formats\list\D365Bap.Tools.PpacTeam.List.Format.ps1xml',
 
 		'xml\formats\list\D365Bap.Tools.PpeOdataEntity.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.PpeCustomApi.List.Format.ps1xml',
 
 		'xml\formats\list\D365Bap.Tools.UdeCredentialCache.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.UdeDatabaseJit.List.Format.ps1xml',
@@ -181,6 +183,7 @@
 		
 		, 'Get-PpeOdata'
 		, 'Get-PpeOdataEntity'
+		, 'Get-PpeCustomApi'
 		
 		, 'Get-PpeSolution'
 		, 'Get-PpeSolutionHistory'
