@@ -1,4 +1,4 @@
-# Unit Tests for Public Functions
+﻿# Unit Tests for Public Functions
 
 Do not hand-edit `*.Tests.ps1` files here. They are generated.
 

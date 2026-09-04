@@ -1,4 +1,5 @@
-﻿<#
+﻿
+<#
     .SYNOPSIS
         Refresh all Data Management Framework entity metadata in a Finance and Operations environment.
         

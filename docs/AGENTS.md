@@ -1,4 +1,4 @@
-# Module Documentation
+﻿# Module Documentation
 
 Do not hand-edit `*.md` files here. They are generated.
 
