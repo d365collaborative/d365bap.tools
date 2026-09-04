@@ -220,6 +220,8 @@
 		
 		, 'Remove-BapTenantDetail'
 		
+		, 'Remove-UnifiedEnvironment'
+		
 		, 'Set-BapAzCopyPath'
 		
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
