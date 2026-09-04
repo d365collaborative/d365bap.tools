@@ -197,6 +197,7 @@
 		, 'Get-UdeXrefDb'
 		
 		, 'Get-UnifiedEnvironment'
+		, 'Get-UnifiedEnvironmentDetails'
 		, 'Get-UnifiedEnvironmentModule'
 		, 'Get-UnifiedEnvironmentPackage'
 		
