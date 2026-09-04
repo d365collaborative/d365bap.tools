@@ -116,21 +116,29 @@ function Get-UnifiedEnvironment {
             Import-Module Az.Accounts -ErrorAction SilentlyContinue
             Import-Module PSFramework -ErrorAction SilentlyContinue
 
-            # We need to get the internal provisioning details via SOAP call
+            # Version details come from the Web API function msprov_getfinopsapplicationdetails
             $baseUri = $envObj.PpacEnvUri
             $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
             $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
-        
-            $headers = @{
-                "Authorization" = "Bearer $($tokenWebApiValue)"
+
+            $headersApi = @{
+                Authorization      = "Bearer $($tokenWebApiValue)"
+                Accept             = "application/json"
+                "OData-MaxVersion" = "4.0"
+                "OData-Version"    = "4.0"
             }
 
-            $localUri = $baseUri + '/api/data/v9.2/msprov_getfinopsapplicationdetails'
+            $Response = $null
 
-            $Response = Invoke-RestMethod -Uri $localUri `
-                -Method Get `
-                -Headers $headers `
-                -SkipHttpErrorCheck
+            try {
+                $Response = Invoke-RestMethod `
+                    -Uri "$($baseUri.TrimEnd('/'))/api/data/v9.2/msprov_getfinopsapplicationdetails()" `
+                    -Method Get `
+                    -Headers $headersApi
+            }
+            catch {
+                $Response = $null
+            }
 
             if ($null -eq $Response) {
                 $messageString = "Could not obtain the <c='em'>Ppac Provision</c> details for <c='em'>$($envObj.PpacEnvName)</c>. It could be due to insufficient permissions or the environment not being fully provisioned. Please try to access the environment details from PowerPlatform Admin Center (PPAC)."

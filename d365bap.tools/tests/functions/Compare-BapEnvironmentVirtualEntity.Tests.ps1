@@ -37,6 +37,19 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
+		It 'Should have the expected parameter Name' {
+			$parameter = (Get-Command Compare-BapEnvironmentVirtualEntity).Parameters['Name']
+			$parameter.Name | Should -Be 'Name'
+			$parameter.ParameterType.ToString() | Should -Be System.String
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be 2
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
 		It 'Should have the expected parameter ShowDiffOnly' {
 			$parameter = (Get-Command Compare-BapEnvironmentVirtualEntity).Parameters['ShowDiffOnly']
 			$parameter.Name | Should -Be 'ShowDiffOnly'
@@ -81,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -SourceEnvironmentId -DestinationEnvironmentId
-		__AllParameterSets -SourceEnvironmentId -DestinationEnvironmentId -ShowDiffOnly -AsExcelOutput -ProgressAction
+		__AllParameterSets -SourceEnvironmentId -DestinationEnvironmentId -Name -ShowDiffOnly -AsExcelOutput -ProgressAction
 		#>
 	}
 
