@@ -116,61 +116,25 @@ function Get-UnifiedEnvironment {
             Import-Module Az.Accounts -ErrorAction SilentlyContinue
             Import-Module PSFramework -ErrorAction SilentlyContinue
 
-            # Version details come from Organization.svc Execute of msprov_getfinopsapplicationdetails
+            # Version details come from the Web API function msprov_getfinopsapplicationdetails
             $baseUri = $envObj.PpacEnvUri
             $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
             $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
-            $soapUri = $baseUri.TrimEnd('/') + '/XRMServices/2011/Organization.svc/web'
-            $requestId = (New-Guid).Guid
-
-            $soapBody = @"
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-  <s:Header>
-    <SdkClientVersion xmlns="http://schemas.microsoft.com/xrm/2011/Contracts">9.2</SdkClientVersion>
-  </s:Header>
-  <s:Body>
-    <Execute xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
-      <request xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" i:type="a:OrganizationRequest">
-        <a:Parameters xmlns:b="http://schemas.datacontract.org/2004/07/System.Collections.Generic" />
-        <a:RequestId>$requestId</a:RequestId>
-        <a:RequestName>msprov_getfinopsapplicationdetails</a:RequestName>
-      </request>
-    </Execute>
-  </s:Body>
-</s:Envelope>
-"@
-
-            $soapHeaders = @{
-                Authorization = "Bearer $($tokenWebApiValue)"
-                SOAPAction    = "http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/Execute"
+            $headersApi = @{
+                Authorization      = "Bearer $($tokenWebApiValue)"
+                Accept             = "application/json"
+                "OData-MaxVersion" = "4.0"
+                "OData-Version"    = "4.0"
             }
 
             $Response = $null
 
             try {
-                $soapResponse = Invoke-RestMethod `
-                    -Uri $soapUri `
-                    -Method Post `
-                    -Headers $soapHeaders `
-                    -ContentType "text/xml; charset=utf-8" `
-                    -Body $soapBody
-
-                $nsMgr = [System.Xml.XmlNamespaceManager]::new($soapResponse.NameTable)
-                $nsMgr.AddNamespace("s", "http://schemas.xmlsoap.org/soap/envelope/")
-                $nsMgr.AddNamespace("a", "http://schemas.microsoft.com/xrm/2011/Contracts")
-                $nsMgr.AddNamespace("b", "http://schemas.datacontract.org/2004/07/System.Collections.Generic")
-
-                $resultMap = @{}
-                foreach ($pair in $soapResponse.SelectNodes("//a:Results/a:KeyValuePairOfstringanyType", $nsMgr)) {
-                    $key = $pair.SelectSingleNode("b:key", $nsMgr).InnerText
-                    $value = $pair.SelectSingleNode("b:value", $nsMgr).InnerText
-                    $resultMap[$key] = $value
-                }
-
-                if ($resultMap.Count -gt 0) {
-                    $Response = [PSCustomObject]$resultMap
-                }
+                $Response = Invoke-RestMethod `
+                    -Uri "$($baseUri.TrimEnd('/'))/api/data/v9.2/msprov_getfinopsapplicationdetails()" `
+                    -Method Get `
+                    -Headers $headersApi
             }
             catch {
                 $Response = $null
