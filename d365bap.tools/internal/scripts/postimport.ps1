@@ -24,6 +24,3 @@ $moduleRoot = Split-Path (Split-Path $PSScriptRoot)
 
 # Load License
 "$moduleRoot\internal\scripts\license.ps1"
-
-# Load format views (not via FormatsToProcess — see load-formatdata.ps1)
-"$moduleRoot\internal\scripts\load-formatdata.ps1"

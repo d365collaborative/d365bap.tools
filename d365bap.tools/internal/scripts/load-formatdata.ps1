@@ -1,10 +1,20 @@
 ﻿# FormatsToProcess cannot be used: each entry is a nested module load (limit 10),
 # and RequiredModules (Az.Accounts) already consumes that budget, so views never
-# register. This script is listed in ScriptsToProcess (caller scope, no nesting)
-# and also run from postimport when loading individual files from git.
+# register. Listed in ScriptsToProcess so this file runs as a real script
+# ($PSScriptRoot is set). Do not load it via postimport/Import-ModuleFile —
+# that uses InvokeScript, $PSScriptRoot is empty, and Join-Path fails.
 #
 # Table first so it is the default view; List second so Format-List still works.
-$moduleRoot = Split-Path (Split-Path $PSScriptRoot)
+if ($PSScriptRoot) {
+	$moduleRoot = Split-Path (Split-Path $PSScriptRoot)
+}
+elseif ($script:ModuleRoot) {
+	$moduleRoot = $script:ModuleRoot
+}
+else {
+	return
+}
+
 foreach ($name in @(
 		'd365bap.tools.Table.Format.ps1xml'
 		, 'd365bap.tools.List.Format.ps1xml'
