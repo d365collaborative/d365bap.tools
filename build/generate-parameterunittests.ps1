@@ -17,8 +17,9 @@ if ($excludeCommands.Count -gt 0) {
 }
 
 Remove-Item -Path "$path\tests\functions\*.Tests.ps1"
+
 foreach ( $commandName in $commands) {
     Invoke-PSMDTemplate CommandTest -OutPath "$path\tests\functions" -Name $commandName -Force
 }
 
-Get-ChildItem -Path "$path\tests\functions" -Recurse -File | Set-PSMDEncoding
+Get-ChildItem -Path "$path\tests\functions\*.Tests.ps1" -Recurse -File | Set-PSMDEncoding
