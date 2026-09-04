@@ -52,6 +52,8 @@ $newLine = [System.Environment]::NewLine
 foreach ($file in $files) {
     $text = ($file | Get-Content -Raw).Trim()
 
+    if ($text.IndexOf('.SYNOPSIS') -lt 0) { continue }
+
     $builder = New-Object System.Text.StringBuilder
     $null = $builder.Append((Get-Header $text).TrimEnd()).Append($newLine)
     $null = $builder.Append("<#").Append($newLine)
