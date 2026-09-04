@@ -14,8 +14,12 @@
     .PARAMETER LatestOnly
         Instructs the cmdlet to only return the latest operation from the history.
         
-    .PARAMETER AsExcelOutput
-        Instructs the cmdlet to output the results as an Excel file.
+    .PARAMETER Id
+        The id of the operation history entry that you want to retrieve.
+        
+        The value is converted to lower case prior filtering.
+        
+        Supports wildcard characters for flexible matching against the operation history id.
         
     .PARAMETER DownloadLog
         Instructs the cmdlet to attempt to download the operation logs for each operation in the history.
@@ -28,6 +32,9 @@
         The default path is "C:\Temp\d365bap.tools\PpacD365OperationHistory".
         
         Logs will be organized in subfolders for each environment based on the environment name.
+        
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
         
     .EXAMPLE
         PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
@@ -57,6 +64,12 @@
         This will fetch the operation history for the specified environment.
         It will attempt to download the operation logs for each operation in the history, and save them to "C:\Temp\MyLogs".
         
+    .EXAMPLE
+        PS C:\> Get-PpacD365OperationHistory -EnvironmentId "eec2a-a4c7-4e1d-b8ed-f62acc9c74c6" -Id "a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6"
+        
+        This will fetch the operation history for the specified environment.
+        It will filter the results to only include the operation with the specified id.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -71,11 +84,13 @@ function Get-PpacD365OperationHistory {
 
         [switch] $LatestOnly,
 
-        [switch] $AsExcelOutput,
+        [string] $Id = "*",
 
         [switch] $DownloadLog,
 
-        [string] $DownloadPath = "C:\Temp\d365bap.tools\PpacD365OperationHistory"
+        [string] $DownloadPath = "C:\Temp\d365bap.tools\PpacD365OperationHistory",
+
+        [switch] $AsExcelOutput
     )
     
     begin {
@@ -122,10 +137,13 @@ function Get-PpacD365OperationHistory {
 
         $localUri = $baseUri + "api/data/v9.0/msprov_operationhistories"
 
+        $filterId = $Id.ToLower()
+
         $colModules = Invoke-RestMethod -Uri $localUri `
             -Method Get `
             -Headers $headers | `
             Select-Object -ExpandProperty value | `
+            Where-Object { "$($_.msprov_operationhistoryid)".ToLower() -like $filterId } | `
             Sort-Object -Property modifiedon -Descending
             
         if ($LatestOnly) {

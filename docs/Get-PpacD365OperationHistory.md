@@ -13,8 +13,8 @@ Get operation history for a given Unified environment from PPAC.
 ## SYNTAX
 
 ```
-Get-PpacD365OperationHistory [-EnvironmentId] <String> [-LatestOnly] [-AsExcelOutput] [-DownloadLog]
- [[-DownloadPath] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-PpacD365OperationHistory [-EnvironmentId] <String> [-LatestOnly] [[-Id] <String>] [-DownloadLog]
+ [[-DownloadPath] <String>] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -61,6 +61,14 @@ Get-PpacD365OperationHistory -EnvironmentId "eec2a-a4c7-4e1d-b8ed-f62acc9c74c6" 
 This will fetch the operation history for the specified environment.
 It will attempt to download the operation logs for each operation in the history, and save them to "C:\Temp\MyLogs".
 
+### EXAMPLE 6
+```
+Get-PpacD365OperationHistory -EnvironmentId "eec2a-a4c7-4e1d-b8ed-f62acc9c74c6" -Id "a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6"
+```
+
+This will fetch the operation history for the specified environment.
+It will filter the results to only include the operation with the specified id.
+
 ## PARAMETERS
 
 ### -EnvironmentId
@@ -95,17 +103,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AsExcelOutput
-Instructs the cmdlet to output the results as an Excel file.
+### -Id
+The id of the operation history entry that you want to retrieve.
+
+The value is converted to lower case prior filtering.
+
+Supports wildcard characters for flexible matching against the operation history id.
 
 ```yaml
-Type: SwitchParameter
+Type: String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
-Default value: False
+Position: 2
+Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -141,8 +153,23 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 2
+Position: 3
 Default value: C:\Temp\d365bap.tools\PpacD365OperationHistory
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AsExcelOutput
+Instructs the cmdlet to output the results as an Excel file.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
