@@ -1,4 +1,4 @@
----
+﻿---
 external help file: d365bap.tools-help.xml
 Module Name: d365bap.tools
 online version:

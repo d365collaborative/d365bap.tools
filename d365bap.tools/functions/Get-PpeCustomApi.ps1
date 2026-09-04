@@ -1,51 +1,52 @@
-﻿<#
+﻿
+<#
     .SYNOPSIS
         Get custom APIs from a Power Platform / Dataverse environment.
-
+        
     .DESCRIPTION
         Retrieves custom API definitions from the Dataverse /api/data/v9.2/customapis endpoint, returning discovery information for each API.
-
+        
         Results show the unique name, whether the API is a Function (HTTP GET) or an Action (HTTP POST), the binding type (Global, Entity, EntityCollection) and whether the API is private.
-
+        
         A private API (IsPrivate) is hidden from the Web API $metadata document and code generation tools, but it can still be invoked through the Web API and the SOAP Organization Service (Execute) when the unique name is known. No custom API is SOAP-only.
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve custom APIs from.
-
+        
         Can be either the environment name or the environment GUID (PPAC).
-
+        
     .PARAMETER Name
         The value to filter the results by.
-
+        
         Filters against the custom API UniqueName, Name and DisplayName fields — any match on either will include the record.
-
+        
         Supports wildcard characters for flexible matching.
-
+        
         Default value is "*", which returns all custom APIs.
-
+        
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to export the retrieved custom APIs to an Excel file.
-
+        
     .EXAMPLE
         PS C:\> Get-PpeCustomApi -EnvironmentId "ContosoEnv"
-
+        
         This command retrieves all custom APIs in the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpeCustomApi -EnvironmentId "ContosoEnv" -Name "msprov_*"
-
+        
         This command retrieves all custom APIs whose unique name starts with "msprov_" from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpeCustomApi -EnvironmentId "ContosoEnv" -Name "*fino*"
-
+        
         This command retrieves all custom APIs whose unique name, name or display name contains "fino" from the environment "ContosoEnv".
-
+        
     .EXAMPLE
         PS C:\> Get-PpeCustomApi -EnvironmentId "ContosoEnv" -AsExcelOutput
-
+        
         This command retrieves all custom APIs in the environment "ContosoEnv" and exports the results to an Excel file.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
