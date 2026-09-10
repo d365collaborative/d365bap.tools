@@ -160,6 +160,9 @@
 		, 'Remove-BapTenantDetail'
 		, 'Remove-UdeEnvironmentModel'
 		
+		, 'Remove-UnifiedEnvironmentModule'
+		, 'Remove-UnifiedEnvironmentPackage'
+		
 		, 'Set-BapAzCopyPath'
 		
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
