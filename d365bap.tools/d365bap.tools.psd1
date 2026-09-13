@@ -1,4 +1,4 @@
-﻿@{
+@{
 	# Script module or binary module file associated with this manifest
 	RootModule        = 'd365bap.tools.psm1'
 	
@@ -64,6 +64,7 @@
 		
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
+		, 'Add-PpacUser'
 		
 		, 'Add-UdeWindowsDefenderRules'
 		
@@ -158,6 +159,8 @@
 		, 'New-UnifiedEnvironment'
 		
 		, 'Remove-BapTenantDetail'
+		, 'Remove-FscmUser'
+		, 'Remove-PpacUser'
 		, 'Remove-UdeEnvironmentModel'
 		
 		, 'Remove-UnifiedEnvironmentModule'
