@@ -37,7 +37,7 @@
 #>
 function Remove-FscmUser {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
@@ -115,38 +115,34 @@ function Remove-FscmUser {
         foreach ($assignedRole in $colRolesToRemove) {
             if ($null -eq $assignedRole) { continue }
 
-            if ($PSCmdlet.ShouldProcess("$($matchedUser.Upn)", "Remove FSCM role $($assignedRole.SecurityRoleIdentifier)")) {
-                Invoke-RestMethod -Method Delete `
-                    -Uri ($baseUri + "/data/SecurityUserRoles(UserId='$($matchedUser.FscmUserId)',SecurityRoleIdentifier='$($assignedRole.SecurityRoleIdentifier)')") `
-                    -Headers $headersFnO `
-                    -ContentType $headersFnO.'Content-Type' `
-                    -StatusCodeVariable statusUnassign > $null 4> $null
+            Invoke-RestMethod -Method Delete `
+                -Uri ($baseUri + "/data/SecurityUserRoles(UserId='$($matchedUser.FscmUserId)',SecurityRoleIdentifier='$($assignedRole.SecurityRoleIdentifier)')") `
+                -Headers $headersFnO `
+                -ContentType $headersFnO.'Content-Type' `
+                -StatusCodeVariable statusUnassign > $null 4> $null
 
-                if (-not ($statusUnassign -like "2*")) {
-                    $messageString = "Failed to remove the security role: <c='em'>$($assignedRole.SecurityRoleIdentifier)</c> from the user: <c='em'>$($matchedUser.Upn)</c>. HTTP status: <c='em'>$statusUnassign</c>."
-                    Write-PSFMessage -Level Important -Message $messageString
-                    Stop-PSFFunction -Message "Stopping because removing the security role failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                    return
-                }
+            if (-not ($statusUnassign -like "2*")) {
+                $messageString = "Failed to remove the security role: <c='em'>$($assignedRole.SecurityRoleIdentifier)</c> from the user: <c='em'>$($matchedUser.Upn)</c>. HTTP status: <c='em'>$statusUnassign</c>."
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because removing the security role failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                return
             }
         }
 
         # Role-only mode: keep the user.
         if ($Role.Count -gt 0) { return }
 
-        if ($PSCmdlet.ShouldProcess("$($matchedUser.Upn)", "Remove FSCM user")) {
-            Invoke-RestMethod -Method Delete `
-                -Uri ($baseUri + "/data/SystemUsers(UserID='$($matchedUser.FscmUserId)')") `
-                -Headers $headersFnO `
-                -ContentType $headersFnO.'Content-Type' `
-                -StatusCodeVariable statusDelete > $null 4> $null
+        Invoke-RestMethod -Method Delete `
+            -Uri ($baseUri + "/data/SystemUsers(UserID='$($matchedUser.FscmUserId)')") `
+            -Headers $headersFnO `
+            -ContentType $headersFnO.'Content-Type' `
+            -StatusCodeVariable statusDelete > $null 4> $null
 
-            if (-not ($statusDelete -like "2*")) {
-                $messageString = "Failed to delete the user: <c='em'>$($matchedUser.Upn)</c>. HTTP status: <c='em'>$statusDelete</c>."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because deleting the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                return
-            }
+        if (-not ($statusDelete -like "2*")) {
+            $messageString = "Failed to delete the user: <c='em'>$($matchedUser.Upn)</c>. HTTP status: <c='em'>$statusDelete</c>."
+            Write-PSFMessage -Level Important -Message $messageString
+            Stop-PSFFunction -Message "Stopping because deleting the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            return
         }
     }
 

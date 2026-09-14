@@ -39,7 +39,7 @@
 #>
 function Remove-PpacUser {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
@@ -118,68 +118,64 @@ function Remove-PpacUser {
         foreach ($assignedRole in $colRolesToRemove) {
             if ($null -eq $assignedRole) { continue }
 
-            if ($PSCmdlet.ShouldProcess("$($crmUser.Upn)", "Remove PPAC role $($assignedRole.name)")) {
-                $roleRef = $baseUri + "/api/data/v9.2/roles($($assignedRole.roleid))"
-                $unassignUri = $baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))/systemuserroles_association/`$ref?`$id=$([uri]::EscapeDataString($roleRef))"
+            $roleRef = $baseUri + "/api/data/v9.2/roles($($assignedRole.roleid))"
+            $unassignUri = $baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))/systemuserroles_association/`$ref?`$id=$([uri]::EscapeDataString($roleRef))"
 
-                Invoke-RestMethod -Method Delete `
-                    -Uri $unassignUri `
-                    -Headers $headersWebApi `
-                    -StatusCodeVariable statusUnassign > $null 4> $null
+            Invoke-RestMethod -Method Delete `
+                -Uri $unassignUri `
+                -Headers $headersWebApi `
+                -StatusCodeVariable statusUnassign > $null 4> $null
 
-                if (-not ($statusUnassign -like "2*")) {
-                    $messageString = "Failed to remove the security role: <c='em'>$($assignedRole.name)</c> from the user: <c='em'>$($crmUser.Upn)</c>. HTTP status: <c='em'>$statusUnassign</c>."
-                    Write-PSFMessage -Level Important -Message $messageString
-                    Stop-PSFFunction -Message "Stopping because removing the security role failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                    return
-                }
+            if (-not ($statusUnassign -like "2*")) {
+                $messageString = "Failed to remove the security role: <c='em'>$($assignedRole.name)</c> from the user: <c='em'>$($crmUser.Upn)</c>. HTTP status: <c='em'>$statusUnassign</c>."
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because removing the security role failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                return
             }
         }
 
         # Role-only mode: keep the user.
         if ($Role.Count -gt 0) { return }
 
-        if ($PSCmdlet.ShouldProcess("$($crmUser.Upn)", "Disable and remove PPAC user")) {
-            $payloadDisable = [PsCustomObject][ordered]@{
-                "isdisabled" = $true
-            } | ConvertTo-Json -Depth 10
+        $payloadDisable = [PsCustomObject][ordered]@{
+            "isdisabled" = $true
+        } | ConvertTo-Json -Depth 10
 
-            Invoke-RestMethod -Method Patch `
+        Invoke-RestMethod -Method Patch `
+            -Uri ($baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))") `
+            -Headers $headersWebApi `
+            -Body $payloadDisable `
+            -StatusCodeVariable statusDisable > $null 4> $null
+
+        if (-not ($statusDisable -like "2*")) {
+            $messageString = "Failed to disable the user: <c='em'>$($crmUser.Upn)</c>. The user must be disabled before deletion. HTTP status: <c='em'>$statusDisable</c>."
+            Write-PSFMessage -Level Important -Message $messageString
+            Stop-PSFFunction -Message "Stopping because disabling the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            return
+        }
+
+        try {
+            Invoke-RestMethod -Method Delete `
                 -Uri ($baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))") `
                 -Headers $headersWebApi `
-                -Body $payloadDisable `
-                -StatusCodeVariable statusDisable > $null 4> $null
+                -StatusCodeVariable statusDelete > $null 4> $null
 
-            if (-not ($statusDisable -like "2*")) {
-                $messageString = "Failed to disable the user: <c='em'>$($crmUser.Upn)</c>. The user must be disabled before deletion. HTTP status: <c='em'>$statusDisable</c>."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because disabling the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            if (-not ($statusDelete -like "2*")) {
+                throw [System.Exception]::new("HTTP status: $statusDelete")
+            }
+        }
+        catch {
+            # Users that still exist in Entra ID cannot be hard deleted (0x80048359).
+            # They stay in place as disabled users without roles, which is the closest removable state.
+            if ("$($_.ErrorDetails.Message)" -like "*0x80048359*") {
+                Write-PSFMessage -Level Important -Message "The user: <c='em'>$($crmUser.Upn)</c> still exists in Entra ID and cannot be hard deleted. It is left as a disabled user without security roles."
                 return
             }
 
-            try {
-                Invoke-RestMethod -Method Delete `
-                    -Uri ($baseUri + "/api/data/v9.2/systemusers($($crmUser.PpacSystemUserId))") `
-                    -Headers $headersWebApi `
-                    -StatusCodeVariable statusDelete > $null 4> $null
-
-                if (-not ($statusDelete -like "2*")) {
-                    throw [System.Exception]::new("HTTP status: $statusDelete")
-                }
-            }
-            catch {
-                # Users that still exist in Entra ID cannot be hard deleted (0x80048359).
-                # They stay in place as disabled users without roles, which is the closest removable state.
-                if ("$($_.ErrorDetails.Message)" -like "*0x80048359*") {
-                    Write-PSFMessage -Level Important -Message "The user: <c='em'>$($crmUser.Upn)</c> still exists in Entra ID and cannot be hard deleted. It is left as a disabled user without security roles."
-                    return
-                }
-
-                $messageString = "Failed to delete the user: <c='em'>$($crmUser.Upn)</c>. $($_.Exception.Message)"
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because deleting the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -ErrorRecord $_
-                return
-            }
+            $messageString = "Failed to delete the user: <c='em'>$($crmUser.Upn)</c>. $($_.Exception.Message)"
+            Write-PSFMessage -Level Important -Message $messageString
+            Stop-PSFFunction -Message "Stopping because deleting the user failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -ErrorRecord $_
+            return
         }
     }
 
