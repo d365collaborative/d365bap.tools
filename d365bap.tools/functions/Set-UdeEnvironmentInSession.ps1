@@ -53,6 +53,7 @@ function Set-UdeEnvironmentInSession {
 
         $Global:PSDefaultParameterValues['Get-UdeDbJit:EnvironmentId'] = $envObj.PpacEnvId
         $Global:PSDefaultParameterValues['Get-UdeDeveloperFile:EnvironmentId'] = $envObj.PpacEnvId
+        $Global:PSDefaultParameterValues['Get-UdeNuget:EnvironmentId'] = $envObj.PpacEnvId
     }
 
     end {}

@@ -108,6 +108,7 @@
 		'xml\formats\list\D365Bap.Tools.UdeCredentialCache.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.UdeDatabaseJit.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.UdeDeveloperFile.List.Format.ps1xml',
+		'xml\formats\list\D365Bap.Tools.UdeNuget.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.UdeEnvironment.List.Format.ps1xml',
 		'xml\formats\list\D365Bap.Tools.UdeEnvironmentPackage.List.Format.ps1xml'
 	)
@@ -191,6 +192,7 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
+		, 'Get-UdeNuget'
 		, 'Get-UdePackageLocalDirectory'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
