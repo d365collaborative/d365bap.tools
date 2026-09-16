@@ -763,5 +763,43 @@
         </ListEntries>
       </ListControl>
     </View>
+    <View>
+      <Name>D365Bap.Tools.UdeNuget</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.UdeNuget</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>Package</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PackageId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>DisplayName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Build</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PackageVersion</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Uri</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Path</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ExtractedPath</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
   </ViewDefinitions>
 </Configuration>
