@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Get publishers from Power Platform environment.

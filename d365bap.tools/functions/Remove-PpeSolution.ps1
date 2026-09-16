@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Remove solutions from a Power Platform environment.

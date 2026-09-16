@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Add a publisher to a Power Platform environment.

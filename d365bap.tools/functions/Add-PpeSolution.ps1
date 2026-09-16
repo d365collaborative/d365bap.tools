@@ -1,4 +1,4 @@
-
+﻿
 <#
     .SYNOPSIS
         Add a solution to a Power Platform environment.
