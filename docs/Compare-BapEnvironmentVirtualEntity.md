@@ -14,7 +14,7 @@ Compare environment Virtual Entities
 
 ```
 Compare-BapEnvironmentVirtualEntity [-SourceEnvironmentId] <String> [-DestinationEnvironmentId] <String>
- [-ShowDiffOnly] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [[-Name] <String>] [-ShowDiffOnly] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -58,6 +58,14 @@ WMHEOutboundQueueEntity        True            False                       False
 
 ### EXAMPLE 3
 ```
+Compare-BapEnvironmentVirtualEntity -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1 -Name "Retail*"
+```
+
+This will get all enabled / visible Virtual Entities that contains the "Retail" text in the name, from the Source Environment.
+It will iterate over all of them, and validate against the Destination Environment.
+
+### EXAMPLE 4
+```
 Compare-BapEnvironmentVirtualEntity -SourceEnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -DestinationEnvironmentId 32c6b196-ef52-4c43-93cf-6ecba51e6aa1
 ```
 
@@ -93,6 +101,40 @@ Aliases:
 Required: True
 Position: 2
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Name
+The name of the virtual entity that you are looking for
+
+The parameter supports wildcards, but will resolve them into a strategy that matches best practice from Microsoft documentation
+
+It means that you can only have a single search phrase.
+E.g.
+* -Name "*Retail"
+* -Name "Retail*"
+* -Name "*Retail*"
+
+Multiple search phrases are not going to produce an output, as it will be striped into an invalid search string.
+E.g.
+!
+-Name "*Retail*Entity*" -\> "RetailEntity"
+!
+-Name "Retail*Entity" -\> "RetailEntity"
+!
+-Name "*Retail*Entity" -\> "RetailEntity"
+!
+-Name "Retail*Entity*" -\> "RetailEntity"
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
