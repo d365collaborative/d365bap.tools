@@ -65,6 +65,9 @@
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
 		, 'Add-PpacUser'
+
+		, 'Add-PpePublisher'
+		, 'Add-PpeSolution'
 		
 		, 'Add-UdeWindowsDefenderRules'
 		
@@ -123,6 +126,8 @@
 		, 'Get-PpeOdata'
 		, 'Get-PpeOdataEntity'
 		, 'Get-PpeCustomApi'
+
+		, 'Get-PpePublisher'
 		
 		, 'Get-PpeSolution'
 		, 'Get-PpeSolutionHistory'
@@ -162,6 +167,7 @@
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
 		, 'Remove-PpacUser'
+		, 'Remove-PpeSolution'
 		, 'Remove-UdeEnvironmentModel'
 		
 		, 'Remove-UnifiedEnvironmentModule'

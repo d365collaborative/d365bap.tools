@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpePublisher</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpePublisher</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>Name</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>SystemName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Prefix</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>OptionValuePrefix</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PpePublisherId</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>IsReadOnly</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Description</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>

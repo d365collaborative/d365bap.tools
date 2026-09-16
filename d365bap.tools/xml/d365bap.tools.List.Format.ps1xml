@@ -513,6 +513,76 @@
       </ListControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.PpePublisher</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpePublisher</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>Name</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>SystemName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Prefix</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>OptionValuePrefix</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PpePublisherId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>IsReadOnly</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Description</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.PpeSolution</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpeSolution</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>Name</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>SystemName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Version</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Publisher</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PublisherName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PpeSolutionId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Description</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.UdeCredentialCache</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.UdeCredentialCache</TypeName>
