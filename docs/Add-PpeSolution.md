@@ -20,8 +20,14 @@ Add-PpeSolution [-EnvironmentId] <String> [-Publisher] <String> [-Name] <String>
 ## DESCRIPTION
 Creates a new unmanaged Dataverse solution (solutions) with the bare minimum of required fields.
 
+The cmdlet is idempotent and works as an upsert keyed on SystemName.
+If a solution with
+the same unique name already exists, it is updated in place with the supplied values
+instead of failing.
+Only values explicitly supplied by the caller are updated -
+omitted optional values are left untouched on existing solutions.
+
 The publisher is resolved by unique name, friendly name, prefix or id using Get-PpePublisher.
-The solution unique name must be unique across the environment.
 
 ## EXAMPLES
 
@@ -38,6 +44,13 @@ Add-PpeSolution -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Publisher
 ```
 
 This will create the "Contoso Tools" solution with full details.
+
+### EXAMPLE 3
+```
+Add-PpeSolution -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Publisher "contoso" -Name "Contoso Tools Updated" -SystemName "contoso_tools"
+```
+
+This will update the existing "contoso_tools" solution with the new display name if it already exists, or create it if it does not exist.
 
 ## PARAMETERS
 
@@ -116,7 +129,7 @@ Aliases:
 
 Required: False
 Position: 5
-Default value: 1.0.0.0
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
