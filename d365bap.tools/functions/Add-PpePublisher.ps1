@@ -6,7 +6,12 @@
     .DESCRIPTION
         Creates a new Dataverse publisher (publishers) with the bare minimum of required fields.
         
-        Requires the unique name, display name, customization prefix and option value prefix. The option value prefix defaults to a random value between 10000 and 99999 when omitted.
+        The cmdlet is idempotent and works as an upsert keyed on UniqueName. If a publisher
+        with the same unique name already exists, it is updated in place with the supplied
+        values instead of failing. Only values explicitly supplied by the caller are updated -
+        omitted optional values are left untouched on existing publishers.
+        
+        Requires the unique name, display name, customization prefix and option value prefix. The option value prefix defaults to a random value between 10000 and 99999 when omitted on create. It is left untouched on update when omitted.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -28,6 +33,36 @@
     .PARAMETER Description
         An optional description of the publisher.
         
+    .PARAMETER EmailAddress
+        An optional email address for the publisher.
+        
+    .PARAMETER SupportingWebsiteUrl
+        An optional supporting website URL for the publisher.
+        
+    .PARAMETER AddressLine1
+        An optional first street line for address 1.
+        
+    .PARAMETER AddressLine2
+        An optional second street line for address 1.
+        
+    .PARAMETER AddressLine3
+        An optional third street line for address 1.
+        
+    .PARAMETER AddressCity
+        An optional city for address 1.
+        
+    .PARAMETER AddressStateOrProvince
+        An optional state or province for address 1.
+        
+    .PARAMETER AddressPostalCode
+        An optional ZIP / postal code for address 1.
+        
+    .PARAMETER AddressCountry
+        An optional country / region for address 1.
+        
+    .PARAMETER AddressPhone
+        An optional phone number for address 1.
+        
     .EXAMPLE
         PS C:\> Add-PpePublisher -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -UniqueName "contoso" -FriendlyName "Contoso" -Prefix "cont"
         
@@ -37,6 +72,11 @@
         PS C:\> Add-PpePublisher -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -UniqueName "contoso" -FriendlyName "Contoso" -Prefix "cont" -OptionValuePrefix 12345 -Description "Contoso publisher"
         
         This will create the "Contoso" publisher with full details.
+        
+    .EXAMPLE
+        PS C:\> Add-PpePublisher -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -UniqueName "contoso" -FriendlyName "Contoso" -Prefix "cont" -AddressLine1 "One Microsoft Way" -AddressCity "Redmond" -AddressCountry "USA" -EmailAddress "publisher@contoso.com"
+        
+        This will update the existing "contoso" publisher with address details if it already exists, or create it with address details if it does not exist.
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -64,7 +104,29 @@ function Add-PpePublisher {
         [ValidateRange(10000, 99999)]
         [int] $OptionValuePrefix,
 
-        [string] $Description
+        [string] $Description,
+
+        [string] $EmailAddress,
+
+        [Alias('Website')]
+        [string] $SupportingWebsiteUrl,
+
+        [string] $AddressLine1,
+
+        [string] $AddressLine2,
+
+        [string] $AddressLine3,
+
+        [string] $AddressCity,
+
+        [string] $AddressStateOrProvince,
+
+        [string] $AddressPostalCode,
+
+        [string] $AddressCountry,
+
+        [Alias('Phone', 'Telephone1')]
+        [string] $AddressPhone
     )
     
     begin {
@@ -89,10 +151,6 @@ function Add-PpePublisher {
         $headersWebApi = @{
             "Authorization" = "Bearer $($tokenWebApiValue)"
         }
-
-        if (-not $PSBoundParameters.ContainsKey('OptionValuePrefix')) {
-            $OptionValuePrefix = Get-Random -Minimum 10000 -Maximum 99999
-        }
     }
     
     process {
@@ -105,10 +163,80 @@ function Add-PpePublisher {
             Select-Object -First 1
 
         if ($null -ne $existingPublisher) {
-            $messageString = "The supplied UniqueName: <c='em'>$UniqueName</c> is already a publisher in the Power Platform environment. Please verify that the name is correct - try running the <c='em'>Get-PpePublisher</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because a publisher with the same unique name already exists." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            # Idempotent upsert: update the existing publisher in place with explicitly supplied values.
+            # Note: PSBoundParameters keys are checked with aliases included, as callers may use them.
+            $updatePayload = [ordered]@{}
+
+            if ($PSBoundParameters.ContainsKey('FriendlyName') -or $PSBoundParameters.ContainsKey('DisplayName')) { $updatePayload.friendlyname = $FriendlyName }
+            # Prefix and option value prefix are only sent when they actually differ - they are
+            # effectively immutable after create and re-sending them can trigger server-side
+            # recalculation of the option value prefix.
+            if ($PSBoundParameters.ContainsKey('Prefix') -or $PSBoundParameters.ContainsKey('CustomizationPrefix')) {
+                if ("$($existingPublisher.customizationprefix)" -ne "$Prefix") { $updatePayload.customizationprefix = $Prefix }
+            }
+            if ($PSBoundParameters.ContainsKey('OptionValuePrefix') -or $PSBoundParameters.ContainsKey('CustomizationOptionValuePrefix')) {
+                if ("$($existingPublisher.customizationoptionvalueprefix)" -ne "$OptionValuePrefix") { $updatePayload.customizationoptionvalueprefix = $OptionValuePrefix }
+            }
+            if ($PSBoundParameters.ContainsKey('Description')) { $updatePayload.description = $Description }
+            if ($PSBoundParameters.ContainsKey('EmailAddress')) { $updatePayload.emailaddress = $EmailAddress }
+            if ($PSBoundParameters.ContainsKey('SupportingWebsiteUrl') -or $PSBoundParameters.ContainsKey('Website')) { $updatePayload.supportingwebsiteurl = $SupportingWebsiteUrl }
+            if ($PSBoundParameters.ContainsKey('AddressLine1')) { $updatePayload.address1_line1 = $AddressLine1 }
+            if ($PSBoundParameters.ContainsKey('AddressLine2')) { $updatePayload.address1_line2 = $AddressLine2 }
+            if ($PSBoundParameters.ContainsKey('AddressLine3')) { $updatePayload.address1_line3 = $AddressLine3 }
+            if ($PSBoundParameters.ContainsKey('AddressCity')) { $updatePayload.address1_city = $AddressCity }
+            if ($PSBoundParameters.ContainsKey('AddressStateOrProvince')) { $updatePayload.address1_stateorprovince = $AddressStateOrProvince }
+            if ($PSBoundParameters.ContainsKey('AddressPostalCode')) { $updatePayload.address1_postalcode = $AddressPostalCode }
+            if ($PSBoundParameters.ContainsKey('AddressCountry')) { $updatePayload.address1_country = $AddressCountry }
+            if ($PSBoundParameters.ContainsKey('AddressPhone') -or $PSBoundParameters.ContainsKey('Phone') -or $PSBoundParameters.ContainsKey('Telephone1')) { $updatePayload.address1_telephone1 = $AddressPhone }
+
+            if ($updatePayload.Count -eq 0) {
+                Write-PSFMessage -Level Verbose -Message "The publisher: $UniqueName already exists and no updatable values were supplied. Returning the existing publisher."
+                return $existingPublisher
+            }
+
+            $isDifferent = $false
+            foreach ($key in @($updatePayload.Keys)) {
+                $desiredValue = $updatePayload[$key]
+                $currentValue = $existingPublisher.$key
+
+                if ($null -eq $desiredValue -and $null -eq $currentValue) { continue }
+                if ([string]::IsNullOrEmpty($desiredValue) -and [string]::IsNullOrEmpty($currentValue)) { continue }
+                if ("$currentValue" -ne "$desiredValue") {
+                    $isDifferent = $true
+                    break
+                }
+            }
+
+            if (-not $isDifferent) {
+                Write-PSFMessage -Level Verbose -Message "The publisher: $UniqueName already exists with the supplied values. Returning the existing publisher."
+                return $existingPublisher
+            }
+
+            Write-PSFMessage -Level Verbose -Message "The publisher: $UniqueName already exists. Updating it with the supplied values."
+
+            Invoke-RestMethod -Method Patch `
+                -Uri $($baseUri + "/api/data/v9.2/publishers($($existingPublisher.PpePublisherId))") `
+                -Headers $headersWebApi `
+                -ContentType "application/json" `
+                -Body $($updatePayload | ConvertTo-Json -Depth 10) `
+                -StatusCodeVariable statusUpdate > $null 4> $null
+
+            if (-not ($statusUpdate -like "2*")) {
+                $messageString = "Failed to update the publisher: <c='em'>$UniqueName</c> in the Power Platform environment. HTTP status: <c='em'>$statusUpdate</c>. Please try updating the publisher manually via the Power Platform maker portal - <c='em'>https://make.powerapps.com</c>"
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because updating the publisher failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                return
+            }
+
+            Get-PpePublisher `
+                -EnvironmentId $envObj.PpacEnvId `
+                -Name $existingPublisher.PpePublisherId
+
             return
+        }
+
+        if (-not ($PSBoundParameters.ContainsKey('OptionValuePrefix') -or $PSBoundParameters.ContainsKey('CustomizationOptionValuePrefix'))) {
+            $OptionValuePrefix = Get-Random -Minimum 10000 -Maximum 99999
         }
 
         $payload = [ordered]@{
@@ -118,7 +246,17 @@ function Add-PpePublisher {
             customizationoptionvalueprefix  = $OptionValuePrefix
         }
 
-        if (-not [string]::IsNullOrEmpty($Description)) { $payload.description = $Description }
+        if ($PSBoundParameters.ContainsKey('Description')) { $payload.description = $Description }
+        if ($PSBoundParameters.ContainsKey('EmailAddress')) { $payload.emailaddress = $EmailAddress }
+        if ($PSBoundParameters.ContainsKey('SupportingWebsiteUrl') -or $PSBoundParameters.ContainsKey('Website')) { $payload.supportingwebsiteurl = $SupportingWebsiteUrl }
+        if ($PSBoundParameters.ContainsKey('AddressLine1')) { $payload.address1_line1 = $AddressLine1 }
+        if ($PSBoundParameters.ContainsKey('AddressLine2')) { $payload.address1_line2 = $AddressLine2 }
+        if ($PSBoundParameters.ContainsKey('AddressLine3')) { $payload.address1_line3 = $AddressLine3 }
+        if ($PSBoundParameters.ContainsKey('AddressCity')) { $payload.address1_city = $AddressCity }
+        if ($PSBoundParameters.ContainsKey('AddressStateOrProvince')) { $payload.address1_stateorprovince = $AddressStateOrProvince }
+        if ($PSBoundParameters.ContainsKey('AddressPostalCode')) { $payload.address1_postalcode = $AddressPostalCode }
+        if ($PSBoundParameters.ContainsKey('AddressCountry')) { $payload.address1_country = $AddressCountry }
+        if ($PSBoundParameters.ContainsKey('AddressPhone') -or $PSBoundParameters.ContainsKey('Phone') -or $PSBoundParameters.ContainsKey('Telephone1')) { $payload.address1_telephone1 = $AddressPhone }
 
         Invoke-RestMethod -Method Post `
             -Uri $($baseUri + "/api/data/v9.2/publishers") `

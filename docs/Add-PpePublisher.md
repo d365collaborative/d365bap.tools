@@ -14,15 +14,26 @@ Add a publisher to a Power Platform environment.
 
 ```
 Add-PpePublisher [-EnvironmentId] <String> [-UniqueName] <String> [-FriendlyName] <String> [-Prefix] <String>
- [[-OptionValuePrefix] <Int32>] [[-Description] <String>] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [[-OptionValuePrefix] <Int32>] [[-Description] <String>] [[-EmailAddress] <String>]
+ [[-SupportingWebsiteUrl] <String>] [[-AddressLine1] <String>] [[-AddressLine2] <String>]
+ [[-AddressLine3] <String>] [[-AddressCity] <String>] [[-AddressStateOrProvince] <String>]
+ [[-AddressPostalCode] <String>] [[-AddressCountry] <String>] [[-AddressPhone] <String>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 Creates a new Dataverse publisher (publishers) with the bare minimum of required fields.
 
+The cmdlet is idempotent and works as an upsert keyed on UniqueName.
+If a publisher
+with the same unique name already exists, it is updated in place with the supplied
+values instead of failing.
+Only values explicitly supplied by the caller are updated -
+omitted optional values are left untouched on existing publishers.
+
 Requires the unique name, display name, customization prefix and option value prefix.
-The option value prefix defaults to a random value between 10000 and 99999 when omitted.
+The option value prefix defaults to a random value between 10000 and 99999 when omitted on create.
+It is left untouched on update when omitted.
 
 ## EXAMPLES
 
@@ -39,6 +50,13 @@ Add-PpePublisher -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -UniqueNa
 ```
 
 This will create the "Contoso" publisher with full details.
+
+### EXAMPLE 3
+```
+Add-PpePublisher -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -UniqueName "contoso" -FriendlyName "Contoso" -Prefix "cont" -AddressLine1 "One Microsoft Way" -AddressCity "Redmond" -AddressCountry "USA" -EmailAddress "publisher@contoso.com"
+```
+
+This will update the existing "contoso" publisher with address details if it already exists, or create it with address details if it does not exist.
 
 ## PARAMETERS
 
@@ -131,6 +149,156 @@ Aliases:
 
 Required: False
 Position: 6
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -EmailAddress
+An optional email address for the publisher.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 7
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SupportingWebsiteUrl
+An optional supporting website URL for the publisher.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: Website
+
+Required: False
+Position: 8
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressLine1
+An optional first street line for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 9
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressLine2
+An optional second street line for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 10
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressLine3
+An optional third street line for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 11
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressCity
+An optional city for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 12
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressStateOrProvince
+An optional state or province for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 13
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressPostalCode
+An optional ZIP / postal code for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 14
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressCountry
+An optional country / region for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 15
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddressPhone
+An optional phone number for address 1.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: Phone, Telephone1
+
+Required: False
+Position: 16
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
