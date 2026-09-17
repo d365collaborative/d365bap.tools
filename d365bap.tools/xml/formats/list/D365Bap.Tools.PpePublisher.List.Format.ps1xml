@@ -31,6 +31,36 @@
                             <ListItem>
                                 <PropertyName>Description</PropertyName>
                             </ListItem>
+                            <ListItem>
+                                <PropertyName>EmailAddress</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>SupportingWebsiteUrl</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressLine1</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressLine2</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressLine3</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressCity</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressStateOrProvince</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressPostalCode</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressCountry</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AddressPhone</PropertyName>
+                            </ListItem>
                         </ListItems>
                     </ListEntry>
                 </ListEntries>
