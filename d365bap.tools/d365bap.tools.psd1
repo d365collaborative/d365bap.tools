@@ -173,6 +173,8 @@
 		, 'Remove-UnifiedEnvironmentModule'
 		, 'Remove-UnifiedEnvironmentPackage'
 		
+		, 'Remove-UnifiedEnvironment'
+		
 		, 'Set-BapAzCopyPath'
 		
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
