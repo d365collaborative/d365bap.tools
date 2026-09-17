@@ -6,6 +6,10 @@
     .DESCRIPTION
         Enables the user to query against the publishers from the Power Platform environment.
         
+        All raw properties returned from the API are kept on the output objects, with friendly aliases (Name, SystemName, Prefix, OptionValuePrefix, Description, EmailAddress, SupportingWebsiteUrl and the Address* details) wired on top - the same pattern used by Get-BapEnvironment.
+        
+        The default table and list views only show a curated subset of properties. Use -AsExcelOutput to export all details, or Format-List * to inspect every property.
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
         
@@ -104,13 +108,24 @@ function Get-PpePublisher {
 
         $resCol = @(
             $colPublishers | Select-PSFObject -TypeName "D365Bap.Tools.PpePublisher" `
-                -ExcludeProperty publisherid, isreadonly `
+                -ExcludeProperty publisherid, isreadonly, description, emailaddress, supportingwebsiteurl, address1_line1, address1_line2, address1_line3, address1_city, address1_stateorprovince, address1_postalcode, address1_country, address1_telephone1 `
                 -Property "publisherid as PpePublisherId",
             "friendlyname as Name",
             "uniquename as SystemName",
             "customizationprefix as Prefix",
             "customizationoptionvalueprefix as OptionValuePrefix",
             "isreadonly as IsReadOnly",
+            "description as Description",
+            "emailaddress as EmailAddress",
+            "supportingwebsiteurl as SupportingWebsiteUrl",
+            "address1_line1 as AddressLine1",
+            "address1_line2 as AddressLine2",
+            "address1_line3 as AddressLine3",
+            "address1_city as AddressCity",
+            "address1_stateorprovince as AddressStateOrProvince",
+            "address1_postalcode as AddressPostalCode",
+            "address1_country as AddressCountry",
+            "address1_telephone1 as AddressPhone",
             *
         )
 

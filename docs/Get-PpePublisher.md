@@ -20,6 +20,11 @@ Get-PpePublisher [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput]
 ## DESCRIPTION
 Enables the user to query against the publishers from the Power Platform environment.
 
+All raw properties returned from the API are kept on the output objects, with friendly aliases (Name, SystemName, Prefix, OptionValuePrefix, Description, EmailAddress, SupportingWebsiteUrl and the Address* details) wired on top - the same pattern used by Get-BapEnvironment.
+
+The default table and list views only show a curated subset of properties.
+Use -AsExcelOutput to export all details, or Format-List * to inspect every property.
+
 ## EXAMPLES
 
 ### EXAMPLE 1
