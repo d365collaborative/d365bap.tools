@@ -6,7 +6,12 @@
     .DESCRIPTION
         Creates a new unmanaged Dataverse solution (solutions) with the bare minimum of required fields.
         
-        The publisher is resolved by unique name, friendly name, prefix or id using Get-PpePublisher. The solution unique name must be unique across the environment.
+        The cmdlet is idempotent and works as an upsert keyed on SystemName. If a solution with
+        the same unique name already exists, it is updated in place with the supplied values
+        instead of failing. Only values explicitly supplied by the caller are updated -
+        omitted optional values are left untouched on existing solutions.
+        
+        The publisher is resolved by unique name, friendly name, prefix or id using Get-PpePublisher.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -38,6 +43,11 @@
         
         This will create the "Contoso Tools" solution with full details.
         
+    .EXAMPLE
+        PS C:\> Add-PpeSolution -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Publisher "contoso" -Name "Contoso Tools Updated" -SystemName "contoso_tools"
+        
+        This will update the existing "contoso_tools" solution with the new display name if it already exists, or create it if it does not exist.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -60,7 +70,7 @@ function Add-PpeSolution {
         [Alias('UniqueName')]
         [string] $SystemName,
 
-        [string] $Version = "1.0.0.0",
+        [string] $Version,
 
         [string] $Description
     )
@@ -112,20 +122,65 @@ function Add-PpeSolution {
             Select-Object -First 1
 
         if ($null -ne $existingSolution) {
-            $messageString = "The supplied SystemName: <c='em'>$SystemName</c> is already a solution in the Power Platform environment. Please verify that the name is correct - try running the <c='em'>Get-PpeSolution</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because a solution with the same unique name already exists." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+            # Idempotent upsert: update the existing solution in place with explicitly supplied values.
+            $updatePayload = [ordered]@{}
+
+            if ($PSBoundParameters.ContainsKey('Name') -or $PSBoundParameters.ContainsKey('DisplayName') -or $PSBoundParameters.ContainsKey('FriendlyName')) {
+                if ("$($existingSolution.Name)" -ne "$Name") { $updatePayload.friendlyname = $Name }
+            }
+            if ($PSBoundParameters.ContainsKey('Version')) {
+                if ("$($existingSolution.Version)" -ne "$Version") { $updatePayload.version = $Version }
+            }
+            if ($PSBoundParameters.ContainsKey('Description')) {
+                $existingDesc = if ($existingSolution.PSObject.Properties['description']) { "$($existingSolution.description)" } else { "" }
+                if ($existingDesc -ne "$Description") { $updatePayload.description = $Description }
+            }
+            if ($PSBoundParameters.ContainsKey('Publisher')) {
+                $desiredPublisherId = $publisherObj.PpePublisherId
+                $currentPublisherId = "$($existingSolution._publisherid_value)"
+                if ($currentPublisherId -ne $desiredPublisherId) {
+                    $updatePayload."publisherid@odata.bind" = "/publishers($desiredPublisherId)"
+                }
+            }
+
+            if ($updatePayload.Count -eq 0) {
+                Write-PSFMessage -Level Verbose -Message "The solution: $SystemName already exists with the supplied values. Returning the existing solution."
+                return $existingSolution
+            }
+
+            Write-PSFMessage -Level Verbose -Message "The solution: $SystemName already exists. Updating it with the supplied values."
+
+            Invoke-RestMethod -Method Patch `
+                -Uri $($baseUri + "/api/data/v9.2/solutions($($existingSolution.PpeSolutionId))") `
+                -Headers $headersWebApi `
+                -ContentType "application/json" `
+                -Body $($updatePayload | ConvertTo-Json -Depth 10) `
+                -StatusCodeVariable statusUpdate > $null 4> $null
+
+            if (-not ($statusUpdate -like "2*")) {
+                $messageString = "Failed to update the solution: <c='em'>$SystemName</c> in the Power Platform environment. HTTP status: <c='em'>$statusUpdate</c>. Please try updating the solution manually via the Power Platform maker portal - <c='em'>https://make.powerapps.com</c>"
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because updating the solution failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                return
+            }
+
+            Get-PpeSolution `
+                -EnvironmentId $envObj.PpacEnvId `
+                -Name $existingSolution.PpeSolutionId
+
             return
         }
+
+        $effectiveVersion = if ($PSBoundParameters.ContainsKey('Version')) { $Version } else { "1.0.0.0" }
 
         $payload = [ordered]@{
             uniquename                 = $SystemName
             friendlyname               = $Name
-            version                    = $Version
+            version                    = $effectiveVersion
             "publisherid@odata.bind"   = "/publishers($($publisherObj.PpePublisherId))"
         }
 
-        if (-not [string]::IsNullOrEmpty($Description)) { $payload.description = $Description }
+        if ($PSBoundParameters.ContainsKey('Description')) { $payload.description = $Description }
 
         Invoke-RestMethod -Method Post `
             -Uri $($baseUri + "/api/data/v9.2/solutions") `
