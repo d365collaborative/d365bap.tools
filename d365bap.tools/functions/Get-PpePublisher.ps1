@@ -30,6 +30,9 @@
         
         This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state.
         
+    .PARAMETER AsHashTable
+        Instruct the cmdlet to output all details as a hashtable. Useful for splatting into other cmdlets.
+        
     .EXAMPLE
         PS C:\> Get-PpePublisher -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6
         
@@ -58,7 +61,9 @@ function Get-PpePublisher {
 
         [string] $Name = "*",
 
-        [switch] $AsExcelOutput
+        [switch] $AsExcelOutput,
+
+        [switch] $AsHashTable
     )
     
     begin {
@@ -131,6 +136,10 @@ function Get-PpePublisher {
 
         if ($AsExcelOutput) {
             $resCol | Export-Excel -WorksheetName "Get-PpePublisher"
+            return
+        }
+        elseif ($AsHashTable) {
+            $resCol | ConvertTo-PSFHashtable
             return
         }
 
