@@ -128,8 +128,14 @@ function Add-FscmUser {
         } | Select-Object -First 1
 
         if ($null -eq $matchedUser) {
+            # Entra mail is not guaranteed (e.g. some users have mail = null), fall back to UPN.
+            $effectiveMail = $usrObj.mail
+            if ([System.String]::IsNullOrEmpty($effectiveMail)) {
+                $effectiveMail = $usrObj.userPrincipalName
+            }
+
             $tenantExternal = ''
-            $tmpId = $usrObj.mail.Split('@')[0]
+            $tmpId = $effectiveMail.Split('@')[0]
                 
             if ($tmpId -in $colUsers.UserId -and (-not $RemapExisting)) {
                 $messageString = "The user: <c='em'>$($usrObj.userPrincipalName) | $($usrObj.mail)</c> was not found as a user in the Dynamics 365 ERP environment based on the UPN. However, a user with the same UserId: <c='em'>$tmpId</c> exists in the environment. Skipping the user - if you want to remap the existing user to the new UPN, please run the command with the <c='em'>-RemapExisting</c> switch."
@@ -138,16 +144,16 @@ function Add-FscmUser {
                 return
             }
             
-            if ($usrObj.userPrincipalName -ne $usrObj.mail) {
-                $tenantExternal = $usrObj.mail.Split('@')[1] + "/"
+            if ($usrObj.userPrincipalName -ne $effectiveMail) {
+                $tenantExternal = $effectiveMail.Split('@')[1] + "/"
             }
             
             if ($tmpId -in $colUsers.UserId) {
                 $payloadUser = [PsCustomObject][ordered]@{
                     "NetworkDomain" = "https://sts.windows.net/$tenantExternal"
                     "UserName"      = $usrObj.displayName
-                    "Email"         = $usrObj.mail
-                    "Alias"         = $usrObj.mail
+                    "Email"         = $effectiveMail
+                    "Alias"         = $effectiveMail
                     "Enabled"       = $true
                 } | ConvertTo-Json
                     
@@ -158,14 +164,14 @@ function Add-FscmUser {
             }
             else {
                 $payloadUser = [PsCustomObject][ordered]@{
-                    "UserID"            = $usrObj.mail.Split('@')[0]
+                    "UserID"            = $effectiveMail.Split('@')[0]
                     "NetworkDomain"     = "https://sts.windows.net/$tenantExternal"
                     "UserInfo_language" = "en-us"
                     "Helplanguage"      = "en-us"
                     "UserName"          = $usrObj.displayName
-                    "Email"             = $usrObj.mail
+                    "Email"             = $effectiveMail
                     "Company"           = "DAT"
-                    "Alias"             = $usrObj.mail
+                    "Alias"             = $effectiveMail
                     "AccountType"       = "ClaimsUser"
                     "Theme"             = "Theme1"
                     "Enabled"           = $true
