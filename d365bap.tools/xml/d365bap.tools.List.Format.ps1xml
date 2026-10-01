@@ -128,6 +128,44 @@
       </ListControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.FscmOdataAction</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.FscmOdataAction</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>EntityName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>CollectionName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ActionName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>BindingKind</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ReturnType</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ParametersList</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Endpoint</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>FieldLookup</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.FscmOdataEntity</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.FscmOdataEntity</TypeName>
