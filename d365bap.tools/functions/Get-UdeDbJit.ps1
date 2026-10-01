@@ -36,6 +36,14 @@
         
         Defaults to "Administrative access via d365bap.tools".
         
+    .PARAMETER WaitSeconds
+        The time in seconds to wait after obtaining the JIT credentials, to allow them to propagate
+        on the backend before the credentials are returned.
+
+        Newly issued JIT credentials need up to 60 seconds to propagate before the SQL login accepts connections.
+
+        Defaults to 60.
+        
     .PARAMETER AsExcelOutput
         Instruct the cmdlet to output all details directly to an Excel file.
         
@@ -74,6 +82,13 @@
         It will use the specified reason "Needed for data migration".
         
     .EXAMPLE
+        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -WaitSeconds 60
+        
+        This will retrieve the JIT database access information for the specified environment ID.
+        It will wait 60 seconds for the credentials to propagate on the backend before returning them.
+        This is the sane default and ensures that piped consumers like Set-UdeDbJitCache receive credentials that are ready to use.
+        
+    .EXAMPLE
         PS C:\> Get-UnifiedEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
         
         This will retrieve the JIT database access information for the specified environment ID.
@@ -81,6 +96,7 @@
         It will assign the "Reader" role.
         It will use the default reason.
         It will output all details directly to an Excel file.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -97,6 +113,8 @@ function Get-UdeDbJit {
         [string] $Role = "Reader",
 
         [string] $Reason = "Administrative access via d365bap.tools",
+
+        [int] $WaitSeconds = 60,
 
         [switch] $AsExcelOutput
     )
@@ -151,6 +169,11 @@ function Get-UdeDbJit {
             -Uri $localUri `
             -Headers $headers `
             -Body $payload
+
+        if ($WaitSeconds -gt 0) {
+            Write-PSFMessage -Level Verbose -Message "Waiting $WaitSeconds seconds for the JIT credentials to propagate on the backend before returning them."
+            Start-Sleep -Seconds $WaitSeconds
+        }
 
         $resObj = $resRequest | Select-PSFObject -TypeName "D365Bap.Tools.UdeDatabaseJit" `
             -ExcludeProperty "@odata.context" `

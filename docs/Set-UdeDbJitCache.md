@@ -153,7 +153,7 @@ Aliases:
 Required: False
 Position: 7
 Default value: Reader
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
