@@ -21,13 +21,8 @@ Invoke-FscmOdataAction [-EnvironmentId] <String> [-Entity] <String> [-Name] <Str
 ## DESCRIPTION
 Calls an OData action exposed via the FSCM OData endpoint (/data).
 
-The caller supplies the entity (Name or CollectionName) as the Entity, the action as the Name, and an optional pre-structured JSON payload for actions with input parameters.
-
-Entity-set-bound actions are addressed as POST /data/\<CollectionName\>/Microsoft.Dynamics.DataEntities.\<ActionName\>, while entity-instance-bound actions additionally require the EntityKey and are addressed as POST /data/\<CollectionName\>(\<EntityKey\>)/Microsoft.Dynamics.DataEntities.\<ActionName\>.
-Use Get-FscmOdataAction to discover the available actions and their binding kind.
-
-A typical example is DataManagementEntity, which exposes GetApplicationBuildVersion, GetPlatformBuildVersion and GetApplicationVersion as actions bound to the DataManagementEntities entity set.
-They take no input parameters and return Edm.String values.
+The caller supplies the entity (Name or CollectionName) as the Entity, the action as the Name,
+and an optional pre-structured JSON payload for POST operations.
 
 ## EXAMPLES
 

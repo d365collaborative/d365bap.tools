@@ -18,12 +18,9 @@ Get-FscmOdataAction [-EnvironmentId] <String> [[-Entity] <String>] [[-Name] <Str
 ```
 
 ## DESCRIPTION
-Retrieves OData action metadata from the Finance and Operations /metadata/PublicEntities endpoint, returning one object per action bound to an entity or an entity set.
+Retrieves action metadata from the Finance and Operations /metadata/PublicEntities endpoint, returning one object per OData action bound to an entity or an entity set.
 
-OData actions are NOT custom REST services - they live on the /data stack (not /api/services), which is why Get-FscmRestService finds nothing for them.
-A typical example is DataManagementEntity, which exposes GetApplicationBuildVersion, GetPlatformBuildVersion and GetApplicationVersion as actions bound to the DataManagementEntities entity set.
-
-Results include the entity name, collection (entity set) name, action name, binding kind (BoundToEntitySet or BoundToEntityInstance), return type and a joined list of the non-binding parameters.
+Results include the entity name, collection name, action name, binding kind, return type and a joined list of parameter names.
 
 Supports wildcard and exact matching against the entity (Name and CollectionName) and the action Name fields.
 
