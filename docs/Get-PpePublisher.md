@@ -13,7 +13,7 @@ Get publishers from Power Platform environment.
 ## SYNTAX
 
 ```
-Get-PpePublisher [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput]
+Get-PpePublisher [-EnvironmentId] <String> [[-Name] <String>] [-AsExcelOutput] [-AsHashTable]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -95,6 +95,22 @@ Accept wildcard characters: False
 Instruct the cmdlet to output all details directly to an Excel file.
 
 This makes it easier to deep dive into all the details returned from the API, and makes it possible for the user to persist the current state.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AsHashTable
+Instruct the cmdlet to output all details as a hashtable.
+Useful for splatting into other cmdlets.
 
 ```yaml
 Type: SwitchParameter

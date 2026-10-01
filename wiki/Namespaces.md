@@ -1,4 +1,4 @@
-﻿# Namespaces
+# Namespaces
 
 Also known as abbreviations or command groups. See also [Abbreviations](https://www.linkedin.com/pulse/abbreviations-d365baptools-m%C3%B6tz-jensen-cm4ee).
 
@@ -30,12 +30,10 @@ T
 | [Compare-BapEnvironmentVirtualEntity](Compare-BapEnvironmentVirtualEntity) | Compare environment Virtual Entities |
 | [Confirm-BapEnvironmentIntegration](Confirm-BapEnvironmentIntegration) | Test the integration status |
 | [Get-BapEnvironment](Get-BapEnvironment) | Retrieves information about Power Platform environments. |
-| [Get-BapEnvironmentApplicationUser](Get-BapEnvironmentApplicationUser) | Get application users from environment |
 | [Get-BapEnvironmentD365App](Get-BapEnvironmentD365App) | Get D365 App from the environment |
 | [Get-BapEnvironmentLinkEnterprisePolicy](Get-BapEnvironmentLinkEnterprisePolicy) | Get Enterprise Policy |
 | [Get-BapEnvironmentOperation](Get-BapEnvironmentOperation) | Get environment life cycle operation info |
 | [Get-BapEnvironmentPowerApp](Get-BapEnvironmentPowerApp) | Get PowerApps from environment |
-| [Get-BapEnvironmentUser](Get-BapEnvironmentUser) | Get users from environment |
 | [Get-BapEnvironmentVirtualEntity](Get-BapEnvironmentVirtualEntity) | Get Virtual Entity from environment |
 | [Get-BapTenant](Get-BapTenant) | Retrieves information about the available azure tenant. |
 | [Get-BapTenantDetail](Get-BapTenantDetail) | Gets detailed information about a BAP tenant. |
@@ -168,6 +166,7 @@ This is when one is working, either as a developer against an Ude environment or
 | [Get-UdeVsPackageDeploy](Get-UdeVsPackageDeploy) | Get UDE VS package deploys. |
 | [Get-UdeVsPowerPlatformExtensionHistory](Get-UdeVsPowerPlatformExtensionHistory) | Get UDE VS Power Platform extension history. |
 | [Get-UdeXrefDb](Get-UdeXrefDb) | Gets UDE cross-reference databases. |
+| [Invoke-UdeDbQuery](Invoke-UdeDbQuery) | Invokes a SQL query against a UDE database using cached JIT access credentials. |
 | [Remove-UdeEnvironmentModel](Remove-UdeEnvironmentModel) | Remove models from a unified environment. |
 | [Set-UdeConfig](Set-UdeConfig) | Sets UDE configuration for a specific environment. |
 | [Set-UdeDbJitCache](Set-UdeDbJitCache) | Sets UDE database JIT access credentials in the local cache. |

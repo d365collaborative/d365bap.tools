@@ -14,7 +14,7 @@ Gets UDE database JIT access information for a specified environment.
 
 ```
 Get-UdeDbJit [-EnvironmentId] <String> [[-WhitelistIp] <String>] [[-Role] <String>] [[-Reason] <String>]
- [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [[-WaitSeconds] <Int32>] [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -63,6 +63,15 @@ It will assign the "Reader" role.
 It will use the specified reason "Needed for data migration".
 
 ### EXAMPLE 5
+```
+Get-UdeDbJit -EnvironmentId "env-123" -WaitSeconds 60
+```
+
+This will retrieve the JIT database access information for the specified environment ID.
+It will wait 60 seconds for the credentials to propagate on the backend before returning them.
+This is the sane default and ensures that piped consumers like Set-UdeDbJitCache receive credentials that are ready to use.
+
+### EXAMPLE 6
 ```
 Get-UnifiedEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
 ```
@@ -149,6 +158,26 @@ Aliases:
 Required: False
 Position: 4
 Default value: Administrative access via d365bap.tools
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WaitSeconds
+The time in seconds to wait after obtaining the JIT credentials, to allow them to propagate
+on the backend before the credentials are returned.
+
+Newly issued JIT credentials need up to 60 seconds to propagate before the SQL login accepts connections.
+
+Defaults to 60.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
+Default value: 60
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

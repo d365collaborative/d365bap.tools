@@ -161,6 +161,8 @@
 		, 'Invoke-PpacD365PlatformUpdate'
 		
 		, 'Invoke-PpePublishAllCustomizations'
+
+		, 'Invoke-UdeDbQuery'
 		
 		, 'New-PpacSecurityRole'
 
