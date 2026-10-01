@@ -438,6 +438,46 @@
       </TableControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.FscmOdataAction</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.FscmOdataAction</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Width>30</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>40</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>22</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>28</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>CollectionName</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>ActionName</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>BindingKind</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>ReturnType</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.FscmOdataEntity</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.FscmOdataEntity</TypeName>

@@ -97,6 +97,7 @@
 		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
 		, 'Get-FscmOdata'
+		, 'Get-FscmOdataAction'
 		, 'Get-FscmOdataEntity'
 		, 'Get-FscmOdataToken'
 		, 'Get-FscmRestService'
@@ -153,6 +154,7 @@
 		, 'Invoke-BapInstallAzCopy'
 
 		, 'Invoke-FscmDmfEntityMetadataRefresh'
+		, 'Invoke-FscmOdataAction'
 		, 'Invoke-FscmRestService'
 
 		, 'Invoke-PpacD365AppInstall'
