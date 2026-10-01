@@ -8,8 +8,6 @@
         
         Results include the entity name, collection name, action name, binding kind, return type and a joined list of parameter names.
         
-        Supports wildcard and exact matching against the entity (Name and CollectionName) and the action Name fields.
-        
     .PARAMETER EnvironmentId
         The ID of the environment to retrieve OData action metadata from.
         

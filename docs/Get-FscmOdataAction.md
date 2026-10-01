@@ -22,8 +22,6 @@ Retrieves action metadata from the Finance and Operations /metadata/PublicEntiti
 
 Results include the entity name, collection name, action name, binding kind, return type and a joined list of parameter names.
 
-Supports wildcard and exact matching against the entity (Name and CollectionName) and the action Name fields.
-
 ## EXAMPLES
 
 ### EXAMPLE 1
