@@ -114,6 +114,7 @@
 		, 'Get-PpacD365App'
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
+		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacRbacRole'
@@ -161,6 +162,7 @@
 
 		, 'Invoke-PpacD365AppInstall'
 		, 'Invoke-PpacD365PlatformUpdate'
+		, 'Invoke-PpacD365VersionUpdate'
 		
 		, 'Invoke-PpePublishAllCustomizations'
 
