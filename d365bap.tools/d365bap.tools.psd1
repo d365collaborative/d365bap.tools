@@ -114,6 +114,7 @@
 		, 'Get-PpacD365App'
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
+		, 'Get-PpacD365Properties'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacRbacRole'
