@@ -128,6 +128,29 @@
       </ListControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.FscmEnvironmentVersion</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.FscmEnvironmentVersion</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>ApplicationVersion</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ApplicationBuild</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PlatformBuild</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.FscmInstalledModel</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.FscmInstalledModel</TypeName>

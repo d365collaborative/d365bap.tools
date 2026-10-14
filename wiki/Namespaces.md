@@ -105,6 +105,7 @@ This is when one is working directly against the Dynamics 365 ERP environment. H
 | [Add-FscmUserFromSecurityGroup](Add-FscmUserFromSecurityGroup) | Enables creation of users from an Entra Security Group in the Dynamics 365 ERP environment. |
 | [Get-FscmDmfEntity](Get-FscmDmfEntity) | Get DMF entity metadata from a Finance and Operations environment. |
 | [Get-FscmEntraApplication](Get-FscmEntraApplication) | Get Entra (AAD) registered applications from a Finance and Operations environment. |
+| [Get-FscmEnvironmentVersion](Get-FscmEnvironmentVersion) | Get version numbers from a Finance and Operations environment. |
 | [Get-FscmInstalledModel](Get-FscmInstalledModel) | Get installed models from a Finance and Operations environment. |
 | [Get-FscmOdata](Get-FscmOdata) | Query an OData entity from a Finance and Operations environment. |
 | [Get-FscmOdataEntity](Get-FscmOdataEntity) | Get OData entity metadata from a Finance and Operations environment. |
