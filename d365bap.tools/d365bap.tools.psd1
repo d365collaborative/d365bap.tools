@@ -98,6 +98,7 @@
 		, 'Get-FscmEntraApplication'
 		, 'Get-FscmInstalledModel'
 		, 'Get-FscmOdata'
+		, 'Get-FscmOdataAction'
 		, 'Get-FscmOdataEntity'
 		, 'Get-FscmOdataToken'
 		, 'Get-FscmRestService'
@@ -154,12 +155,15 @@
 		, 'Invoke-BapInstallAzCopy'
 
 		, 'Invoke-FscmDmfEntityMetadataRefresh'
+		, 'Invoke-FscmOdataAction'
 		, 'Invoke-FscmRestService'
 
 		, 'Invoke-PpacD365AppInstall'
 		, 'Invoke-PpacD365PlatformUpdate'
 		
 		, 'Invoke-PpePublishAllCustomizations'
+
+		, 'Invoke-UdeDbQuery'
 		
 		, 'New-PpacSecurityRole'
 
@@ -173,6 +177,8 @@
 		
 		, 'Remove-UnifiedEnvironmentModule'
 		, 'Remove-UnifiedEnvironmentPackage'
+		
+		, 'Remove-UnifiedEnvironment'
 		
 		, 'Set-BapAzCopyPath'
 		

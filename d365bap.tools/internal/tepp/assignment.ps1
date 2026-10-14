@@ -64,6 +64,11 @@ Register-PSFTeppArgumentCompleter `
     -Name "d365bap.tools.tepp.ude.dbjit.credentials"
 
 Register-PSFTeppArgumentCompleter `
+    -Command Invoke-UdeDbQuery `
+    -Parameter Id `
+    -Name "d365bap.tools.tepp.ude.dbjit.credentials"
+
+Register-PSFTeppArgumentCompleter `
     -Command Get-PpacDeployLocation `
     -Parameter Name `
     -Name "d365bap.tools.tepp.bap.locations"

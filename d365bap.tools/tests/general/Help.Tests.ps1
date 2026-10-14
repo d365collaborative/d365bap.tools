@@ -50,7 +50,14 @@ if ($SkipTest) { return }
 $includedNames = (Get-ChildItem $CommandPath -Recurse -File | Where-Object Name -like "*.ps1").BaseName
 $commandTypes = @('Cmdlet', 'Function')
 if ($PSVersionTable.PSEdition -eq 'Desktop' ) { $commandTypes += 'Workflow' }
-$commands = Get-Command -Module (Get-Module $ModuleName) -CommandType $commandTypes | Where-Object Name -In $includedNames
+$moduleBasePath = (Resolve-Path "$global:testroot\..").Path
+$commands = Get-Command -Module (Get-Module $ModuleName) -CommandType $commandTypes | Where-Object Name -In $includedNames | Group-Object Name | ForEach-Object {
+	# Other instances of the module may be loaded as well (e.g. an installed release next to the repo checkout).
+	# Exclude commands that do not come from the module under test, so each command is only tested once.
+	$underTest = $_.Group | Where-Object { $null -ne $_.Module -and $_.Module.Path.StartsWith($moduleBasePath, [System.StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1
+	if ($null -eq $underTest) { $_.Group | Select-Object -First 1 }
+	else { $underTest }
+}
 
 ## When testing help, remember that help is cached at the beginning of each session.
 ## To test, restart session.
