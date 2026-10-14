@@ -150,6 +150,7 @@
 		
 		, 'Get-UnifiedEnvironment'
 		, 'Get-UnifiedEnvironmentModule'
+		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
