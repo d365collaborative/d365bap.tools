@@ -96,6 +96,7 @@
 		
 		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
+		, 'Get-FscmInstalledModel'
 		, 'Get-FscmOdata'
 		, 'Get-FscmOdataEntity'
 		, 'Get-FscmOdataToken'
