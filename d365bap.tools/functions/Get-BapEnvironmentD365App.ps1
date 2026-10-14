@@ -211,7 +211,9 @@ function Get-BapEnvironmentD365App {
         if (Test-PSFFunctionInterrupt) { return }
         # $envObj = @{"PpacEnvId" = "f0612c9b-3995-eaf5-a011-29f65bab374a"; "LinkedMetaPpacEnvUri" = "https://org47ec3c08.crm4.dynamics.com/"}
 
-        # First we will fetch ALL available apps for the environment
+        # First we will fetch ALL available apps for the environment.
+        # Same endpoint as 'pac app-management get-environment-application-package':
+        # GET .../applicationPackages?appInstallState=All&api-version=2024-10-01, following '@odata.nextLink'.
         $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
         
@@ -219,11 +221,18 @@ function Get-BapEnvironmentD365App {
             "Authorization" = "Bearer $($tokenPowerApiValue)"
         }
         
-        $appsAvailable = Invoke-RestMethod `
-            -Method Get `
-            -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" `
-            -Headers $headersPowerApi | `
-            Select-Object -ExpandProperty Value
+        $appsAvailable = @()
+        $nextUri = "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?appInstallState=All&api-version=2024-10-01"
+
+        do {
+            $responsePage = Invoke-RestMethod `
+                -Method Get `
+                -Uri $nextUri `
+                -Headers $headersPowerApi
+
+            $appsAvailable += $responsePage.value
+            $nextUri = $responsePage.'@odata.nextLink'
+        } while (-not [string]::IsNullOrEmpty($nextUri))
 
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)

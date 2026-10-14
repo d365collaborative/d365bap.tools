@@ -1,12 +1,22 @@
 ﻿
 <#
     .SYNOPSIS
-        Invoke the installation of a D365 App in a given environment
+        Invoke the installation or update of a D365 App in a given environment
         
     .DESCRIPTION
-        Enables the invocation of the installation process against the PowerPlatform API (https://api.powerplatform.com)
+        Enables the invocation of the installation / update process against the PowerPlatform API (https://api.powerplatform.com)
         
-        The cmdlet will keep requesting the status of all invoked installations, until they all have a NON "Running" state
+        Mimics the behavior of 'pac app-management install-application-package --unique-name':
+        POST https://api.powerplatform.com/appmanagement/environments/{environmentId}/applicationPackages/{uniqueName}/install?api-version=2024-10-01
+        with body '{"payloadValue":"..."}' (or '{}' when no payload is needed).
+        
+        The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
+        The unique name (PpacPackageName / UniqueName) MUST be used in the URL - using the package Id guid
+        returns HTTP 400 'Package requested for installation was not found'.
+        
+        The cmdlet will keep requesting the status of all invoked installations, until they all reach a
+        terminal state (Succeeded / Failed / Canceled). Valid operation states are:
+        NotStarted, Running, Succeeded, Failed, Canceled.
         
         It will request this status every 60 seconds
         
@@ -18,9 +28,19 @@
     .PARAMETER PackageId
         The id of the package(s) that you want to have Installed
         
+        Accepts either the package Id guid (PpacD365AppId / Id) or the package unique name
+        (PpacPackageName / UniqueName). The unique name is what is sent to the API.
+        
         It supports id of current packages, with updates available and new D365 apps
         
         It support an array as input, so it can invoke multiple D365 App installations
+        
+    .PARAMETER PayloadValue
+        Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
+        
+        Mimics 'pac app-management install-application-package --payload-value'.
+        Required by some apps with a custom install experience.
+        Omit for regular installs / updates.
         
     .EXAMPLE
         PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId 'be69fc64-7393-4c3c-8908-2a1c2e53aef9','6defa8de-87f9-4478-8f9a-a7d685394e24'
@@ -108,7 +128,10 @@ function Invoke-BapEnvironmentInstallD365App {
         [string] $EnvironmentId,
 
         [parameter (Mandatory = $true)]
-        [string[]] $PackageId
+        [string[]] $PackageId,
+
+        [parameter (Mandatory = $false)]
+        [string] $PayloadValue
     )
     
     begin {
@@ -143,9 +166,16 @@ function Invoke-BapEnvironmentInstallD365App {
 
         $headersPowerApi."Content-Type" = "application/json;charset=utf-8"
 
+        if ($PSBoundParameters.ContainsKey('PayloadValue')) {
+            $body = @{ payloadValue = $PayloadValue } | ConvertTo-Json -Compress
+        }
+        else {
+            $body = '{}'
+        }
+
         foreach ($pgkId in $PackageId) {
             $appToBeInstalled = $appsAvailable | `
-                Where-Object Id -eq $pgkId | `
+                Where-Object { $_.Id -eq $pgkId -or $_.UniqueName -eq $pgkId -or $_.PpacD365AppId -eq $pgkId -or $_.PpacPackageName -eq $pgkId } | `
                 Select-Object -First 1
 
             if ($null -eq $appToBeInstalled) {
@@ -154,12 +184,15 @@ function Invoke-BapEnvironmentInstallD365App {
                 Stop-PSFFunction -Message "Stopping because environment and d365app combination was NOT found based on the supplied parameters." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             }
 
-            $body = $appToBeInstalled | ConvertTo-Json
+            $uniqueNameToInstall = $appToBeInstalled.UniqueName
+            if ([string]::IsNullOrEmpty($uniqueNameToInstall)) {
+                $uniqueNameToInstall = $appToBeInstalled.PpacPackageName
+            }
 
             try {
                 $resIntall = Invoke-RestMethod `
                     -Method Post `
-                    -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/applicationPackages/$($appToBeInstalled.id)/install?api-version=2022-03-01-preview" `
+                    -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages/$uniqueNameToInstall/install?api-version=2024-10-01" `
                     -Headers $headersPowerApi `
                     -Body $body
 
@@ -191,12 +224,12 @@ function Invoke-BapEnvironmentInstallD365App {
             $arrStatus = @()
 
             foreach ($operation in $arrInstallStarted) {
-                $resInstallOperation = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$EnvironmentId/operations/$($operation.lastOperation.operationId)?api-version=2022-03-01-preview" -Headers $headersPowerApi
+                $resInstallOperation = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/operations/$($operation.lastOperation.operationId)?api-version=2024-10-01" -Headers $headersPowerApi
                 $arrStatus.Add($resInstallOperation)
             }
 
             $arrStatus | Format-Table
-        } while ("Running" -in $arrStatus.status)
+        } while (("NotStarted" -in $arrStatus.status) -or ("Running" -in $arrStatus.status))
     }
     
     end {

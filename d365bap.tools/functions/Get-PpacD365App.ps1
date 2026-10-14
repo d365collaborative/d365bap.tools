@@ -6,6 +6,10 @@
     .DESCRIPTION
         Retrieves available D365 applications from the environment as they are shown in the Power Platform Admin Center (PPAC).
         
+        Queries the same endpoint as 'pac app-management get-environment-application-package':
+        GET https://api.powerplatform.com/appmanagement/environments/{environmentId}/applicationPackages?appInstallState=All&api-version=2024-10-01
+        All result pages are followed via '@odata.nextLink'.
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
         
@@ -77,11 +81,18 @@ function Get-PpacD365App {
             "Prefer"           = "odata.include-annotations=*"
         }
         
-        $appsAvailable = Invoke-RestMethod `
-            -Method Get `
-            -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" `
-            -Headers $headersPowerApi 4> $null | `
-            Select-Object -ExpandProperty Value
+        $appsAvailable = @()
+        $nextUri = "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?appInstallState=All&api-version=2024-10-01"
+
+        do {
+            $responsePage = Invoke-RestMethod `
+                -Method Get `
+                -Uri $nextUri `
+                -Headers $headersPowerApi 4> $null
+
+            $appsAvailable += $responsePage.value
+            $nextUri = $responsePage.'@odata.nextLink'
+        } while (-not [string]::IsNullOrEmpty($nextUri))
     }
     
     process {

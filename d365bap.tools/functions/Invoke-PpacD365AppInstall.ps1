@@ -1,10 +1,16 @@
 ﻿
 <#
     .SYNOPSIS
-        Installs D365 applications in the environment.
+        Installs or updates D365 applications in the environment.
         
     .DESCRIPTION
-        Enables the user to install D365 applications in the environment as it would be done in Power Platform Admin Center (PPAC).
+        Enables the user to install or update D365 applications in the environment as it would be done in Power Platform Admin Center (PPAC).
+        
+        Mimics the behavior of 'pac app-management install-application-package --unique-name':
+        POST https://api.powerplatform.com/appmanagement/environments/{environmentId}/applicationPackages/{uniqueName}/install?api-version=2024-10-01
+        with body '{"payloadValue":"..."}' (or '{}' when no payload is needed).
+        
+        The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
@@ -13,6 +19,15 @@
         The name, unique name or package name of the D365 application you want to install in the environment.
         
         Supports single or multiple application names.
+        
+        The unique name (PpacPackageName) is used in the install URL, as required by the API.
+        
+    .PARAMETER PayloadValue
+        Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
+        
+        Mimics 'pac app-management install-application-package --payload-value'.
+        Required by some apps with a custom install experience (e.g. Finance and Operations Provisioning App).
+        Omit for regular installs / updates.
         
     .EXAMPLE
         PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "Invoice Capture for Dynamics 365 Finance"
@@ -42,7 +57,10 @@ function Invoke-PpacD365AppInstall {
         [string] $EnvironmentId,
 
         [parameter (Mandatory = $true)]
-        [string[]] $D365App
+        [string[]] $D365App,
+
+        [parameter (Mandatory = $false)]
+        [string] $PayloadValue
     )
     
     begin {
@@ -93,8 +111,15 @@ function Invoke-PpacD365AppInstall {
                 Stop-PSFFunction -Message "Stopping because environment and d365app combination was NOT found based on the supplied parameters." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             }
 
+            if ($PSBoundParameters.ContainsKey('PayloadValue')) {
+                $body = @{ payloadValue = $PayloadValue } | ConvertTo-Json -Compress
+            }
+            else {
+                $body = '{}'
+            }
+
             try {
-                $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2022-03-01-preview" `
+                $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2024-10-01" `
                     -f $envObj.PpacEnvId `
                     , $appToBeInstalled.PpacPackageName
 
@@ -136,7 +161,7 @@ function Invoke-PpacD365AppInstall {
             $arrStatus = @()
 
             foreach ($operation in $arrInstallStarted) {
-                $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/operations/{1}?api-version=2022-03-01-preview" `
+                $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/operations/{1}?api-version=2024-10-01" `
                     -f $envObj.PpacEnvId `
                     , $operation.lastOperation.operationId
 
@@ -150,9 +175,9 @@ function Invoke-PpacD365AppInstall {
 
             $arrStatus | Format-Table
         } while (
-            (-not ("Succeeded" -in $arrStatus.status)) `
-                -and
-            (-not ("Failed" -in $arrStatus.status))
+            ("NotStarted" -in $arrStatus.status) `
+                -or
+            ("Running" -in $arrStatus.status)
         )
     }
     
