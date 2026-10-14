@@ -96,6 +96,7 @@
 		
 		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
+		, 'Get-FscmEnvironmentVersion'
 		, 'Get-FscmInstalledModel'
 		, 'Get-FscmOdata'
 		, 'Get-FscmOdataAction'
