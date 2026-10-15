@@ -6,13 +6,7 @@
     .DESCRIPTION
         Updates the Finance and Operations maintenance settings for a Unified Environment.
         
-        Wraps the Power Platform API endpoint:
-        PUT https://api.powerplatform.com/dynamics/environments/{environmentId}/finopsadminsettings?api-version=2024-10-01
-        
-        Supports updating the maintenance window cadence for major version application updates
-        and the preferred days of week for updates.
-        
-        Support D365 Finance and Operations Unified Environments, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
+        Supports updating the maintenance window cadence for major version application updates and the preferred days of week for updates.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -33,17 +27,17 @@
         Valid values are Sunday, Monday, Tuesday, Wednesday, Thursday, Friday and Saturday.
         
     .EXAMPLE
-        PS C:\> Set-UnifiedEnvironmentMaintenance -EnvironmentId "es-ude-motz-01" -Cadence EveryOtherUpdate
+        PS C:\> Set-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Cadence EveryOtherUpdate
         
-        This will set the maintenance window cadence to 'EveryOtherUpdate' for the environment "es-ude-motz-01".
-        
-    .EXAMPLE
-        PS C:\> Set-UnifiedEnvironmentMaintenance -EnvironmentId "es-ude-motz-01" -DaysOfWeek Saturday, Sunday
-        
-        This will set the preferred maintenance days to Saturday and Sunday for the environment "es-ude-motz-01".
+        This will set the maintenance window cadence to 'EveryOtherUpdate' for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6".
         
     .EXAMPLE
-        PS C:\> Set-UnifiedEnvironmentMaintenance -EnvironmentId "es-ude-motz-01" -Cadence EveryUpdate -DaysOfWeek Saturday
+        PS C:\> Set-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -DaysOfWeek Saturday, Sunday
+        
+        This will set the preferred maintenance days to Saturday and Sunday for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6".
+        
+    .EXAMPLE
+        PS C:\> Set-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Cadence EveryUpdate -DaysOfWeek Saturday
         
         This will set the maintenance window cadence to 'EveryUpdate' and the preferred maintenance day to Saturday.
         
@@ -73,11 +67,12 @@ function Set-UnifiedEnvironmentMaintenance {
             return
         }
 
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId `
+            -SkipVersionDetails | `
+            Select-Object -First 1
 
         if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
+            $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return

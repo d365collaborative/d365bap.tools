@@ -6,12 +6,7 @@
     .DESCRIPTION
         Retrieves the Finance and Operations maintenance settings for a Unified Environment.
         
-        Wraps the Power Platform API endpoint:
-        GET https://api.powerplatform.com/dynamics/environments/{environmentId}/finopsadminsettings?api-version=2024-10-01
-        
         Returns the maintenance window cadence and the preferred days of week for updates.
-        
-        Support D365 Finance and Operations Unified Environments, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -35,11 +30,13 @@ function Get-UnifiedEnvironmentMaintenance {
     )
     
     begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        $envObj = Get-UnifiedEnvironment `
+            -EnvironmentId $EnvironmentId `
+            -SkipVersionDetails | `
+            Select-Object -First 1
 
         if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
+            $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
