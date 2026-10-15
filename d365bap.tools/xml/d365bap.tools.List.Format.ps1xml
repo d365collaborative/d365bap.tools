@@ -401,6 +401,47 @@
       </ListControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.PpacD365Properties</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacD365Properties</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>PpacEnvId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PpacEnvName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>AppId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>DeploymentType</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>DemoDataset</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>LastObservedAOSCount</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>LastObservedBatchAOSCount</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>MaxAOSCount</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>MaxBatchAOSCount</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.PpacEnvironment</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.PpacEnvironment</TypeName>

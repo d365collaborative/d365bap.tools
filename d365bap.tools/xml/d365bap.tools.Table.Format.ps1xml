@@ -828,6 +828,58 @@
       </TableControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.PpacD365Properties</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacD365Properties</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Width>30</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>17</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>25</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>12</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>17</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>PpacEnvName</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>DeploymentType</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>LastObservedAOSCount</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>LastObservedBatchAOSCount</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>MaxAOSCount</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>MaxBatchAOSCount</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.PpacEnvironment</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.PpacEnvironment</TypeName>
