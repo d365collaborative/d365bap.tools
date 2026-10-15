@@ -14,6 +14,7 @@ Invoke the installation of a D365 App in a given environment
 
 ```
 Invoke-BapEnvironmentInstallD365App [-EnvironmentId] <String> [-PackageId] <String[]>
+ [[-PayloadValue] <String>] [[-PollIntervalSeconds] <Int32>] [[-TimeoutMinutes] <Int32>]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -130,6 +131,10 @@ Accept wildcard characters: False
 ### -PackageId
 The id of the package(s) that you want to have Installed
 
+Accepts:
+* The package Id guid (PpacD365AppId / Id)
+* The package unique name (PpacPackageName / UniqueName), as required by the API install URL
+
 It supports id of current packages, with updates available and new D365 apps
 
 It support an array as input, so it can invoke multiple D365 App installations
@@ -142,6 +147,61 @@ Aliases:
 Required: True
 Position: 2
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PayloadValue
+Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
+
+Required by some apps with a custom install experience.
+Omit for regular installs / updates.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PollIntervalSeconds
+Seconds to wait between each status poll against the operations endpoint.
+
+Defaults to 60 seconds.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: 60
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TimeoutMinutes
+Maximum time to wait for all installations to reach a terminal state (Succeeded / Failed / Canceled) before giving up polling.
+
+Defaults to 120 minutes.
+Use 0 to wait indefinitely (not recommended for automation).
+
+When the timeout expires the cmdlet stops polling, warns, and returns the last known statuses so the caller can decide how to proceed.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
+Default value: 120
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
