@@ -219,11 +219,19 @@ function Get-BapEnvironmentD365App {
             "Authorization" = "Bearer $($tokenPowerApiValue)"
         }
         
-        $appsAvailable = Invoke-RestMethod `
-            -Method Get `
-            -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" `
-            -Headers $headersPowerApi | `
-            Select-Object -ExpandProperty Value
+        $appsAvailable = @()
+        $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages?appInstallState=All&api-version=2024-10-01" `
+            -f $envObj.PpacEnvId
+
+        do {
+            $responsePage = Invoke-RestMethod `
+                -Method Get `
+                -Uri $localUri `
+                -Headers $headersPowerApi
+
+            $appsAvailable += $responsePage.value
+            $localUri = $responsePage.'@odata.nextLink'
+        } while (-not [string]::IsNullOrEmpty($localUri))
 
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
@@ -243,6 +251,22 @@ function Get-BapEnvironmentD365App {
     
     process {
         if (Test-PSFFunctionInterrupt) { return }
+
+        $compareVersions = {
+            param ([string]$Installed, [string]$Available)
+            $iParts = $Installed -split '\.'
+            $aParts = $Available -split '\.'
+            $len = [Math]::Max($iParts.Count, $aParts.Count)
+            for ($n = 0; $n -lt $len; $n++) {
+                $iNum = 0
+                $aNum = 0
+                if ($n -lt $iParts.Count) { [int]::TryParse($iParts[$n], [ref]$iNum) | Out-Null }
+                if ($n -lt $aParts.Count) { [int]::TryParse($aParts[$n], [ref]$aNum) | Out-Null }
+                if ($aNum -gt $iNum) { return 1 }
+                if ($aNum -lt $iNum) { return -1 }
+            }
+            return 0
+        }
 
         $colApps = $appsAvailable | Where-Object {
             ($_.ApplicationName -like $Name -or $_.ApplicationName -eq $Name) `
@@ -287,7 +311,10 @@ function Get-BapEnvironmentD365App {
         }
 
         if ($UpdatesOnly) {
-            $resCol = @($resCol | Where-Object IsLatest -eq $false)
+            $resCol = @($resCol | Where-Object {
+                    $_.InstalledVersion -ne 'N/A' -and `
+                    (& $compareVersions -Installed $_.InstalledVersion -Available $_.AvailableVersion) -gt 0
+                })
         }
 
         if ($AsExcelOutput) {

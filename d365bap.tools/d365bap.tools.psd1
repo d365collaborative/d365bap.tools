@@ -151,6 +151,7 @@
 		, 'Get-UdeXrefDb'
 		
 		, 'Get-UnifiedEnvironment'
+		, 'Get-UnifiedEnvironmentMaintenance'
 		, 'Get-UnifiedEnvironmentModule'
 		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
@@ -205,6 +206,8 @@
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
+		
+		, 'Set-UnifiedEnvironmentMaintenance'
 		
 		, 'Start-UdeDatabaseRefresh'
 		, 'Start-UdeDbSsms'
