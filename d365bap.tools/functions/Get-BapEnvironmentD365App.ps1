@@ -10,7 +10,7 @@
         
         It can show only installed D365 Apps
         
-        It can show only installed D365 Apps, with available updates
+        It can show only installed D365 Apps that have a newer version available (upgrades)
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
@@ -48,7 +48,11 @@
         Instruction to include all D365 Apps in the output, regardless of their install state
         
     .PARAMETER UpdatesOnly
-        Instruct the cmdlet to only output D365 Apps that has an update available
+        Instruct the cmdlet to only output D365 Apps that have a newer version available (upgrades)
+        
+        Available versions are compared part by part against the installed versions, so apps
+        where the available version is older (a different release train) are NOT included -
+        installing those would be a downgrade.
         
         Makes it easier to fully automate the update process of a given environment
         
@@ -253,6 +257,24 @@ function Get-BapEnvironmentD365App {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
+        # Compares two dotted version strings part by part (non-numeric parts count as 0).
+        # Returns 1 when Available is newer than Installed, -1 when older, 0 when equal.
+        $compareVersions = {
+            param ([string]$Installed, [string]$Available)
+            $iParts = $Installed -split '\.'
+            $aParts = $Available -split '\.'
+            $len = [Math]::Max($iParts.Count, $aParts.Count)
+            for ($n = 0; $n -lt $len; $n++) {
+                $iNum = 0
+                $aNum = 0
+                if ($n -lt $iParts.Count) { [int]::TryParse($iParts[$n], [ref]$iNum) | Out-Null }
+                if ($n -lt $aParts.Count) { [int]::TryParse($aParts[$n], [ref]$aNum) | Out-Null }
+                if ($aNum -gt $iNum) { return 1 }
+                if ($aNum -lt $iNum) { return -1 }
+            }
+            return 0
+        }
+
         $colApps = $appsAvailable | Where-Object {
             ($_.ApplicationName -like $Name -or $_.ApplicationName -eq $Name) `
                 -or ($_.UniqueName -like $Name -or $_.UniqueName -eq $Name)
@@ -296,7 +318,13 @@ function Get-BapEnvironmentD365App {
         }
 
         if ($UpdatesOnly) {
-            $resCol = @($resCol | Where-Object IsLatest -eq $false)
+            # Only apps where the available version is actually NEWER than the installed
+            # version. A mere version mismatch can also mean the available version is
+            # older (different release train) - installing that would be a downgrade.
+            $resCol = @($resCol | Where-Object {
+                    $_.InstalledVersion -ne 'N/A' -and `
+                    (& $compareVersions -Installed $_.InstalledVersion -Available $_.AvailableVersion) -gt 0
+                })
         }
 
         if ($AsExcelOutput) {
