@@ -30,13 +30,6 @@ Get-PpacD365Version -EnvironmentId <String> [-Latest] [-ProgressAction <ActionPr
 ## DESCRIPTION
 Enables the user to retrieve the available D365 Finance and Operations application versions for the environment.
 
-Uses the Power Platform API:
-GET https://api.powerplatform.com/dynamics/environments/{environmentId}/finopsversions?api-version=2024-10-01
-
-This cmdlet coexists with Get-PpacD365PlatformUpdate, which uses the legacy Dataverse
-action (msprov_getfnoversiondetails).
-Both should return the same version set.
-
 ## EXAMPLES
 
 ### EXAMPLE 1

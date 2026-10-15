@@ -5,12 +5,6 @@
         
     .DESCRIPTION
         Enables the user to retrieve the available D365 Finance and Operations application versions for the environment.
-
-        Uses the Power Platform API:
-        GET https://api.powerplatform.com/dynamics/environments/{environmentId}/finopsversions?api-version=2024-10-01
-
-        This cmdlet coexists with Get-PpacD365PlatformUpdate, which uses the legacy Dataverse
-        action (msprov_getfnoversiondetails). Both should return the same version set.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -54,8 +48,11 @@ function Get-PpacD365Version {
     )
     
     begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        
+        $envObj = Get-UnifiedEnvironment `
+            -EnvironmentId $EnvironmentId `
+            -SkipVersionDetails | `
+            Select-Object -First 1
 
         if ($null -eq $envObj) {
             $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."

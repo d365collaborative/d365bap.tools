@@ -5,18 +5,6 @@
         
     .DESCRIPTION
         Applies the specified D365 Finance and Operations application version to the environment.
-
-        Uses the Power Platform API:
-        POST https://api.powerplatform.com/dynamics/environments/{environmentId}/finopsversions/{version}/apply?api-version=2024-10-01
-
-        The API returns 202 Accepted with an operationId / resourceId when the update is queued,
-        and 204 No Content when the environment is already at or above the requested version.
-
-        By default the cmdlet returns immediately after the update is accepted (NoWait behavior).
-        Specify -WaitForCompletion to poll the lifecycle operation until it reaches a terminal state.
-
-        This cmdlet coexists with Invoke-PpacD365PlatformUpdate, which uses the legacy Dataverse
-        action (msprov_queuefnoinstallorupdate).
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -25,13 +13,10 @@
         The version of D365 Finance and Operations to apply.
 
         A full application version is expected (e.g. "10.0.47.5"), but a short platform
-        version (e.g. "10.0.47") is also accepted and resolved to the matching full version
-        reported by Get-PpacD365Version.
+        version (e.g. "10.0.47") is also accepted.
         
     .PARAMETER WaitForCompletion
         Instructs the cmdlet to wait until the apply operation reaches a terminal state.
-
-        Without this switch the cmdlet returns immediately after the operation is accepted.
         
     .EXAMPLE
         PS C:\> Invoke-PpacD365VersionUpdate -EnvironmentId "env-123" -Version "10.0.47.5"
@@ -66,14 +51,10 @@ function Invoke-PpacD365VersionUpdate {
         [switch] $WaitForCompletion
     )
     
-    begin {
-        # Has to be empty - as we want to support pipe inputs.
-    }
-    
     process {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
+        $envObj = Get-UnifiedEnvironment `
+            -EnvironmentId $EnvironmentId `
+            -SkipVersionDetails | `
             Select-Object -First 1
 
         if ($null -eq $envObj) {
