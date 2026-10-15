@@ -18,10 +18,7 @@ Get-UnifiedEnvironmentOperationError [-EnvironmentId] <String> [[-MaxResults] <I
 ```
 
 ## DESCRIPTION
-Retrieves recent Finance and Operations operation errors for a Unified environment
-using the Power Platform API.
-
-Calls GET https://api.powerplatform.com/dynamics/environments/{environmentId}/operationerrors?api-version=2024-10-01
+Enables the user to retrieve recent Finance and Operations operation errors for a Unified environment
 
 ## EXAMPLES
 
@@ -69,7 +66,7 @@ Accept wildcard characters: False
 ### -MaxResults
 The maximum number of operation errors to return.
 
-Defaults to 20 and is capped at 1000 by the API.
+Default it 20.
 
 ```yaml
 Type: Int32
