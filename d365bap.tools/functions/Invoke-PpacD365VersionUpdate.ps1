@@ -64,10 +64,6 @@ function Invoke-PpacD365VersionUpdate {
             return
         }
 
-        <#
-            The apply endpoint expects the full application version (10.0.X.Y), so resolve
-            the requested version against the available versions first.
-        #>
         $colVersions = Get-PpacD365Version -EnvironmentId $envObj.PpacEnvId
 
         $deployVersion = $colVersions | `

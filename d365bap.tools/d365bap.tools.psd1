@@ -114,6 +114,7 @@
 		, 'Get-PpacD365App'
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
+		, 'Get-PpacD365Properties'
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentGroup'
@@ -151,6 +152,7 @@
 		
 		, 'Get-UnifiedEnvironment'
 		, 'Get-UnifiedEnvironmentModule'
+		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
