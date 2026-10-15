@@ -1,62 +1,63 @@
-﻿<#
+﻿
+<#
     .SYNOPSIS
         Remove a unified environment from a Power Platform tenant.
-
+        
     .DESCRIPTION
         Removes a unified environment (UDE/USE) and everything inside it from the tenant.
-
+        
         Nothing is removed unless the -Force switch is supplied.
         Without -Force the cmdlet lists the environment and the resources that would be removed together with it.
-
+        
         Only unified environments are supported. Other environment types must be removed from the Power Platform Admin Center (PPAC).
-
+        
         A removed environment can be recovered from the Power Platform Admin Center (PPAC) for a limited period, normally seven days.
-
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
-
+        
         Can be either the environment name or the environment GUID (PPAC). Supports wildcards, but has to match a single environment.
-
+        
     .PARAMETER Force
         Instructs the cmdlet to proceed with removing the environment.
-
+        
         Nothing happens unless this parameter is supplied.
-
+        
     .PARAMETER WaitForCompletion
         Instructs the cmdlet to wait until the environment has been removed from the tenant.
-
+        
     .PARAMETER DeletionTimeoutMinutes
         Maximum number of minutes to wait for the environment to be removed.
-
+        
         Prevents endless waiting when the removal is stuck or has failed.
-
+        
         Is only used together with the -WaitForCompletion parameter.
-
+        
         Defaults to 60 minutes. Valid range is 1 to 720 minutes.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironment -EnvironmentId "env-123"
-
+        
         This will show the environment and the resources that would be removed for the specified environment id.
         It will NOT remove the environment yet, allowing you to review it before deciding to remove it.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironment -EnvironmentId "env-123" -Force
-
+        
         This will remove the specified environment without further confirmation.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironment -EnvironmentId "env-123" -Force -WaitForCompletion
-
+        
         This will remove the specified environment without further confirmation.
         It will wait until the environment has been removed from the tenant.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironment -EnvironmentId "env-123" -Force -WaitForCompletion -DeletionTimeoutMinutes 120
-
+        
         This will remove the specified environment without further confirmation.
         It will wait up to 120 minutes for the environment to be removed from the tenant.
-
+        
     .NOTES
         Author: Stefan Vestergaard
 #>

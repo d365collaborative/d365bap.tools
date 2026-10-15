@@ -39,9 +39,9 @@
     .PARAMETER WaitSeconds
         The time in seconds to wait after obtaining the JIT credentials, to allow them to propagate
         on the backend before the credentials are returned.
-
+        
         Newly issued JIT credentials need up to 60 seconds to propagate before the SQL login accepts connections.
-
+        
         Defaults to 60.
         
     .PARAMETER AsExcelOutput

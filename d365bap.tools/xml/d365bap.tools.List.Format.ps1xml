@@ -963,6 +963,29 @@
       </ListControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.UnifiedEnvironmentMaintenance</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.UnifiedEnvironmentMaintenance</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>PpacEnvName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Cadence</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>DaysOfWeek</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.UnifiedEnvironmentOperationError</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.UnifiedEnvironmentOperationError</TypeName>

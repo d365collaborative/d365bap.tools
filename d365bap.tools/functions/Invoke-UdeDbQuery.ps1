@@ -8,7 +8,7 @@
         
         It uses JIT access credentials from the local cache (see Get-UdeDbJitCache) and never
         obtains credentials itself.
-                
+        
     .PARAMETER Id
         The unique identifier of the cached JIT access credentials to use.
         
