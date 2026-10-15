@@ -10,7 +10,7 @@
         
         It can show only installed D365 Apps
         
-        It can show only installed D365 Apps that have a newer version available (upgrades)
+        It can show only installed D365 Apps, with available updates
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
@@ -48,11 +48,7 @@
         Instruction to include all D365 Apps in the output, regardless of their install state
         
     .PARAMETER UpdatesOnly
-        Instruct the cmdlet to only output D365 Apps that have a newer version available (upgrades)
-        
-        Available versions are compared part by part against the installed versions, so apps
-        where the available version is older (a different release train) are NOT included -
-        installing those would be a downgrade.
+        Instruct the cmdlet to only output D365 Apps that has an update available
         
         Makes it easier to fully automate the update process of a given environment
         

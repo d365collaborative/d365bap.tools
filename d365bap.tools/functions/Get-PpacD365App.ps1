@@ -6,10 +6,6 @@
     .DESCRIPTION
         Retrieves available D365 applications from the environment as they are shown in the Power Platform Admin Center (PPAC).
         
-        Queries the same endpoint as 'pac app-management get-environment-application-package':
-        GET https://api.powerplatform.com/appmanagement/environments/{environmentId}/applicationPackages?appInstallState=All&api-version=2024-10-01
-        All result pages are followed via '@odata.nextLink'.
-        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
         
