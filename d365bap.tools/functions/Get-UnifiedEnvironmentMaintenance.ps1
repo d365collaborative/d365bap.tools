@@ -14,9 +14,9 @@
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
         
     .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentMaintenance -EnvironmentId "es-ude-motz-01"
+        PS C:\> Get-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
         
-        This will retrieve the maintenance settings for the environment "es-ude-motz-01".
+        This will retrieve the maintenance settings for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6".
         
     .NOTES
         Author: Mötz Jensen (@Splaxi)
