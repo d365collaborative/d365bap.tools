@@ -425,16 +425,16 @@
                 <PropertyName>DemoDataset</PropertyName>
               </ListItem>
               <ListItem>
-                <PropertyName>LastObservedAOSCount</PropertyName>
+                <PropertyName>AosCount</PropertyName>
               </ListItem>
               <ListItem>
-                <PropertyName>LastObservedBatchAOSCount</PropertyName>
+                <PropertyName>BatchCount</PropertyName>
               </ListItem>
               <ListItem>
-                <PropertyName>MaxAOSCount</PropertyName>
+                <PropertyName>MaxAos</PropertyName>
               </ListItem>
               <ListItem>
-                <PropertyName>MaxBatchAOSCount</PropertyName>
+                <PropertyName>MaxBatch</PropertyName>
               </ListItem>
             </ListItems>
           </ListEntry>

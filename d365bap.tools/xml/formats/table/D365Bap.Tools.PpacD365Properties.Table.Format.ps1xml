@@ -12,7 +12,7 @@
                         <Width>30</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
-                        <Width>17</Width>
+                        <Width>16</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Width>20</Width>
@@ -37,16 +37,16 @@
                                 <PropertyName>DeploymentType</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <PropertyName>LastObservedAOSCount</PropertyName>
+                                <PropertyName>AosCount</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <PropertyName>LastObservedBatchAOSCount</PropertyName>
+                                <PropertyName>BatchCount</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <PropertyName>MaxAOSCount</PropertyName>
+                                <PropertyName>MaxAos</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <PropertyName>MaxBatchAOSCount</PropertyName>
+                                <PropertyName>MaxBatch</PropertyName>
                             </TableColumnItem>
                         </TableColumnItems>
                     </TableRowEntry>
