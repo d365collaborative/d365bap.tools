@@ -27,8 +27,7 @@ with body '{"payloadValue":"..."}' (or '{}' when no payload is needed).
 
 The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
 
-Returns one result object per requested app with the final operation status,
-including error details when an install fails or cannot be started.
+Returns one result object per requested app with the final operation status.
 
 ## EXAMPLES
 
@@ -78,8 +77,6 @@ The name, unique name or package name of the D365 application you want to instal
 
 Supports single or multiple application names.
 
-The unique name (PpacPackageName) is used in the install URL, as required by the API.
-
 ```yaml
 Type: String[]
 Parameter Sets: (All)
@@ -95,7 +92,6 @@ Accept wildcard characters: False
 ### -PayloadValue
 Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
 
-Mimics 'pac app-management install-application-package --payload-value'.
 Required by some apps with a custom install experience (e.g.
 Finance and Operations Provisioning App).
 Omit for regular installs / updates.
@@ -130,14 +126,12 @@ Accept wildcard characters: False
 ```
 
 ### -TimeoutMinutes
-Maximum time to wait for all installations to reach a terminal state
-(Succeeded / Failed / Canceled) before giving up polling.
+Maximum time to wait for all installations to reach a terminal state (Succeeded / Failed / Canceled) before giving up polling.
 
 Defaults to 120 minutes.
 Use 0 to wait indefinitely (not recommended for automation).
 
-When the timeout expires the cmdlet stops polling, warns, and returns the last known
-statuses so the caller can decide how to proceed.
+When the timeout expires the cmdlet stops polling, warns, and returns the last known statuses so the caller can decide how to proceed.
 
 ```yaml
 Type: Int32

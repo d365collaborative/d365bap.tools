@@ -211,9 +211,7 @@ function Get-BapEnvironmentD365App {
         if (Test-PSFFunctionInterrupt) { return }
         # $envObj = @{"PpacEnvId" = "f0612c9b-3995-eaf5-a011-29f65bab374a"; "LinkedMetaPpacEnvUri" = "https://org47ec3c08.crm4.dynamics.com/"}
 
-        # First we will fetch ALL available apps for the environment.
-        # Same endpoint as 'pac app-management get-environment-application-package':
-        # GET .../applicationPackages?appInstallState=All&api-version=2024-10-01, following '@odata.nextLink'.
+        # First we will fetch ALL available apps for the environment
         $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
         
@@ -222,17 +220,18 @@ function Get-BapEnvironmentD365App {
         }
         
         $appsAvailable = @()
-        $nextUri = "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?appInstallState=All&api-version=2024-10-01"
+        $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages?appInstallState=All&api-version=2024-10-01" `
+            -f $envObj.PpacEnvId
 
         do {
             $responsePage = Invoke-RestMethod `
                 -Method Get `
-                -Uri $nextUri `
+                -Uri $localUri `
                 -Headers $headersPowerApi
 
             $appsAvailable += $responsePage.value
-            $nextUri = $responsePage.'@odata.nextLink'
-        } while (-not [string]::IsNullOrEmpty($nextUri))
+            $localUri = $responsePage.'@odata.nextLink'
+        } while (-not [string]::IsNullOrEmpty($localUri))
 
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
@@ -253,8 +252,6 @@ function Get-BapEnvironmentD365App {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        # Compares two dotted version strings part by part (non-numeric parts count as 0).
-        # Returns 1 when Available is newer than Installed, -1 when older, 0 when equal.
         $compareVersions = {
             param ([string]$Installed, [string]$Available)
             $iParts = $Installed -split '\.'
@@ -314,9 +311,6 @@ function Get-BapEnvironmentD365App {
         }
 
         if ($UpdatesOnly) {
-            # Only apps where the available version is actually NEWER than the installed
-            # version. A mere version mismatch can also mean the available version is
-            # older (different release train) - installing that would be a downgrade.
             $resCol = @($resCol | Where-Object {
                     $_.InstalledVersion -ne 'N/A' -and `
                     (& $compareVersions -Installed $_.InstalledVersion -Available $_.AvailableVersion) -gt 0

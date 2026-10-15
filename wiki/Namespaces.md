@@ -37,7 +37,7 @@ T
 | [Get-BapEnvironmentVirtualEntity](Get-BapEnvironmentVirtualEntity) | Get Virtual Entity from environment |
 | [Get-BapTenant](Get-BapTenant) | Retrieves information about the available azure tenant. |
 | [Get-BapTenantDetail](Get-BapTenantDetail) | Gets detailed information about a BAP tenant. |
-| [Invoke-BapEnvironmentInstallD365App](Invoke-BapEnvironmentInstallD365App) | Invoke the installation or update of a D365 App in a given environment |
+| [Invoke-BapEnvironmentInstallD365App](Invoke-BapEnvironmentInstallD365App) | Invoke the installation of a D365 App in a given environment |
 | [Invoke-BapInstallAzCopy](Invoke-BapInstallAzCopy) | Installs AzCopy by downloading it from the official Microsoft URL. |
 | [Remove-BapTenantDetail](Remove-BapTenantDetail) | Removes tenant details for a specified BAP tenant from the local configuration. |
 | [Set-BapAzCopyPath](Set-BapAzCopyPath) | Sets the path to the AzCopy executable. |

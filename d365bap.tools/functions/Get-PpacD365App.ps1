@@ -78,17 +78,18 @@ function Get-PpacD365App {
         }
         
         $appsAvailable = @()
-        $nextUri = "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?appInstallState=All&api-version=2024-10-01"
+        $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages?appInstallState=All&api-version=2024-10-01" `
+            -f $envObj.PpacEnvId
 
         do {
             $responsePage = Invoke-RestMethod `
                 -Method Get `
-                -Uri $nextUri `
+                -Uri $localUri `
                 -Headers $headersPowerApi 4> $null
 
             $appsAvailable += $responsePage.value
-            $nextUri = $responsePage.'@odata.nextLink'
-        } while (-not [string]::IsNullOrEmpty($nextUri))
+            $localUri = $responsePage.'@odata.nextLink'
+        } while (-not [string]::IsNullOrEmpty($localUri))
     }
     
     process {

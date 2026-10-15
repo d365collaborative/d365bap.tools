@@ -8,7 +8,7 @@ schema: 2.0.0
 # Invoke-BapEnvironmentInstallD365App
 
 ## SYNOPSIS
-Invoke the installation or update of a D365 App in a given environment
+Invoke the installation of a D365 App in a given environment
 
 ## SYNTAX
 
@@ -19,23 +19,9 @@ Invoke-BapEnvironmentInstallD365App [-EnvironmentId] <String> [-PackageId] <Stri
 ```
 
 ## DESCRIPTION
-Enables the invocation of the installation / update process against the PowerPlatform API (https://api.powerplatform.com)
+Enables the invocation of the installation process against the PowerPlatform API (https://api.powerplatform.com)
 
-Mimics the behavior of 'pac app-management install-application-package --unique-name':
-POST https://api.powerplatform.com/appmanagement/environments/{environmentId}/applicationPackages/{uniqueName}/install?api-version=2024-10-01
-with body '{"payloadValue":"..."}' (or '{}' when no payload is needed).
-
-The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
-The unique name (PpacPackageName / UniqueName) MUST be used in the URL - using the package Id guid
-returns HTTP 400 'Package requested for installation was not found'.
-
-Returns one result object per requested app with the final operation status,
-including error details when an install fails or cannot be started.
-
-The cmdlet will keep requesting the status of all invoked installations, until they all reach a
-terminal state (Succeeded / Failed / Canceled).
-Valid operation states are:
-NotStarted, Running, Succeeded, Failed, Canceled.
+The cmdlet will keep requesting the status of all invoked installations, until they all have a NON "Running" state
 
 It will request this status every 60 seconds
 
@@ -145,9 +131,9 @@ Accept wildcard characters: False
 ### -PackageId
 The id of the package(s) that you want to have Installed
 
-Accepts either the package Id guid (PpacD365AppId / Id) or the package unique name
-(PpacPackageName / UniqueName).
-The unique name is what is sent to the API.
+Accepts:
+* The package Id guid (PpacD365AppId / Id)
+* The package unique name (PpacPackageName / UniqueName), as required by the API install URL
 
 It supports id of current packages, with updates available and new D365 apps
 
@@ -168,7 +154,6 @@ Accept wildcard characters: False
 ### -PayloadValue
 Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
 
-Mimics 'pac app-management install-application-package --payload-value'.
 Required by some apps with a custom install experience.
 Omit for regular installs / updates.
 
@@ -202,14 +187,12 @@ Accept wildcard characters: False
 ```
 
 ### -TimeoutMinutes
-Maximum time to wait for all installations to reach a terminal state
-(Succeeded / Failed / Canceled) before giving up polling.
+Maximum time to wait for all installations to reach a terminal state (Succeeded / Failed / Canceled) before giving up polling.
 
 Defaults to 120 minutes.
 Use 0 to wait indefinitely (not recommended for automation).
 
-When the timeout expires the cmdlet stops polling, warns, and returns the last known
-statuses so the caller can decide how to proceed.
+When the timeout expires the cmdlet stops polling, warns, and returns the last known statuses so the caller can decide how to proceed.
 
 ```yaml
 Type: Int32

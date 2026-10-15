@@ -1,25 +1,12 @@
 ﻿
 <#
     .SYNOPSIS
-        Invoke the installation or update of a D365 App in a given environment
+        Invoke the installation of a D365 App in a given environment
         
     .DESCRIPTION
-        Enables the invocation of the installation / update process against the PowerPlatform API (https://api.powerplatform.com)
+        Enables the invocation of the installation process against the PowerPlatform API (https://api.powerplatform.com)
         
-        Mimics the behavior of 'pac app-management install-application-package --unique-name':
-        POST https://api.powerplatform.com/appmanagement/environments/{environmentId}/applicationPackages/{uniqueName}/install?api-version=2024-10-01
-        with body '{"payloadValue":"..."}' (or '{}' when no payload is needed).
-        
-        The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
-        The unique name (PpacPackageName / UniqueName) MUST be used in the URL - using the package Id guid
-        returns HTTP 400 'Package requested for installation was not found'.
-        
-        Returns one result object per requested app with the final operation status,
-        including error details when an install fails or cannot be started.
-        
-        The cmdlet will keep requesting the status of all invoked installations, until they all reach a
-        terminal state (Succeeded / Failed / Canceled). Valid operation states are:
-        NotStarted, Running, Succeeded, Failed, Canceled.
+        The cmdlet will keep requesting the status of all invoked installations, until they all have a NON "Running" state
         
         It will request this status every 60 seconds
         
@@ -31,8 +18,9 @@
     .PARAMETER PackageId
         The id of the package(s) that you want to have Installed
         
-        Accepts either the package Id guid (PpacD365AppId / Id) or the package unique name
-        (PpacPackageName / UniqueName). The unique name is what is sent to the API.
+        Accepts:
+        * The package Id guid (PpacD365AppId / Id)
+        * The package unique name (PpacPackageName / UniqueName), as required by the API install URL
         
         It supports id of current packages, with updates available and new D365 apps
         
@@ -41,7 +29,6 @@
     .PARAMETER PayloadValue
         Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
         
-        Mimics 'pac app-management install-application-package --payload-value'.
         Required by some apps with a custom install experience.
         Omit for regular installs / updates.
         
@@ -51,13 +38,11 @@
         Defaults to 60 seconds.
         
     .PARAMETER TimeoutMinutes
-        Maximum time to wait for all installations to reach a terminal state
-        (Succeeded / Failed / Canceled) before giving up polling.
+        Maximum time to wait for all installations to reach a terminal state (Succeeded / Failed / Canceled) before giving up polling.
         
         Defaults to 120 minutes. Use 0 to wait indefinitely (not recommended for automation).
         
-        When the timeout expires the cmdlet stops polling, warns, and returns the last known
-        statuses so the caller can decide how to proceed.
+        When the timeout expires the cmdlet stops polling, warns, and returns the last known statuses so the caller can decide how to proceed.
         
     .EXAMPLE
         PS C:\> Invoke-BapEnvironmentInstallD365App -EnvironmentId eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6 -PackageId 'be69fc64-7393-4c3c-8908-2a1c2e53aef9','6defa8de-87f9-4478-8f9a-a7d685394e24'
@@ -215,9 +200,12 @@ function Invoke-BapEnvironmentInstallD365App {
             }
 
             try {
+                $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages/{1}/install?api-version=2024-10-01" `
+                    -f $envObj.PpacEnvId, $uniqueNameToInstall
+
                 $resIntall = Invoke-RestMethod `
                     -Method Post `
-                    -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages/$uniqueNameToInstall/install?api-version=2024-10-01" `
+                    -Uri $localUri `
                     -Headers $headersPowerApi `
                     -Body $body
 
@@ -235,7 +223,7 @@ function Invoke-BapEnvironmentInstallD365App {
             $messageString = "The following packages <c='em'>failed to start</c>:"
             Write-PSFMessage -Level Important -Message $messageString
 
-            $arrFailedStarts.ToArray() | Format-Table | Out-Host
+            $arrFailedStarts.ToArray() | Format-Table
 
             if ($arrFailedStarts.Count -eq $PackageId.Count) {
                 Write-PSFMessage -Level Warning -Message "All package installations failed to start. Returning the failure details."
@@ -261,7 +249,10 @@ function Invoke-BapEnvironmentInstallD365App {
             $arrStatus = @()
 
             foreach ($operation in $arrInstallStarted) {
-                $resInstallOperation = Invoke-RestMethod -Method Get -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/operations/$($operation.lastOperation.operationId)?api-version=2024-10-01" -Headers $headersPowerApi
+                $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/operations/{1}?api-version=2024-10-01" `
+                    -f $envObj.PpacEnvId, $operation.lastOperation.operationId
+
+                $resInstallOperation = Invoke-RestMethod -Method Get -Uri $localUri -Headers $headersPowerApi
                 $arrStatus.Add($resInstallOperation)
             }
 
@@ -272,7 +263,7 @@ function Invoke-BapEnvironmentInstallD365App {
                 -Status "$pendingCount of $($arrStatus.Count) operation(s) still active (NotStarted / Running)" `
                 -PercentComplete $(if ($arrStatus.Count -gt 0) { (($arrStatus.Count - $pendingCount) / $arrStatus.Count) * 100 } else { 100 })
 
-            $arrStatus | Format-Table | Out-Host
+            $arrStatus | Format-Table
 
             if ($pendingCount -gt 0 -and (Get-Date) -ge $pollDeadline) {
                 $timedOut = $true

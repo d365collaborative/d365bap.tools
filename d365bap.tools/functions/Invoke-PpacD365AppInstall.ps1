@@ -12,8 +12,7 @@
         
         The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
         
-        Returns one result object per requested app with the final operation status,
-        including error details when an install fails or cannot be started.
+        Returns one result object per requested app with the final operation status.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
@@ -23,12 +22,9 @@
         
         Supports single or multiple application names.
         
-        The unique name (PpacPackageName) is used in the install URL, as required by the API.
-        
     .PARAMETER PayloadValue
         Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
         
-        Mimics 'pac app-management install-application-package --payload-value'.
         Required by some apps with a custom install experience (e.g. Finance and Operations Provisioning App).
         Omit for regular installs / updates.
         
@@ -38,13 +34,11 @@
         Defaults to 60 seconds.
         
     .PARAMETER TimeoutMinutes
-        Maximum time to wait for all installations to reach a terminal state
-        (Succeeded / Failed / Canceled) before giving up polling.
+        Maximum time to wait for all installations to reach a terminal state (Succeeded / Failed / Canceled) before giving up polling.
         
         Defaults to 120 minutes. Use 0 to wait indefinitely (not recommended for automation).
         
-        When the timeout expires the cmdlet stops polling, warns, and returns the last known
-        statuses so the caller can decide how to proceed.
+        When the timeout expires the cmdlet stops polling, warns, and returns the last known statuses so the caller can decide how to proceed.
         
     .EXAMPLE
         PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "Invoice Capture for Dynamics 365 Finance"
@@ -168,7 +162,7 @@ function Invoke-PpacD365AppInstall {
             $messageString = "The following packages <c='em'>failed to start</c>:"
             Write-PSFMessage -Level Important -Message $messageString
 
-            $arrFailedStarts.ToArray() | Format-Table | Out-Host
+            $arrFailedStarts.ToArray() | Format-Table
 
             if ($arrFailedStarts.Count -eq $D365App.Count) {
                 Write-PSFMessage -Level Warning -Message "All package installations failed to start. Returning the failure details."
@@ -213,7 +207,7 @@ function Invoke-PpacD365AppInstall {
                 -Status "$pendingCount of $($arrStatus.Count) operation(s) still active (NotStarted / Running)" `
                 -PercentComplete $(if ($arrStatus.Count -gt 0) { (($arrStatus.Count - $pendingCount) / $arrStatus.Count) * 100 } else { 100 })
 
-            $arrStatus | Format-Table | Out-Host
+            $arrStatus | Format-Table
 
             if ($pendingCount -gt 0 -and (Get-Date) -ge $pollDeadline) {
                 $timedOut = $true
