@@ -1,47 +1,48 @@
-﻿<#
+﻿
+<#
     .SYNOPSIS
         Remove UDE environment modules.
-
+        
     .DESCRIPTION
         Removes UDE environment modules (msprov_fnomodule records) for a specified environment.
-
+        
         Modules are matched by module id and name. Nothing is removed unless the -Force switch is supplied.
         Without -Force the cmdlet lists the modules that would be removed.
-
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
-
+        
     .PARAMETER ModuleId
         The id of the module that you want to remove.
-
+        
         Supports wildcard characters for flexible matching against the module id.
-
+        
     .PARAMETER Name
         The name of the module that you want to remove.
-
+        
         Supports wildcard characters for flexible matching against the module name.
-
+        
     .PARAMETER Force
         Instructs the function to proceed with removing the modules.
-
+        
         Nothing happens unless this parameter is supplied.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironmentModule -EnvironmentId "env-123" -ModuleId "a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6"
-
+        
         This will show the module that would be removed for the specified environment id.
         It will NOT remove the module yet, allowing you to review it before deciding to remove it.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironmentModule -EnvironmentId "env-123" -ModuleId "a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6" -Force
-
+        
         This will remove the specified module for the specified environment id without further confirmation.
-
+        
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironmentModule -EnvironmentId "env-123" | Remove-UnifiedEnvironmentModule -Force
-
+        
         This will remove all modules returned for the specified environment id without further confirmation.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

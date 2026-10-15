@@ -1,39 +1,40 @@
-﻿<#
+﻿
+<#
     .SYNOPSIS
         Remove a user from a Power Platform environment.
-
+        
     .DESCRIPTION
         Removes the Dataverse systemuser for a Microsoft Entra ID user. Optionally only removes one or more security role assignments and keeps the user.
-
+        
         Removal order is enforced by the platform:
         all role assignments must be removed first, then the user must be disabled before DELETE.
         Users that still exist in Entra ID cannot be hard deleted (0x80048359) - those stay in place as disabled users without roles.
-
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER User
         The user that you want to remove from the Power Platform environment.
-
+        
         Can be either the User Principal Name (UPN), mail address or Entra object id.
-
+        
     .PARAMETER Role
         Only remove the supplied security role assignment(s) and keep the user.
-
+        
         Can be either the role name or the role ID. When omitted the user is fully removed (all roles, disable, delete).
-
+        
     .EXAMPLE
         PS C:\> Remove-PpacUser -EnvironmentId "ContosoEnv" -User "megan.bowen@contoso.com"
-
+        
         Removes all security roles from megan.bowen@contoso.com, disables the user and deletes it. When the user still exists in Entra ID it stays as a disabled user without roles.
-
+        
     .EXAMPLE
         PS C:\> Remove-PpacUser -EnvironmentId "ContosoEnv" -User "megan.bowen@contoso.com" -Role "System Administrator"
-
+        
         Only removes the System Administrator role assignment and keeps the user.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
