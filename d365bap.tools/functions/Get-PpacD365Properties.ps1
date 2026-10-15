@@ -100,10 +100,10 @@ function Get-PpacD365Properties {
             "appId as AppId",
             "deploymentType as DeploymentType",
             "demoDataset as DemoDataset",
-            "lastObservedAOSCount as LastObservedAOSCount",
-            "lastObservedBatchAOSCount as LastObservedBatchAOSCount",
-            "maxAOSCount as MaxAOSCount",
-            "maxBatchAOSCount as MaxBatchAOSCount",
+            "lastObservedAOSCount as AosCount",
+            "lastObservedBatchAOSCount as BatchCount",
+            "maxAOSCount as MaxAos",
+            "maxBatchAOSCount as MaxBatch",
             "*"
         )
 
