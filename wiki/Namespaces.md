@@ -191,6 +191,7 @@ This is for the things that concern the underlying Unified (Developer / Sandbox 
 | --- | --- |
 | [Get-UnifiedEnvironment](Get-UnifiedEnvironment) | Get Unified Environment in Power Platform Admin Center (PPAC). |
 | [Get-UnifiedEnvironmentModule](Get-UnifiedEnvironmentModule) | Get UDE environment modules. |
+| [Get-UnifiedEnvironmentOperationError](Get-UnifiedEnvironmentOperationError) | Get Finance and Operations operation errors for a Unified environment. |
 | [Get-UnifiedEnvironmentPackage](Get-UnifiedEnvironmentPackage) | Get UDE environment packages. |
 | [New-UnifiedEnvironment](New-UnifiedEnvironment) | Deploy a new Unified Environment in Power Platform Admin Center (PPAC). |
 | [Remove-UnifiedEnvironment](Remove-UnifiedEnvironment) | Remove a unified environment from a Power Platform tenant. |

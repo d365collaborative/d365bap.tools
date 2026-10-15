@@ -962,5 +962,43 @@
         </ListEntries>
       </ListControl>
     </View>
+    <View>
+      <Name>D365Bap.Tools.UnifiedEnvironmentOperationError</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.UnifiedEnvironmentOperationError</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>EnvironmentId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>EnvironmentName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>FailedAt</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>OperationType</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>FailedActionName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ErrorCode</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ErrorMessage</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>CorrelationId</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
   </ViewDefinitions>
 </Configuration>
