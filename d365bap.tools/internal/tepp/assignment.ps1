@@ -89,6 +89,11 @@ Register-PSFTeppArgumentCompleter `
     -Name "d365bap.tools.tepp.env.temp.versions"
 
 Register-PSFTeppArgumentCompleter `
+    -Command Invoke-PpacD365VersionUpdate `
+    -Parameter Version `
+    -Name "d365bap.tools.tepp.env.d365.versions"
+
+Register-PSFTeppArgumentCompleter `
     -Command Add-PpacRbacRoleMember `
     -Parameter Role `
     -Name "d365bap.tools.tepp.ppac.rbac.roles"

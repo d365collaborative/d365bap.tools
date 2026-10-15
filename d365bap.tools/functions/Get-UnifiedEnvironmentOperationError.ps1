@@ -20,17 +20,17 @@
         Instructs the function to export the results to an Excel file.
         
     .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentOperationError -EnvironmentId "es-ude-motz-01"
+        PS C:\> Get-UnifiedEnvironmentOperationError -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
         
         This will fetch up to 20 recent operation errors for the specified environment.
         
     .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentOperationError -EnvironmentId "es-ude-motz-01" -MaxResults 100
+        PS C:\> Get-UnifiedEnvironmentOperationError -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -MaxResults 100
         
         This will fetch up to 100 recent operation errors for the specified environment.
         
     .EXAMPLE
-        PS C:\> Get-UnifiedEnvironmentOperationError -EnvironmentId "es-ude-motz-01" -AsExcelOutput
+        PS C:\> Get-UnifiedEnvironmentOperationError -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -AsExcelOutput
         
         This will fetch recent operation errors for the specified environment.
         It will output the results directly into an Excel file, that will automatically open on your machine.

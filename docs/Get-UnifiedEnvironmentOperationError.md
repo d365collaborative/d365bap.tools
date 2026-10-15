@@ -24,21 +24,21 @@ Enables the user to retrieve recent Finance and Operations operation errors for 
 
 ### EXAMPLE 1
 ```
-Get-UnifiedEnvironmentOperationError -EnvironmentId "es-ude-motz-01"
+Get-UnifiedEnvironmentOperationError -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
 ```
 
 This will fetch up to 20 recent operation errors for the specified environment.
 
 ### EXAMPLE 2
 ```
-Get-UnifiedEnvironmentOperationError -EnvironmentId "es-ude-motz-01" -MaxResults 100
+Get-UnifiedEnvironmentOperationError -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -MaxResults 100
 ```
 
 This will fetch up to 100 recent operation errors for the specified environment.
 
 ### EXAMPLE 3
 ```
-Get-UnifiedEnvironmentOperationError -EnvironmentId "es-ude-motz-01" -AsExcelOutput
+Get-UnifiedEnvironmentOperationError -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -AsExcelOutput
 ```
 
 This will fetch recent operation errors for the specified environment.
