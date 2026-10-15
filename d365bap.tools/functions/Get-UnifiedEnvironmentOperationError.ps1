@@ -4,10 +4,7 @@
         Get Finance and Operations operation errors for a Unified environment.
         
     .DESCRIPTION
-        Retrieves recent Finance and Operations operation errors for a Unified environment
-        using the Power Platform API.
-
-        Calls GET https://api.powerplatform.com/dynamics/environments/{environmentId}/operationerrors?api-version=2024-10-01
+        Enables the user to retrieve recent Finance and Operations operation errors for a Unified environment
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -17,7 +14,7 @@
     .PARAMETER MaxResults
         The maximum number of operation errors to return.
 
-        Defaults to 20 and is capped at 1000 by the API.
+        Default it 20.
         
     .PARAMETER AsExcelOutput
         Instructs the function to export the results to an Excel file.
@@ -84,7 +81,8 @@ function Get-UnifiedEnvironmentOperationError {
             "Authorization" = "Bearer $($tokenValue)"
         }
 
-        $localUri = "https://api.powerplatform.com/dynamics/environments/$($envObj.PpacEnvId)/operationerrors?api-version=2024-10-01&maxResults=$MaxResults"
+        $localUri = "https://api.powerplatform.com/dynamics/environments/{0}/operationerrors?api-version=2024-10-01&maxResults={1}" `
+            -f $envObj.PpacEnvId, $MaxResults
 
         $response = Invoke-RestMethod -Uri $localUri `
             -Method Get `
