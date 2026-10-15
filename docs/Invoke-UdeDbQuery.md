@@ -27,11 +27,11 @@ obtains credentials itself.
 
 ### EXAMPLE 1
 ```
-Get-UdeDbJit -EnvironmentId "es-ude-motz-01" -Role Reader | Set-UdeDbJitCache -Id "motz01-reader"
+Get-UdeDbJit -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Role Reader | Set-UdeDbJitCache -Id "motz01-reader"
 PS C:\> Invoke-UdeDbQuery -Id "motz01-reader" -Query "SELECT TOP (10) name FROM sys.tables ORDER BY name"
 ```
 
-This will cache Reader JIT access credentials for the environment "es-ude-motz-01" (waiting 60 seconds
+This will cache Reader JIT access credentials for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" (waiting 60 seconds
 for backend propagation) and then execute the query using the cached credentials.
 It will return one object per row.
 
