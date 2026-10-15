@@ -96,6 +96,7 @@
 		
 		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
+		, 'Get-FscmEnvironmentVersion'
 		, 'Get-FscmInstalledModel'
 		, 'Get-FscmOdata'
 		, 'Get-FscmOdataAction'
@@ -113,6 +114,7 @@
 		, 'Get-PpacD365App'
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
+		, 'Get-PpacD365Properties'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacRbacRole'
@@ -149,6 +151,7 @@
 		
 		, 'Get-UnifiedEnvironment'
 		, 'Get-UnifiedEnvironmentModule'
+		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
