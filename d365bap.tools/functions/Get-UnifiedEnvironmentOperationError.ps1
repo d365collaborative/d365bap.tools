@@ -53,10 +53,6 @@ function Get-UnifiedEnvironmentOperationError {
         [switch] $AsExcelOutput
     )
     
-    begin {
-        # Needs to be empty for support of pipe input
-    }
-    
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
