@@ -12,6 +12,9 @@
         
         The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
         
+        Returns one result object per requested app with the final operation status,
+        including error details when an install fails or cannot be started.
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
         
@@ -28,6 +31,20 @@
         Mimics 'pac app-management install-application-package --payload-value'.
         Required by some apps with a custom install experience (e.g. Finance and Operations Provisioning App).
         Omit for regular installs / updates.
+        
+    .PARAMETER PollIntervalSeconds
+        Seconds to wait between each status poll against the operations endpoint.
+        
+        Defaults to 60 seconds.
+        
+    .PARAMETER TimeoutMinutes
+        Maximum time to wait for all installations to reach a terminal state
+        (Succeeded / Failed / Canceled) before giving up polling.
+        
+        Defaults to 120 minutes. Use 0 to wait indefinitely (not recommended for automation).
+        
+        When the timeout expires the cmdlet stops polling, warns, and returns the last known
+        statuses so the caller can decide how to proceed.
         
     .EXAMPLE
         PS C:\> Invoke-PpacD365AppInstall -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -D365App "Invoice Capture for Dynamics 365 Finance"
@@ -60,7 +77,15 @@ function Invoke-PpacD365AppInstall {
         [string[]] $D365App,
 
         [parameter (Mandatory = $false)]
-        [string] $PayloadValue
+        [string] $PayloadValue,
+
+        [parameter (Mandatory = $false)]
+        [ValidateRange(5, 3600)]
+        [int] $PollIntervalSeconds = 60,
+
+        [parameter (Mandatory = $false)]
+        [ValidateRange(0, 4320)]
+        [int] $TimeoutMinutes = 120
     )
     
     begin {
@@ -132,6 +157,9 @@ function Invoke-PpacD365AppInstall {
                 $arrInstallStarted.Add($resIntall)
             }
             catch {
+                $startError = $_.Exception.Message
+                if ($_.ErrorDetails -and $_.ErrorDetails.Message) { $startError = $_.ErrorDetails.Message }
+                $appToBeInstalled | Add-Member -MemberType NoteProperty -Name '_InstallStartError' -Value $startError -Force
                 $arrFailedStarts.Add($appToBeInstalled)
             }
         }
@@ -139,24 +167,29 @@ function Invoke-PpacD365AppInstall {
         if ($arrFailedStarts.Count -gt 0) {
             $messageString = "The following packages <c='em'>failed to start</c>:"
             Write-PSFMessage -Level Important -Message $messageString
-                
-            $arrFailedStarts.ToArray()
+
+            $arrFailedStarts.ToArray() | Format-Table | Out-Host
 
             if ($arrFailedStarts.Count -eq $D365App.Count) {
-                Stop-PSFFunction -Message "Stopping because all package installations failed to start." -Exception $([System.Exception]::new($messageString))
-                return
+                Write-PSFMessage -Level Warning -Message "All package installations failed to start. Returning the failure details."
             }
         }
         
+        $pollDeadline = if ($TimeoutMinutes -gt 0) { (Get-Date).AddMinutes($TimeoutMinutes) } else { [datetime]::MaxValue }
+        $timedOut = $false
+        $pendingCount = 0
+        $arrStatus = @()
+
+        if ($arrInstallStarted.Count -gt 0) {
         do {
+            Start-Sleep -Seconds $PollIntervalSeconds
+
             $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
             $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
-        
+
             $headersPowerApi = @{
                 "Authorization" = "Bearer $($tokenPowerApiValue)"
             }
-
-            Start-Sleep -Seconds 60
 
             $arrStatus = @()
 
@@ -173,12 +206,59 @@ function Invoke-PpacD365AppInstall {
                 $arrStatus.Add($resInstallOperation)
             }
 
-            $arrStatus | Format-Table
-        } while (
-            ("NotStarted" -in $arrStatus.status) `
-                -or
-            ("Running" -in $arrStatus.status)
-        )
+            $pendingCount = @($arrStatus | Where-Object { $_.status -in @('NotStarted', 'Running') }).Count
+
+            Write-Progress -Id 1 `
+                -Activity "Installing D365 app(s) in '$($envObj.PpacEnvName)'" `
+                -Status "$pendingCount of $($arrStatus.Count) operation(s) still active (NotStarted / Running)" `
+                -PercentComplete $(if ($arrStatus.Count -gt 0) { (($arrStatus.Count - $pendingCount) / $arrStatus.Count) * 100 } else { 100 })
+
+            $arrStatus | Format-Table | Out-Host
+
+            if ($pendingCount -gt 0 -and (Get-Date) -ge $pollDeadline) {
+                $timedOut = $true
+                break
+            }
+        } while ($pendingCount -gt 0)
+
+        Write-Progress -Id 1 -Completed -Activity "Installing D365 app(s) in '$($envObj.PpacEnvName)'"
+        }
+
+        if ($timedOut) {
+            $messageString = "Polling timed out after <c='em'>$TimeoutMinutes minute(s)</c> with <c='em'>$pendingCount operation(s)</c> still active. Returning the last known statuses."
+            Write-PSFMessage -Level Warning -Message $messageString
+        }
+
+        foreach ($install in $arrInstallStarted) {
+            $opId = $install.lastOperation.operationId
+            $final = $arrStatus | Where-Object operationId -eq $opId | Select-Object -First 1
+
+            [PSCustomObject]@{
+                PpacD365AppName = $install.localizedName
+                PpacPackageName = $install.packageUniqueName
+                PackageVersion  = $install.packageVersion
+                Status          = $final.status
+                StatusMessage   = $final.statusMessage
+                ErrorName       = $final.error.errorName
+                ErrorMessage    = $final.error.message
+                OperationId     = $opId
+                TimedOut        = $timedOut
+            }
+        }
+
+        foreach ($failed in $arrFailedStarts) {
+            [PSCustomObject]@{
+                PpacD365AppName = $failed.PpacD365AppName
+                PpacPackageName = $failed.PpacPackageName
+                PackageVersion  = $failed.AvailableVersion
+                Status          = 'FailedToStart'
+                StatusMessage   = $failed._InstallStartError
+                ErrorName       = $null
+                ErrorMessage    = $failed._InstallStartError
+                OperationId     = $null
+                TimedOut        = $false
+            }
+        }
     }
     
     end {
