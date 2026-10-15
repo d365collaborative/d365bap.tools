@@ -69,6 +69,7 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacD365App](Get-PpacD365App) | Get D365 application that are available in the environment. |
 | [Get-PpacD365OperationHistory](Get-PpacD365OperationHistory) | Get operation history for a given Unified environment from PPAC. |
 | [Get-PpacD365PlatformUpdate](Get-PpacD365PlatformUpdate) | Get D365 platform update information for the environment. |
+| [Get-PpacD365Properties](Get-PpacD365Properties) | Get Finance and Operations properties for the environment. |
 | [Get-PpacDeployLocation](Get-PpacDeployLocation) | Get the available deployment locations for Power Platform environments. |
 | [Get-PpacEnvironmentGroup](Get-PpacEnvironmentGroup) | Retrieves Power Platform environment groups. |
 | [Get-PpacRbacRole](Get-PpacRbacRole) | Get PPAC RBAC roles available in the tenant. |
