@@ -70,6 +70,7 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacD365OperationHistory](Get-PpacD365OperationHistory) | Get operation history for a given Unified environment from PPAC. |
 | [Get-PpacD365PlatformUpdate](Get-PpacD365PlatformUpdate) | Get D365 platform update information for the environment. |
 | [Get-PpacD365Properties](Get-PpacD365Properties) | Get Finance and Operations properties for the environment. |
+| [Get-PpacD365Version](Get-PpacD365Version) | Get D365 Finance and Operations versions for the environment. |
 | [Get-PpacDeployLocation](Get-PpacDeployLocation) | Get the available deployment locations for Power Platform environments. |
 | [Get-PpacEnvironmentGroup](Get-PpacEnvironmentGroup) | Retrieves Power Platform environment groups. |
 | [Get-PpacRbacRole](Get-PpacRbacRole) | Get PPAC RBAC roles available in the tenant. |
@@ -82,6 +83,7 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacUser](Get-PpacUser) | Get information about users in a Power Platform environment. |
 | [Invoke-PpacD365AppInstall](Invoke-PpacD365AppInstall) | Installs D365 applications in the environment. |
 | [Invoke-PpacD365PlatformUpdate](Invoke-PpacD365PlatformUpdate) | Start D365 Platform update. |
+| [Invoke-PpacD365VersionUpdate](Invoke-PpacD365VersionUpdate) | Apply a D365 Finance and Operations version to the environment. |
 | [New-PpacSecurityRole](New-PpacSecurityRole) | Create a new security role in a given environment. |
 | [Remove-PpacUser](Remove-PpacUser) | Remove a user from a Power Platform environment. |
 | [Set-PpacAdminMode](Set-PpacAdminMode) | Set the admin mode for a Power Platform environment. |
