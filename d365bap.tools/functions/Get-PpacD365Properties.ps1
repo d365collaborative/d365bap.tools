@@ -6,7 +6,7 @@
     .DESCRIPTION
         Retrieves Finance and Operations environment properties from the Power Platform API (PPAC).
         
-        Wraps GET /dynamics/environments/{environmentId}/finopsproperties (api-version 2024-10-01) and returns details such as deployment type, demo dataset, and AOS counts.
+        Shows details such as deployment type, demo dataset, and AOS counts.
         
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against.
@@ -20,12 +20,6 @@
         PS C:\> Get-PpacD365Properties -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
         
         This will fetch the Finance and Operations properties for the environment.
-        
-    .EXAMPLE
-        PS C:\> Get-PpacD365Properties -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" | Format-List
-        
-        This will fetch the Finance and Operations properties for the environment.
-        It will output all details in list view.
         
     .EXAMPLE
         PS C:\> Get-PpacD365Properties -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -AsExcelOutput
@@ -60,9 +54,9 @@ function Get-PpacD365Properties {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
+        $envObj = Get-UnifiedEnvironment `
+            -EnvironmentId $EnvironmentId `
+            -SkipVersionDetails | `
             Select-Object -First 1
 
         if ($null -eq $envObj) {

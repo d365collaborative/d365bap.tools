@@ -20,7 +20,7 @@ Get-PpacD365Properties [-EnvironmentId] <String> [-AsExcelOutput] [-ProgressActi
 ## DESCRIPTION
 Retrieves Finance and Operations environment properties from the Power Platform API (PPAC).
 
-Wraps GET /dynamics/environments/{environmentId}/finopsproperties (api-version 2024-10-01) and returns details such as deployment type, demo dataset, and AOS counts.
+Shows details such as deployment type, demo dataset, and AOS counts.
 
 ## EXAMPLES
 
@@ -32,14 +32,6 @@ Get-PpacD365Properties -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
 This will fetch the Finance and Operations properties for the environment.
 
 ### EXAMPLE 2
-```
-Get-PpacD365Properties -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" | Format-List
-```
-
-This will fetch the Finance and Operations properties for the environment.
-It will output all details in list view.
-
-### EXAMPLE 3
 ```
 Get-PpacD365Properties -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -AsExcelOutput
 ```
