@@ -11,7 +11,7 @@
         
     .PARAMETER Version
         The version of D365 Finance and Operations to apply.
-
+        
         A full application version is expected (e.g. "10.0.47.5"), but a short platform
         version (e.g. "10.0.47") is also accepted.
         
