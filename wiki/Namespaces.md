@@ -37,7 +37,7 @@ T
 | [Get-BapEnvironmentVirtualEntity](Get-BapEnvironmentVirtualEntity) | Get Virtual Entity from environment |
 | [Get-BapTenant](Get-BapTenant) | Retrieves information about the available azure tenant. |
 | [Get-BapTenantDetail](Get-BapTenantDetail) | Gets detailed information about a BAP tenant. |
-| [Invoke-BapEnvironmentInstallD365App](Invoke-BapEnvironmentInstallD365App) | Invoke the installation of a D365 App in a given environment |
+| [Invoke-BapEnvironmentInstallD365App](Invoke-BapEnvironmentInstallD365App) | Invoke the installation or update of a D365 App in a given environment |
 | [Invoke-BapInstallAzCopy](Invoke-BapInstallAzCopy) | Installs AzCopy by downloading it from the official Microsoft URL. |
 | [Remove-BapTenantDetail](Remove-BapTenantDetail) | Removes tenant details for a specified BAP tenant from the local configuration. |
 | [Set-BapAzCopyPath](Set-BapAzCopyPath) | Sets the path to the AzCopy executable. |
@@ -80,7 +80,7 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacTable](Get-PpacTable) | Get the tables (entities) from a given environment. |
 | [Get-PpacTeam](Get-PpacTeam) | Get team details from Power Platform environment. |
 | [Get-PpacUser](Get-PpacUser) | Get information about users in a Power Platform environment. |
-| [Invoke-PpacD365AppInstall](Invoke-PpacD365AppInstall) | Installs D365 applications in the environment. |
+| [Invoke-PpacD365AppInstall](Invoke-PpacD365AppInstall) | Installs or updates D365 applications in the environment. |
 | [Invoke-PpacD365PlatformUpdate](Invoke-PpacD365PlatformUpdate) | Start D365 Platform update. |
 | [New-PpacSecurityRole](New-PpacSecurityRole) | Create a new security role in a given environment. |
 | [Remove-PpacUser](Remove-PpacUser) | Remove a user from a Power Platform environment. |
