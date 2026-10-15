@@ -84,7 +84,7 @@ function Get-PpacD365Version {
             $resVersions | Sort-Object -Property { [version]$_.version } | `
                 Select-PSFObject -TypeName 'D365Bap.Tools.D365PlatformVersion' `
                 -Property `
-                @{Name = "EnvironmentId"; Expression = { $envObj.PpacEnvId } }, `
+                @{Name = "EnvironmentId"; Expression = { $envObj.EnvName } }, `
                 "version as Version", `
                 @{Name = "Platform"; Expression = { $_.version.Substring(0, 7) } }, `
                 "releaseStage as ReleaseStage"
