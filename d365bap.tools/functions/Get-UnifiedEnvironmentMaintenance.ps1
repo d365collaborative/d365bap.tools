@@ -55,7 +55,8 @@ function Get-UnifiedEnvironmentMaintenance {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $localUri = "https://api.powerplatform.com/dynamics/environments/$($envObj.PpacEnvId)/finopsadminsettings?api-version=2024-10-01"
+        $localUri = "https://api.powerplatform.com/dynamics/environments/{0}/finopsadminsettings?api-version=2024-10-01" `
+            -f $envObj.PpacEnvId
 
         $maintenanceParams = @{
             Method             = 'Get'
