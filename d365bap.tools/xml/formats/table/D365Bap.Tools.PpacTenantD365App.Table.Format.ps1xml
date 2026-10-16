@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>D365Bap.Tools.PpacTenantD365App</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacTenantD365App</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Application</Label><Width>42</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Package</Label><Width>45</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Publisher</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>PpacD365AppName</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>PpacPackageName</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Publisher</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>

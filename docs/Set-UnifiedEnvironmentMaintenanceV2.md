@@ -29,7 +29,7 @@ Unspecified update settings retain their current values.
 Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId 'es-ude-motz-01' -Cadence EveryUpdate -WhatIf
 ```
 
-Uses the generated SDK command with an environment name.
+Uses the current Az context.
 
 ## PARAMETERS
 

@@ -203,6 +203,7 @@
 		# BEGIN SDK EXPORTS
 		, 'Get-UnifiedEnvironmentMaintenanceV2'
 		, 'Set-UnifiedEnvironmentMaintenanceV2'
+		, 'Get-PpacTenantD365App'
 		# END SDK EXPORTS
 		
 	)

@@ -14,7 +14,7 @@ namespace D365Bap.Tools.PowerPlatformSdk
     public static class SdkClient
     {
         public static string Execute(string builderTypeName, string methodName,
-            string environmentId, string apiVersion, IParsable body, string token)
+            string environmentId, string apiVersion, IParsable body, string token, string requestUrl)
         {
             using (var adapter = CreateAdapter(token))
             {
@@ -25,7 +25,18 @@ namespace D365Bap.Tools.PowerPlatformSdk
                     ["environmentId"] = environmentId,
                     ["api%2Dversion"] = apiVersion
                 };
-                var builder = Activator.CreateInstance(builderType, paths, adapter);
+                object builder;
+                if (string.IsNullOrEmpty(requestUrl))
+                    builder = Activator.CreateInstance(builderType, paths, adapter);
+                else
+                {
+                    if (!Uri.TryCreate(requestUrl, UriKind.Absolute, out var nextUri) ||
+                        nextUri.Scheme != Uri.UriSchemeHttps ||
+                        !string.Equals(nextUri.Host, new Uri(adapter.BaseUrl).Host, StringComparison.OrdinalIgnoreCase) ||
+                        !nextUri.IsDefaultPort || !string.IsNullOrEmpty(nextUri.UserInfo))
+                        throw new ArgumentException("The continuation URL must use the Power Platform API host over HTTPS.", nameof(requestUrl));
+                    builder = Activator.CreateInstance(builderType, requestUrl, adapter);
+                }
                 var method = builderType.GetMethod(methodName);
                 var arguments = new List<object>();
                 foreach (var parameter in method.GetParameters())

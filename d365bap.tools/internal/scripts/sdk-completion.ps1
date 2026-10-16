@@ -1,4 +1,5 @@
-﻿Register-ArgumentCompleter -CommandName @($script:BapSdkCommands.Keys) -ParameterName EnvironmentId -ScriptBlock {
+﻿$environmentCommands = @($script:BapSdkCommands.Keys | Where-Object { $script:BapSdkCommands[$_].Resource.Scope -eq 'Environment' })
+Register-ArgumentCompleter -CommandName $environmentCommands -ParameterName EnvironmentId -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
     $null = $commandName, $parameterName, $commandAst, $fakeBoundParameters

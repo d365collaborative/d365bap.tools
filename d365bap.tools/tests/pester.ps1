@@ -74,7 +74,7 @@ $global:__pester_data.ScriptAnalyzer | Out-Host
 if ($TestFunctions)
 {
 	Write-PSFMessage -Level Important -Message "Proceeding with individual tests"
-	foreach ($file in (Get-ChildItem "$PSScriptRoot\functions" -Recurse -File | Where-Object Name -like "*Tests.ps1"))
+	foreach ($file in (Get-ChildItem -Path @("$PSScriptRoot\functions", "$PSScriptRoot\sdk") -Recurse -File | Where-Object Name -like "*Tests.ps1"))
 	{
 		if ($file.Name -notlike $Include) { continue }
 		if ($file.Name -like $Exclude) { continue }

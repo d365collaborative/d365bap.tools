@@ -51,10 +51,10 @@ function Get-BapSdkParameter {
 
 function Invoke-BapSdkRequest {
     [CmdletBinding()]
-    param ($Resource, [string] $Method, [string] $EnvironmentId, $Body, [string] $Token)
+    param ($Resource, [string] $Method, [string] $EnvironmentId, $Body, [string] $Token, [string] $RequestUrl)
 
     $json = [D365Bap.Tools.PowerPlatformSdk.SdkClient]::Execute(
-        $Resource.Builder, $Method, $EnvironmentId, $script:BapSdkApiVersion, $Body, $Token)
+        $Resource.Builder, $Method, $EnvironmentId, $script:BapSdkApiVersion, $Body, $Token, $RequestUrl)
     if ($json) { $json | ConvertFrom-Json }
 }
 
@@ -63,21 +63,25 @@ function Invoke-BapSdkCommand {
     param ([string] $CommandName, [Collections.IDictionary] $BoundParameters)
 
     $operation = $script:BapSdkCommands[$CommandName]
-    $inputEnvironment = $BoundParameters['EnvironmentId']
-    if ([guid]::TryParse($inputEnvironment, [ref]([guid]::Empty))) {
-        $environmentId = $inputEnvironment
-        $environmentName = $inputEnvironment
-    }
-    else {
-        if ([Management.Automation.WildcardPattern]::ContainsWildcardCharacters($inputEnvironment)) {
-            throw 'EnvironmentId must be an exact environment name or GUID.'
+    $environmentId = $null
+    $environmentName = $null
+    if ($operation.Resource.Scope -eq 'Environment') {
+        $inputEnvironment = $BoundParameters['EnvironmentId']
+        if ([guid]::TryParse($inputEnvironment, [ref]([guid]::Empty))) {
+            $environmentId = $inputEnvironment
+            $environmentName = $inputEnvironment
         }
-        $environments = @(Get-BapEnvironment -EnvironmentId $inputEnvironment -ErrorAction Stop)
-        if ($environments.Count -ne 1) {
-            throw "Expected one environment named '$inputEnvironment'; found $($environments.Count)."
+        else {
+            if ([Management.Automation.WildcardPattern]::ContainsWildcardCharacters($inputEnvironment)) {
+                throw 'EnvironmentId must be an exact environment name or GUID.'
+            }
+            $environments = @(Get-BapEnvironment -EnvironmentId $inputEnvironment -ErrorAction Stop)
+            if ($environments.Count -ne 1) {
+                throw "Expected one environment named '$inputEnvironment'; found $($environments.Count)."
+            }
+            $environmentId = $environments[0].PpacEnvId
+            $environmentName = $environments[0].EnvName
         }
-        $environmentId = $environments[0].PpacEnvId
-        $environmentName = $environments[0].EnvName
     }
 
     $secureToken = (Get-AzAccessToken -ResourceUrl 'https://api.powerplatform.com' -AsSecureString -ErrorAction Stop).Token
@@ -106,7 +110,48 @@ function Invoke-BapSdkCommand {
             $parameter.Property.SetValue($body, $converted)
         }
     }
-    $result = Invoke-BapSdkRequest -Resource $operation.Resource -Method $operation.Method -EnvironmentId $environmentId -Body $body -Token $token
+    $request = @{
+        Resource = $operation.Resource
+        Method = $operation.Method
+        EnvironmentId = $environmentId
+        Body = $body
+        Token = $token
+        ErrorAction = 'Stop'
+    }
+    $result = Invoke-BapSdkRequest @request
+    if ($operation.Resource.CollectionProperty) {
+        $items = [Collections.Generic.List[object]]::new()
+        $visited = [Collections.Generic.HashSet[string]]::new()
+        do {
+            foreach ($item in $result.($operation.Resource.CollectionProperty)) {
+                $items.Add($item)
+            }
+            $nextLink = $result.($operation.Resource.NextLinkProperty)
+            if ($nextLink) {
+                if (-not $visited.Add($nextLink)) { throw 'The API returned a repeated continuation URL.' }
+                $result = Invoke-BapSdkRequest @request -RequestUrl $nextLink
+            }
+        } while ($nextLink)
+
+        $name = if ($BoundParameters.ContainsKey('Name')) { $BoundParameters['Name'] } else { '*' }
+        $filtered = foreach ($item in $items) {
+            foreach ($property in $operation.Resource.FilterProperties) {
+                if ($item.$property -like $name -or $item.$property -eq $name) {
+                    $item
+                    break
+                }
+            }
+        }
+        $output = @($filtered | Sort-Object -Property $operation.Resource.SortProperty |
+            Select-PSFObject -TypeName $operation.Resource.TypeName -Property $operation.Resource.Properties)
+        if ($BoundParameters['AsExcelOutput']) {
+            if ($output.Count) {
+                $output | Export-Excel -WorksheetName $operation.Resource.WorksheetName
+            }
+            return
+        }
+        return $output
+    }
     if ($null -ne $result) {
         $result.PSObject.TypeNames.Insert(0, ('D365Bap.Tools.' + $operation.Resource.Noun))
         foreach ($parameter in @(Get-BapSdkParameter -Resource $operation.Resource -Method $operation.Resource.Methods.Set)) {
