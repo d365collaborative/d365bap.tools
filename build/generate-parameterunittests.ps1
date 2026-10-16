@@ -23,3 +23,8 @@ foreach ( $commandName in $commands) {
 }
 
 Get-ChildItem -Path "$path\tests\functions\*.Tests.ps1" -Recurse -File | Set-PSMDEncoding
+
+Get-ChildItem -Path "$path\tests\functions\*.Tests.ps1" -File | ForEach-Object {
+    $content = [IO.File]::ReadAllText($_.FullName) -replace '\r?\n', "`r`n"
+    [IO.File]::WriteAllText($_.FullName, $content, [Text.UTF8Encoding]::new($true))
+}

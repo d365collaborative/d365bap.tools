@@ -13,7 +13,9 @@ Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.environments" -ScriptBlock
 $teppParameters = @("EnvironmentId", "SourceEnvironmentId", "DestinationEnvironmentId")
 
 foreach ($paramName in $teppParameters) {
-    $commands = Get-Command -Module d365bap.tools | Where-Object { $_.Parameters.Keys -contains $paramName }
+    $commands = Get-Command -CommandType Function -ListImported | Where-Object {
+        $_.Module.Path -eq $ExecutionContext.SessionState.Module.Path -and $_.Parameters.Keys -contains $paramName
+    }
 
     foreach ($command in $commands) {
         Register-PSFTeppArgumentCompleter -Command $command.Name -Parameter $paramName -Name "d365bap.tools.tepp.environments"

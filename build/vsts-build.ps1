@@ -45,6 +45,7 @@ if ($Build) {
 }
 
 # Prepare publish folder
+& "$PSScriptRoot\Build-PowerPlatformSdk.ps1"
 Write-PSFMessage -Level Important -Message "Creating and populating publishing directory"
 $publishDir = New-Item -Path $WorkingDirectory -Name publish -ItemType Directory -Force
 Copy-Item -Path "$($WorkingDirectory)\d365bap.tools" -Destination $publishDir.FullName -Recurse -Force

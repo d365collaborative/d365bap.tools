@@ -16,11 +16,18 @@ $moduleRoot = Split-Path (Split-Path $PSScriptRoot)
 # Load Scriptblocks
 (Get-ChildItem "$moduleRoot\internal\scriptblocks\*.ps1" -ErrorAction Ignore).FullName
 
+# Generate SDK commands before registering completion
+"$moduleRoot\internal\sdk\runtime.ps1"
+"$moduleRoot\internal\scripts\initialize-sdk.ps1"
+
 # Load Tab Expansion
 (Get-ChildItem "$moduleRoot\internal\tepp\*.tepp.ps1" -ErrorAction Ignore).FullName
 
 # Load Tab Expansion Assignment
 "$moduleRoot\internal\tepp\assignment.ps1"
+
+# Register SDK completion after the general environment completer
+"$moduleRoot\internal\scripts\sdk-completion.ps1"
 
 # Load License
 "$moduleRoot\internal\scripts\license.ps1"
