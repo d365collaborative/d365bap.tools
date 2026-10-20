@@ -35,7 +35,13 @@ Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.environments" -ScriptBlock
 $teppParameters = @("EnvironmentId", "SourceEnvironmentId", "DestinationEnvironmentId")
 
 foreach ($paramName in $teppParameters) {
-    $commands = Get-Command -Module d365bap.tools | Where-Object { $_.Parameters.Keys -contains $paramName }
+    # Discover commands from this module's own session state (function: drive).
+    # Must NOT use 'Get-Command -Module d365bap.tools' here: during module import that
+    # triggers auto-loading of the released module version from PSModulePath, which then
+    # re-registers this same TEPP name in Simple mode and shadows the dev copy's commands.
+    $commands = Get-ChildItem function: | Where-Object {
+        (Get-Command $_.Name -CommandType Function -ErrorAction SilentlyContinue).Parameters.Keys -contains $paramName
+    }
 
     foreach ($command in $commands) {
         Register-PSFTeppArgumentCompleter -Command $command.Name -Parameter $paramName -Name "d365bap.tools.tepp.environments"
