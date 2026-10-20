@@ -75,6 +75,19 @@ function Get-UnifiedEnvironmentMaintenance {
             return
         }
 
+        if ($null -ne $resObj.maintenanceWindowDaysOfWeek) {
+            $weekOrderDays = @('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+            $weekOrderIndex = @{}
+            for ($i = 0; $i -lt $weekOrderDays.Count; $i++) {
+                $weekOrderIndex[$weekOrderDays[$i]] = $i
+            }
+
+            $responseDays = @($resObj.maintenanceWindowDaysOfWeek)
+            if ($responseDays.Count -gt 0) {
+                $resObj.maintenanceWindowDaysOfWeek = @($responseDays | Sort-Object { $weekOrderIndex["$_"] })
+            }
+        }
+
         $resObj | Select-PSFObject -TypeName "D365Bap.Tools.UnifiedEnvironmentMaintenance" `
             -Property "maintenanceWindowCadence as Cadence",
         "maintenanceWindowDaysOfWeek as DaysOfWeek",

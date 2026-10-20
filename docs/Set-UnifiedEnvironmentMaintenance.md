@@ -87,7 +87,7 @@ Accept wildcard characters: False
 ### -DaysOfWeek
 The preferred days of week for updates.
 
-Valid values are Sunday, Monday, Tuesday, Wednesday, Thursday, Friday and Saturday.
+Valid values are Monday, Tuesday, Wednesday, Thursday, Friday, Saturday and Sunday.
 
 ```yaml
 Type: String[]

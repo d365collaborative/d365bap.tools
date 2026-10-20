@@ -24,7 +24,7 @@
     .PARAMETER DaysOfWeek
         The preferred days of week for updates.
         
-        Valid values are Sunday, Monday, Tuesday, Wednesday, Thursday, Friday and Saturday.
+        Valid values are Monday, Tuesday, Wednesday, Thursday, Friday, Saturday and Sunday.
         
     .EXAMPLE
         PS C:\> Set-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Cadence EveryOtherUpdate
@@ -52,10 +52,62 @@ function Set-UnifiedEnvironmentMaintenance {
         [Parameter (Mandatory = $true)]
         [string] $EnvironmentId,
 
-        [ValidateSet("EveryUpdate", "EveryOtherUpdate", "Regulated")]
+        [ArgumentCompleter({
+            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $null = $commandName, $parameterName, $commandAst, $fakeBoundParameters
+            $cadenceOrder = @('EveryUpdate', 'EveryOtherUpdate', 'Regulated')
+            $filterWord = ([string]$wordToComplete).Trim("'", '"')
+            foreach ($value in $cadenceOrder) {
+                if ([string]::IsNullOrEmpty($filterWord) -or $value -like "$filterWord*") {
+                    [System.Management.Automation.CompletionResult]::new($value, $value, 'ParameterValue', $value)
+                }
+            }
+        })]
+        [ValidateScript({
+            if ($_ -in @('EveryUpdate', 'EveryOtherUpdate', 'Regulated')) { $true }
+            else { throw "Invalid cadence '$($_)'. Valid values are: EveryUpdate, EveryOtherUpdate, Regulated." }
+        })]
         [string] $Cadence,
 
-        [ValidateSet("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")]
+        [ArgumentCompleter({
+            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $null = $commandName, $parameterName
+            $weekOrder = @('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+            $selectedDays = @()
+            if ($null -ne $fakeBoundParameters -and $fakeBoundParameters.ContainsKey('DaysOfWeek')) {
+                foreach ($item in @($fakeBoundParameters['DaysOfWeek'])) {
+                    if ($null -ne $item -and "$item" -in $weekOrder) {
+                        $selectedDays += "$item"
+                    }
+                }
+            }
+            if ($null -ne $commandAst) {
+                $astValues = $commandAst.FindAll({
+                    param($node)
+                    $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
+                }, $true) | ForEach-Object { $_.Value }
+                foreach ($astValue in $astValues) {
+                    if ($astValue -in $weekOrder -and $astValue -notin $selectedDays) {
+                        $selectedDays += $astValue
+                    }
+                }
+            }
+            $filterWord = ([string]$wordToComplete).Trim("'", '"')
+            foreach ($value in $weekOrder) {
+                if ($value -notin $selectedDays -and ([string]::IsNullOrEmpty($filterWord) -or $value -like "$filterWord*")) {
+                    [System.Management.Automation.CompletionResult]::new($value, $value, 'ParameterValue', $value)
+                }
+            }
+        })]
+        [ValidateScript({
+            $validDays = @('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+            foreach ($day in @($_)) {
+                if ($day -notin $validDays) {
+                    throw "Invalid day '$day'. Valid values are: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday."
+                }
+            }
+            $true
+        })]
         [string[]] $DaysOfWeek
     )
     
@@ -91,6 +143,12 @@ function Set-UnifiedEnvironmentMaintenance {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
+        $weekOrderDays = @('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+        $weekOrderIndex = @{}
+        for ($i = 0; $i -lt $weekOrderDays.Count; $i++) {
+            $weekOrderIndex[$weekOrderDays[$i]] = $i
+        }
+
         $bodyObj = [PsCustomObject][ordered]@{}
 
         if (-not [System.String]::IsNullOrWhiteSpace($Cadence)) {
@@ -98,7 +156,8 @@ function Set-UnifiedEnvironmentMaintenance {
         }
 
         if ($null -ne $DaysOfWeek -and $DaysOfWeek.Count -gt 0) {
-            $bodyObj | Add-Member -MemberType NoteProperty -Name "updatedMaintenanceWindowDaysOfWeek" -Value $DaysOfWeek
+            $orderedDays = @($DaysOfWeek | Sort-Object { $weekOrderIndex["$_"] })
+            $bodyObj | Add-Member -MemberType NoteProperty -Name "updatedMaintenanceWindowDaysOfWeek" -Value $orderedDays
         }
 
         $payload = $bodyObj | ConvertTo-Json -Depth 10
@@ -123,6 +182,13 @@ function Set-UnifiedEnvironmentMaintenance {
             Write-PSFMessage -Level Important -Message $messageString
             Stop-PSFFunction -Message "Stopping because updating the maintenance settings failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
             return
+        }
+
+        if ($null -ne $resObj.maintenanceWindowDaysOfWeek) {
+            $responseDays = @($resObj.maintenanceWindowDaysOfWeek)
+            if ($responseDays.Count -gt 0) {
+                $resObj.maintenanceWindowDaysOfWeek = @($responseDays | Sort-Object { $weekOrderIndex["$_"] })
+            }
         }
 
         $resObj | Select-PSFObject -TypeName "D365Bap.Tools.UnifiedEnvironmentMaintenance" `
