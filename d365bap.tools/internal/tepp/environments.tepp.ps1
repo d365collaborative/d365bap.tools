@@ -3,12 +3,34 @@
     The below implementation will refresh the environments every 15 minutes, but this can be adjusted as needed.
 #>
 Register-PSFTaskEngineTask -Name EnvironmentRefresh -Interval (New-TimeSpan -Minutes 15) -ResetTask -ScriptBlock {
-    Set-PSFTaskEngineCache -Module d365bap.tools -Name Environments -Value (Get-BapEnvironment -FscmEnabled:$FscmEnabled).EnvName
+    Set-PSFTaskEngineCache -Module d365bap.tools -Name Environments -Value (Get-BapEnvironment -ErrorAction SilentlyContinue).EnvName
 }
 
-Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.environments" -ScriptBlock {
-    Get-PSFTaskEngineCache -Module d365bap.tools -Name Environments
+$scbEnvironments = {
+    param (
+        $commandName,
+        $parameterName,
+        $wordToComplete,
+        $commandAst,
+        $fakeBoundParameter
+    )
+
+    try {
+        $filterWord = $wordToComplete -replace '^[''"]', ''
+        $cached = @(Get-PSFTaskEngineCache -Module d365bap.tools -Name Environments -ErrorAction SilentlyContinue | Where-Object { $_ })
+        if (-not $cached -or $cached.Count -eq 0) {
+            $cached = @(Get-BapEnvironment -ErrorAction SilentlyContinue | Select-Object -ExpandProperty EnvName -Unique | Where-Object { $_ })
+        }
+        $merged = @($cached) | Sort-Object -Unique | Where-Object { $_ -like "$filterWord*" }
+
+        foreach ($v in $merged) {
+            [System.Management.Automation.CompletionResult]::new($v, $v, 'ParameterValue', $v)
+        }
+    }
+    catch { }
 }
+
+Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.environments" -ScriptBlock $scbEnvironments -Mode Full
 
 $teppParameters = @("EnvironmentId", "SourceEnvironmentId", "DestinationEnvironmentId")
 
