@@ -24,7 +24,9 @@ $scbEnvironments = {
         $merged = @($cached) | Sort-Object -Unique | Where-Object { $_ -like "$filterWord*" }
 
         foreach ($v in $merged) {
-            [System.Management.Automation.CompletionResult]::new($v, $v, 'ParameterValue', $v)
+            $escaped = $v -replace "'", "''"
+            $quoted = "'$escaped'"
+            [System.Management.Automation.CompletionResult]::new($quoted, $v, 'ParameterValue', $v)
         }
     }
     catch { }
