@@ -61,7 +61,8 @@ Accepts a location name (e.g.
 Supports wildcard characters (*).
 Defaults to all
 locations.
-Only default locations are returned.
+Only default locations are returned, looked up live
+for the current login.
 
 ```yaml
 Type: String

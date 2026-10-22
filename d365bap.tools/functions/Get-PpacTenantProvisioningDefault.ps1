@@ -16,7 +16,8 @@
         
         Accepts a location name (e.g. "europe") or display name (e.g.
         "Europe"). Supports wildcard characters (*). Defaults to all
-        locations. Only default locations are returned.
+        locations. Only default locations are returned, looked up live
+        for the current login.
         
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -69,7 +70,20 @@ function Get-PpacTenantProvisioningDefault {
             return
         }
 
-        $defaultLocations = @($matchedLocations | Where-Object { $_.isDefault })
+        # Default flags differ per tenant, so they are never cached. Look
+        # the default locations up live for the current login.
+        $base = 'https://api.powerplatform.com'
+        $api = $script:BapSdkApiVersion
+
+        $liveLocations = Invoke-BapSdkRequest `
+            -Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.LocationsRequestBuilder' } `
+            -Method 'GetAsync' `
+            -Token $tokenPowerApiValue `
+            -RequestUrl "$base/environmentmanagement/provisioning/locations?api-version=$api"
+
+        $liveDefaultNames = @($liveLocations.collection | Where-Object { $_.isDefault } | ForEach-Object { $_.name })
+
+        $defaultLocations = @($matchedLocations | Where-Object { $_.name -in $liveDefaultNames })
 
         if (-not $defaultLocations) {
             Write-PSFMessage -Level Warning -Message "None of the matched locations ($(($matchedLocations | ForEach-Object { $_.name }) -join ', ')) is a default provisioning location."
@@ -86,7 +100,7 @@ function Get-PpacTenantProvisioningDefault {
                 }
 
                 $tenantDefault | Add-Member -NotePropertyName "Name" -NotePropertyValue $locationEntry.displayName -Force
-                $tenantDefault | Add-Member -NotePropertyName "IsDefault" -NotePropertyValue ([bool]$locationEntry.isDefault) -Force
+                $tenantDefault | Add-Member -NotePropertyName "IsDefault" -NotePropertyValue $true -Force
 
                 $tenantDefault
             }
