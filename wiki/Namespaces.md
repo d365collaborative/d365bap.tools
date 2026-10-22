@@ -189,6 +189,7 @@ This is for the things that concern the underlying Unified (Developer / Sandbox 
 | [Get-UnifiedEnvironmentModule](Get-UnifiedEnvironmentModule) | Get UDE environment modules. |
 | [Get-UnifiedEnvironmentPackage](Get-UnifiedEnvironmentPackage) | Get UDE environment packages. |
 | [New-UnifiedEnvironment](New-UnifiedEnvironment) | Deploy a new Unified Environment in Power Platform Admin Center (PPAC). |
+| [New-UnifiedEnvironmentV2](New-UnifiedEnvironmentV2) | Deploy a new Unified environment through the Power Platform SDK. |
 | [Remove-UnifiedEnvironmentModule](Remove-UnifiedEnvironmentModule) | Remove UDE environment modules. |
 | [Remove-UnifiedEnvironmentPackage](Remove-UnifiedEnvironmentPackage) | Remove UDE environment packages. |
 | [Set-UnifiedEnvironmentMaintenanceV2](Set-UnifiedEnvironmentMaintenanceV2) | Finance and Operations maintenance settings through the bundled Power Platform SDK. |

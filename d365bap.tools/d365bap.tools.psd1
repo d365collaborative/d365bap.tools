@@ -163,6 +163,7 @@
 		, 'New-PpacSecurityRole'
 
 		, 'New-UnifiedEnvironment'
+		, 'New-UnifiedEnvironmentV2'
 		
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'

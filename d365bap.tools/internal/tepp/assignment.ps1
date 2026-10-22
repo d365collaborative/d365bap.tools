@@ -132,3 +132,11 @@ Register-PSFTeppArgumentCompleter `
     -Command Get-PpacTable `
     -Parameter Name `
     -Name "d365bap.tools.tepp.ppac.tables"
+
+Register-PSFTeppArgumentCompleter `
+    -Command New-UnifiedEnvironmentV2 `
+    -Parameter Location `
+    -Name "d365bap.tools.tepp.provisioning.locations"
+
+# Template completion is registered natively in provisioning.templates.tepp.ps1
+# (location-aware via $fakeBoundParameters).

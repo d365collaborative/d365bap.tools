@@ -20,6 +20,9 @@ $moduleRoot = Split-Path (Split-Path $PSScriptRoot)
 "$moduleRoot\internal\sdk\runtime.ps1"
 "$moduleRoot\internal\scripts\initialize-sdk.ps1"
 
+# Load provisioning discovery cache before tab expansion reads it
+"$moduleRoot\internal\sdk\provisioning.ps1"
+
 # Load Tab Expansion
 (Get-ChildItem "$moduleRoot\internal\tepp\*.tepp.ps1" -ErrorAction Ignore).FullName
 
