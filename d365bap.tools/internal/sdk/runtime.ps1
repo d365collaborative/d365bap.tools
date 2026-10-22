@@ -84,7 +84,7 @@ function Invoke-BapSdkCommand {
         }
     }
 
-    $secureToken = (Get-AzAccessToken -ResourceUrl 'https://api.powerplatform.com' -AsSecureString -ErrorAction Stop).Token
+    $secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com' -ErrorAction Stop
     $token = [Net.NetworkCredential]::new('', $secureToken).Password
     $body = $null
     if ($operation.Parameters.Count) {

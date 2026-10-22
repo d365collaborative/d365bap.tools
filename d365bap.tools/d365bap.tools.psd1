@@ -93,6 +93,7 @@
 		
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
+		, 'Get-BapToolsAuthProvider'
 		
 		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
@@ -157,6 +158,7 @@
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
+		, 'Invoke-BapInstallAzCli'
 
 		, 'Invoke-FscmDmfEntityMetadataRefresh'
 		, 'Invoke-FscmOdataAction'
@@ -191,6 +193,7 @@
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
+		, 'Set-BapToolsAuthProvider'
 		
 		, 'Set-FscmUserAccess'
 		

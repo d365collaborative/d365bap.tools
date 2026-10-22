@@ -8,6 +8,22 @@
     )
 
     try {
+        $provider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+        if ($provider -eq 'AzCli') {
+            $upns = @()
+            try {
+                $raw = az account list --query '[].user.name' -o tsv 2>$null
+                if ($LASTEXITCODE -eq 0 -and $raw) {
+                    $upns = @($raw | Where-Object { $_ } | Sort-Object -Unique)
+                }
+            }
+            catch { }
+            foreach ($upn in ($upns | Where-Object { $_ -like "$wordToComplete*" })) {
+                [System.Management.Automation.CompletionResult]::new($upn, $upn, 'ParameterValue', $upn)
+            }
+            return
+        }
+
         $contexts = Get-AzContext -ListAvailable -ErrorAction SilentlyContinue
         if (-not $contexts) { return }
 

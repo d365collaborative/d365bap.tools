@@ -101,14 +101,27 @@ function Start-ProvisioningCacheRefresh {
         if (Get-Job -Name 'd365bap.tools.provisioning.refresh' -State Running -ErrorAction SilentlyContinue) { return }
         Get-Job -Name 'd365bap.tools.provisioning.refresh' -ErrorAction SilentlyContinue | Remove-Job -Force -ErrorAction SilentlyContinue
 
+        # Provider choice cannot be read inside the job: PSFConfig and
+        # $script: module state are not shared with the job process, so
+        # pass it explicitly and let the job mint a fresh token.
+        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+
         $null = Start-Job -Name 'd365bap.tools.provisioning.refresh' -ScriptBlock {
-            param ([string] $CachePath)
+            param ([string] $CachePath, [string] $AuthProvider, [string] $ModuleRoot)
 
             try {
-                Import-Module Az.Accounts -ErrorAction Stop
-                if (-not (Get-AzContext -ErrorAction SilentlyContinue)) { return }
+                if ($AuthProvider -eq 'AzAccount') {
+                    Import-Module Az.Accounts -ErrorAction Stop
+                    if (-not (Get-AzContext -ErrorAction SilentlyContinue)) { return }
+                }
 
-                $secure = (Get-AzAccessToken -ResourceUrl 'https://api.powerplatform.com' -AsSecureString -ErrorAction Stop).Token
+                if (-not (Get-Command Get-BapAccessToken -ErrorAction SilentlyContinue)) {
+                    $helperPath = Join-Path $ModuleRoot 'internal/functions/Get-BapAccessToken.ps1'
+                    if (Test-Path -LiteralPath $helperPath) { . $helperPath }
+                    else { return }
+                }
+
+                $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com' -ErrorAction Stop
                 $token = [Net.NetworkCredential]::new('', $secure).Password
                 $headers = @{ Authorization = "Bearer $token" }
                 $base = 'https://api.powerplatform.com'
@@ -179,7 +192,7 @@ function Start-ProvisioningCacheRefresh {
                 $snapshot | ConvertTo-Json -Depth 8 -ErrorAction Stop | Set-Content -LiteralPath $CachePath -Encoding utf8 -ErrorAction Stop
             }
             catch { Write-PSFMessage -Level Verbose -Message 'Provisioning refresh: background probe failed, keeping the previous cache.' }
-        } -ArgumentList (Get-ProvisioningUserCachePath)
+        } -ArgumentList @((Get-ProvisioningUserCachePath), $authProvider, $script:ModuleRoot)
     }
     catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh was skipped: $($_.Exception.Message)" }
 }

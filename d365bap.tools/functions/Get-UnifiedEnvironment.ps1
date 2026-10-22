@@ -88,6 +88,10 @@ function Get-UnifiedEnvironment {
 
         $searchById = Test-Guid -InputObject $EnvironmentId
 
+        # Read before the parallel loop: $script: module state is not
+        # shared across parallel runspaces, so each runspace mints fresh.
+        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+
         $currentProgress = $ProgressPreference
         $ProgressPreference = "SilentlyContinue"
     }
@@ -111,14 +115,16 @@ function Get-UnifiedEnvironment {
                 continue
             }
 
-            # Import required modules inside the parallel block if they are not automatically loaded
-            # Adjust as needed based on your environment/module setup
-            Import-Module Az.Accounts -ErrorAction SilentlyContinue
+            # Only the AzAccount provider needs Az.Accounts in the runspace.
+            if ($using:authProvider -eq 'AzAccount') {
+                Import-Module Az.Accounts -ErrorAction SilentlyContinue
+            }
             Import-Module PSFramework -ErrorAction SilentlyContinue
 
             # Version details come from the Web API function msprov_getfinopsapplicationdetails
+            # Each runspace mints its own token via Get-BapAccessToken.
             $baseUri = $envObj.PpacEnvUri
-            $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+            $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
             $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
             $headersApi = @{
