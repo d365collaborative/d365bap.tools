@@ -24,7 +24,7 @@ Platform SDK.
 
 Tenant defaults are tenant specific and are never served from the
 provisioning cache.
-One row is returned per matched location.
+One row is returned per matched default location.
 
 ## EXAMPLES
 
@@ -33,7 +33,7 @@ One row is returned per matched location.
 Get-PpacTenantProvisioningDefault
 ```
 
-This will return the tenant default language and currency for all locations.
+This will return the tenant default language and currency for the default location.
 
 ### EXAMPLE 2
 ```
@@ -61,6 +61,7 @@ Accepts a location name (e.g.
 Supports wildcard characters (*).
 Defaults to all
 locations.
+Only default locations are returned.
 
 ```yaml
 Type: String

@@ -577,6 +577,9 @@
                 <PropertyName>Location</PropertyName>
               </ListItem>
               <ListItem>
+                <PropertyName>Name</PropertyName>
+              </ListItem>
+              <ListItem>
                 <PropertyName>BaseLanguage</PropertyName>
               </ListItem>
               <ListItem>

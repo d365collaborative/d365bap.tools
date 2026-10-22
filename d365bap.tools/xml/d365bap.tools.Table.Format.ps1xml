@@ -1391,8 +1391,8 @@
       <TableControl>
         <TableHeaders>
           <TableColumnHeader>
-            <Label>Location</Label>
-            <Width>24</Width>
+            <Label>Name</Label>
+            <Width>26</Width>
           </TableColumnHeader>
           <TableColumnHeader>
             <Label>BaseLanguage</Label>
@@ -1419,7 +1419,7 @@
           <TableRowEntry>
             <TableColumnItems>
               <TableColumnItem>
-                <PropertyName>Location</PropertyName>
+                <PropertyName>Name</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>BaseLanguage</PropertyName>

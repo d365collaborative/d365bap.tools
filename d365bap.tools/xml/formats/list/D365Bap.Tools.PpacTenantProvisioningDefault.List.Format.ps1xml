@@ -11,6 +11,7 @@
           <ListEntry>
             <ListItems>
               <ListItem><PropertyName>Location</PropertyName></ListItem>
+              <ListItem><PropertyName>Name</PropertyName></ListItem>
               <ListItem><PropertyName>BaseLanguage</PropertyName></ListItem>
               <ListItem><PropertyName>LanguageName</PropertyName></ListItem>
               <ListItem><PropertyName>CurrencyCode</PropertyName></ListItem>

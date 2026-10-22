@@ -9,14 +9,14 @@
         Platform SDK.
         
         Tenant defaults are tenant specific and are never served from the
-        provisioning cache. One row is returned per matched location.
+        provisioning cache. One row is returned per matched default location.
         
     .PARAMETER Location
         The deployment location to resolve tenant defaults for.
         
         Accepts a location name (e.g. "europe") or display name (e.g.
         "Europe"). Supports wildcard characters (*). Defaults to all
-        locations.
+        locations. Only default locations are returned.
         
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -24,7 +24,7 @@
     .EXAMPLE
         PS C:\> Get-PpacTenantProvisioningDefault
         
-        This will return the tenant default language and currency for all locations.
+        This will return the tenant default language and currency for the default location.
         
     .EXAMPLE
         PS C:\> Get-PpacTenantProvisioningDefault -Location "europe"
@@ -69,8 +69,15 @@ function Get-PpacTenantProvisioningDefault {
             return
         }
 
+        $defaultLocations = @($matchedLocations | Where-Object { $_.isDefault })
+
+        if (-not $defaultLocations) {
+            Write-PSFMessage -Level Warning -Message "None of the matched locations ($(($matchedLocations | ForEach-Object { $_.name }) -join ', ')) is a default provisioning location."
+            return
+        }
+
         $resCol = @(
-            foreach ($locationEntry in $matchedLocations) {
+            foreach ($locationEntry in $defaultLocations) {
                 $tenantDefault = Get-ProvisioningLocationDefault -Location $locationEntry.name -Token $tokenPowerApiValue
 
                 if (-not $tenantDefault) {
@@ -78,6 +85,7 @@ function Get-PpacTenantProvisioningDefault {
                     continue
                 }
 
+                $tenantDefault | Add-Member -NotePropertyName "Name" -NotePropertyValue $locationEntry.displayName -Force
                 $tenantDefault | Add-Member -NotePropertyName "IsDefault" -NotePropertyValue ([bool]$locationEntry.isDefault) -Force
 
                 $tenantDefault
@@ -86,6 +94,7 @@ function Get-PpacTenantProvisioningDefault {
 
         $resCol = @($resCol | Select-PSFObject -TypeName "D365Bap.Tools.PpacTenantProvisioningDefault" `
                 -Property "Location as Location",
+            "Name as Name",
             "BaseLanguage as BaseLanguage",
             "LanguageName as LanguageName",
             "CurrencyCode as CurrencyCode",

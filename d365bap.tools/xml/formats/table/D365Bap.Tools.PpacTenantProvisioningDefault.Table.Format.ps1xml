@@ -8,7 +8,7 @@
       </ViewSelectedBy>
       <TableControl>
         <TableHeaders>
-          <TableColumnHeader><Label>Location</Label><Width>24</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Name</Label><Width>26</Width></TableColumnHeader>
           <TableColumnHeader><Label>BaseLanguage</Label><Width>12</Width></TableColumnHeader>
           <TableColumnHeader><Label>Language</Label><Width>28</Width></TableColumnHeader>
           <TableColumnHeader><Label>Currency</Label><Width>8</Width></TableColumnHeader>
@@ -18,7 +18,7 @@
         <TableRowEntries>
           <TableRowEntry>
             <TableColumnItems>
-              <TableColumnItem><PropertyName>Location</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Name</PropertyName></TableColumnItem>
               <TableColumnItem><PropertyName>BaseLanguage</PropertyName></TableColumnItem>
               <TableColumnItem><PropertyName>LanguageName</PropertyName></TableColumnItem>
               <TableColumnItem><PropertyName>CurrencyCode</PropertyName></TableColumnItem>
