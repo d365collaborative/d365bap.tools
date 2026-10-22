@@ -18,6 +18,12 @@ Remove-Module d365bap.tools -ErrorAction Ignore
 Import-Module "$PSScriptRoot\..\d365bap.tools.psd1"
 Import-Module "$PSScriptRoot\..\d365bap.tools.psm1" -Force
 
+# Importing the checkout may auto-load an installed release of the module next to it.
+# Evict any instance that is not the checkout under test, so all tests run against a single module instance.
+$repoModulePath = (Resolve-Path "$PSScriptRoot\..\d365bap.tools.psm1").Path
+Get-Module d365bap.tools | Where-Object Path -ne $repoModulePath | Remove-Module -Force -ErrorAction Ignore
+if (@(Get-Module d365bap.tools).Count -ne 1) { throw "Expected exactly one loaded d365bap.tools instance (the checkout under test). Aborting test run." }
+
 Import-Module Pester
 
 Write-PSFMessage -Level Important -Message "Creating test result folder"

@@ -2,6 +2,16 @@
 # Validation jobs run in parallel with module caching; build-and-release runs after all pass.
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'd365bap.tools/functions/**'
+      - 'd365bap.tools/internal/**'
+      - 'd365bap.tools/d365bap.tools.psd1'
+      - 'd365bap.tools/d365bap.tools.psm1'
+      - 'd365bap.tools/xml/**'
+      - 'd365bap.tools/en-us/**'
   workflow_dispatch:
 
 jobs:
