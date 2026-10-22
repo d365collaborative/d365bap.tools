@@ -107,7 +107,31 @@ function Add-PpacTeamOnSecurityGroup {
         if (Test-PSFFunctionInterrupt) { return }
 
         if ([System.String]::IsNullOrEmpty($TeamAdmin)) {
-            $TeamAdmin = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).UserId
+            $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+            if ($authProvider -eq 'AzCli') {
+                # .UserId on the Az token is the signed-in user's UPN (plain string).
+                # The az CLI equivalent without extra Graph permissions is the
+                # account user name from az account show.
+                try {
+                    $azUser = az account show --query user.name -o tsv 2>$null
+                    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$azUser")) {
+                        $TeamAdmin = "$azUser".Trim()
+                    }
+                }
+                catch {
+                    Write-PSFMessage -Level Verbose -Message "az account show failed with: $($_.Exception.Message)"
+                }
+
+                if ([string]::IsNullOrWhiteSpace("$TeamAdmin")) {
+                    $messageString = "Unable to determine the current user from the Azure CLI. Please run <c='em'>az login</c> and try again, or pass <c='em'>-TeamAdmin</c> explicitly."
+                    Write-PSFMessage -Level Important -Message $messageString
+                    Stop-PSFFunction -Message "Stopping because the current user could not be determined." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                    return
+                }
+            }
+            else {
+                $TeamAdmin = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).UserId
+            }
         }
         
         $userObj = Get-PpacUser `
