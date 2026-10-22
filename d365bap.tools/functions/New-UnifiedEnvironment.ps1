@@ -314,7 +314,7 @@ function New-ShellEnvironment {
         [switch] $EarlyRelease
     )
 
-    $localUri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments?api-version=2024-10-01'
+    $localUri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments?api-version=2024-05-01'
 
     $config = [PsCustomObject][ordered]@{
         location   = $Location
