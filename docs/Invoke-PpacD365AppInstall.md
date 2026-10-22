@@ -8,17 +8,26 @@ schema: 2.0.0
 # Invoke-PpacD365AppInstall
 
 ## SYNOPSIS
-Installs D365 applications in the environment.
+Installs or updates D365 applications in the environment.
 
 ## SYNTAX
 
 ```
-Invoke-PpacD365AppInstall [-EnvironmentId] <String> [-D365App] <String[]> [-ProgressAction <ActionPreference>]
+Invoke-PpacD365AppInstall [-EnvironmentId] <String> [-D365App] <String[]> [[-PayloadValue] <String>]
+ [[-PollIntervalSeconds] <Int32>] [[-TimeoutMinutes] <Int32>] [-ProgressAction <ActionPreference>]
  [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Enables the user to install D365 applications in the environment as it would be done in Power Platform Admin Center (PPAC).
+Enables the user to install or update D365 applications in the environment as it would be done in Power Platform Admin Center (PPAC).
+
+Mimics the behavior of 'pac app-management install-application-package --unique-name':
+POST https://api.powerplatform.com/appmanagement/environments/{environmentId}/applicationPackages/{uniqueName}/install?api-version=2024-10-01
+with body '{"payloadValue":"..."}' (or '{}' when no payload is needed).
+
+The same endpoint handles both fresh installs (state 'None') and updates of already installed apps.
+
+Returns one result object per requested app with the final operation status.
 
 ## EXAMPLES
 
@@ -76,6 +85,62 @@ Aliases:
 Required: True
 Position: 2
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PayloadValue
+Optional payload value sent as '{"payloadValue":"..."}' in the install request body.
+
+Required by some apps with a custom install experience (e.g.
+Finance and Operations Provisioning App).
+Omit for regular installs / updates.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PollIntervalSeconds
+Seconds to wait between each status poll against the operations endpoint.
+
+Defaults to 60 seconds.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: 60
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TimeoutMinutes
+Maximum time to wait for all installations to reach a terminal state (Succeeded / Failed / Canceled) before giving up polling.
+
+Defaults to 120 minutes.
+Use 0 to wait indefinitely (not recommended for automation).
+
+When the timeout expires the cmdlet stops polling, warns, and returns the last known statuses so the caller can decide how to proceed.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
+Default value: 120
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

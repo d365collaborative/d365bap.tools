@@ -1,37 +1,38 @@
-﻿<#
+﻿
+<#
     .SYNOPSIS
         Remove a user from a Finance and Operations environment.
-
+        
     .DESCRIPTION
         Removes the SystemUser record for a Finance and Operations user. Optionally only removes one or more security role assignments and keeps the user.
-
+        
         Role assignments are removed via DELETE SecurityUserRoles(UserId, SecurityRoleIdentifier), then the user is removed via DELETE SystemUsers(UserID).
-
+        
     .PARAMETER EnvironmentId
         The ID of the environment to remove the user from.
-
+        
         Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-
+        
     .PARAMETER User
         The name or ID of the user to remove from the environment.
-
+        
         Can be either the user name, user ID or user principal name (UPN).
-
+        
     .PARAMETER Role
         Only remove the supplied security role assignment(s) and keep the user.
-
+        
         Can be either the role name or role ID. When omitted the user is fully removed (all roles, then delete).
-
+        
     .EXAMPLE
         PS C:\> Remove-FscmUser -EnvironmentId "ContosoEnv" -User "megan.bowen@contoso.com"
-
+        
         Removes all security roles from megan.bowen@contoso.com and deletes the FSCM user.
-
+        
     .EXAMPLE
         PS C:\> Remove-FscmUser -EnvironmentId "ContosoEnv" -User "megan.bowen@contoso.com" -Role "System administrator"
-
+        
         Only removes the System administrator role assignment and keeps the user.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

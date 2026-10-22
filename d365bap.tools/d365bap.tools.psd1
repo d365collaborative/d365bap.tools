@@ -96,7 +96,10 @@
 		
 		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
+		, 'Get-FscmEnvironmentVersion'
+		, 'Get-FscmInstalledModel'
 		, 'Get-FscmOdata'
+		, 'Get-FscmOdataAction'
 		, 'Get-FscmOdataEntity'
 		, 'Get-FscmOdataToken'
 		, 'Get-FscmRestService'
@@ -111,6 +114,8 @@
 		, 'Get-PpacD365App'
 		, 'Get-PpacD365OperationHistory'
 		, 'Get-PpacD365PlatformUpdate'
+		, 'Get-PpacD365Properties'
+		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacRbacRole'
@@ -146,19 +151,25 @@
 		, 'Get-UdeXrefDb'
 		
 		, 'Get-UnifiedEnvironment'
+		, 'Get-UnifiedEnvironmentMaintenance'
 		, 'Get-UnifiedEnvironmentModule'
+		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
 		
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 
 		, 'Invoke-FscmDmfEntityMetadataRefresh'
+		, 'Invoke-FscmOdataAction'
 		, 'Invoke-FscmRestService'
 
 		, 'Invoke-PpacD365AppInstall'
 		, 'Invoke-PpacD365PlatformUpdate'
+		, 'Invoke-PpacD365VersionUpdate'
 		
 		, 'Invoke-PpePublishAllCustomizations'
+
+		, 'Invoke-UdeDbQuery'
 		
 		, 'New-PpacSecurityRole'
 
@@ -172,6 +183,8 @@
 		
 		, 'Remove-UnifiedEnvironmentModule'
 		, 'Remove-UnifiedEnvironmentPackage'
+		
+		, 'Remove-UnifiedEnvironment'
 		
 		, 'Set-BapAzCopyPath'
 		
@@ -193,6 +206,8 @@
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
+		
+		, 'Set-UnifiedEnvironmentMaintenance'
 		
 		, 'Start-UdeDatabaseRefresh'
 		, 'Start-UdeDbSsms'

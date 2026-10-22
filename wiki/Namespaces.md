@@ -1,4 +1,4 @@
-﻿# Namespaces
+# Namespaces
 
 Also known as abbreviations or command groups. See also [Abbreviations](https://www.linkedin.com/pulse/abbreviations-d365baptools-m%C3%B6tz-jensen-cm4ee).
 
@@ -30,12 +30,10 @@ T
 | [Compare-BapEnvironmentVirtualEntity](Compare-BapEnvironmentVirtualEntity) | Compare environment Virtual Entities |
 | [Confirm-BapEnvironmentIntegration](Confirm-BapEnvironmentIntegration) | Test the integration status |
 | [Get-BapEnvironment](Get-BapEnvironment) | Retrieves information about Power Platform environments. |
-| [Get-BapEnvironmentApplicationUser](Get-BapEnvironmentApplicationUser) | Get application users from environment |
 | [Get-BapEnvironmentD365App](Get-BapEnvironmentD365App) | Get D365 App from the environment |
 | [Get-BapEnvironmentLinkEnterprisePolicy](Get-BapEnvironmentLinkEnterprisePolicy) | Get Enterprise Policy |
 | [Get-BapEnvironmentOperation](Get-BapEnvironmentOperation) | Get environment life cycle operation info |
 | [Get-BapEnvironmentPowerApp](Get-BapEnvironmentPowerApp) | Get PowerApps from environment |
-| [Get-BapEnvironmentUser](Get-BapEnvironmentUser) | Get users from environment |
 | [Get-BapEnvironmentVirtualEntity](Get-BapEnvironmentVirtualEntity) | Get Virtual Entity from environment |
 | [Get-BapTenant](Get-BapTenant) | Retrieves information about the available azure tenant. |
 | [Get-BapTenantDetail](Get-BapTenantDetail) | Gets detailed information about a BAP tenant. |
@@ -71,6 +69,8 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacD365App](Get-PpacD365App) | Get D365 application that are available in the environment. |
 | [Get-PpacD365OperationHistory](Get-PpacD365OperationHistory) | Get operation history for a given Unified environment from PPAC. |
 | [Get-PpacD365PlatformUpdate](Get-PpacD365PlatformUpdate) | Get D365 platform update information for the environment. |
+| [Get-PpacD365Properties](Get-PpacD365Properties) | Get Finance and Operations properties for the environment. |
+| [Get-PpacD365Version](Get-PpacD365Version) | Get D365 Finance and Operations versions for the environment. |
 | [Get-PpacDeployLocation](Get-PpacDeployLocation) | Get the available deployment locations for Power Platform environments. |
 | [Get-PpacEnvironmentGroup](Get-PpacEnvironmentGroup) | Retrieves Power Platform environment groups. |
 | [Get-PpacRbacRole](Get-PpacRbacRole) | Get PPAC RBAC roles available in the tenant. |
@@ -81,8 +81,9 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacTable](Get-PpacTable) | Get the tables (entities) from a given environment. |
 | [Get-PpacTeam](Get-PpacTeam) | Get team details from Power Platform environment. |
 | [Get-PpacUser](Get-PpacUser) | Get information about users in a Power Platform environment. |
-| [Invoke-PpacD365AppInstall](Invoke-PpacD365AppInstall) | Installs D365 applications in the environment. |
+| [Invoke-PpacD365AppInstall](Invoke-PpacD365AppInstall) | Installs or updates D365 applications in the environment. |
 | [Invoke-PpacD365PlatformUpdate](Invoke-PpacD365PlatformUpdate) | Start D365 Platform update. |
+| [Invoke-PpacD365VersionUpdate](Invoke-PpacD365VersionUpdate) | Apply a D365 Finance and Operations version to the environment. |
 | [New-PpacSecurityRole](New-PpacSecurityRole) | Create a new security role in a given environment. |
 | [Remove-PpacUser](Remove-PpacUser) | Remove a user from a Power Platform environment. |
 | [Set-PpacAdminMode](Set-PpacAdminMode) | Set the admin mode for a Power Platform environment. |
@@ -107,7 +108,10 @@ This is when one is working directly against the Dynamics 365 ERP environment. H
 | [Add-FscmUserFromSecurityGroup](Add-FscmUserFromSecurityGroup) | Enables creation of users from an Entra Security Group in the Dynamics 365 ERP environment. |
 | [Get-FscmDmfEntity](Get-FscmDmfEntity) | Get DMF entity metadata from a Finance and Operations environment. |
 | [Get-FscmEntraApplication](Get-FscmEntraApplication) | Get Entra (AAD) registered applications from a Finance and Operations environment. |
+| [Get-FscmEnvironmentVersion](Get-FscmEnvironmentVersion) | Get version numbers from a Finance and Operations environment. |
+| [Get-FscmInstalledModel](Get-FscmInstalledModel) | Get installed models from a Finance and Operations environment. |
 | [Get-FscmOdata](Get-FscmOdata) | Query an OData entity from a Finance and Operations environment. |
+| [Get-FscmOdataAction](Get-FscmOdataAction) | Get OData action metadata from a Finance and Operations environment. |
 | [Get-FscmOdataEntity](Get-FscmOdataEntity) | Get OData entity metadata from a Finance and Operations environment. |
 | [Get-FscmOdataToken](Get-FscmOdataToken) | Get an OData access token for a Finance and Operations environment. |
 | [Get-FscmRestService](Get-FscmRestService) | Get REST service metadata from a Finance and Operations environment. |
@@ -115,6 +119,7 @@ This is when one is working directly against the Dynamics 365 ERP environment. H
 | [Get-FscmSecurityRoleMember](Get-FscmSecurityRoleMember) | Get information about Finance and Operations security role members in a given environment. |
 | [Get-FscmUser](Get-FscmUser) | Get information about Finance and Operations users in a given environment. |
 | [Invoke-FscmDmfEntityMetadataRefresh](Invoke-FscmDmfEntityMetadataRefresh) | Refresh all Data Management Framework entity metadata in a Finance and Operations environment. |
+| [Invoke-FscmOdataAction](Invoke-FscmOdataAction) | Invokes an OData action in Finance and Supply Chain Management (FSCM). |
 | [Invoke-FscmRestService](Invoke-FscmRestService) | Invokes a REST service operation in Finance and Supply Chain Management (FSCM). |
 | [Remove-FscmUser](Remove-FscmUser) | Remove a user from a Finance and Operations environment. |
 | [Set-FscmUserAccess](Set-FscmUserAccess) | Enable or disable user access in a Dynamics 365 Finance & Operations environment |
@@ -168,6 +173,7 @@ This is when one is working, either as a developer against an Ude environment or
 | [Get-UdeVsPackageDeploy](Get-UdeVsPackageDeploy) | Get UDE VS package deploys. |
 | [Get-UdeVsPowerPlatformExtensionHistory](Get-UdeVsPowerPlatformExtensionHistory) | Get UDE VS Power Platform extension history. |
 | [Get-UdeXrefDb](Get-UdeXrefDb) | Gets UDE cross-reference databases. |
+| [Invoke-UdeDbQuery](Invoke-UdeDbQuery) | Invokes a SQL query against a UDE database using cached JIT access credentials. |
 | [Remove-UdeEnvironmentModel](Remove-UdeEnvironmentModel) | Remove models from a unified environment. |
 | [Set-UdeConfig](Set-UdeConfig) | Sets UDE configuration for a specific environment. |
 | [Set-UdeDbJitCache](Set-UdeDbJitCache) | Sets UDE database JIT access credentials in the local cache. |
@@ -186,11 +192,15 @@ This is for the things that concern the underlying Unified (Developer / Sandbox 
 | Command | Description |
 | --- | --- |
 | [Get-UnifiedEnvironment](Get-UnifiedEnvironment) | Get Unified Environment in Power Platform Admin Center (PPAC). |
+| [Get-UnifiedEnvironmentMaintenance](Get-UnifiedEnvironmentMaintenance) | Get maintenance settings for a Unified Environment in Power Platform Admin Center (PPAC). |
 | [Get-UnifiedEnvironmentModule](Get-UnifiedEnvironmentModule) | Get UDE environment modules. |
+| [Get-UnifiedEnvironmentOperationError](Get-UnifiedEnvironmentOperationError) | Get Finance and Operations operation errors for a Unified environment. |
 | [Get-UnifiedEnvironmentPackage](Get-UnifiedEnvironmentPackage) | Get UDE environment packages. |
 | [New-UnifiedEnvironment](New-UnifiedEnvironment) | Deploy a new Unified Environment in Power Platform Admin Center (PPAC). |
+| [Remove-UnifiedEnvironment](Remove-UnifiedEnvironment) | Remove a unified environment from a Power Platform tenant. |
 | [Remove-UnifiedEnvironmentModule](Remove-UnifiedEnvironmentModule) | Remove UDE environment modules. |
 | [Remove-UnifiedEnvironmentPackage](Remove-UnifiedEnvironmentPackage) | Remove UDE environment packages. |
+| [Set-UnifiedEnvironmentMaintenance](Set-UnifiedEnvironmentMaintenance) | Set maintenance settings for a Unified Environment in Power Platform Admin Center (PPAC). |
 <!-- END-AUTOGENERATED:Unified -->
 
 ## Graph

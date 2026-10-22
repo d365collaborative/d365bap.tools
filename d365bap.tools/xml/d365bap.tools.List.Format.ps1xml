@@ -128,6 +128,96 @@
       </ListControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.FscmEnvironmentVersion</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.FscmEnvironmentVersion</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>ApplicationVersion</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ApplicationBuild</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PlatformBuild</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.FscmInstalledModel</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.FscmInstalledModel</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>DisplayName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Name</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Version</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Module</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Publisher</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.FscmOdataAction</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.FscmOdataAction</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>EntityName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>CollectionName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ActionName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>BindingKind</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ReturnType</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ParametersList</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Endpoint</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>FieldLookup</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.FscmOdataEntity</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.FscmOdataEntity</TypeName>
@@ -304,6 +394,47 @@
               </ListItem>
               <ListItem>
                 <PropertyName>ProvVersion</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.PpacD365Properties</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacD365Properties</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>PpacEnvId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>PpacEnvName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>AppId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>DeploymentType</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>DemoDataset</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>AosCount</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>BatchCount</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>MaxAos</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>MaxBatch</PropertyName>
               </ListItem>
             </ListItems>
           </ListEntry>
@@ -825,6 +956,67 @@
               </ListItem>
               <ListItem>
                 <PropertyName>ExtractedPath</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.UnifiedEnvironmentMaintenance</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.UnifiedEnvironmentMaintenance</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>PpacEnvName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>Cadence</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>DaysOfWeek</PropertyName>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.UnifiedEnvironmentOperationError</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.UnifiedEnvironmentOperationError</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <PropertyName>EnvironmentId</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>EnvironmentName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>FailedAt</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>OperationType</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>FailedActionName</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ErrorCode</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>ErrorMessage</PropertyName>
+              </ListItem>
+              <ListItem>
+                <PropertyName>CorrelationId</PropertyName>
               </ListItem>
             </ListItems>
           </ListEntry>

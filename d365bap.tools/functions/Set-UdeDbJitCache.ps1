@@ -83,6 +83,7 @@ function Set-UdeDbJitCache {
         [Parameter(ValueFromPipelineByPropertyName = $true)]
         [datetime] $Expiration = (Get-Date).AddHours(8),
 
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [ValidateSet("Reader", "Writer")]
         [string] $Role = "Reader",
 
