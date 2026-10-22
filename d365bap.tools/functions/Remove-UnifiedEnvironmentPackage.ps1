@@ -1,47 +1,48 @@
-﻿<#
+﻿
+<#
     .SYNOPSIS
         Remove UDE environment packages.
-
+        
     .DESCRIPTION
         Removes UDE environment packages (msprov_fnopackage records) for a specified environment.
-
+        
         Packages are matched by package id and name. Nothing is removed unless the -Force switch is supplied.
         Without -Force the cmdlet lists the packages that would be removed.
-
+        
     .PARAMETER EnvironmentId
         The id of the environment that you want to work against
-
+        
     .PARAMETER PackageId
         The id of the package that you want to remove.
-
+        
         Supports wildcard characters for flexible matching against the package id.
-
+        
     .PARAMETER Name
         The name of the package that you want to remove.
-
+        
         Supports wildcard characters for flexible matching against the package name.
-
+        
     .PARAMETER Force
         Instructs the function to proceed with removing the packages.
-
+        
         Nothing happens unless this parameter is supplied.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironmentPackage -EnvironmentId "env-123" -PackageId "a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6"
-
+        
         This will show the package that would be removed for the specified environment id.
         It will NOT remove the package yet, allowing you to review it before deciding to remove it.
-
+        
     .EXAMPLE
         PS C:\> Remove-UnifiedEnvironmentPackage -EnvironmentId "env-123" -PackageId "a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6" -Force
-
+        
         This will remove the specified package for the specified environment id without further confirmation.
-
+        
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironmentPackage -EnvironmentId "env-123" | Remove-UnifiedEnvironmentPackage -Force
-
+        
         This will remove all packages returned for the specified environment id without further confirmation.
-
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

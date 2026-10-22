@@ -64,6 +64,11 @@ Register-PSFTeppArgumentCompleter `
     -Name "d365bap.tools.tepp.ude.dbjit.credentials"
 
 Register-PSFTeppArgumentCompleter `
+    -Command Invoke-UdeDbQuery `
+    -Parameter Id `
+    -Name "d365bap.tools.tepp.ude.dbjit.credentials"
+
+Register-PSFTeppArgumentCompleter `
     -Command Get-PpacDeployLocation `
     -Parameter Name `
     -Name "d365bap.tools.tepp.bap.locations"
@@ -74,14 +79,14 @@ Register-PSFTeppArgumentCompleter `
     -Name "d365bap.tools.tepp.bap.locations"
 
 Register-PSFTeppArgumentCompleter `
-    -Command New-UnifiedEnvironment `
-    -Parameter Region `
-    -Name "d365bap.tools.tepp.bap.regions"
-
-Register-PSFTeppArgumentCompleter `
     -Command Invoke-PpacD365PlatformUpdate `
     -Parameter Version `
     -Name "d365bap.tools.tepp.env.temp.versions"
+
+Register-PSFTeppArgumentCompleter `
+    -Command Invoke-PpacD365VersionUpdate `
+    -Parameter Version `
+    -Name "d365bap.tools.tepp.env.d365.versions"
 
 Register-PSFTeppArgumentCompleter `
     -Command Add-PpacRbacRoleMember `

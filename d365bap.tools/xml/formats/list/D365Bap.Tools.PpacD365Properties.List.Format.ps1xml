@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpacD365Properties</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpacD365Properties</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <PropertyName>PpacEnvId</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PpacEnvName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AppId</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>DeploymentType</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>DemoDataset</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AosCount</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>BatchCount</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>MaxAos</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>MaxBatch</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>

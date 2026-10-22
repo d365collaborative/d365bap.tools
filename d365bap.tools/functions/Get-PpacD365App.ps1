@@ -77,11 +77,19 @@ function Get-PpacD365App {
             "Prefer"           = "odata.include-annotations=*"
         }
         
-        $appsAvailable = Invoke-RestMethod `
-            -Method Get `
-            -Uri "https://api.powerplatform.com/appmanagement/environments/$($envObj.PpacEnvId)/applicationPackages?api-version=2022-03-01-preview" `
-            -Headers $headersPowerApi 4> $null | `
-            Select-Object -ExpandProperty Value
+        $appsAvailable = @()
+        $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages?appInstallState=All&api-version=2024-10-01" `
+            -f $envObj.PpacEnvId
+
+        do {
+            $responsePage = Invoke-RestMethod `
+                -Method Get `
+                -Uri $localUri `
+                -Headers $headersPowerApi 4> $null
+
+            $appsAvailable += $responsePage.value
+            $localUri = $responsePage.'@odata.nextLink'
+        } while (-not [string]::IsNullOrEmpty($localUri))
     }
     
     process {

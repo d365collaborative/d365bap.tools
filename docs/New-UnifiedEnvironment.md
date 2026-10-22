@@ -14,9 +14,9 @@ Deploy a new Unified Environment in Power Platform Admin Center (PPAC).
 
 ```
 New-UnifiedEnvironment [-Type] <String> [-Name] <String> [[-CustomDomainName] <String>] [-Location] <String>
- [[-Region] <String>] [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>]
- [[-EnvironmentGroup] <String>] [[-PostProvisionDelaySeconds] <Int32>] [[-ReadyStateTimeoutMinutes] <Int32>]
- [-WaitForCompletion] [-EarlyRelease] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>] [[-EnvironmentGroup] <String>]
+ [[-PostProvisionDelaySeconds] <Int32>] [[-ReadyStateTimeoutMinutes] <Int32>] [-WaitForCompletion]
+ [-EarlyRelease] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -37,15 +37,12 @@ It will get a default/unique domain name assigned by Power Platform.
 It will take the latest available version of Finance and Operations.
 It will not restrict access to the environment.
 
-It will deploy into the North Europe region, as it's the default region for the Europe location.
-
 ### EXAMPLE 2
 ```
-New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -Region "West Europe"
+New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe"
 ```
 
 This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
-It will deploy into the "West Europe" region.
 It will include a demo database.
 It will get a default/unique domain name assigned by Power Platform.
 It will take the latest available version of Finance and Operations.
@@ -196,25 +193,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Region
-The Azure region for the new environment.
-
-It specifies the physical location of the data center where the environment will be hosted.
-
-Get-PpacDeployLocation | Format-List can be used to find possible regions.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 5
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -NoDemoDb
 Instructs the cmdlet to create the environment without a demo database.
 
@@ -239,7 +217,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: 5
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -254,7 +232,7 @@ Parameter Sets: (All)
 Aliases: EntraGroup
 
 Required: False
-Position: 7
+Position: 6
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -271,7 +249,7 @@ Parameter Sets: (All)
 Aliases: EnvironmentGroupId, EnvironmentGroupName
 
 Required: False
-Position: 8
+Position: 7
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -288,7 +266,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 9
+Position: 8
 Default value: 60
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -305,7 +283,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 10
+Position: 9
 Default value: 60
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -329,7 +307,7 @@ Accept wildcard characters: False
 ### -EarlyRelease
 Instructs the cmdlet to create the environment in the early release cycle.
 
-Note that not all locations/regions support early release environments.
+Note that not all locations support early release environments.
 
 ```yaml
 Type: SwitchParameter
