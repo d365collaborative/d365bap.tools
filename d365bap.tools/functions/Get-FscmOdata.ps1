@@ -71,6 +71,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmOdata {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "OData is the name of the protocol.")]
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType('System.Object[]')]
     param (

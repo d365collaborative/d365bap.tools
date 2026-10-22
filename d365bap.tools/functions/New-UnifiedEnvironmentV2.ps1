@@ -94,6 +94,12 @@
         
         Note that not all locations support early release environments.
         
+    .PARAMETER Confirm
+        Prompts for confirmation before provisioning the environment.
+
+    .PARAMETER WhatIf
+        Shows the resolved provisioning settings without creating an environment.
+
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe"
         

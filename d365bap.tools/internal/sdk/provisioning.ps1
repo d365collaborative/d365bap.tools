@@ -142,7 +142,7 @@ function Start-ProvisioningCacheRefresh {
                             if ($key -notin $languageLocations) { $languageLocations += $key }
                         }
                     }
-                    catch { Write-Verbose "Provisioning refresh: keeping previous language list, could not read '$CachePath'." }
+                    catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh: keeping previous language list, could not read '$CachePath'." }
                 }
 
                 foreach ($location in @($locations.name)) {
@@ -172,13 +172,13 @@ function Start-ProvisioningCacheRefresh {
                         $snapshot.currencies[$location] = @((Invoke-RestMethod -Uri "$base/environmentmanagement/provisioning/locations/$location/currencies?api-version=$api" -Headers $headers -ErrorAction Stop).collection |
                             ForEach-Object { [ordered]@{ code = $_.code; symbol = $_.symbol; isTenantDefault = $_.isTenantDefault } })
                     }
-                    catch { Write-Verbose "Provisioning refresh: skipping languages/currencies for location '$location'." }
+                    catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh: skipping languages/currencies for location '$location'." }
                 }
 
                 $null = New-Item -ItemType Directory -Path (Split-Path -Parent $CachePath) -Force -ErrorAction Stop
                 $snapshot | ConvertTo-Json -Depth 8 -ErrorAction Stop | Set-Content -LiteralPath $CachePath -Encoding utf8 -ErrorAction Stop
             }
-            catch { Write-Verbose 'Provisioning refresh: background probe failed, keeping the previous cache.' }
+            catch { Write-PSFMessage -Level Verbose -Message 'Provisioning refresh: background probe failed, keeping the previous cache.' }
         } -ArgumentList (Get-ProvisioningUserCachePath)
     }
     catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh was skipped: $($_.Exception.Message)" }
@@ -239,7 +239,7 @@ function Resolve-ProvisioningTemplate {
         # Advisory only: availability flags have been observed to disagree
         # across calls, so a disabled flag warns instead of blocking.
         $reason = $slot[0].disabledReason.code
-        Write-Warning "Template '$Template' is currently reported as disabled for $EnvironmentSku in location '$Location' (reason: $reason). Provisioning will be attempted anyway."
+        Write-PSFMessage -Level Warning -Message "Template '$Template' is currently reported as disabled for $EnvironmentSku in location '$Location' (reason: $reason). Provisioning will be attempted anyway."
     }
     return $match[0].name
 }

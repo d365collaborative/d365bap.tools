@@ -24,6 +24,7 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Update-BapEnvironmentVirtualEntityMetadata {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "Metadata is an uncountable noun.")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
