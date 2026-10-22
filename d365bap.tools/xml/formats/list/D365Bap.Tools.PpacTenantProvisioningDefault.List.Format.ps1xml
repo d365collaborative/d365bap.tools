@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>D365Bap.Tools.PpacTenantProvisioningDefault</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacTenantProvisioningDefault</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem><PropertyName>Location</PropertyName></ListItem>
+              <ListItem><PropertyName>BaseLanguage</PropertyName></ListItem>
+              <ListItem><PropertyName>LanguageName</PropertyName></ListItem>
+              <ListItem><PropertyName>CurrencyCode</PropertyName></ListItem>
+              <ListItem><PropertyName>CurrencySymbol</PropertyName></ListItem>
+              <ListItem><PropertyName>IsDefault</PropertyName></ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>

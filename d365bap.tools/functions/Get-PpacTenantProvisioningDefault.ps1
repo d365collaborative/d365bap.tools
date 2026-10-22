@@ -58,25 +58,27 @@ function Get-PpacTenantProvisioningDefault {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $locations = @($script:ProvisioningCache.locations | Where-Object {
+        $matchedLocations = @($script:ProvisioningCache.locations | Where-Object {
                 ($_.name -like $Location -or $_.name -eq $Location) `
                     -or ($_.displayName -like $Location -or $_.displayName -eq $Location)
-            } | ForEach-Object { $_.name } | Sort-Object -Unique)
+            } | Sort-Object -Property name -Unique)
 
-        if (-not $locations) {
+        if (-not $matchedLocations) {
             $valid = @($script:ProvisioningCache.locations | ForEach-Object { $_.name } | Sort-Object -Unique)
             Stop-PSFFunction -Message "Unknown location '$Location'. Valid values: $($valid -join ', ')."
             return
         }
 
         $resCol = @(
-            foreach ($locationName in $locations) {
-                $tenantDefault = Get-ProvisioningLocationDefault -Location $locationName -Token $tokenPowerApiValue
+            foreach ($locationEntry in $matchedLocations) {
+                $tenantDefault = Get-ProvisioningLocationDefault -Location $locationEntry.name -Token $tokenPowerApiValue
 
                 if (-not $tenantDefault) {
-                    Write-PSFMessage -Level Warning -Message "No tenant default language or currency reported for location '$locationName'. Skipping."
+                    Write-PSFMessage -Level Warning -Message "No tenant default language or currency reported for location '$($locationEntry.name)'. Skipping."
                     continue
                 }
+
+                $tenantDefault | Add-Member -NotePropertyName "IsDefault" -NotePropertyValue ([bool]$locationEntry.isDefault) -Force
 
                 $tenantDefault
             }
@@ -87,7 +89,8 @@ function Get-PpacTenantProvisioningDefault {
             "BaseLanguage as BaseLanguage",
             "LanguageName as LanguageName",
             "CurrencyCode as CurrencyCode",
-            "CurrencySymbol as CurrencySymbol")
+            "CurrencySymbol as CurrencySymbol",
+            "IsDefault as IsDefault")
 
         if ($AsExcelOutput) {
             if ($resCol) {

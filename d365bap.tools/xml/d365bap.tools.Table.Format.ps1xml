@@ -1392,7 +1392,7 @@
         <TableHeaders>
           <TableColumnHeader>
             <Label>Location</Label>
-            <Width>20</Width>
+            <Width>24</Width>
           </TableColumnHeader>
           <TableColumnHeader>
             <Label>BaseLanguage</Label>
@@ -1409,6 +1409,10 @@
           <TableColumnHeader>
             <Label>Symbol</Label>
             <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>IsDefault</Label>
+            <Width>9</Width>
           </TableColumnHeader>
         </TableHeaders>
         <TableRowEntries>
@@ -1428,6 +1432,9 @@
               </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>CurrencySymbol</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>IsDefault</PropertyName>
               </TableColumnItem>
             </TableColumnItems>
           </TableRowEntry>

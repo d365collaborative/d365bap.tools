@@ -8,11 +8,12 @@
       </ViewSelectedBy>
       <TableControl>
         <TableHeaders>
-          <TableColumnHeader><Label>Location</Label><Width>20</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Location</Label><Width>24</Width></TableColumnHeader>
           <TableColumnHeader><Label>BaseLanguage</Label><Width>12</Width></TableColumnHeader>
           <TableColumnHeader><Label>Language</Label><Width>28</Width></TableColumnHeader>
           <TableColumnHeader><Label>Currency</Label><Width>8</Width></TableColumnHeader>
           <TableColumnHeader><Label>Symbol</Label><Width>8</Width></TableColumnHeader>
+          <TableColumnHeader><Label>IsDefault</Label><Width>9</Width></TableColumnHeader>
         </TableHeaders>
         <TableRowEntries>
           <TableRowEntry>
@@ -22,6 +23,7 @@
               <TableColumnItem><PropertyName>LanguageName</PropertyName></TableColumnItem>
               <TableColumnItem><PropertyName>CurrencyCode</PropertyName></TableColumnItem>
               <TableColumnItem><PropertyName>CurrencySymbol</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>IsDefault</PropertyName></TableColumnItem>
             </TableColumnItems>
           </TableRowEntry>
         </TableRowEntries>
