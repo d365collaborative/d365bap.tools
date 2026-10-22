@@ -33,8 +33,6 @@ Get-ChildItem -Path "$path\tests\functions\*.Tests.ps1" -File | ForEach-Object {
     $content = [IO.File]::ReadAllText($_.FullName) -replace '\r?\n', "`r`n"
     foreach ($skipParameter in $skipParameters) {
         $content = $content -replace "(?ms)^\t+It 'Should have the expected parameter $skipParameter' \{.*?\r?\n\t+\}\r?\n", ''
-        # The template also lists every parameter in the "Testing parameterset"
-        # comment. Drop the token there as well.
         $content = $content -replace " -$skipParameter(?=\s|$)", ''
     }
     [IO.File]::WriteAllText($_.FullName, $content, [Text.UTF8Encoding]::new($true))
