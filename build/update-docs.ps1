@@ -10,11 +10,11 @@ Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" | Remove-Item -Force
 if (Get-Command -Name New-MarkdownHelp -ErrorAction SilentlyContinue) {
     $null = New-MarkdownHelp -Module d365bap.tools -OutputFolder "$path\docs" -Force
 
-    # Automatic ShouldProcess parameters carry no per-command contract.
+    # Automatic parameters carry no per-command contract.
     # Drop their generated sections (see d365bap.tools/functions/AGENTS.md).
     Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" -Recurse -File | ForEach-Object {
         $content = [IO.File]::ReadAllText($_.FullName)
-        $content = $content -replace "(?ms)^### -(?:Confirm|WhatIf)\r?\n.*?(?=^### |^## |\Z)", ''
+        $content = $content -replace "(?ms)^### -(?:Confirm|WhatIf|ProgressAction)\r?\n.*?(?=^### |^## |\Z)", ''
         [IO.File]::WriteAllText($_.FullName, $content, [Text.UTF8Encoding]::new($true))
     }
 
