@@ -224,7 +224,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -UniqueName -FriendlyName -Prefix
-		__AllParameterSets -EnvironmentId -UniqueName -FriendlyName -Prefix -OptionValuePrefix -Description -EmailAddress -SupportingWebsiteUrl -AddressLine1 -AddressLine2 -AddressLine3 -AddressCity -AddressStateOrProvince -AddressPostalCode -AddressCountry -AddressPhone -ProgressAction
+		__AllParameterSets -EnvironmentId -UniqueName -FriendlyName -Prefix -OptionValuePrefix -Description -EmailAddress -SupportingWebsiteUrl -AddressLine1 -AddressLine2 -AddressLine3 -AddressCity -AddressStateOrProvince -AddressPostalCode -AddressCountry -AddressPhone
 		#>
 	}
 

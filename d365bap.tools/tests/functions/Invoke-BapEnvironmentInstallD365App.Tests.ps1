@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -PackageId
-		__AllParameterSets -EnvironmentId -PackageId -PayloadValue -PollIntervalSeconds -TimeoutMinutes -ProgressAction
+		__AllParameterSets -EnvironmentId -PackageId -PayloadValue -PollIntervalSeconds -TimeoutMinutes
 		#>
 	}
 

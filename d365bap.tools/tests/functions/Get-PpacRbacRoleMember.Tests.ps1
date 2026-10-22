@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -ServicePrincipalId -Role -AsExcelOutput -ProgressAction
+		__AllParameterSets -ServicePrincipalId -Role -AsExcelOutput
 		#>
 	}
 

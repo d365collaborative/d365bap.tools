@@ -68,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -Force -WaitForCompletion -DeletionTimeoutMinutes -ProgressAction
+		__AllParameterSets -EnvironmentId -Force -WaitForCompletion -DeletionTimeoutMinutes
 		#>
 	}
 

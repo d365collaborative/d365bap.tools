@@ -42,7 +42,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -Id -ShowPassword -ProgressAction
+		__AllParameterSets -Id -ShowPassword
 		#>
 	}
 

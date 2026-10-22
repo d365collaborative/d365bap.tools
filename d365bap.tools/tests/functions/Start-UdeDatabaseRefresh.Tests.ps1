@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -SourceEnvironmentId
-		__AllParameterSets -SourceEnvironmentId -TargetEnvironmentId -CopyType -IncludeAuditData -AdvancedFnO -ProgressAction
+		__AllParameterSets -SourceEnvironmentId -TargetEnvironmentId -CopyType -IncludeAuditData -AdvancedFnO
 		#>
 	}
 

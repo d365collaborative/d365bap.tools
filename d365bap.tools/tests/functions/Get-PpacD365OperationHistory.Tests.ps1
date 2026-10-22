@@ -94,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -LatestOnly -Id -DownloadLog -DownloadPath -AsExcelOutput -ProgressAction
+		__AllParameterSets -EnvironmentId -LatestOnly -Id -DownloadLog -DownloadPath -AsExcelOutput
 		#>
 	}
 

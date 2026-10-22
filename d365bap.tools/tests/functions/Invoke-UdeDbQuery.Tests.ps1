@@ -68,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Id -Query
-		__AllParameterSets -Id -Query -QueryTimeout -AsExcelOutput -ProgressAction
+		__AllParameterSets -Id -Query -QueryTimeout -AsExcelOutput
 		#>
 	}
 

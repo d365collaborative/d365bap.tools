@@ -29,7 +29,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -ServicePrincipalId -ProgressAction
+		__AllParameterSets -ServicePrincipalId
 		#>
 	}
 

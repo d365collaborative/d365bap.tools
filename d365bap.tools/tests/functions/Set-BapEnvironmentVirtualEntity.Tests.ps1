@@ -94,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Name
-		__AllParameterSets -EnvironmentId -Name -VisibilityOn -VisibilityOff -TrackingOn -TrackingOff -ProgressAction
+		__AllParameterSets -EnvironmentId -Name -VisibilityOn -VisibilityOff -TrackingOn -TrackingOff
 		#>
 	}
 

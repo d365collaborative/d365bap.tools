@@ -94,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Model
-		__AllParameterSets -EnvironmentId -Model -WorkFolder -WaitForCompletion -DownloadLog -Force -ProgressAction
+		__AllParameterSets -EnvironmentId -Model -WorkFolder -WaitForCompletion -DownloadLog -Force
 		#>
 	}
 

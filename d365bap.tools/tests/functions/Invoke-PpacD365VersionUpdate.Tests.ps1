@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Version
-		__AllParameterSets -EnvironmentId -Version -WaitForCompletion -ProgressAction
+		__AllParameterSets -EnvironmentId -Version -WaitForCompletion
 		#>
 	}
 

@@ -172,7 +172,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Type -Name -Location
-		__AllParameterSets -Type -Name -CustomDomainName -Location -NoDemoDb -Version -SecurityGroup -EnvironmentGroup -PostProvisionDelaySeconds -ReadyStateTimeoutMinutes -WaitForCompletion -EarlyRelease -ProgressAction
+		__AllParameterSets -Type -Name -CustomDomainName -Location -NoDemoDb -Version -SecurityGroup -EnvironmentGroup -PostProvisionDelaySeconds -ReadyStateTimeoutMinutes -WaitForCompletion -EarlyRelease
 		#>
 	}
 

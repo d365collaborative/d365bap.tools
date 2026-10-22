@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -Path -Files -Download -ClearSystemPackages -ProgressAction
+		__AllParameterSets -EnvironmentId -Path -Files -Download -ClearSystemPackages
 		#>
 	}
 

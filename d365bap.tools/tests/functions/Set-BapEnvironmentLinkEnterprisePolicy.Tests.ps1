@@ -42,7 +42,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -EnterprisePolicyResourceId
-		__AllParameterSets -EnvironmentId -EnterprisePolicyResourceId -ProgressAction
+		__AllParameterSets -EnvironmentId -EnterprisePolicyResourceId
 		#>
 	}
 

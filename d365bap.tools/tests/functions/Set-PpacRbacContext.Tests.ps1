@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -Username -Password -ImpersonateAppId -ProgressAction
+		__AllParameterSets -Username -Password -ImpersonateAppId
 		#>
 	}
 

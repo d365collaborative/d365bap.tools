@@ -67,19 +67,19 @@
 	Describe "Testing parameterset Default" {
 		<#
 		Default -EnvironmentId
-		Default -EnvironmentId -ProgressAction
+		Default -EnvironmentId
 		#>
 	}
  	Describe "Testing parameterset Object" {
 		<#
 		Object -EnvironmentId -AsObject
-		Object -EnvironmentId -AsObject -ProgressAction
+		Object -EnvironmentId -AsObject
 		#>
 	}
  	Describe "Testing parameterset BearerToken" {
 		<#
 		BearerToken -EnvironmentId -AsBearerToken
-		BearerToken -EnvironmentId -AsBearerToken -ProgressAction
+		BearerToken -EnvironmentId -AsBearerToken
 		#>
 	}
 

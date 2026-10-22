@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Role
-		__AllParameterSets -EnvironmentId -Role -User -IncludePpacApplications -AsExcelOutput -ProgressAction
+		__AllParameterSets -EnvironmentId -Role -User -IncludePpacApplications -AsExcelOutput
 		#>
 	}
 

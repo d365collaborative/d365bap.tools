@@ -68,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentUri -PackagesVersion -Path
-		__AllParameterSets -EnvironmentUri -PackagesVersion -Path -FallbackPath -ProgressAction
+		__AllParameterSets -EnvironmentUri -PackagesVersion -Path -FallbackPath
 		#>
 	}
 

@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -ServicePrincipalId -Role -Scope
-		__AllParameterSets -ServicePrincipalId -Role -Scope -ProgressAction
+		__AllParameterSets -ServicePrincipalId -Role -Scope
 		#>
 	}
 

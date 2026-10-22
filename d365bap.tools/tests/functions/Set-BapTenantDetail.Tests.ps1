@@ -68,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Id -Upn -TenantId
-		__AllParameterSets -Id -Upn -TenantId -TenantName -ProgressAction
+		__AllParameterSets -Id -Upn -TenantId -TenantName
 		#>
 	}
 

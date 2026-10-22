@@ -107,7 +107,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -Name -Status -GeoRegion -IncludeAll -UpdatesOnly -AsExcelOutput -ProgressAction
+		__AllParameterSets -EnvironmentId -Name -Status -GeoRegion -IncludeAll -UpdatesOnly -AsExcelOutput
 		#>
 	}
 

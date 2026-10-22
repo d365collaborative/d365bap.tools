@@ -94,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -WhitelistIp -Role -Reason -WaitSeconds -AsExcelOutput -ProgressAction
+		__AllParameterSets -EnvironmentId -WhitelistIp -Role -Reason -WaitSeconds -AsExcelOutput
 		#>
 	}
 

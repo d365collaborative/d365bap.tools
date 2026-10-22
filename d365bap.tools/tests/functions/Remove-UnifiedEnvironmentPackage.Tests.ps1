@@ -68,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -PackageId -Name -Force -ProgressAction
+		__AllParameterSets -EnvironmentId -PackageId -Name -Force
 		#>
 	}
 

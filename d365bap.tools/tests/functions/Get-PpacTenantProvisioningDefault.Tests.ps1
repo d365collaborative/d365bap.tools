@@ -42,7 +42,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -Location -AsExcelOutput -ProgressAction
+		__AllParameterSets -Location -AsExcelOutput
 		#>
 	}
 

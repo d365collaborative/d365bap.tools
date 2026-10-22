@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -EnvironmentId -FscmEnabled -AsExcelOutput -ProgressAction
+		__AllParameterSets -EnvironmentId -FscmEnabled -AsExcelOutput
 		#>
 	}
 

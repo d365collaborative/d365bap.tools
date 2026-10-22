@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -D365App
-		__AllParameterSets -EnvironmentId -D365App -PayloadValue -PollIntervalSeconds -TimeoutMinutes -ProgressAction
+		__AllParameterSets -EnvironmentId -D365App -PayloadValue -PollIntervalSeconds -TimeoutMinutes
 		#>
 	}
 

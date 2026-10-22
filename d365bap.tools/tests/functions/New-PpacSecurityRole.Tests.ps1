@@ -107,7 +107,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Name -Description -AppliesTo -SummaryOfCoreTablePrivileges
-		__AllParameterSets -EnvironmentId -Name -Description -AppliesTo -SummaryOfCoreTablePrivileges -MemberPrivilegeInheritance -IncludeAppOpenerPrivileges -ProgressAction
+		__AllParameterSets -EnvironmentId -Name -Description -AppliesTo -SummaryOfCoreTablePrivileges -MemberPrivilegeInheritance -IncludeAppOpenerPrivileges
 		#>
 	}
 

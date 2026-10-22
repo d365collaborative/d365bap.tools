@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -Cadence -DaysOfWeek -ProgressAction
+		__AllParameterSets -EnvironmentId -Cadence -DaysOfWeek
 		#>
 	}
 

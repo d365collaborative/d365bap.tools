@@ -42,7 +42,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Id
-		__AllParameterSets -Id -Force -ProgressAction
+		__AllParameterSets -Id -Force
 		#>
 	}
 

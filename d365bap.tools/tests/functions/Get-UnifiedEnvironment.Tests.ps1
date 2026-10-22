@@ -81,25 +81,25 @@
 	Describe "Testing parameterset Default" {
 		<#
 		Default -
-		Default -EnvironmentId -AsExcelOutput -ProgressAction
+		Default -EnvironmentId -AsExcelOutput
 		#>
 	}
  	Describe "Testing parameterset SkipVersion" {
 		<#
 		SkipVersion -
-		SkipVersion -EnvironmentId -SkipVersionDetails -AsExcelOutput -ProgressAction
+		SkipVersion -EnvironmentId -SkipVersionDetails -AsExcelOutput
 		#>
 	}
  	Describe "Testing parameterset UdeOnly" {
 		<#
 		UdeOnly -
-		UdeOnly -EnvironmentId -UdeOnly -AsExcelOutput -ProgressAction
+		UdeOnly -EnvironmentId -UdeOnly -AsExcelOutput
 		#>
 	}
  	Describe "Testing parameterset UseOnly" {
 		<#
 		UseOnly -
-		UseOnly -EnvironmentId -UseOnly -AsExcelOutput -ProgressAction
+		UseOnly -EnvironmentId -UseOnly -AsExcelOutput
 		#>
 	}
 

@@ -120,7 +120,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Id -Server -Database -Username -Password
-		__AllParameterSets -Id -Server -Database -Username -Password -Expiration -Role -EnvironmentId -ProgressAction
+		__AllParameterSets -Id -Server -Database -Username -Password -Expiration -Role -EnvironmentId
 		#>
 	}
 

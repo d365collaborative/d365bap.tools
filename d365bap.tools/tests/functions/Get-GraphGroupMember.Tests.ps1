@@ -29,7 +29,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Group
-		__AllParameterSets -Group -ProgressAction
+		__AllParameterSets -Group
 		#>
 	}
 

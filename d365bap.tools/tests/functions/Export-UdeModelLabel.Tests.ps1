@@ -107,13 +107,13 @@
 	Describe "Testing parameterset Active" {
 		<#
 		Active -
-		Active -Model -Language -LabelFileId -OutputPath -AsExcelOutput -ShowLabelDetails -ProgressAction
+		Active -Model -Language -LabelFileId -OutputPath -AsExcelOutput -ShowLabelDetails
 		#>
 	}
  	Describe "Testing parameterset Pipeline" {
 		<#
 		Pipeline -
-		Pipeline -Model -Language -LabelFileId -OutputPath -AsExcelOutput -ShowLabelDetails -PackagesLocalDirectory -ProgressAction
+		Pipeline -Model -Language -LabelFileId -OutputPath -AsExcelOutput -ShowLabelDetails -PackagesLocalDirectory
 		#>
 	}
 

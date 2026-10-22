@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -Path -Packages -Download -ClearNugetPackages -ProgressAction
+		__AllParameterSets -EnvironmentId -Path -Packages -Download -ClearNugetPackages
 		#>
 	}
 

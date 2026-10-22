@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -Name -Active -AsExcelOutput -ProgressAction
+		__AllParameterSets -Name -Active -AsExcelOutput
 		#>
 	}
 

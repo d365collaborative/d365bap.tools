@@ -113,13 +113,13 @@
 	Describe "Testing parameterset Default" {
 		<#
 		Default -EnvironmentId -Entity
-		Default -EnvironmentId -Entity -ODataQuery -CrossCompany -AsExcelOutput -ProgressAction
+		Default -EnvironmentId -Entity -ODataQuery -CrossCompany -AsExcelOutput
 		#>
 	}
  	Describe "Testing parameterset NextLink" {
 		<#
 		NextLink -EnvironmentId -Entity -TraverseNextLink
-		NextLink -EnvironmentId -Entity -ODataQuery -CrossCompany -TraverseNextLink -ThrottleSeed -AsExcelOutput -ProgressAction
+		NextLink -EnvironmentId -Entity -ODataQuery -CrossCompany -TraverseNextLink -ThrottleSeed -AsExcelOutput
 		#>
 	}
 

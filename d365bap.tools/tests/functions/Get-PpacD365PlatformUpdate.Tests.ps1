@@ -55,19 +55,19 @@
 	Describe "Testing parameterset Default" {
 		<#
 		Default -EnvironmentId
-		Default -EnvironmentId -ProgressAction
+		Default -EnvironmentId
 		#>
 	}
  	Describe "Testing parameterset Lowest" {
 		<#
 		Lowest -EnvironmentId
-		Lowest -EnvironmentId -Oldest -ProgressAction
+		Lowest -EnvironmentId -Oldest
 		#>
 	}
  	Describe "Testing parameterset Highest" {
 		<#
 		Highest -EnvironmentId
-		Highest -EnvironmentId -Latest -ProgressAction
+		Highest -EnvironmentId -Latest
 		#>
 	}
 

@@ -81,7 +81,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -SourceEnvironmentId -DestinationEnvironmentId
-		__AllParameterSets -SourceEnvironmentId -DestinationEnvironmentId -ShowDiffOnly -IncludeAppIds -AsExcelOutput -ProgressAction
+		__AllParameterSets -SourceEnvironmentId -DestinationEnvironmentId -ShowDiffOnly -IncludeAppIds -AsExcelOutput
 		#>
 	}
 

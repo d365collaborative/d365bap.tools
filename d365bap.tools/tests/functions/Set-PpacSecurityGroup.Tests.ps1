@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -SecurityGroup
-		__AllParameterSets -EnvironmentId -SecurityGroup -Force -ProgressAction
+		__AllParameterSets -EnvironmentId -SecurityGroup -Force
 		#>
 	}
 

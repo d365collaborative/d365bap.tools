@@ -159,7 +159,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Role -Table
-		__AllParameterSets -EnvironmentId -Role -Table -Create -Read -Write -Delete -Append -AppendTo -Assign -Share -ProgressAction
+		__AllParameterSets -EnvironmentId -Role -Table -Create -Read -Write -Delete -Append -AppendTo -Assign -Share
 		#>
 	}
 

@@ -94,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Publisher -Name -SystemName
-		__AllParameterSets -EnvironmentId -Publisher -Name -SystemName -Version -Description -ProgressAction
+		__AllParameterSets -EnvironmentId -Publisher -Name -SystemName -Version -Description
 		#>
 	}
 

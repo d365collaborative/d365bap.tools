@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -All -OpenFolder -DeploysOnly -ProgressAction
+		__AllParameterSets -All -OpenFolder -DeploysOnly
 		#>
 	}
 

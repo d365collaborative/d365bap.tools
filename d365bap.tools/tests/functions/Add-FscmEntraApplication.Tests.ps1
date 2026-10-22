@@ -68,7 +68,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -ClientId -MappedUser
-		__AllParameterSets -EnvironmentId -ClientId -Name -MappedUser -ProgressAction
+		__AllParameterSets -EnvironmentId -ClientId -Name -MappedUser
 		#>
 	}
 

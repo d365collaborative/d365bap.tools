@@ -94,7 +94,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Name -SecurityGroup -Role
-		__AllParameterSets -EnvironmentId -Name -SecurityGroup -MembershipType -Role -TeamAdmin -ProgressAction
+		__AllParameterSets -EnvironmentId -Name -SecurityGroup -MembershipType -Role -TeamAdmin
 		#>
 	}
 

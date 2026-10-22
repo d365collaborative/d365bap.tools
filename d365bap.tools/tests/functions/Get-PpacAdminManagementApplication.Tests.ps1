@@ -42,7 +42,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -SkipGraphLookup -AsExcelOutput -ProgressAction
+		__AllParameterSets -SkipGraphLookup -AsExcelOutput
 		#>
 	}
 

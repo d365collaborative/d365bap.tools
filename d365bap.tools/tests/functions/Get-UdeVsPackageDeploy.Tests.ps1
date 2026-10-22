@@ -42,7 +42,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -All -OpenFolder -ProgressAction
+		__AllParameterSets -All -OpenFolder
 		#>
 	}
 

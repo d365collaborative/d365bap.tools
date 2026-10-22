@@ -107,7 +107,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId -Entity -Name
-		__AllParameterSets -EnvironmentId -Entity -Name -EntityKey -Parameters -Payload -CrossCompany -ProgressAction
+		__AllParameterSets -EnvironmentId -Entity -Name -EntityKey -Parameters -Payload -CrossCompany
 		#>
 	}
 

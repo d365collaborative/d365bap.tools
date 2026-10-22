@@ -55,7 +55,7 @@
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -EnvironmentId
-		__AllParameterSets -EnvironmentId -MaxResults -AsExcelOutput -ProgressAction
+		__AllParameterSets -EnvironmentId -MaxResults -AsExcelOutput
 		#>
 	}
 

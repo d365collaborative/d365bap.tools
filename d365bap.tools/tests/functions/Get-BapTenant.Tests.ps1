@@ -68,19 +68,19 @@
 	Describe "Testing parameterset Default" {
 		<#
 		Default -
-		Default -Upn -TenantId -ProgressAction
+		Default -Upn -TenantId
 		#>
 	}
  	Describe "Testing parameterset Excel" {
 		<#
 		Excel -
-		Excel -Upn -TenantId -AsExcelOutput -ProgressAction
+		Excel -Upn -TenantId -AsExcelOutput
 		#>
 	}
  	Describe "Testing parameterset HashTable" {
 		<#
 		HashTable -
-		HashTable -Upn -TenantId -AsHashTable -ProgressAction
+		HashTable -Upn -TenantId -AsHashTable
 		#>
 	}
 
