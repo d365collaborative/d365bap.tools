@@ -8,7 +8,7 @@ schema: 2.0.0
 # Get-UnifiedEnvironmentMaintenance
 
 ## SYNOPSIS
-Get maintenance settings for a Unified Environment in Power Platform Admin Center (PPAC).
+Finance and Operations maintenance settings through the bundled Power Platform SDK.
 
 ## SYNTAX
 
@@ -18,35 +18,33 @@ Get-UnifiedEnvironmentMaintenance [-EnvironmentId] <String> [-ProgressAction <Ac
 ```
 
 ## DESCRIPTION
-Retrieves the Finance and Operations maintenance settings for a Unified Environment.
-
-Returns the maintenance window cadence and the preferred days of week for updates.
+Generated from the bundled Microsoft.PowerPlatform.Management SDK.
+Uses the current Az context.
+Unspecified update settings retain their current values.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Get-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6"
+Get-UnifiedEnvironmentMaintenance -EnvironmentId 'es-ude-motz-01'
 ```
 
-This will retrieve the maintenance settings for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6".
+Uses the current Az context.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against.
-
-Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+An exact environment name or Power Platform environment GUID.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: EnvironmentName, PpacEnvId
 
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -70,10 +68,10 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+### An object with an EnvironmentId, EnvironmentName, or PpacEnvId property.
 ## OUTPUTS
 
-### System.Object[]
+### System.Management.Automation.PSCustomObject
 ## NOTES
-Author: Mötz Jensen (@Splaxi)
 
 ## RELATED LINKS

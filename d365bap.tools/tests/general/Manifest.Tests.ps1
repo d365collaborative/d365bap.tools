@@ -8,8 +8,12 @@
 			$functions = (Compare-Object -ReferenceObject $files.BaseName -DifferenceObject $manifest.FunctionsToExport | Where-Object SideIndicator -Like '<=').InputObject
 			$functions | Should -BeNullOrEmpty
 		}
-		It "Exports no function that isn't also present in the public folder" -TestCases @{ files = $files; manifest = $manifest } {
-			$functions = (Compare-Object -ReferenceObject $files.BaseName -DifferenceObject $manifest.FunctionsToExport | Where-Object SideIndicator -Like '=>').InputObject
+		It "Exports only public functions and generated SDK commands" -TestCases @{ files = $files; manifest = $manifest; moduleRoot = $moduleRoot } {
+			$sdkMapping = Import-PowerShellDataFile "$moduleRoot\internal\sdk\commands.psd1"
+			$sdkFunctions = @(foreach ($resource in $sdkMapping.Resources) {
+				foreach ($verb in $resource.Methods.Keys) { "$verb-$($resource.Noun)" }
+			})
+			$functions = (Compare-Object -ReferenceObject @($files.BaseName + $sdkFunctions) -DifferenceObject $manifest.FunctionsToExport | Where-Object SideIndicator -Like '=>').InputObject
 			$functions | Should -BeNullOrEmpty
 		}
 		

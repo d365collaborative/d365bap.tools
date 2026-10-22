@@ -1,4 +1,4 @@
-@{
+﻿@{
 	# Script module or binary module file associated with this manifest
 	RootModule        = 'd365bap.tools.psm1'
 	
@@ -20,9 +20,9 @@
 	# Description of the functionality provided by this module
 	Description       = 'Tools used for Business Application Platform, One Dynamics One Platform - D365FO + Dataverse'
 	
-	# Minimum version of the Windows PowerShell engine required by this module
-	# Some commands require PowerShell 7, but the module can still be imported in 5.0
-	PowerShellVersion = '5.0'
+	# The bundled Power Platform SDK requires the .NET 10 runtime in PowerShell 7.6.
+	PowerShellVersion = '7.6'
+	CompatiblePSEditions = @('Core')
 	
 	# Modules that must be imported into the global environment prior to importing
 	# this module
@@ -151,7 +151,6 @@
 		, 'Get-UdeXrefDb'
 		
 		, 'Get-UnifiedEnvironment'
-		, 'Get-UnifiedEnvironmentMaintenance'
 		, 'Get-UnifiedEnvironmentModule'
 		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
@@ -174,6 +173,7 @@
 		, 'New-PpacSecurityRole'
 
 		, 'New-UnifiedEnvironment'
+		, 'New-UnifiedEnvironmentV2'
 		
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
@@ -207,14 +207,17 @@
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
 		
-		, 'Set-UnifiedEnvironmentMaintenance'
-		
 		, 'Start-UdeDatabaseRefresh'
 		, 'Start-UdeDbSsms'
 		
 		, 'Switch-BapTenant'
 		
 		, 'Update-BapEnvironmentVirtualEntityMetadata'
+		# BEGIN SDK EXPORTS
+		, 'Get-UnifiedEnvironmentMaintenance'
+		, 'Set-UnifiedEnvironmentMaintenance'
+		, 'Get-PpacTenantD365App'
+		# END SDK EXPORTS
 		
 	)
 	

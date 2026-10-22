@@ -1,3 +1,3 @@
 ﻿# Build & validation
 
-Run Pester and PSScriptAnalyzer under Windows PowerShell 5.1 (`powershell`), not PowerShell 7 (`pwsh`).
+Run Pester and PSScriptAnalyzer under PowerShell 7.6+ (`pwsh`), matching the module's minimum supported version.

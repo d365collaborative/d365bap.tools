@@ -20,6 +20,8 @@ TestResults/*
 
 # ignore the publishing Directory
 publish/*
+library/PowerPlatformSdk/bin/
+library/PowerPlatformSdk/obj/
 agent-tools
 terminals
 docs/superpowers

@@ -8,69 +8,49 @@ schema: 2.0.0
 # Set-UnifiedEnvironmentMaintenance
 
 ## SYNOPSIS
-Set maintenance settings for a Unified Environment in Power Platform Admin Center (PPAC).
+Finance and Operations maintenance settings through the bundled Power Platform SDK.
 
 ## SYNTAX
 
 ```
 Set-UnifiedEnvironmentMaintenance [-EnvironmentId] <String> [[-Cadence] <String>] [[-DaysOfWeek] <String[]>]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Updates the Finance and Operations maintenance settings for a Unified Environment.
-
-Supports updating the maintenance window cadence for major version application updates and the preferred days of week for updates.
+Generated from the bundled Microsoft.PowerPlatform.Management SDK.
+Uses the current Az context.
+Unspecified update settings retain their current values.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```
-Set-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Cadence EveryOtherUpdate
+Set-UnifiedEnvironmentMaintenance -EnvironmentId 'es-ude-motz-01' -Cadence EveryUpdate -WhatIf
 ```
 
-This will set the maintenance window cadence to 'EveryOtherUpdate' for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6".
-
-### EXAMPLE 2
-```
-Set-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -DaysOfWeek Saturday, Sunday
-```
-
-This will set the preferred maintenance days to Saturday and Sunday for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6".
-
-### EXAMPLE 3
-```
-Set-UnifiedEnvironmentMaintenance -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Cadence EveryUpdate -DaysOfWeek Saturday
-```
-
-This will set the maintenance window cadence to 'EveryUpdate' and the preferred maintenance day to Saturday.
+Uses the current Az context.
 
 ## PARAMETERS
 
 ### -EnvironmentId
-The id of the environment that you want to work against.
-
-Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
+An exact environment name or Power Platform environment GUID.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: EnvironmentName, PpacEnvId
 
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
 ### -Cadence
-Cadence for major version application updates.
-
-Valid values are:
-- "EveryUpdate": Apply every major version application update.
-- "EveryOtherUpdate": Apply every other major version application update.
-- "Regulated": Regulated cadence for major version application updates.
+Allowed values from the SDK: EveryUpdate, EveryOtherUpdate, Regulated.
+If omitted, the current environment value is preserved.
 
 ```yaml
 Type: String
@@ -85,9 +65,8 @@ Accept wildcard characters: False
 ```
 
 ### -DaysOfWeek
-The preferred days of week for updates.
-
-Valid values are Monday, Tuesday, Wednesday, Thursday, Friday, Saturday and Sunday.
+Allowed values from the SDK: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday.
+If omitted, the current environment value is preserved.
 
 ```yaml
 Type: String[]
@@ -96,6 +75,37 @@ Aliases:
 
 Required: False
 Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: cf
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -121,10 +131,10 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+### An object with an EnvironmentId, EnvironmentName, or PpacEnvId property.
 ## OUTPUTS
 
-### System.Object[]
+### System.Management.Automation.PSCustomObject
 ## NOTES
-Author: Mötz Jensen (@Splaxi)
 
 ## RELATED LINKS

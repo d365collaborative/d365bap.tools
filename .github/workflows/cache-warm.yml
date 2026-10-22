@@ -15,12 +15,12 @@ jobs:
       id: cache-powershell-modules
       uses: actions/cache@v5
       with:
-        path: ~\Documents\WindowsPowerShell\Modules
-        key: ps-modules-${{ runner.os }}-v1
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-v1
 
     - name: Install modules
       if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
-      shell: powershell
+      shell: pwsh
       run: |
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
         $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
