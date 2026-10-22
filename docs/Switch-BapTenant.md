@@ -19,6 +19,8 @@ Switch-BapTenant [-Id] <String> [-Force] [-ProgressAction <ActionPreference>] [<
 ## DESCRIPTION
 This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
 
+It uses the auth provider set with Set-BapToolsAuthProvider: Az PowerShell context (AzAccount) or Azure CLI (AzCli).
+
 ## EXAMPLES
 
 ### EXAMPLE 1

@@ -6,6 +6,8 @@
     .DESCRIPTION
         This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
         
+        It uses the auth provider set with Set-BapToolsAuthProvider: Az PowerShell context (AzAccount) or Azure CLI (AzCli).
+        
     .PARAMETER Id
         The ID of the BAP tenant to switch to.
         
@@ -52,19 +54,51 @@ function Switch-BapTenant {
         }
         
         $obj = $hashTenants."$Id"
-        $contextObj = (Get-AzContext -ListAvailable | `
-                Where-Object { $_.tenant.id -eq $obj.Tenant } | `
-                Where-Object { $_.Account.Id -eq $obj.User } | `
-                Select-Object -First 1)
+        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
 
         $fake = ''
 
-        if (-not $null -eq $contextObj) {
-            Select-AzContext -InputObject $contextObj > $null
+        if ($authProvider -eq 'AzCli') {
+            $azMatch = $null
+            try {
+                $azRaw = az account list --query "[?tenantId=='$($obj.Tenant)' && user.name=='$($obj.User)']" -o json 2>$null
+                if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$azRaw")) {
+                    $azMatch = @("$azRaw" | ConvertFrom-Json -ErrorAction Stop) | Select-Object -First 1
+                }
+            }
+            catch {
+                Write-PSFMessage -Level Verbose -Message "az account list failed with: $($_.Exception.Message)"
+            }
 
-            $fake = (Get-AzAccessToken `
-                    -ResourceUrl "https://service.powerapps.com/" `
-                    -AsSecureString -ErrorAction SilentlyContinue).Token
+            if ($null -ne $azMatch) {
+                if (-not [string]::IsNullOrWhiteSpace("$($azMatch.id)")) {
+                    $null = az account set --subscription $azMatch.id 2>$null
+                }
+
+                try {
+                    $azProbe = az account get-access-token --resource 'https://service.powerapps.com/' -o json 2>$null
+                    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$azProbe")) {
+                        $fake = "$azProbe"
+                    }
+                }
+                catch {
+                    Write-PSFMessage -Level Verbose -Message "Azure CLI token probe failed with: $($_.Exception.Message)"
+                }
+            }
+        }
+        else {
+            $contextObj = (Get-AzContext -ListAvailable | `
+                    Where-Object { $_.tenant.id -eq $obj.Tenant } | `
+                    Where-Object { $_.Account.Id -eq $obj.User } | `
+                    Select-Object -First 1)
+
+            if (-not $null -eq $contextObj) {
+                Select-AzContext -InputObject $contextObj > $null
+
+                $fake = (Get-AzAccessToken `
+                        -ResourceUrl "https://service.powerapps.com/" `
+                        -AsSecureString -ErrorAction SilentlyContinue).Token
+            }
         }
 
         if ([string]::IsNullOrWhiteSpace($fake) -or $Force) {
@@ -77,6 +111,20 @@ function Switch-BapTenant {
             
             Start-Sleep -Seconds 2
 
+            if ($authProvider -eq 'AzCli') {
+                # Subscription selection is irrelevant for BAP tenant auth (Power Platform tokens).
+                # --allow-no-subscriptions skips subscription discovery for tenant-level
+                # operations, matching the Az path's SkipContextPopulation behaviour
+                # (no subscription context is populated).
+                $null = az login --tenant $obj.Tenant --allow-no-subscriptions 2>$null
+                if ($LASTEXITCODE -ne 0) {
+                    $messageString = "Azure CLI login failed for tenant <c='em'>$($obj.Tenant)</c>. Please run <c='em'>az login --tenant $($obj.Tenant) --allow-no-subscriptions</c> manually and try again."
+                    Write-PSFMessage -Level Important -Message $messageString
+                    Stop-PSFFunction -Message "Stopping because the Azure CLI login failed." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                    return
+                }
+            }
+            else {
             # Subscription selection is irrelevant for BAP tenant auth (Power Platform tokens).
             # Do not pass -Subscription: a cached or current Az context may still hold SubA from
             # another tenant, and Connect-AzAccount then fails when that sub is not in the target tenant.
@@ -126,6 +174,7 @@ function Switch-BapTenant {
                 if ($defaultSubscriptionOverridden) {
                     $null = Clear-AzConfig -DefaultSubscriptionForLogin -Scope Process -ErrorAction SilentlyContinue
                 }
+            }
             }
         }
 
