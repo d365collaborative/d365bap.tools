@@ -212,7 +212,7 @@ function Get-BapEnvironmentD365App {
         # $envObj = @{"PpacEnvId" = "f0612c9b-3995-eaf5-a011-29f65bab374a"; "LinkedMetaPpacEnvUri" = "https://org47ec3c08.crm4.dynamics.com/"}
 
         # First we will fetch ALL available apps for the environment
-        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+        $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
         
         $headersPowerApi = @{
@@ -236,7 +236,7 @@ function Get-BapEnvironmentD365App {
         # Next we will fetch current installed apps and their details, for the environment
         $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
         
-        $secureTokenAdminApi = (Get-AzAccessToken -ResourceUrl "065d9450-1e87-434e-ac2f-69af271549ed" -AsSecureString).Token
+        $secureTokenAdminApi = Get-BapAccessToken -ResourceUrl "065d9450-1e87-434e-ac2f-69af271549ed"
         $tokenAdminApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenAdminApi
 
         $headersAdminApi = @{

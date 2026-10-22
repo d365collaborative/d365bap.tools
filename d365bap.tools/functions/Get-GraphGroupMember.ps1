@@ -31,7 +31,7 @@ function Get-GraphGroupMember {
     )
     
     end {
-        $secureTokenGraph = (Get-AzAccessToken -ResourceUrl "https://graph.microsoft.com/" -AsSecureString).Token
+        $secureTokenGraph = Get-BapAccessToken -ResourceUrl "https://graph.microsoft.com/"
         $tokenGraphValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenGraph
 
         $headersGraphApi = @{

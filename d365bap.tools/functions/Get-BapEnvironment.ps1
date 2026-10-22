@@ -55,7 +55,7 @@ function Get-BapEnvironment {
     )
 
     begin {
-        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString -ErrorAction Stop).Token
+        $secureTokenBap = Get-BapAccessToken -ResourceUrl "https://service.powerapps.com/" -ErrorAction Stop
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
         $headersBapApi = @{
