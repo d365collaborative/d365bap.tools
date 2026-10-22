@@ -143,5 +143,10 @@ Register-PSFTeppArgumentCompleter `
     -Parameter Location `
     -Name "d365bap.tools.tepp.provisioning.locations"
 
+Register-PSFTeppArgumentCompleter `
+    -Command Get-PpacTenantProvisioningDefault `
+    -Parameter Location `
+    -Name "d365bap.tools.tepp.provisioning.locations"
+
 # Template completion is registered natively in provisioning.templates.tepp.ps1
 # (location-aware via $fakeBoundParameters).

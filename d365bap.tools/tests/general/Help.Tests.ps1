@@ -96,7 +96,9 @@ foreach ($command in $commands) {
         
         Context "Test parameter help for $commandName" {
             
-            $common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable', 'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable', 'ProgressAction'
+            # Automatic common parameters carry no per-command contract and need no CBH.
+            # Confirm/WhatIf come from SupportsShouldProcess, like the rest of this list.
+            $common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable', 'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable', 'ProgressAction', 'Confirm', 'WhatIf'
             
             $parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
             $parameterNames = $parameters.Name
@@ -143,7 +145,7 @@ foreach ($command in $commands) {
 					}
                 }
             }
-            foreach ($helpParm in $HelpParameterNames) {
+            foreach ($helpParm in ($HelpParameterNames | Where-Object { $_ -notin $common })) {
 				# Shouldn't find extra parameters in help.
 				It "finds help parameter in code: $helpParm" -TestCases @{ helpParm = $helpParm; parameterNames = $parameterNames } {
 					$helpParm -in $parameterNames | Should -Be $true

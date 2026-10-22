@@ -94,12 +94,6 @@
         
         Note that not all locations support early release environments.
         
-    .PARAMETER Confirm
-        Prompts for confirmation before provisioning the environment.
-
-    .PARAMETER WhatIf
-        Shows the resolved provisioning settings without creating an environment.
-
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe"
         
@@ -181,7 +175,10 @@ function New-UnifiedEnvironmentV2 {
             Stop-PSFFunction -Message "Type 'USE' cannot use template 'D365_DeveloperEdition'. Pick a Finance and Operations template instead. Supported values: $($finOpsTemplates -join ', '). Note that -Template defaults to 'D365_DeveloperEdition', so it must be specified explicitly for 'USE'." -EnableException $true
             return
         }
-        $tenantDefault = Get-ProvisioningTenantDefault -Location $locationName
+        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString -ErrorAction Stop).Token
+        $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
+
+        $tenantDefault = Get-ProvisioningTenantDefault -Location $locationName -Token $tokenPowerApiValue
 
         $SecurityGroupId = $null
         $EnvironmentGroupId = $null
@@ -241,9 +238,6 @@ function New-UnifiedEnvironmentV2 {
             $preview
             return
         }
-
-        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString -ErrorAction Stop).Token
-        $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
     }
     
     process {

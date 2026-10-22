@@ -311,7 +311,8 @@ Accept wildcard characters: False
 ```
 
 ### -WhatIf
-Shows the resolved provisioning settings without creating an environment.
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
 
 ```yaml
 Type: SwitchParameter
@@ -326,7 +327,7 @@ Accept wildcard characters: False
 ```
 
 ### -Confirm
-Prompts for confirmation before provisioning the environment.
+Prompts you for confirmation before running the cmdlet.
 
 ```yaml
 Type: SwitchParameter

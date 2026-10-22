@@ -7,6 +7,11 @@
 
       GET /environmentmanagement/provisioning/locations
       GET /environmentmanagement/provisioning/locations/{location}/templates
+
+    Tenant default language and currency are tenant specific, so they are
+    never cached. They are resolved live through the bundled Power Platform
+    SDK for the location being provisioned:
+
       GET /environmentmanagement/provisioning/locations/{location}/languages
       GET /environmentmanagement/provisioning/locations/{location}/currencies
 
@@ -36,7 +41,7 @@ function Import-ProvisioningCache {
     [CmdletBinding()]
     param ()
 
-    $script:ProvisioningCache = @{ locations = @(); templates = @{}; languages = @{}; currencies = @{} }
+    $script:ProvisioningCache = @{ locations = @(); templates = @{} }
 
     $shipped = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-cache.json'
     if (Test-Path -LiteralPath $shipped) {
@@ -49,7 +54,7 @@ function Import-ProvisioningCache {
         try {
             $overlay = Get-Content -LiteralPath $userPath -Raw -Encoding utf8 |
                 ConvertFrom-Json -AsHashtable -ErrorAction Stop
-            foreach ($key in @('locations', 'templates', 'languages', 'currencies', 'refreshedUtc')) {
+            foreach ($key in @('locations', 'templates', 'refreshedUtc')) {
                 if ($overlay.ContainsKey($key)) { $script:ProvisioningCache[$key] = $overlay[$key] }
             }
         }
@@ -130,19 +135,6 @@ function Start-ProvisioningCacheRefresh {
                             }
                         })
                     templates    = [ordered]@{}
-                    languages    = [ordered]@{}
-                    currencies   = [ordered]@{}
-                }
-
-                $languageLocations = @('europe', 'unitedstates', 'unitedkingdom', 'germany')
-                if (Test-Path -LiteralPath $CachePath) {
-                    try {
-                        $previous = Get-Content -LiteralPath $CachePath -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable -ErrorAction Stop
-                        foreach ($key in @($previous.languages.Keys)) {
-                            if ($key -notin $languageLocations) { $languageLocations += $key }
-                        }
-                    }
-                    catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh: keeping previous language list, could not read '$CachePath'." }
                 }
 
                 foreach ($location in @($locations.name)) {
@@ -163,16 +155,6 @@ function Start-ProvisioningCacheRefresh {
                             })
                     }
                     catch { $snapshot.templates[$location] = @() }
-                }
-
-                foreach ($location in $languageLocations) {
-                    try {
-                        $snapshot.languages[$location] = @((Invoke-RestMethod -Uri "$base/environmentmanagement/provisioning/locations/$location/languages?api-version=$api" -Headers $headers -ErrorAction Stop).collection |
-                            ForEach-Object { [ordered]@{ localeId = $_.localeId; localizedName = $_.localizedName; isTenantDefault = $_.isTenantDefault } })
-                        $snapshot.currencies[$location] = @((Invoke-RestMethod -Uri "$base/environmentmanagement/provisioning/locations/$location/currencies?api-version=$api" -Headers $headers -ErrorAction Stop).collection |
-                            ForEach-Object { [ordered]@{ code = $_.code; symbol = $_.symbol; isTenantDefault = $_.isTenantDefault } })
-                    }
-                    catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh: skipping languages/currencies for location '$location'." }
                 }
 
                 $null = New-Item -ItemType Directory -Path (Split-Path -Parent $CachePath) -Force -ErrorAction Stop
@@ -244,35 +226,88 @@ function Resolve-ProvisioningTemplate {
     return $match[0].name
 }
 
-function Get-ProvisioningTenantDefault {
+function Get-ProvisioningLocationDefault {
+    <#
+        Shared worker for tenant default language and currency.
+
+        Resolves live through the bundled Power Platform SDK. Tenant
+        defaults are tenant specific, so they are never read from the
+        provisioning cache.
+    #>
     [CmdletBinding()]
     param (
-        [string] $Location = 'europe'
+        [Parameter(Mandatory = $true)]
+        [string] $Location,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Token
     )
 
-    $languages = @($script:ProvisioningCache.languages[$Location])
-    if (-not $languages) {
-        foreach ($key in @($script:ProvisioningCache.languages.Keys)) {
-            $languages = @($script:ProvisioningCache.languages[$key])
-            if ($languages) { break }
-        }
-    }
-    $language = @($languages | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
-    $baseLanguage = if ($language) { [int]$language[0].localeId } else { 1033 }
+    $base = 'https://api.powerplatform.com'
+    $api = $script:BapSdkApiVersion
 
-    $currencies = @($script:ProvisioningCache.currencies[$Location])
-    if (-not $currencies) {
-        foreach ($key in @($script:ProvisioningCache.currencies.Keys)) {
-            $currencies = @($script:ProvisioningCache.currencies[$key])
-            if ($currencies) { break }
-        }
+    $languageResult = Invoke-BapSdkRequest `
+        -Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Languages.LanguagesRequestBuilder' } `
+        -Method 'GetAsync' `
+        -Token $Token `
+        -RequestUrl "$base/environmentmanagement/provisioning/locations/$Location/languages?api-version=$api"
+
+    $language = @($languageResult.collection | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
+
+    $currencyResult = Invoke-BapSdkRequest `
+        -Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Currencies.CurrenciesRequestBuilder' } `
+        -Method 'GetAsync' `
+        -Token $Token `
+        -RequestUrl "$base/environmentmanagement/provisioning/locations/$Location/currencies?api-version=$api"
+
+    $currency = @($currencyResult.collection | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
+
+    if (-not $language -or -not $currency) {
+        Write-PSFMessage -Level Verbose -Message "No tenant default language or currency reported for location '$Location'."
+        return $null
     }
-    $currency = @($currencies | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
 
     [pscustomobject]@{
-        BaseLanguage   = $baseLanguage
-        CurrencyCode   = if ($currency) { $currency[0].code } else { 'USD' }
-        CurrencySymbol = if ($currency) { $currency[0].symbol } else { '$' }
+        Location       = $Location
+        BaseLanguage   = [int]$language[0].localeId
+        LanguageName   = $language[0].localizedName
+        CurrencyCode   = $currency[0].code
+        CurrencySymbol = $currency[0].symbol
+    }
+}
+
+function Get-ProvisioningTenantDefault {
+    <#
+        Internal tenant default for New-UnifiedEnvironmentV2.
+
+        Always resolves live through the bundled Power Platform SDK. The
+        tenant default is tenant specific and is never served from the
+        provisioning cache.
+    #>
+    [CmdletBinding()]
+    param (
+        [string] $Location = 'europe',
+
+        [string] $Token
+    )
+
+    if (-not $Token) {
+        $secure = (Get-AzAccessToken -ResourceUrl 'https://api.powerplatform.com' -AsSecureString -ErrorAction Stop).Token
+        $Token = [Net.NetworkCredential]::new('', $secure).Password
+    }
+
+    $locationName = Resolve-ProvisioningLocation -Location $Location
+    $tenantDefault = Get-ProvisioningLocationDefault -Location $locationName -Token $Token
+
+    if (-not $tenantDefault) {
+        throw "No tenant default language or currency reported for location '$locationName'."
+    }
+
+    [pscustomobject]@{
+        BaseLanguage   = $tenantDefault.BaseLanguage
+        LanguageName   = $tenantDefault.LanguageName
+        CurrencyCode   = $tenantDefault.CurrencyCode
+        CurrencySymbol = $tenantDefault.CurrencySymbol
     }
 }
 
