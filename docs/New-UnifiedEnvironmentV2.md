@@ -14,10 +14,10 @@ Deploy a new Unified environment through the Power Platform SDK.
 
 ```
 New-UnifiedEnvironmentV2 [-Type] <String> [-Name] <String> [[-CustomDomainName] <String>] [-Location] <String>
- [[-Template] <String>] [-NoDemoDb] [[-Version] <Version>] [[-SecurityGroup] <String>]
- [[-EnvironmentGroup] <String>] [[-PostProvisionDelaySeconds] <Int32>] [[-ReadyStateTimeoutMinutes] <Int32>]
- [-WaitForCompletion] [-EarlyRelease] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
- [<CommonParameters>]
+ [[-Template] <String>] [[-Language] <Int32>] [[-Currency] <String>] [-NoDemoDb] [[-Version] <Version>]
+ [[-SecurityGroup] <String>] [[-EnvironmentGroup] <String>] [[-PostProvisionDelaySeconds] <Int32>]
+ [[-ReadyStateTimeoutMinutes] <Int32>] [-WaitForCompletion] [-EarlyRelease]
+ [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -182,6 +182,49 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -Language
+The base language of the new environment as a locale id (e.g.
+1033
+for English).
+
+Tab completion lists the available languages for the selected
+location, with the tenant default first.
+When omitted, the tenant
+default language is used.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
+Default value: 0
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Currency
+The currency code of the new environment (e.g.
+"USD").
+
+Tab completion lists the available currencies for the selected
+location, with the tenant default first.
+When omitted, the tenant
+default currency is used.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 7
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -NoDemoDb
 Instructs the cmdlet to create the environment without a demo database.
 
@@ -206,7 +249,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: 8
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -221,7 +264,7 @@ Parameter Sets: (All)
 Aliases: EntraGroup
 
 Required: False
-Position: 7
+Position: 9
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -238,7 +281,7 @@ Parameter Sets: (All)
 Aliases: EnvironmentGroupId, EnvironmentGroupName
 
 Required: False
-Position: 8
+Position: 10
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -255,7 +298,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 9
+Position: 11
 Default value: 60
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -272,7 +315,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 10
+Position: 12
 Default value: 60
 Accept pipeline input: False
 Accept wildcard characters: False

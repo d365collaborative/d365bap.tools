@@ -121,6 +121,7 @@ function Import-ProvisioningCatalog {
     $script:ProvisioningCache['languages'] = $catalog['languages']
     $script:ProvisioningCache['currencies'] = $catalog['currencies']
     $script:ProvisioningCatalogLoaded = $true
+    Publish-ProvisioningCatalogData
 }
 
 function Get-ProvisioningCatalog {
@@ -169,6 +170,97 @@ function Get-ProvisioningTenantDefaultCache {
     return $null
 }
 
+function Publish-ProvisioningCatalogData {
+    <#
+        Publishes the in-memory language and currency catalogs for tab
+        completion. Called after the catalog is loaded, whenever that
+        happens.
+    #>
+    [CmdletBinding()]
+    param ()
+
+    Set-PSFConfig -FullName 'd365bap.tools.provisioning.languages' -Value $script:ProvisioningCache['languages'] -Description 'Power Platform provisioning languages per location for tab completion.'
+    Set-PSFConfig -FullName 'd365bap.tools.provisioning.currencies' -Value $script:ProvisioningCache['currencies'] -Description 'Power Platform provisioning currencies per location for tab completion.'
+}
+
+function Start-ProvisioningCatalogPreload {
+    <#
+        Parses the language and currency catalogs in a background worker
+        so module import stays fast. A StateChanged action merges the
+        result into module scope when the job completes. Anything that
+        needs the catalog calls Import-ProvisioningCatalog, which covers
+        the gap if the worker has not finished yet.
+    #>
+    [CmdletBinding()]
+    param ()
+
+    $sourceId = 'd365bap.tools.provisioning.catalog.preload'
+    $jobName = 'd365bap.tools.provisioning.catalog.preload'
+
+    if ($script:ProvisioningCatalogLoaded) { return }
+
+    $runningJob = Get-Job -Name $jobName -ErrorAction SilentlyContinue | Where-Object State -eq 'Running' | Select-Object -First 1
+    if (Get-EventSubscriber -SourceIdentifier $sourceId -ErrorAction SilentlyContinue) {
+        if ($runningJob) { return }
+        Unregister-Event -SourceIdentifier $sourceId -ErrorAction SilentlyContinue
+    }
+
+    # The module is still importing when this runs, so it is not in
+    # Get-Module yet. The session state reference is always available.
+    $module = $ExecutionContext.SessionState.Module
+    if (-not $module) { return }
+
+    if (-not $runningJob) {
+        $shippedCatalogPath = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json'
+        $userPath = Get-ProvisioningUserCachePath
+        $runningJob = Start-Job -Name $jobName -ScriptBlock {
+            param ([string] $ShippedPath, [string] $UserPath)
+
+            $catalog = @{ languages = @{}; currencies = @{} }
+            foreach ($path in @($ShippedPath, $UserPath)) {
+                if (-not $path -or -not (Test-Path -LiteralPath $path)) { continue }
+                try {
+                    $data = Get-Content -LiteralPath $path -Raw -Encoding utf8 |
+                        ConvertFrom-Json -AsHashtable -ErrorAction Stop
+                    foreach ($key in @('languages', 'currencies')) {
+                        if ($data.ContainsKey($key)) {
+                            foreach ($locationKey in @($data[$key].Keys)) {
+                                $catalog[$key][$locationKey] = @($data[$key][$locationKey])
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+            $catalog
+        } -ArgumentList $shippedCatalogPath, $userPath
+    }
+
+    $null = Register-ObjectEvent -InputObject $runningJob -EventName StateChanged -SourceIdentifier $sourceId -MessageData $module -Action {
+        try {
+            if ($Event.Sender.State -eq 'Completed') {
+                $catalog = Receive-Job -Job $Event.Sender -ErrorAction Stop
+                & $Event.MessageData {
+                    param ($loaded)
+                    if ($null -eq $loaded) { return }
+                    foreach ($key in @('languages', 'currencies')) {
+                        if ($loaded.ContainsKey($key)) { $script:ProvisioningCache[$key] = $loaded[$key] }
+                    }
+                    $script:ProvisioningCatalogLoaded = $true
+                    Publish-ProvisioningCatalogData
+                } $catalog
+            }
+        }
+        catch { }
+        finally {
+                    # NOTE: remove by name. Removing by job object or id from
+                    # inside an event action reports success but leaves the
+                    # job behind.
+                    Unregister-Event -SourceIdentifier 'd365bap.tools.provisioning.catalog.preload' -ErrorAction SilentlyContinue
+                    Remove-Job -Name 'd365bap.tools.provisioning.catalog.preload' -Force -ErrorAction SilentlyContinue
+                }
+    }
+}
 function Publish-ProvisioningCompletionData {
     [CmdletBinding()]
     param ()
@@ -176,6 +268,8 @@ function Publish-ProvisioningCompletionData {
     $locations = @($script:ProvisioningCache.locations)
     Set-PSFConfig -FullName 'd365bap.tools.provisioning.locations' -Value $locations -Description 'Power Platform provisioning locations for tab completion.'
     Set-PSFConfig -FullName 'd365bap.tools.provisioning.v2TemplateFilter' -Value $script:ProvisioningV2TemplateFilter -Description 'Template allow-list for New-UnifiedEnvironmentV2 tab completion.'
+    Set-PSFConfig -FullName 'd365bap.tools.provisioning.catalogPath' -Value (Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json') -Description 'Shipped language and currency catalog for tab completion.'
+    Set-PSFConfig -FullName 'd365bap.tools.provisioning.userCachePath' -Value (Get-ProvisioningUserCachePath) -Description 'User language and currency cache for tab completion.'
     $templateIndex = @{}
     foreach ($locationName in @($script:ProvisioningCache.templates.Keys)) {
         $templateIndex[$locationName] = @(
@@ -477,3 +571,4 @@ function Get-ProvisioningTenantDefault {
 
 Import-ProvisioningCache
 Start-ProvisioningCacheRefresh
+Start-ProvisioningCatalogPreload

@@ -62,6 +62,21 @@
         selected location and type. The template is validated for the
         Sandbox SKU before anything is provisioned.
         
+    .PARAMETER Language
+        The base language of the new environment as a locale id (e.g. 1033
+        for English).
+        
+        Tab completion lists the available languages for the selected
+        location, with the tenant default first. When omitted, the tenant
+        default language is used.
+        
+    .PARAMETER Currency
+        The currency code of the new environment (e.g. "USD").
+        
+        Tab completion lists the available currencies for the selected
+        location, with the tenant default first. When omitted, the tenant
+        default currency is used.
+        
     .PARAMETER NoDemoDb
         Instructs the cmdlet to create the environment without a demo database.
         
@@ -138,6 +153,10 @@ function New-UnifiedEnvironmentV2 {
 
         [string] $Template = 'D365_DeveloperEdition',
 
+        [int] $Language,
+
+        [string] $Currency,
+
         [switch] $NoDemoDb,
 
         [version] $Version,
@@ -178,7 +197,58 @@ function New-UnifiedEnvironmentV2 {
         $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString -ErrorAction Stop).Token
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
 
-        $tenantDefault = Get-ProvisioningTenantDefault -Location $locationName -Token $tokenPowerApiValue
+        # Language and currency catalogs resolve against the selected
+        # location. Loaded once, then kept in memory for the session.
+        Import-ProvisioningCatalog
+
+        $catalogLanguages = @($script:ProvisioningCache['languages'][$locationName])
+        $catalogCurrencies = @($script:ProvisioningCache['currencies'][$locationName])
+
+        if ($PSBoundParameters.ContainsKey('Language')) {
+            $languageMatch = @($catalogLanguages | Where-Object { $_.localeId -eq $Language })
+            if ($catalogLanguages.Count -and -not $languageMatch) {
+                $validLanguages = @($catalogLanguages | ForEach-Object { $_.localeId } | Sort-Object -Unique)
+                throw "Unknown language '$Language' for location '$locationName'. Supported values: $($validLanguages -join ', ')."
+            }
+            $baseLanguage = [int]$Language
+            $languageName = if ($languageMatch) { $languageMatch[0].localizedName } else { $null }
+        }
+
+        if ($PSBoundParameters.ContainsKey('Currency')) {
+            $currencyMatch = @($catalogCurrencies | Where-Object { $_.code -eq $Currency })
+            if ($catalogCurrencies.Count -and -not $currencyMatch) {
+                $validCurrencies = @($catalogCurrencies | ForEach-Object { $_.code } | Sort-Object -Unique)
+                throw "Unknown currency '$Currency' for location '$locationName'. Supported values: $($validCurrencies -join ', ')."
+            }
+            $currencyCode = if ($currencyMatch) { $currencyMatch[0].code } else { $Currency }
+            $currencySymbol = if ($currencyMatch) { $currencyMatch[0].symbol } else { $null }
+        }
+
+        if (-not $PSBoundParameters.ContainsKey('Language') -or -not $PSBoundParameters.ContainsKey('Currency')) {
+            $tenantDefault = $null
+            $tenantDefaultCache = Get-ProvisioningTenantDefaultCache
+            if ($tenantDefaultCache -and $tenantDefaultCache.defaults -and $tenantDefaultCache.defaults[$locationName]) {
+                $cachedDefault = $tenantDefaultCache.defaults[$locationName]
+                $tenantDefault = [pscustomobject]@{
+                    BaseLanguage   = [int]$cachedDefault.language.localeId
+                    LanguageName   = $cachedDefault.language.localizedName
+                    CurrencyCode   = $cachedDefault.currency.code
+                    CurrencySymbol = $cachedDefault.currency.symbol
+                }
+            }
+            else {
+                $tenantDefault = Get-ProvisioningTenantDefault -Location $locationName -Token $tokenPowerApiValue
+            }
+
+            if (-not $PSBoundParameters.ContainsKey('Language')) {
+                $baseLanguage = $tenantDefault.BaseLanguage
+                $languageName = $tenantDefault.LanguageName
+            }
+            if (-not $PSBoundParameters.ContainsKey('Currency')) {
+                $currencyCode = $tenantDefault.CurrencyCode
+                $currencySymbol = $tenantDefault.CurrencySymbol
+            }
+        }
 
         $SecurityGroupId = $null
         $EnvironmentGroupId = $null
@@ -222,9 +292,10 @@ function New-UnifiedEnvironmentV2 {
             Location           = $locationName
             Template           = $templateName
             EnvironmentSku     = 'Sandbox'
-            BaseLanguage       = $tenantDefault.BaseLanguage
-            CurrencyCode       = $tenantDefault.CurrencyCode
-            CurrencySymbol     = $tenantDefault.CurrencySymbol
+            BaseLanguage       = $baseLanguage
+            LanguageName       = $languageName
+            CurrencyCode       = $currencyCode
+            CurrencySymbol     = $currencySymbol
             CustomDomainName   = $CustomDomainName
             DevToolsEnabled    = ($Type -eq 'UDE')
             DemoDataEnabled    = (-not $NoDemoDb)
@@ -234,7 +305,8 @@ function New-UnifiedEnvironmentV2 {
             EarlyRelease       = [bool]$EarlyRelease
         }
 
-        if (-not $PSCmdlet.ShouldProcess($Name, "Create unified environment ($Type) in location '$locationName'")) {
+        $shouldProvision = $PSCmdlet.ShouldProcess($Name, "Create unified environment ($Type) in location '$locationName'")
+        if (-not $shouldProvision) {
             $preview
             return
         }
@@ -243,14 +315,15 @@ function New-UnifiedEnvironmentV2 {
     process {
         if (Test-PSFFunctionInterrupt) { return }
         if (-not $tokenPowerApiValue) { return }
+        if (-not $shouldProvision) { return }
 
         $shellEnvironmentParams = @{
             Name                = $Name
             LocationName        = $locationName
             TemplateName        = $templateName
-            BaseLanguage        = $tenantDefault.BaseLanguage
-            CurrencyCode        = $tenantDefault.CurrencyCode
-            CurrencySymbol      = $tenantDefault.CurrencySymbol
+            BaseLanguage        = $baseLanguage
+            CurrencyCode        = $currencyCode
+            CurrencySymbol      = $currencySymbol
             CustomDomainName    = $CustomDomainName
             SecurityGroupId     = $SecurityGroupId
             EnvironmentGroupId  = $EnvironmentGroupId
