@@ -79,7 +79,7 @@
 		It 'Should have the expected parameter Language' {
 			$parameter = (Get-Command New-UnifiedEnvironmentV2).Parameters['Language']
 			$parameter.Name | Should -Be 'Language'
-			$parameter.ParameterType.ToString() | Should -Be System.Int32
+			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
 			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
 			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'

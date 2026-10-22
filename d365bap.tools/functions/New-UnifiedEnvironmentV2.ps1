@@ -63,8 +63,8 @@
         Sandbox SKU before anything is provisioned.
         
     .PARAMETER Language
-        The base language of the new environment as a locale id (e.g. 1033
-        for English).
+        The base language of the new environment, as a locale id (e.g. 1033)
+        or a language name (e.g. "English (United States)").
         
         Tab completion lists the available languages for the selected
         location, with the tenant default first. When omitted, the tenant
@@ -153,7 +153,7 @@ function New-UnifiedEnvironmentV2 {
 
         [string] $Template = 'D365_DeveloperEdition',
 
-        [int] $Language,
+        [string] $Language,
 
         [string] $Currency,
 
@@ -205,13 +205,25 @@ function New-UnifiedEnvironmentV2 {
         $catalogCurrencies = @($script:ProvisioningCache['currencies'][$locationName])
 
         if ($PSBoundParameters.ContainsKey('Language')) {
-            $languageMatch = @($catalogLanguages | Where-Object { $_.localeId -eq $Language })
-            if ($catalogLanguages.Count -and -not $languageMatch) {
+            $languageMatch = @()
+            if ("$Language" -match '^\d+$') {
+                $languageMatch = @($catalogLanguages | Where-Object { $_.localeId -eq ([int]$Language) })
+            }
+            else {
+                $languageMatch = @($catalogLanguages | Where-Object { $_.localizedName -eq $Language })
+            }
+            if ($languageMatch) {
+                $baseLanguage = [int]$languageMatch[0].localeId
+                $languageName = $languageMatch[0].localizedName
+            }
+            elseif ("$Language" -match '^\d+$' -and -not $catalogLanguages.Count) {
+                $baseLanguage = [int]$Language
+                $languageName = $null
+            }
+            else {
                 $validLanguages = @($catalogLanguages | ForEach-Object { $_.localeId } | Sort-Object -Unique)
                 throw "Unknown language '$Language' for location '$locationName'. Supported values: $($validLanguages -join ', ')."
             }
-            $baseLanguage = [int]$Language
-            $languageName = if ($languageMatch) { $languageMatch[0].localizedName } else { $null }
         }
 
         if ($PSBoundParameters.ContainsKey('Currency')) {

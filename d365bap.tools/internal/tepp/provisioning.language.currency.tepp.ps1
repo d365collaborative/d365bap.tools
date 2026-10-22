@@ -109,7 +109,10 @@ $provisioningCultureCompleter = {
         foreach ($entry in $ordered) {
             $text = "$($entry.code) ($($entry.symbol))"
             if ("$($entry.code)" -like "$word*" -or "$($entry.symbol)" -like "$word*") {
-                [Management.Automation.CompletionResult]::new("'$($entry.code)'", $text, 'ParameterValue', $text)
+                # Single-quote the inserted code so values with spaces stay
+                # one token, doubling any embedded quote to keep it valid.
+                $quotedCode = "'" + ("$($entry.code)" -replace "'", "''") + "'"
+                [Management.Automation.CompletionResult]::new($quotedCode, $text, 'ParameterValue', $text)
             }
         }
     }

@@ -14,7 +14,7 @@ Deploy a new Unified environment through the Power Platform SDK.
 
 ```
 New-UnifiedEnvironmentV2 [-Type] <String> [-Name] <String> [[-CustomDomainName] <String>] [-Location] <String>
- [[-Template] <String>] [[-Language] <Int32>] [[-Currency] <String>] [-NoDemoDb] [[-Version] <Version>]
+ [[-Template] <String>] [[-Language] <String>] [[-Currency] <String>] [-NoDemoDb] [[-Version] <Version>]
  [[-SecurityGroup] <String>] [[-EnvironmentGroup] <String>] [[-PostProvisionDelaySeconds] <Int32>]
  [[-ReadyStateTimeoutMinutes] <Int32>] [-WaitForCompletion] [-EarlyRelease]
  [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
@@ -183,9 +183,10 @@ Accept wildcard characters: False
 ```
 
 ### -Language
-The base language of the new environment as a locale id (e.g.
-1033
-for English).
+The base language of the new environment, as a locale id (e.g.
+1033)
+or a language name (e.g.
+"English (United States)").
 
 Tab completion lists the available languages for the selected
 location, with the tenant default first.
@@ -193,13 +194,13 @@ When omitted, the tenant
 default language is used.
 
 ```yaml
-Type: Int32
+Type: String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: 6
-Default value: 0
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
