@@ -582,7 +582,7 @@ function Start-PlatformProvisioning {
     $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
     $baseUri = $envObj.PpacEnvUri
 
-    $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+    $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
     $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
     $headersWebApi = @{

@@ -92,7 +92,7 @@ function Get-BapEnvironmentPowerApp {
         $baseUri = $envObj.PpacEnvUri
         $uriPowerAppsApi = $envObj."Api.PowerApps"
 
-        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
         $headersWebApi = @{
