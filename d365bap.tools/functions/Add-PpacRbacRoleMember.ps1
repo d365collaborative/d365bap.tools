@@ -78,7 +78,29 @@ function Add-PpacRbacRoleMember {
         $headersPowerApi = @{ 'Content-Type' = 'application/json' }
         $headersPowerApi.Add('Authorization', $token)
 
-        $tenantId = (Get-AzContext).Tenant.Id
+        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+        if ($authProvider -eq 'AzCli') {
+            $tenantId = $null
+            try {
+                $azTenant = az account show --query tenantId -o tsv 2>$null
+                if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$azTenant")) {
+                    $tenantId = "$azTenant".Trim()
+                }
+            }
+            catch {
+                Write-PSFMessage -Level Verbose -Message "az account show failed with: $($_.Exception.Message)"
+            }
+
+            if ([string]::IsNullOrWhiteSpace("$tenantId")) {
+                $messageString = "Unable to determine the current tenant from the Azure CLI. Please run <c='em'>az login</c> and try again."
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because the current tenant could not be determined." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                return
+            }
+        }
+        else {
+            $tenantId = (Get-AzContext).Tenant.Id
+        }
     }
     
     process {
