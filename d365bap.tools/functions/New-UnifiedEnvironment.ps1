@@ -34,13 +34,6 @@
         
         Get-PpacDeployLocation can be used to find available locations.
         
-    .PARAMETER Region
-        The Azure region for the new environment.
-        
-        It specifies the physical location of the data center where the environment will be hosted.
-        
-        Get-PpacDeployLocation | Format-List can be used to find possible regions.
-        
     .PARAMETER NoDemoDb
         Instructs the cmdlet to create the environment without a demo database.
         
@@ -71,7 +64,7 @@
     .PARAMETER EarlyRelease
         Instructs the cmdlet to create the environment in the early release cycle.
         
-        Note that not all locations/regions support early release environments.
+        Note that not all locations support early release environments.
         
     .EXAMPLE
         PS C:\> New-UnifiedEnvironment -Type "UDE" -Name "MyUdeEnv" -Location "Europe"
@@ -82,13 +75,10 @@
         It will take the latest available version of Finance and Operations.
         It will not restrict access to the environment.
         
-        It will deploy into the North Europe region, as it's the default region for the Europe location.
-        
     .EXAMPLE
-        PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe" -Region "West Europe"
+        PS C:\> New-UnifiedEnvironment -Type "USE" -Name "MyUseEnv" -Location "Europe"
         
         This will create a new Unified Sandbox Environment (USE) named "MyUseEnv" in the "Europe" location.
-        It will deploy into the "West Europe" region.
         It will include a demo database.
         It will get a default/unique domain name assigned by Power Platform.
         It will take the latest available version of Finance and Operations.
@@ -170,8 +160,6 @@ function New-UnifiedEnvironment {
         [Parameter (Mandatory = $true)]
         [string] $Location,
 
-        [string] $Region,
-
         [switch] $NoDemoDb,
 
         [version] $Version,
@@ -248,7 +236,6 @@ function New-UnifiedEnvironment {
             Name                     = $Name
             HeadersBapApi            = $headersBapApi
             Location                 = $Location
-            Region                   = $Region
             CustomDomainName         = $CustomDomainName
             SecurityGroupId          = $SecurityGroupId
             EnvironmentGroupId       = $EnvironmentGroupId
@@ -312,8 +299,6 @@ function New-ShellEnvironment {
         [Parameter(Mandatory = $true)]
         [string] $Location,
 
-        [string] $Region,
-
         [string] $CustomDomainName,
 
         [string] $SecurityGroupId,
@@ -344,13 +329,6 @@ function New-ShellEnvironment {
                 templates    = @("D365_DeveloperEdition")
             }
         }
-    }
-
-    if ($Region) {
-        $config.properties | `
-            Add-Member -MemberType NoteProperty `
-            -Name azureRegion `
-            -Value $Region
     }
 
     if ($CustomDomainName) {
