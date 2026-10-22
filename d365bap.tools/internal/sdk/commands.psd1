@@ -1,7 +1,7 @@
 ﻿@{
     Resources = @(
         @{
-            Noun = 'UnifiedEnvironmentMaintenanceV2'
+            Noun = 'UnifiedEnvironmentMaintenance'
             Scope = 'Environment'
             Builder = 'Microsoft.PowerPlatform.Management.Dynamics.Environments.Item.Finopsadminsettings.FinopsadminsettingsRequestBuilder'
             ParameterPrefix = 'UpdatedMaintenanceWindow'

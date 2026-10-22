@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-UnifiedEnvironmentMaintenanceV2
+# Set-UnifiedEnvironmentMaintenance
 
 ## SYNOPSIS
 Finance and Operations maintenance settings through the bundled Power Platform SDK.
@@ -13,8 +13,8 @@ Finance and Operations maintenance settings through the bundled Power Platform S
 ## SYNTAX
 
 ```
-Get-UnifiedEnvironmentMaintenanceV2 [-EnvironmentId] <String> [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Set-UnifiedEnvironmentMaintenance [-EnvironmentId] <String> [[-Cadence] <String>] [[-DaysOfWeek] <String[]>]
+ [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -26,7 +26,7 @@ Unspecified update settings retain their current values.
 
 ### EXAMPLE 1
 ```
-Get-UnifiedEnvironmentMaintenanceV2 -EnvironmentId 'es-ude-motz-01'
+Set-UnifiedEnvironmentMaintenance -EnvironmentId 'es-ude-motz-01' -Cadence EveryUpdate -WhatIf
 ```
 
 Uses the current Az context.
@@ -45,6 +45,69 @@ Required: True
 Position: 1
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Cadence
+Allowed values from the SDK: EveryUpdate, EveryOtherUpdate, Regulated.
+If omitted, the current environment value is preserved.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DaysOfWeek
+Allowed values from the SDK: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday.
+If omitted, the current environment value is preserved.
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: cf
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

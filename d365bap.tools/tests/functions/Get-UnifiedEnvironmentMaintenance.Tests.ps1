@@ -1,4 +1,4 @@
-﻿Describe "Get-UnifiedEnvironmentMaintenanceV2 Unit Tests" -Tag "Unit" {
+﻿Describe "Get-UnifiedEnvironmentMaintenance Unit Tests" -Tag "Unit" {
 	BeforeAll {
 		# Place here all things needed to prepare for the tests
 	}
@@ -8,11 +8,11 @@
 	
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
-			(Get-Command Get-UnifiedEnvironmentMaintenanceV2).ParameterSets.Name | Should -Be '__AllParameterSets'
+			(Get-Command Get-UnifiedEnvironmentMaintenance).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
 		
 		It 'Should have the expected parameter EnvironmentId' {
-			$parameter = (Get-Command Get-UnifiedEnvironmentMaintenanceV2).Parameters['EnvironmentId']
+			$parameter = (Get-Command Get-UnifiedEnvironmentMaintenance).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
 			$parameter.ParameterType.ToString() | Should -Be System.String
 			$parameter.IsDynamic | Should -Be $False
@@ -25,7 +25,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 		It 'Should have the expected parameter ProgressAction' {
-			$parameter = (Get-Command Get-UnifiedEnvironmentMaintenanceV2).Parameters['ProgressAction']
+			$parameter = (Get-Command Get-UnifiedEnvironmentMaintenance).Parameters['ProgressAction']
 			$parameter.Name | Should -Be 'ProgressAction'
 			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.ActionPreference
 			$parameter.IsDynamic | Should -Be $False

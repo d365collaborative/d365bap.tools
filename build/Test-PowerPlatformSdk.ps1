@@ -16,7 +16,7 @@ if (-not $ResultPath) { $ResultPath = Join-Path $PSScriptRoot '../TestResults/Po
 if (($WriteCurrentSettings -or $RoundTrip) -and -not $Live) { throw 'WriteCurrentSettings and RoundTrip require Live.' }
 Import-Module $ModulePath -Force
 $checks = [Collections.Generic.List[string]]::new()
-$setter = Get-Command Set-UnifiedEnvironmentMaintenanceV2
+$setter = Get-Command Set-UnifiedEnvironmentMaintenance
 $moduleFile = [IO.Path]::ChangeExtension((Resolve-Path $ModulePath).Path, '.psm1')
 if ($setter.Module.Path -ne $moduleFile) { throw 'The command came from a different installed module.' }
 $checks.Add('Commands came from the requested module artifact.')
@@ -27,8 +27,8 @@ if (Compare-Object ([Enum]::GetNames($enum)) $actualValues) { throw 'Cadence val
 $checks.Add('Parameter validation matches the bundled SDK enum.')
 
 foreach ($case in @(
-    @{ Line = 'Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId unused -Cadence Every'; Expected = @('EveryOtherUpdate', 'EveryUpdate') },
-    @{ Line = 'Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId unused -DaysOfWeek S'; Expected = @('Saturday', 'Sunday') }
+    @{ Line = 'Set-UnifiedEnvironmentMaintenance -EnvironmentId unused -Cadence Every'; Expected = @('EveryOtherUpdate', 'EveryUpdate') },
+    @{ Line = 'Set-UnifiedEnvironmentMaintenance -EnvironmentId unused -DaysOfWeek S'; Expected = @('Saturday', 'Sunday') }
 )) {
     $completionValues = @([Management.Automation.CommandCompletion]::CompleteInput($case.Line, $case.Line.Length, $null).CompletionMatches.CompletionText)
     if (Compare-Object $case.Expected $completionValues) { throw "Unexpected completion for $($case.Line): $completionValues" }
@@ -36,12 +36,12 @@ foreach ($case in @(
 $checks.Add('Cadence and days complete from SDK values.')
 
 $invalidRejected = $false
-try { Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId unused -Cadence Invalid -WhatIf } catch [Management.Automation.ParameterBindingException] { $invalidRejected = $true }
+try { Set-UnifiedEnvironmentMaintenance -EnvironmentId unused -Cadence Invalid -WhatIf } catch [Management.Automation.ParameterBindingException] { $invalidRejected = $true }
 if (-not $invalidRejected) { throw 'Invalid enum input was accepted.' }
 $checks.Add('Invalid values are rejected before dispatch.')
 
 $emptyRejected = $false
-try { Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId unused } catch { $emptyRejected = $_.Exception.Message -like '*Specify at least one*' }
+try { Set-UnifiedEnvironmentMaintenance -EnvironmentId unused } catch { $emptyRejected = $_.Exception.Message -like '*Specify at least one*' }
 if (-not $emptyRejected) { throw 'An update without settings was accepted.' }
 $checks.Add('An empty update is rejected.')
 
@@ -51,7 +51,7 @@ $module = Get-Module d365bap.tools | Where-Object Path -EQ $moduleFile
     function script:Invoke-BapSdkCommand { throw 'WhatIf dispatched an SDK call.' }
 }
 try {
-    $output = @(Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId unused -Cadence EveryUpdate -WhatIf)
+    $output = @(Set-UnifiedEnvironmentMaintenance -EnvironmentId unused -Cadence EveryUpdate -WhatIf)
     if ($output.Count) { throw 'WhatIf returned an API result.' }
 }
 finally {
@@ -61,12 +61,15 @@ finally {
 }
 $checks.Add('WhatIf performs no environment lookup, authentication, or SDK dispatch.')
 
-foreach ($command in 'Get-UnifiedEnvironmentMaintenanceV2', 'Set-UnifiedEnvironmentMaintenanceV2') {
+foreach ($command in 'Get-UnifiedEnvironmentMaintenance', 'Set-UnifiedEnvironmentMaintenance') {
     $help = Get-Help $command -Full
     if (-not $help.Description -or -not $help.Examples.Example) { throw "Generated help is missing for $command." }
 }
 Import-Module $ModulePath -Force
-if (@(Get-Command -Module d365bap.tools | Where-Object Name -Like '*EnvironmentMaintenanceV2').Count -ne 2) { throw 'Reimport changed command exports.' }
+$maintenanceCommands = @(Get-Command -Module d365bap.tools | Where-Object Name -Like '*EnvironmentMaintenance*')
+if (Compare-Object @('Get-UnifiedEnvironmentMaintenance', 'Set-UnifiedEnvironmentMaintenance') $maintenanceCommands.Name) {
+    throw 'Only the standard SDK-backed maintenance command names should be exported after reimport.'
+}
 if (Get-Command Invoke-BapSdkCommand -ErrorAction SilentlyContinue) { throw 'SDK internals were exported.' }
 $checks.Add('Generated help, private scope, and repeated import work.')
 
@@ -75,27 +78,27 @@ $writeResult = $null
 $after = $null
 $temporary = $null
 if ($Live) {
-    $before = Get-UnifiedEnvironmentMaintenanceV2 -EnvironmentId $EnvironmentId
+    $before = Get-UnifiedEnvironmentMaintenance -EnvironmentId $EnvironmentId
     if (-not $before.EnvironmentId -or -not $before.maintenanceWindowCadence -or -not $before.maintenanceWindowDaysOfWeek) {
         throw 'The live GET did not return maintenance settings.'
     }
     $checks.Add('Live SDK GET returned maintenance settings.')
-    $pipelineResult = @($before | Get-UnifiedEnvironmentMaintenanceV2)
+    $pipelineResult = @($before | Get-UnifiedEnvironmentMaintenance)
     if ($pipelineResult.Count -ne 1 -or $pipelineResult[0].EnvironmentId -ne $before.EnvironmentId) { throw 'Live pipeline binding failed.' }
     $checks.Add('Live pipeline binding resolves EnvironmentId.')
-    $line = 'Get-UnifiedEnvironmentMaintenanceV2 -EnvironmentId ' + $EnvironmentId
+    $line = 'Get-UnifiedEnvironmentMaintenance -EnvironmentId ' + $EnvironmentId
     $completion = [Management.Automation.CommandCompletion]::CompleteInput($line, $line.Length, $null)
     if ($before.EnvironmentName -ne $before.EnvironmentId -and $completion.CompletionMatches.ListItemText -notcontains $before.EnvironmentName) {
         throw 'The live environment name was absent from completion.'
     }
     $checks.Add('Environment name completion works against the current tenant.')
     if ($WriteCurrentSettings) {
-        $writeResult = Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId $before.EnvironmentId -Cadence $before.maintenanceWindowCadence -Confirm:$false
+        $writeResult = Set-UnifiedEnvironmentMaintenance -EnvironmentId $before.EnvironmentId -Cadence $before.maintenanceWindowCadence -Confirm:$false
         if (-not $writeResult -or $writeResult.maintenanceWindowCadence -ne $before.maintenanceWindowCadence -or
             (Compare-Object $before.maintenanceWindowDaysOfWeek $writeResult.maintenanceWindowDaysOfWeek)) {
             throw 'The SDK PUT did not return the original settings.'
         }
-        $after = Get-UnifiedEnvironmentMaintenanceV2 -EnvironmentId $before.EnvironmentId
+        $after = Get-UnifiedEnvironmentMaintenance -EnvironmentId $before.EnvironmentId
         if ($after.maintenanceWindowCadence -ne $before.maintenanceWindowCadence -or
             (Compare-Object $before.maintenanceWindowDaysOfWeek $after.maintenanceWindowDaysOfWeek)) {
             throw 'Live readback differs from the settings before the test.'
@@ -105,8 +108,8 @@ if ($Live) {
     if ($RoundTrip) {
         $temporaryCadence = [Enum]::GetNames($enum) | Where-Object { $_ -ne $before.Cadence } | Select-Object -First 1
         try {
-            $writeResult = Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId $before.EnvironmentId -Cadence $temporaryCadence -Confirm:$false
-            $temporary = Get-UnifiedEnvironmentMaintenanceV2 -EnvironmentId $before.EnvironmentId
+            $writeResult = Set-UnifiedEnvironmentMaintenance -EnvironmentId $before.EnvironmentId -Cadence $temporaryCadence -Confirm:$false
+            $temporary = Get-UnifiedEnvironmentMaintenance -EnvironmentId $before.EnvironmentId
             if ($temporary.Cadence -ne $temporaryCadence -or
                 (Compare-Object $before.DaysOfWeek $temporary.DaysOfWeek)) {
                 throw 'Live readback did not confirm the temporary cadence and preserved days.'
@@ -114,8 +117,8 @@ if ($Live) {
             $checks.Add('A temporary cadence change was confirmed by a separate live GET; omitted days were preserved.')
         }
         finally {
-            $null = Set-UnifiedEnvironmentMaintenanceV2 -EnvironmentId $before.EnvironmentId -Cadence $before.Cadence -DaysOfWeek $before.DaysOfWeek -Confirm:$false
-            $after = Get-UnifiedEnvironmentMaintenanceV2 -EnvironmentId $before.EnvironmentId
+            $null = Set-UnifiedEnvironmentMaintenance -EnvironmentId $before.EnvironmentId -Cadence $before.Cadence -DaysOfWeek $before.DaysOfWeek -Confirm:$false
+            $after = Get-UnifiedEnvironmentMaintenance -EnvironmentId $before.EnvironmentId
             if ($after.Cadence -ne $before.Cadence -or (Compare-Object $before.DaysOfWeek $after.DaysOfWeek)) {
                 throw 'The original maintenance settings were not restored.'
             }
