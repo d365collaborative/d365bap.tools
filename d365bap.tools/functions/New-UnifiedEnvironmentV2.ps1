@@ -133,6 +133,13 @@
         This will show the resolved provisioning payload without creating anything.
         It will install version 10.0.44 of Finance and Operations when run without -WhatIf.
         
+    .EXAMPLE
+        PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe" -Currency "EUR"
+        
+        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "europe" location.
+        It will use "EUR" as the currency of the environment.
+        It will use the tenant default language.
+        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -335,7 +342,6 @@ function New-UnifiedEnvironmentV2 {
             TemplateName        = $templateName
             BaseLanguage        = $baseLanguage
             CurrencyCode        = $currencyCode
-            CurrencySymbol      = $currencySymbol
             CustomDomainName    = $CustomDomainName
             SecurityGroupId     = $SecurityGroupId
             EnvironmentGroupId  = $EnvironmentGroupId
@@ -406,9 +412,6 @@ function New-V2ShellEnvironment {
         [Parameter(Mandatory = $true)]
         [string] $CurrencyCode,
 
-        [Parameter(Mandatory = $true)]
-        [string] $CurrencySymbol,
-
         [string] $CustomDomainName,
 
         [string] $SecurityGroupId,
@@ -452,7 +455,6 @@ function New-V2ShellEnvironment {
     $linked.BaseLanguageCode = $BaseLanguage
     $currency = [Activator]::CreateInstance([Microsoft.PowerPlatform.Management.Models.EnvironmentRequestCurrency])
     $currency.Code = $CurrencyCode
-    $currency.Symbol = $CurrencySymbol
     $linked.Currency = $currency
     $linked.Templates = [Collections.Generic.List[string]]@($TemplateName)
     if ($CustomDomainName) { $linked.DomainName = $CustomDomainName }
