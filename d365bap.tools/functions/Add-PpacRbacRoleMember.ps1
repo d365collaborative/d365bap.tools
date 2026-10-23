@@ -78,7 +78,7 @@ function Add-PpacRbacRoleMember {
         $headersPowerApi = @{ 'Content-Type' = 'application/json' }
         $headersPowerApi.Add('Authorization', $token)
 
-        $tenantId = Get-BapTenantId
+        $tenantId = (Get-BapContext).TenantId
     }
     
     process {

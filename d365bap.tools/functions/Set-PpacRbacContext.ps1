@@ -47,7 +47,7 @@ function Set-PpacRbacContext {
     )
     
     begin {
-        $tenantId = Get-BapTenantId
+        $tenantId = (Get-BapContext).TenantId
     }
     
     process {

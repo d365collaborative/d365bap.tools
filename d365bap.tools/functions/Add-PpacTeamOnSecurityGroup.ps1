@@ -107,7 +107,7 @@ function Add-PpacTeamOnSecurityGroup {
         if (Test-PSFFunctionInterrupt) { return }
 
         if ([System.String]::IsNullOrEmpty($TeamAdmin)) {
-            $TeamAdmin = Get-BapCurrentUserName
+            $TeamAdmin = (Get-BapContext).Upn
         }
         
         $userObj = Get-PpacUser `

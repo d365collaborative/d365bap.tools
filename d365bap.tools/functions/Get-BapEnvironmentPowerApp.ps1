@@ -100,7 +100,7 @@ function Get-BapEnvironmentPowerApp {
         }
 
         # Work around for getting the user id
-        $curEntraUserId = Get-BapCurrentUserId
+        $curEntraUserId = (Get-BapContext -RequireUserId).UserId
 
         $expandPermissions = "permissions(`$filter=maxAssignedTo(`'$curEntraUserId`'))"
 
