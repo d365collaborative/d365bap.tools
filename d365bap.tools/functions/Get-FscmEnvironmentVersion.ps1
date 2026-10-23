@@ -80,7 +80,7 @@ function Get-FscmEnvironmentVersion {
                 -Uri $localUri `
                 -Headers $headersFnO `
                 -ContentType 'application/json' `
-                -Body '{}' | Select-Object -ExpandProperty value
+                -Body '{}' -ErrorAction Stop | Select-Object -ExpandProperty value
 
             $props[$key] = $resValue
         }
