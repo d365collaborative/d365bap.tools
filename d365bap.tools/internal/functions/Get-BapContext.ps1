@@ -31,6 +31,11 @@ function Get-BapContext {
             Fail fast with a Graph-access hint when the Entra user id cannot be
             determined, instead of returning an object with an empty UserId.
 
+        .PARAMETER AllowEmpty
+            Return $null instead of stopping when no usable sign-in exists. For
+            best-effort lookups (e.g. cache keys) that handle a missing sign-in
+            themselves.
+
         .EXAMPLE
             PS C:\> $tenantId = (Get-BapContext).TenantId
 
@@ -42,7 +47,9 @@ function Get-BapContext {
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param (
-        [switch] $RequireUserId
+        [switch] $RequireUserId,
+
+        [switch] $AllowEmpty
     )
 
     $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
@@ -130,6 +137,7 @@ function Get-BapContext {
     }
 
     if ([string]::IsNullOrWhiteSpace("$tenantId") -or [string]::IsNullOrWhiteSpace("$upn")) {
+        if ($AllowEmpty) { return $null }
         $messageString = "Unable to determine the current Azure sign-in. Please run <c='em'>Connect-AzAccount</c> or <c='em'>az login</c> and try again."
         Write-PSFMessage -Level Important -Message $messageString
         Stop-PSFFunction -Message "Stopping because the current Azure sign-in could not be determined." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1

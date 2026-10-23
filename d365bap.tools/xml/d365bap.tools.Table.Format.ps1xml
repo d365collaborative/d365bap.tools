@@ -1384,6 +1384,64 @@
       </TableControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.PpacTenantProvisioningDefault</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacTenantProvisioningDefault</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Name</Label>
+            <Width>26</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>BaseLanguage</Label>
+            <Width>12</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Language</Label>
+            <Width>28</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Currency</Label>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Symbol</Label>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>IsDefault</Label>
+            <Width>9</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Name</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>BaseLanguage</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>LanguageName</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>CurrencyCode</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>CurrencySymbol</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>IsDefault</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.PpacUser</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.PpacUser</TypeName>

@@ -220,6 +220,7 @@
 		, 'Get-UnifiedEnvironmentMaintenance'
 		, 'Set-UnifiedEnvironmentMaintenance'
 		, 'Get-PpacTenantD365App'
+		, 'Get-PpacTenantProvisioningDefault'
 		# END SDK EXPORTS
 		
 	)

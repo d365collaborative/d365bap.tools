@@ -63,37 +63,24 @@
 			$parameter.ParameterSets['HashTable'].ValueFromPipelineByPropertyName | Should -Be $False
 			$parameter.ParameterSets['HashTable'].ValueFromRemainingArguments | Should -Be $False
 		}
-		It 'Should have the expected parameter ProgressAction' {
-			$parameter = (Get-Command Get-BapTenant).Parameters['ProgressAction']
-			$parameter.Name | Should -Be 'ProgressAction'
-			$parameter.ParameterType.ToString() | Should -Be System.Management.Automation.ActionPreference
-			$parameter.IsDynamic | Should -Be $False
-			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
-			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
-			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
-			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
-			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
-			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
-			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
-		}
 	}
 	
 	Describe "Testing parameterset Default" {
 		<#
 		Default -
-		Default -Upn -TenantId -ProgressAction
+		Default -Upn -TenantId
 		#>
 	}
  	Describe "Testing parameterset Excel" {
 		<#
 		Excel -
-		Excel -Upn -TenantId -AsExcelOutput -ProgressAction
+		Excel -Upn -TenantId -AsExcelOutput
 		#>
 	}
  	Describe "Testing parameterset HashTable" {
 		<#
 		HashTable -
-		HashTable -Upn -TenantId -AsHashTable -ProgressAction
+		HashTable -Upn -TenantId -AsHashTable
 		#>
 	}
 
