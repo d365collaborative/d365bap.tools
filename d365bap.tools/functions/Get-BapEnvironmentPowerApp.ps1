@@ -100,33 +100,7 @@ function Get-BapEnvironmentPowerApp {
         }
 
         # Work around for getting the user id
-        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
-        if ($authProvider -eq 'AzCli') {
-            # HomeAccountId on the Az context is '<oid>.<tenantId>'; the
-            # permissions filter needs the bare Entra user id. The az CLI
-            # equivalent is the signed-in user's id from Microsoft Graph.
-            $curEntraUserId = $null
-            try {
-                $azUserId = az ad signed-in-user show --query id -o tsv 2>$null
-                if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$azUserId")) {
-                    $curEntraUserId = "$azUserId".Trim()
-                }
-            }
-            catch {
-                Write-PSFMessage -Level Verbose -Message "az ad signed-in-user show failed with: $($_.Exception.Message)"
-            }
-
-            if ([string]::IsNullOrWhiteSpace("$curEntraUserId")) {
-                $messageString = "Unable to determine the current Entra user id from the Azure CLI. Please run <c='em'>az login</c> with a user account that has Microsoft Graph access and try again."
-                Write-PSFMessage -Level Important -Message $messageString
-                Stop-PSFFunction -Message "Stopping because the current Entra user id could not be determined." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-                return
-            }
-        }
-        else {
-            $extObj = (Get-AzContext | Select-Object -ExpandProperty account).ExtendedProperties
-            $curEntraUserId = $extObj.HomeAccountId.Replace(".$($extObj.Tenants)", "")
-        }
+        $curEntraUserId = Get-BapCurrentUserId
 
         $expandPermissions = "permissions(`$filter=maxAssignedTo(`'$curEntraUserId`'))"
 
