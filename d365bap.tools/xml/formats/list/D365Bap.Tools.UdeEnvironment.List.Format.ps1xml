@@ -20,9 +20,6 @@
                                 <PropertyName>FinOpsEnvUri</PropertyName>
                             </ListItem>
                             <ListItem>
-                                <PropertyName>FinOpsApp</PropertyName>
-                            </ListItem>
-                            <ListItem>
                                 <PropertyName>EnvType</PropertyName>
                             </ListItem>
                             <ListItem>
