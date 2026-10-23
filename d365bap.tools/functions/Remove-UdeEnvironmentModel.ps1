@@ -111,7 +111,7 @@ function Remove-UdeEnvironmentModel {
 
         $baseUri = $envObj.PpacEnvUri + "/" #! Very important to have the trailing slash
 
-        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
         $headers = @{

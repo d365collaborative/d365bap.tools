@@ -86,7 +86,7 @@ function Invoke-PpacD365VersionUpdate {
 
         if (Test-PSFFunctionInterrupt) { return }
 
-        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+        $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
 
         $headersPowerApi = @{
@@ -144,7 +144,7 @@ function Invoke-PpacD365VersionUpdate {
             -f $envObj.PpacEnvId, $resApply.operationId
 
         do {
-            $secureTokenPoll = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+            $secureTokenPoll = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
             $tokenPollValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPoll
 
             $headersPoll = @{

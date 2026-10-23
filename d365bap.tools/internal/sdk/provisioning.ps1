@@ -151,8 +151,8 @@ function Get-ProvisioningTenantDefaultCache {
     [CmdletBinding()]
     param ()
 
-    $azContext = Get-AzContext -ErrorAction SilentlyContinue
-    if ($null -eq $azContext -or [string]::IsNullOrWhiteSpace($azContext.Tenant.Id)) { return $null }
+    $azContext = Get-BapContext -AllowEmpty
+    if ($null -eq $azContext) { return $null }
 
     $storePath = Get-ProvisioningTenantDefaultsPath
     if (-not (Test-Path -LiteralPath $storePath)) { return $null }
@@ -160,7 +160,7 @@ function Get-ProvisioningTenantDefaultCache {
     try {
         $store = Get-Content -LiteralPath $storePath -Raw -Encoding utf8 |
             ConvertFrom-Json -AsHashtable -ErrorAction Stop
-        $key = "$($azContext.Tenant.Id)/$($azContext.Account.Id)"
+        $key = "$($azContext.TenantId)/$($azContext.Upn)"
         if ($store.ContainsKey($key)) { return $store[$key] }
     }
     catch {
@@ -306,13 +306,30 @@ function Start-ProvisioningCacheRefresh {
         $sdkRoot = Join-Path $script:ModuleRoot 'bin/PowerPlatformSdk'
         $tenantDefaultsPath = Get-ProvisioningTenantDefaultsPath
 
+        # Provider choice cannot be read inside the job: PSFConfig and
+        # $script: module state are not shared with the job process, so
+        # pass it explicitly and let the job mint a fresh token.
+        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+
         $null = Start-Job -Name 'd365bap.tools.provisioning.refresh' -ScriptBlock {
-            param ([string] $CachePath, [string] $SdkRoot, [string] $ApiVersion, [string] $TenantDefaultsPath)
+            param ([string] $CachePath, [string] $SdkRoot, [string] $ApiVersion, [string] $TenantDefaultsPath, [string] $AuthProvider, [string] $ModuleRoot)
 
             try {
-                Import-Module Az.Accounts -ErrorAction Stop
-                $azContext = Get-AzContext -ErrorAction SilentlyContinue
-                if (-not $azContext -or [string]::IsNullOrWhiteSpace($azContext.Tenant.Id)) { return }
+                if ($AuthProvider -eq 'AzCli') {
+                    $azShow = az account show --query '{tenant:tenantId, user:user.name}' -o json 2>$null
+                    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace("$azShow")) { return }
+                    $azIdentity = "$azShow" | ConvertFrom-Json -ErrorAction Stop
+                    $azTenantId = "$($azIdentity.tenant)"
+                    $azAccountId = "$($azIdentity.user)"
+                    if ([string]::IsNullOrWhiteSpace($azTenantId) -or [string]::IsNullOrWhiteSpace($azAccountId)) { return }
+                }
+                else {
+                    Import-Module Az.Accounts -ErrorAction Stop
+                    $azContext = Get-AzContext -ErrorAction SilentlyContinue
+                    if (-not $azContext -or [string]::IsNullOrWhiteSpace($azContext.Tenant.Id) -or [string]::IsNullOrWhiteSpace($azContext.Account.Id)) { return }
+                    $azTenantId = $azContext.Tenant.Id
+                    $azAccountId = $azContext.Account.Id
+                }
 
                 foreach ($dll in @('Microsoft.Kiota.Abstractions.dll', 'Microsoft.Kiota.Serialization.Json.dll', 'Microsoft.Kiota.Http.HttpClientLibrary.dll', 'Microsoft.PowerPlatform.Management.dll', 'D365Bap.Tools.PowerPlatformSdk.dll')) {
                     $dllPath = Join-Path $SdkRoot $dll
@@ -323,7 +340,13 @@ function Start-ProvisioningCacheRefresh {
                 if (-not $clientType) { return }
                 $execute = $clientType.GetMethod('Execute')
 
-                $secure = (Get-AzAccessToken -ResourceUrl 'https://api.powerplatform.com' -AsSecureString -ErrorAction Stop).Token
+                if (-not (Get-Command Get-BapAccessToken -ErrorAction SilentlyContinue)) {
+                    $helperPath = Join-Path $ModuleRoot 'internal/functions/Get-BapAccessToken.ps1'
+                    if (Test-Path -LiteralPath $helperPath) { . $helperPath }
+                    else { return }
+                }
+
+                $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com'
                 $token = [Net.NetworkCredential]::new('', $secure).Password
                 $base = 'https://api.powerplatform.com'
 
@@ -408,9 +431,9 @@ function Start-ProvisioningCacheRefresh {
                     }
                     catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh: starting a new tenant defaults store." }
                 }
-                $store["$($azContext.Tenant.Id)/$($azContext.Account.Id)"] = [ordered]@{
-                    tenantId         = $azContext.Tenant.Id
-                    account          = $azContext.Account.Id
+                $store["$azTenantId/$azAccountId"] = [ordered]@{
+                    tenantId         = $azTenantId
+                    account          = $azAccountId
                     savedUtc         = [datetime]::UtcNow.ToString('o')
                     apiVersion       = $ApiVersion
                     defaultLocations = @($defaultLocations)
@@ -419,7 +442,7 @@ function Start-ProvisioningCacheRefresh {
                 $store | ConvertTo-Json -Depth 8 -ErrorAction Stop | Set-Content -LiteralPath $TenantDefaultsPath -Encoding utf8 -ErrorAction Stop
             }
             catch { Write-PSFMessage -Level Verbose -Message 'Provisioning refresh: background probe failed, keeping the previous cache.' }
-        } -ArgumentList $userPath, $sdkRoot, $script:BapSdkApiVersion, $tenantDefaultsPath
+        } -ArgumentList $userPath, $sdkRoot, $script:BapSdkApiVersion, $tenantDefaultsPath, $authProvider, $script:ModuleRoot
     }
     catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh was skipped: $($_.Exception.Message)" }
 }
@@ -550,7 +573,7 @@ function Get-ProvisioningTenantDefault {
     )
 
     if (-not $Token) {
-        $secure = (Get-AzAccessToken -ResourceUrl 'https://api.powerplatform.com' -AsSecureString -ErrorAction Stop).Token
+        $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com'
         $Token = [Net.NetworkCredential]::new('', $secure).Password
     }
 

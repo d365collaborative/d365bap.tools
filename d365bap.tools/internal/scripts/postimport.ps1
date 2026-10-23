@@ -23,6 +23,9 @@ $moduleRoot = Split-Path (Split-Path $PSScriptRoot)
 # Load provisioning discovery cache before tab expansion reads it
 "$moduleRoot\internal\sdk\provisioning.ps1"
 
+# Preload access tokens in the background to warm the token cache
+"$moduleRoot\internal\sdk\token-preload.ps1"
+
 # Load Tab Expansion
 (Get-ChildItem "$moduleRoot\internal\tepp\*.tepp.ps1" -ErrorAction Ignore).FullName
 

@@ -185,14 +185,14 @@ function New-UnifiedEnvironment {
         $SecurityGroupId = $null
         $EnvironmentGroupId = $null
 
-        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
+        $secureTokenBap = Get-BapAccessToken -ResourceUrl "https://service.powerapps.com/"
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
         $headersBapApi = @{
             "Authorization" = "Bearer $($tokenBapValue)"
         }
 
-        $secureTokenPowerApi = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString).Token
+        $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
     
         if ($SecurityGroup) {
@@ -582,7 +582,7 @@ function Start-PlatformProvisioning {
     $envObj = Get-BapEnvironment -EnvironmentId $Name | Select-Object -First 1
     $baseUri = $envObj.PpacEnvUri
 
-    $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+    $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
     $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
     $headersWebApi = @{

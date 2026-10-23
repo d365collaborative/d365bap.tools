@@ -92,7 +92,7 @@ function Get-BapEnvironmentPowerApp {
         $baseUri = $envObj.PpacEnvUri
         $uriPowerAppsApi = $envObj."Api.PowerApps"
 
-        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
         $headersWebApi = @{
@@ -100,12 +100,11 @@ function Get-BapEnvironmentPowerApp {
         }
 
         # Work around for getting the user id
-        $extObj = (Get-AzContext | Select-Object -ExpandProperty account).ExtendedProperties
-        $curEntraUserId = $extObj.HomeAccountId.Replace(".$($extObj.Tenants)", "")
+        $curEntraUserId = (Get-BapContext -RequireUserId).UserId
 
         $expandPermissions = "permissions(`$filter=maxAssignedTo(`'$curEntraUserId`'))"
 
-        $secureTokenBap = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).Token
+        $secureTokenBap = Get-BapAccessToken -ResourceUrl "https://service.powerapps.com/"
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
         $headersBapApi = @{

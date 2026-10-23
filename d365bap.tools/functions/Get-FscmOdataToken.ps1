@@ -72,7 +72,7 @@ function Get-FscmOdataToken {
 
         $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
         $tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
     }
     

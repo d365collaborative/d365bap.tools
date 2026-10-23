@@ -18,6 +18,8 @@ Set-PSFConfig -FullName "d365bap.tools.tenant.details" -Value @{} -Initialize -D
 
 Set-PSFConfig -FullName "d365bap.tools.path.azcopy" -Value "C:\temp\d365bap.tools\AzCopy\AzCopy.exe" -Initialize -Description "Path to the default location where AzCopy.exe is located."
 
+Set-PSFConfig -FullName 'd365bap.tools.auth.provider' -Value 'AzAccount' -Initialize -Description 'Token minting provider: AzAccount (default, Az.Accounts) or AzCli (az CLI).'
+
 Set-PSFConfig -FullName "d365bap.tools.ude.dbjit.cache" -Value @{} -Initialize -Description "Object that stores different Ude Database JIT credentials and their details."
 
 Set-PSFConfig -FullName "d365bap.tools.bap.deploy.locations" -Value @{

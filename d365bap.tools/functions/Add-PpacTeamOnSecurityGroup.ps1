@@ -98,7 +98,7 @@ function Add-PpacTeamOnSecurityGroup {
 
         $baseUri = $envObj.PpacEnvUri
 
-        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
         $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
         $secGrp = Get-GraphGroup `
@@ -107,7 +107,7 @@ function Add-PpacTeamOnSecurityGroup {
         if (Test-PSFFunctionInterrupt) { return }
 
         if ([System.String]::IsNullOrEmpty($TeamAdmin)) {
-            $TeamAdmin = (Get-AzAccessToken -ResourceUrl "https://service.powerapps.com/" -AsSecureString).UserId
+            $TeamAdmin = (Get-BapContext).Upn
         }
         
         $userObj = Get-PpacUser `

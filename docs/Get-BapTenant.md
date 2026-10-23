@@ -30,7 +30,7 @@ Get-BapTenant [-Upn <String>] [-TenantId <String>] [-AsHashTable] [-ProgressActi
 ```
 
 ## DESCRIPTION
-This function retrieves information about the available azure tenants based on cached credentials in the local Azure PowerShell context.
+This function retrieves information about the available azure tenants based on cached credentials in the local Azure context (Az PowerShell context or Azure CLI, depending on the auth provider set with Set-BapToolsAuthProvider).
 
 ## EXAMPLES
 

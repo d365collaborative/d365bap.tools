@@ -43,7 +43,7 @@ function Get-PpacEnvironmentGroup {
     )
 
     begin {
-        $secureToken = (Get-AzAccessToken -ResourceUrl "https://api.powerplatform.com/" -AsSecureString -ErrorAction Stop).Token
+        $secureToken = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
         $tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
         $headers = @{

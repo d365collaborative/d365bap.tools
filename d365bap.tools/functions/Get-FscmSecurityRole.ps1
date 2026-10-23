@@ -69,7 +69,7 @@ function Get-FscmSecurityRole {
 
         $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        $secureToken = (Get-AzAccessToken -ResourceUrl $baseUri -AsSecureString).Token
+        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
         $tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 
         $headersFnO = @{
