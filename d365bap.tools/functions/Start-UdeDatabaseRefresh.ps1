@@ -109,13 +109,27 @@ function Start-UdeDatabaseRefresh {
             return
         }
 
-        if (([Version]$envSource.FinOpsApp).Build -lt ([Version]$envTarget.FinOpsApp).Build) {
-            $messageString = "The build version of FnO application in the source environment is <c='em'>lower</c> than in the target environment. Database refresh is not supported in this scenario."
+        if ([string]::IsNullOrWhiteSpace($envSource.PpacProvApp) -or [string]::IsNullOrWhiteSpace($envTarget.PpacProvApp)) {
+            $messageString = "Could not determine the FnO application build version for both environments. Skipping the source/target build comparison."
+            Write-PSFMessage -Level Warning -Message $messageString
+        }
+        else {
+            # Compare the release (Major.Minor.Build) only. The 4th part
+            # (Revision) holds quality updates and may differ in either
+            # direction without blocking the refresh.
+            $sourceVersion = [Version]$envSource.PpacProvApp
+            $targetVersion = [Version]$envTarget.PpacProvApp
+            $sourceRelease = [Version]::new($sourceVersion.Major, $sourceVersion.Minor, $sourceVersion.Build)
+            $targetRelease = [Version]::new($targetVersion.Major, $targetVersion.Minor, $targetVersion.Build)
 
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because one of the FnO application is different." `
-                -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
+            if ($sourceRelease -lt $targetRelease) {
+                $messageString = "The build version of FnO application in the source environment is <c='em'>lower</c> than in the target environment. Database refresh is not supported in this scenario."
+
+                Write-PSFMessage -Level Important -Message $messageString
+                Stop-PSFFunction -Message "Stopping because one of the FnO application is different." `
+                    -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+                return
+            }
         }
 
         $payload = [PSCustomObject][ordered]@{

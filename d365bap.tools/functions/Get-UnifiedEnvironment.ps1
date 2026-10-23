@@ -96,23 +96,11 @@ function Get-UnifiedEnvironment {
         $filteredEnvs = $colEnv | Where-Object FinOpsMetadataEnvType -eq "Internal"
 
         # ForEach-Object -Parallel runs in isolated runspaces that do not
-        # inherit module functions (Get-BapAccessToken and
-        # Get-BapEnvironmentD365App are unavailable there). Mint all tokens
-        # up-front and pass plain-text values via $using:.
+        # inherit module functions (Get-BapAccessToken is unavailable there).
+        # Mint all tokens up-front and pass plain-text values via $using:.
         $dataverseTokenMap = @{}
-        $tokenPowerApiValue = $null
-        $tokenAdminApiValue = $null
-        $tenantId = $null
 
         if (-not $SkipVersionDetails -and @($filteredEnvs).Count -gt 0) {
-            $tenantId = (Get-BapContext).TenantId
-
-            $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
-            $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
-
-            $secureTokenAdminApi = Get-BapAccessToken -ResourceUrl "065d9450-1e87-434e-ac2f-69af271549ed"
-            $tokenAdminApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenAdminApi
-
             $distinctUris = @($filteredEnvs |
                 Select-Object -ExpandProperty PpacEnvUri -Unique |
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -126,9 +114,6 @@ function Get-UnifiedEnvironment {
         $resCol = $filteredEnvs | ForEach-Object -Parallel {
             $envObj = $_
             $localTokenMap = $using:dataverseTokenMap
-            $localPowerToken = $using:tokenPowerApiValue
-            $localAdminToken = $using:tokenAdminApiValue
-            $localTenantId = $using:tenantId
 
             if ($using:searchById) {
                 if (-not ($envObj.PpacEnvId -like $using:EnvironmentId)) { continue }
@@ -180,62 +165,6 @@ function Get-UnifiedEnvironment {
                 $envObj | Add-Member -NotePropertyName "ProvisioningType" -NotePropertyValue $Response.applicationdeploymenttype
             }
 
-            # User friendly version from the installed provisioning anchor app.
-            # Inlined here (instead of Get-BapEnvironmentD365App) because
-            # module functions are unavailable in -Parallel runspaces.
-            $finOpsAppVersion = $null
-
-            try {
-                $headersPowerApi = @{
-                    "Authorization" = "Bearer $($localPowerToken)"
-                }
-
-                $localUri = "https://api.powerplatform.com/appmanagement/environments/{0}/applicationPackages?appInstallState=All&api-version=2024-10-01" `
-                    -f $envObj.PpacEnvId
-
-                $appsAvailable = @()
-
-                do {
-                    $responsePage = Invoke-RestMethod `
-                        -Method Get `
-                        -Uri $localUri `
-                        -Headers $headersPowerApi
-
-                    $appsAvailable += $responsePage.value
-                    $localUri = $responsePage.'@odata.nextLink'
-                } while (-not [string]::IsNullOrEmpty($localUri))
-
-                $anchorAvailable = @($appsAvailable |
-                    Where-Object UniqueName -eq 'msdyn_FinanceAndOperationsProvisioningAppAnchor') |
-                    Select-Object -First 1
-
-                if ($null -ne $anchorAvailable) {
-                    $uriSourceEncoded = [System.Web.HttpUtility]::UrlEncode($envObj.LinkedMetaPpacEnvUri)
-
-                    $headersAdminApi = @{
-                        "Authorization" = "Bearer $($localAdminToken)"
-                    }
-
-                    $appsEnvironment = Invoke-RestMethod `
-                        -Method Get `
-                        -Uri "https://api.admin.powerplatform.microsoft.com/api/AppManagement/InstancePackages/instanceId/$($localTenantId)?instanceUrl=$uriSourceEncoded&geoType=Emea" `
-                        -Headers $headersAdminApi
-
-                    $currentApp = @($appsEnvironment |
-                        Where-Object ApplicationId -eq $anchorAvailable.ApplicationId) |
-                        Select-Object -First 1
-
-                    if ($null -ne $currentApp) {
-                        $finOpsAppVersion = $currentApp.Version
-                    }
-                }
-            }
-            catch {
-                $finOpsAppVersion = $null
-            }
-
-            $envObj | Add-Member -NotePropertyName "FinOpsApp" -NotePropertyValue $finOpsAppVersion
-
             $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `
                 -ExcludeProperty EnvType `
                 -Property "ProvisioningAppVersion as PpacProvApp",
@@ -263,7 +192,7 @@ function Get-UnifiedEnvironment {
         if ($AsExcelOutput) {
             $resCol | Export-Excel `
                 -WorksheetName "Get-UnifiedEnvironment" `
-                -NoNumberConversion FinOpsApp,PpacProvApp,PpacProvPlatform,ProvisioningAppVersion,ProvisioningPlatVersion
+                -NoNumberConversion PpacProvApp,PpacProvPlatform,ProvisioningAppVersion,ProvisioningPlatVersion
             return
         }
 
