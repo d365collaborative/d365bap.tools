@@ -20,6 +20,10 @@ Get-UdeDeveloperFile [-EnvironmentId] <String> [[-Path] <String>] [[-Files] <Str
 ## DESCRIPTION
 This function retrieves UDE developer files for a specified environment.
 
+When -Download is used, the local PackagesLocalDirectory versions are probed
+and the download is skipped when the environment version is already in place.
+Use -ClearSystemPackages to force download and re-extraction.
+
 ## EXAMPLES
 
 ### EXAMPLE 1

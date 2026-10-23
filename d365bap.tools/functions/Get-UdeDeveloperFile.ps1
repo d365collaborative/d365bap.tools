@@ -5,6 +5,10 @@
         
     .DESCRIPTION
         This function retrieves UDE developer files for a specified environment.
+
+        When -Download is used, the local PackagesLocalDirectory versions are probed
+        and the download is skipped when the environment version is already in place.
+        Use -ClearSystemPackages to force download and re-extraction.
         
     .PARAMETER EnvironmentId
         The ID of the environment that you want to work against.
@@ -97,7 +101,12 @@ function Get-UdeDeveloperFile {
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        if ($Download) {
+            $envObj = Get-UdeEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        }
+        else {
+            $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+        }
 
         if ($null -eq $envObj) {
             $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
@@ -109,6 +118,33 @@ function Get-UdeDeveloperFile {
         }
         
         $build = $envObj.PpacProvApp
+
+        if ($Download -and -not $ClearSystemPackages) {
+            $remoteVersion = $build -as [version]
+
+            if ($null -ne $remoteVersion) {
+                $localMax = $null
+
+                $localVersions = @()
+
+                if (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA 'Microsoft\Dynamics365')) {
+                    $localVersions = @(Get-UdePackageLocalDirectory | Select-Object -ExpandProperty PackagesVersion)
+                }
+
+                foreach ($localVersion in $localVersions) {
+                    $parsed = $localVersion -as [version]
+
+                    if ($null -ne $parsed -and ($null -eq $localMax -or $parsed -gt $localMax)) {
+                        $localMax = $parsed
+                    }
+                }
+
+                if ($null -ne $localMax -and $remoteVersion -le $localMax) {
+                    Write-PSFMessage -Level Important -Message "Developer files for version <c='em'>$build</c> are already in place."
+                    return
+                }
+            }
+        }
 
         if ($Download) {
             $downloadDir = "$Path\$($envObj.PpacProvApp)"
