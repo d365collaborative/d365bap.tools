@@ -81,6 +81,7 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacTable](Get-PpacTable) | Get the tables (entities) from a given environment. |
 | [Get-PpacTeam](Get-PpacTeam) | Get team details from Power Platform environment. |
 | [Get-PpacTenantD365App](Get-PpacTenantD365App) | Get Dynamics 365 applications available in the tenant. |
+| [Get-PpacTenantProvisioningDefault](Get-PpacTenantProvisioningDefault) | Get the tenant default provisioning language and currency per location. |
 | [Get-PpacUser](Get-PpacUser) | Get information about users in a Power Platform environment. |
 | [Invoke-PpacD365AppInstall](Invoke-PpacD365AppInstall) | Installs or updates D365 applications in the environment. |
 | [Invoke-PpacD365PlatformUpdate](Invoke-PpacD365PlatformUpdate) | Start D365 Platform update. |
