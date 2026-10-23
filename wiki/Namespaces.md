@@ -172,6 +172,7 @@ This is when one is working, either as a developer against an Ude environment or
 | [Get-UdeDbJit](Get-UdeDbJit) | Gets UDE database JIT access information for a specified environment. |
 | [Get-UdeDbJitCache](Get-UdeDbJitCache) | Retrieves UDE database JIT access credentials from the local cache. |
 | [Get-UdeDeveloperFile](Get-UdeDeveloperFile) | Gets UDE developer files for a specified environment. |
+| [Get-UdeEnvironment](Get-UdeEnvironment) | Gets UDE environment details. |
 | [Get-UdeEnvironmentModel](Get-UdeEnvironmentModel) | Get UDE environment models. |
 | [Get-UdeNuget](Get-UdeNuget) | Gets UDE NuGet packages for a specified environment. |
 | [Get-UdePackageLocalDirectory](Get-UdePackageLocalDirectory) | Gets local UDE PackagesLocalDirectory paths |

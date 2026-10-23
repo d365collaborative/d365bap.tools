@@ -144,6 +144,7 @@
 		, 'Get-UdeDbJit'
 		, 'Get-UdeDbJitCache'
 		, 'Get-UdeDeveloperFile'
+		, 'Get-UdeEnvironment'
 		, 'Get-UdeEnvironmentModel'
 		, 'Get-UdeNuget'
 		, 'Get-UdePackageLocalDirectory'
