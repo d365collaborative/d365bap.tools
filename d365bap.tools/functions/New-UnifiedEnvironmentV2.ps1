@@ -194,7 +194,7 @@ function New-UnifiedEnvironmentV2 {
             Stop-PSFFunction -Message "Type 'USE' cannot use template 'D365_DeveloperEdition'. Pick a Finance and Operations template instead. Supported values: $($finOpsTemplates -join ', '). Note that -Template defaults to 'D365_DeveloperEdition', so it must be specified explicitly for 'USE'." -EnableException $true
             return
         }
-        $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/" -ErrorAction Stop
+        $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
 
         # Language and currency catalogs resolve against the selected

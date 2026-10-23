@@ -346,7 +346,7 @@ function Start-ProvisioningCacheRefresh {
                     else { return }
                 }
 
-                $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com' -ErrorAction Stop
+                $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com'
                 $token = [Net.NetworkCredential]::new('', $secure).Password
                 $base = 'https://api.powerplatform.com'
 
@@ -573,7 +573,7 @@ function Get-ProvisioningTenantDefault {
     )
 
     if (-not $Token) {
-        $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com' -ErrorAction Stop
+        $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com'
         $Token = [Net.NetworkCredential]::new('', $secure).Password
     }
 

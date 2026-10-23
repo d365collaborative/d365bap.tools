@@ -8,6 +8,9 @@
         provider and returns the .Token equivalent (a SecureString), so existing call
         sites can keep their ConvertFrom-SecureString -AsPlainText pattern.
 
+        A failed mint stops execution entirely with a terminating error: running
+        any code without a token makes no sense, so there is no soft-fail path.
+
         Tokens are cached per resource + tenant + account in $script:BapTokenCache and
         reused while more than 15 minutes of lifetime remain. The current Azure context
         is re-read on every call: a manual context switch outside Switch-BapTenant
@@ -95,9 +98,8 @@ function Get-BapAccessToken {
     }
     else {
         $messageString = "Unknown auth provider '<c='em'>$provider</c>'. Expected 'AzAccount' or 'AzCli' in configuration 'd365bap.tools.auth.provider'."
-        Write-PSFMessage -Level Important -Message $messageString
-        Stop-PSFFunction -Message "Stopping because the auth provider is unknown." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
-        return
+        Write-PSFMessage -Level Critical -Message $messageString
+        throw $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
     }
     #endregion Resolve current context stamp
 
@@ -156,13 +158,21 @@ function Get-BapAccessToken {
             }
 
             $secureToken = $azToken.Token
-            $expiresOn = ([datetime]$azToken.ExpiresOn)
+            $rawExpiry = $azToken.ExpiresOn
+            if ($rawExpiry -is [datetimeoffset]) {
+                $expiresOn = $rawExpiry.UtcDateTime
+            }
+            elseif ($rawExpiry -is [datetime]) {
+                $expiresOn = $rawExpiry
+            }
+            else {
+                $expiresOn = ([datetime]"$rawExpiry")
+            }
         }
         catch {
-            $messageString = "Failed to mint an access token for resource <c='em'>$ResourceUrl</c> via Get-AzAccessToken."
-            Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-            Stop-PSFFunction -Message "Stopping because the access token could not be minted." -Exception $_.Exception -StepsUpward 1
-            return
+            $messageString = "Failed to mint an access token for resource <c='em'>$ResourceUrl</c> via Get-AzAccessToken. Stopping execution, a missing token must never be ignored."
+            Write-PSFMessage -Level Critical -Message $messageString -Exception $_.Exception
+            throw
         }
     }
     else {
@@ -207,10 +217,9 @@ function Get-BapAccessToken {
             $secureToken = ConvertTo-SecureString -String $accessTokenPlain -AsPlainText -Force
         }
         catch {
-            $messageString = "Failed to mint an access token for resource <c='em'>$ResourceUrl</c> via the Azure CLI."
-            Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-            Stop-PSFFunction -Message "Stopping because the access token could not be minted." -Exception $_.Exception -StepsUpward 1
-            return
+            $messageString = "Failed to mint an access token for resource <c='em'>$ResourceUrl</c> via the Azure CLI. Stopping execution, a missing token must never be ignored."
+            Write-PSFMessage -Level Critical -Message $messageString -Exception $_.Exception
+            throw
         }
     }
     #endregion Mint new token

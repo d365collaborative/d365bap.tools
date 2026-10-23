@@ -77,7 +77,7 @@ function Start-UdeDatabaseRefresh {
     )
 
     begin {
-        $secureTokenBap = Get-BapAccessToken -ResourceUrl "https://service.powerapps.com/" -ErrorAction Stop
+        $secureTokenBap = Get-BapAccessToken -ResourceUrl "https://service.powerapps.com/"
         $tokenBapValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenBap
 
         $headersBapApi = @{

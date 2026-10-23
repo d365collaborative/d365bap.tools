@@ -52,7 +52,7 @@ function Get-PpacTenantProvisioningDefault {
     )
 
     begin {
-        $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/" -ErrorAction Stop
+        $secureTokenPowerApi = Get-BapAccessToken -ResourceUrl "https://api.powerplatform.com/"
         $tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
     }
     

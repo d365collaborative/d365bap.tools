@@ -88,7 +88,7 @@ function Start-BapTokenPreload {
 
                 foreach ($resource in $Resources) {
                     try {
-                        $null = Get-BapAccessToken -ResourceUrl $resource -ErrorAction Stop
+                        $null = Get-BapAccessToken -ResourceUrl $resource
                     }
                     catch { Write-PSFMessage -Level Verbose -Message "Token preload: skipping resource '$resource'." }
                 }
