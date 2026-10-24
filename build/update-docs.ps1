@@ -1,28 +1,32 @@
-# Script to generate the comment based markdown help files.
-# based on https://gist.github.com/Splaxi/8934e13cb35918d13af6e3a21c208b0e
-# See also https://github.com/d365collaborative/d365fo.tools/wiki/Building-tools
+<#
+    .SYNOPSIS
+        Generates markdown help files.
+
+    .DESCRIPTION
+        Regenerates command docs and the wiki namespaces article.
+#>
+[CmdletBinding()]
+param()
+
 $path = "$PSScriptRoot\.."
 
 Import-Module "$path\d365bap.tools" -Force
 
+if (-not (Get-Command -Name New-MarkdownHelp -ErrorAction SilentlyContinue)) {
+    throw "platyPS is not installed. Nothing was deleted. Run build/vsts-prerequisites.ps1 to install it."
+}
+
 Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" | Remove-Item -Force
 
-if (Get-Command -Name New-MarkdownHelp -ErrorAction SilentlyContinue) {
-    $null = New-MarkdownHelp -Module d365bap.tools -OutputFolder "$path\docs" -Force
+$null = New-MarkdownHelp -Module d365bap.tools -OutputFolder "$path\docs" -Force
 
-    # Automatic parameters carry no per-command contract.
-    # Drop their generated sections (see d365bap.tools/functions/AGENTS.md).
-    Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" -Recurse -File | ForEach-Object {
-        $content = [IO.File]::ReadAllText($_.FullName)
-        $content = $content -replace "(?ms)^### -(?:Confirm|WhatIf|ProgressAction)\r?\n.*?(?=^### |^## |\Z)", ''
-        [IO.File]::WriteAllText($_.FullName, $content, [Text.UTF8Encoding]::new($true))
-    }
+Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" -Recurse -File | ForEach-Object {
+    $content = [IO.File]::ReadAllText($_.FullName)
+    $content = $content -replace "(?ms)^### -(?:Confirm|WhatIf|ProgressAction)\r?\n.*?(?=^### |^## |\Z)", ''
+    [IO.File]::WriteAllText($_.FullName, $content, [Text.UTF8Encoding]::new($true))
+}
 
-    Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" -Recurse -File | Set-PSMDEncoding
-}
-else {
-    Write-Warning "platyPS is not installed. Skipping markdown help generation. Run build/vsts-prerequisites.ps1 to install it."
-}
+Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" -Recurse -File | Set-PSMDEncoding
 
 function Update-NamespacesArticle {
     [CmdletBinding()]
@@ -30,7 +34,6 @@ function Update-NamespacesArticle {
         [string] $Path
     )
 
-    # Update the wiki namespaces article with the current commands and their synopsis, grouped by namespace (abbreviation).
     $namespaces = "Bap", "Ppac", "Fscm", "Ppe", "Ude", "Unified", "Graph"
 
     $commands = Get-Command -Module d365bap.tools -CommandType Function | Sort-Object Verb, Noun

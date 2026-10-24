@@ -33,14 +33,14 @@ jobs:
       uses: actions/cache@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-v1
+        key: pwsh-modules-generated-${{ runner.os }}-v1
 
     - name: Install Prerequisites
       if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
+        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts','platyPS')
         foreach ($module in $modules) {
           Write-Host "Installing $module..."
           Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
