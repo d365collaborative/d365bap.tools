@@ -119,6 +119,27 @@ They are also available in the [wiki](https://github.com/d365collaborative/d365b
 
 Want to contribute to the project? We'd love to have you! Visit our [contributing.md](https://github.com/d365collaborative/d365bap.tools/blob/master/contributing.md) for a jump start.
 
+### Local feedback (optional)
+
+Pull the repo and work as usual — local checks are opt-in. If you skip them,
+the pull request checks on GitHub run the exact same rules.
+
+```powershell
+# one-time: PowerShell 7.6+, prek, and the lint prerequisite
+pip install "prek==0.5.7"
+prek install
+prek run setup --stage manual
+
+# fast loop: lint changed files + targeted tests
+prek run
+pwsh -NoProfile -File ./d365bap.tools/tests/pester.ps1 -TestGeneral $false -TestFunctions $true -Include "<ChangedCommand>.Tests.ps1"
+```
+
+`prek run --all-files --stage manual` lints the whole tree. Never commit
+generated files (`*.Tests.ps1`, `docs/*.md`, consolidated format xml,
+`wiki/Namespaces.md`) — push only sources and let the regen workflow commit
+the rest after review.
+
 ## Dependencies
 
 This module depends on other modules. The dependencies are documented in the [dependency graph](https://github.com/d365collaborative/d365bap.tools/network/dependencies) and the Dependencies section of the Package Details of the [package listing](https://www.powershellgallery.com/packages/d365bap.tools) in the PowerShell Gallery.

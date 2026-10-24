@@ -1,13 +1,12 @@
 # Unit Tests for Public Functions
 
-Do not hand-edit `*.Tests.ps1` files here. They are generated.
+Do not hand-edit `*.Tests.ps1` files here. They are generated and owned by the
+regen workflow, not by PR authors.
 
-To generate / update all parameter unit tests after adding or changing a public function, run from the repo root with PowerShell 7:
+After adding or changing a public function, push only the function source.
+CI (`validate-generated`) fails until the generated tests are refreshed; a
+reviewer then adds the `accept-signature-change` label and the regen workflow
+commits the refreshed `*.Tests.ps1` files back onto the PR branch.
 
-```powershell
-pwsh -NoProfile -File ./build/generate-parameterunittests.ps1
-```
-
-The script takes no parameters. It deletes and regenerates every `*.Tests.ps1` file in this folder, so always run it after a parameter signature change and include the full regeneration in your commit.
-
-Requires `PSModuleDevelopment` (`Invoke-PSMDTemplate`). Install prerequisites with `build/vsts-prerequisites.ps1` if the template command is missing.
+Local preview only (never commit the result):
+`pwsh -NoProfile -File ./build/generate-parameterunittests.ps1`
