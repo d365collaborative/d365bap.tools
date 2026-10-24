@@ -1,0 +1,77 @@
+name: regen-generated
+
+# Regenerates owned artifacts back onto the PR branch after a reviewer accepts
+# signature changes. Trigger: add the `accept-signature-change` label. It also
+# re-runs on every push while the label is present, so follow-up source edits
+# get their regeneration without another label round-trip.
+#
+# Runs on pull_request_target so fork PRs can be written back with GITHUB_TOKEN.
+# The workflow definition itself comes from the base branch; the generator
+# scripts that execute are the PR's reviewed versions.
+
+on:
+  pull_request_target:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  regen:
+    name: Regenerate artifacts onto PR branch
+    runs-on: windows-latest
+    if: contains(github.event.pull_request.labels.*.name, 'accept-signature-change')
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-v1
+
+    - name: Install Prerequisites
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+    - name: Regenerate and push
+      shell: pwsh
+      run: |
+        ./build/generate-parameterunittests.ps1
+        ./build/update-docs.ps1
+        ./build/Merge-FormatPs1Xml.ps1
+        # Stage only real content changes and genuinely new files. git diff
+        # normalizes line endings, so cosmetic CRLF/LF churn is not committed.
+        $generated = @(
+          'd365bap.tools/tests/functions'
+          'docs'
+          'd365bap.tools/xml/d365bap.tools.Table.Format.ps1xml'
+          'd365bap.tools/xml/d365bap.tools.List.Format.ps1xml'
+          'wiki/Namespaces.md'
+        )
+        $dirty = @(git diff --name-only -- $generated)
+        $dirty += @(git ls-files --others --exclude-standard -- $generated)
+        $dirty = @($dirty | Where-Object { $_ -and $_ -ne 'docs/AGENTS.md' -and $_ -ne 'd365bap.tools/tests/functions/AGENTS.md' } | Sort-Object -Unique)
+        if ($dirty.Count -eq 0) {
+          Write-Host 'Already in sync, nothing to commit.'
+          exit 0
+        }
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+        git add -- $dirty
+        git commit -m "Regenerate artifacts"
+        git push origin HEAD:${{ github.event.pull_request.head.ref }}

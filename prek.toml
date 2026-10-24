@@ -1,0 +1,85 @@
+minimum_prek_version = "0.5.6"
+default_install_hook_types = ["pre-commit"]
+
+# PowerShell lint for this repo. The hook scripts under build/ps1-lint are
+# vendored from an internal-only module and live their own life here: they
+# started as a copy and are maintained in this repo. Do not reference the
+# internal module from this public repo.
+#
+# Local (optional, opt-in):
+#   pip install prek
+#   prek install
+#   prek run setup --stage manual   # one-time: installs PSScriptAnalyzer
+#   prek run                         # changed/staged files
+#   prek run --all-files --stage manual   # whole tree
+# PRs on GitHub run the same hooks on changed files (see .github/workflows/ps1-lint.yml).
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "setup"
+priority = 0
+name = "setup (install PSScriptAnalyzer)"
+language = "system"
+entry = "pwsh"
+args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/setup/Run.ps1"]
+stages = ["manual"]
+always_run = true
+pass_filenames = false
+
+[[repos.hooks]]
+id = "ps1-format"
+priority = 10
+name = "PowerShell format and UTF-8 BOM"
+language = "system"
+entry = "pwsh"
+args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/ps1-format/Run.ps1"]
+files = { glob = "**.ps1" }
+# Generated unit tests are owned by the regen workflow; linting them would flag
+# their template comments on every new command.
+exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
+pass_filenames = 16
+stages = ["pre-commit", "manual"]
+
+[[repos.hooks]]
+id = "psscriptanalyzer"
+priority = 30
+name = "PSScriptAnalyzer plus repo comment/help/alias rules"
+language = "system"
+entry = "pwsh"
+args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/psscriptanalyzer/Run.ps1"]
+files = { glob = "**.ps1" }
+exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
+pass_filenames = 16
+stages = ["pre-commit", "manual"]
+
+[[repos]]
+repo = "builtin"
+
+[[repos.hooks]]
+id = "check-merge-conflict"
+args = ["--assume-in-merge"]
+stages = ["pre-commit", "manual"]
+priority = 30
+
+[[repos.hooks]]
+id = "trailing-whitespace"
+stages = ["pre-commit", "manual"]
+priority = 5
+
+[[repos.hooks]]
+id = "end-of-file-fixer"
+stages = ["pre-commit", "manual"]
+priority = 6
+
+[[repos.hooks]]
+id = "check-json"
+priority = 30
+stages = ["pre-commit", "manual"]
+
+[[repos.hooks]]
+id = "check-yaml"
+args = ["--allow-multiple-documents"]
+priority = 30
+stages = ["pre-commit", "manual"]
