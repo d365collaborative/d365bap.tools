@@ -216,6 +216,8 @@
 		, 'Switch-BapTenant'
 		
 		, 'Update-BapEnvironmentVirtualEntityMetadata'
+
+		, 'Wait-PpacD365Operation'
 		# BEGIN SDK EXPORTS
 		, 'Get-UnifiedEnvironmentMaintenance'
 		, 'Set-UnifiedEnvironmentMaintenance'
