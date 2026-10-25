@@ -6,9 +6,34 @@ name: regen-generated
 # Authors never touch generated files — the touch-guard blocks that, and this
 # workflow overwrites anything but generator output anyway.
 #
-# Runs on pull_request_target so fork PRs can be written back with GITHUB_TOKEN.
-# The workflow definition itself comes from the base branch; the generator
-# scripts that execute are the PR's versions.
+# Runs on pull_request_target so fork PRs can be written back. The workflow
+# definition itself comes from the base branch; the generator scripts that
+# execute are the PR's versions.
+#
+# Approval gate (PR #207): pushing the regeneration with GITHUB_TOKEN makes the
+# follow-up pull_request runs trigger as github-actions[bot], which GitHub parks
+# behind approval (action_required) even for trusted contributors. The documented
+# fix is to push with a separate GitHub App installation token or PAT instead:
+# https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs
+# Changing the commit author alone does NOT help — the push credential decides.
+#
+# Isolation: the privileged push credential never meets untrusted PR code. The
+# generate job runs the PR's generator scripts with only GITHUB_TOKEN (no
+# secrets) and exports a patch artifact. The publish job holds the privileged
+# token, runs no PR code (only trusted inline steps from this base-branch
+# definition), enforces the generated-paths whitelist on the patch, and pushes.
+#
+# Maintainer setup (one time, in d365collaborative/d365bap.tools settings):
+#   Recommended: create a GitHub App with Contents: Read and write and
+#   Pull requests: Read-only. Install it on d365collaborative/d365bap.tools AND
+#   on the fork that sends PRs (e.g. es-alficody/d365bap.tools), because the
+#   push lands on the PR's fork branch. Store the App ID as REGEN_APP_ID and
+#   the private key as REGEN_APP_PRIVATE_KEY. Fork PRs additionally need
+#   "Allow edits from maintainers" so the push is accepted.
+#   Fallback: a fine-grained PAT with Contents: Read and write on both repos,
+#   stored as REGEN_PUBLISH_ACCESS_TOKEN (same pattern as WIKI_PUBLISH_ACCESS_TOKEN).
+#   With neither secret configured, publish falls back to GITHUB_TOKEN and the
+#   approval gate returns — the run logs an explicit warning in that case.
 
 on:
   pull_request_target:
@@ -20,26 +45,27 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: read
 
 jobs:
-  regen:
-    name: Regenerate artifacts onto PR branch
+  generate:
+    name: Regenerate artifacts (untrusted)
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@v4
       with:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
         ref: ${{ github.event.pull_request.head.ref }}
         fetch-depth: 0
+        # Deliberately GITHUB_TOKEN only: this job executes the PR's generator
+        # scripts, so it must never see the privileged push credential.
         token: ${{ secrets.GITHUB_TOKEN }}
         # Required: GitHub refuses fork checkouts from pull_request_target
-        # otherwise. Accepted risk here: this job runs no secrets, executes
-        # only the repo's own generator scripts, and pushes back solely the
-        # whitelisted generated paths onto the PR branch. Revisit if this
-        # repo ever takes PRs from untrusted forks (then gate on author or
-        # move the push behind a stored bot PAT instead).
+        # otherwise. Safe here because this job holds no secrets and never
+        # pushes — it only exports a patch for the trusted publish job.
         allow-unsafe-pr-checkout: true
 
     - name: Cache Powershell Modules
@@ -60,14 +86,15 @@ jobs:
           Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
         }
 
-    - name: Regenerate and push
+    - name: Regenerate and export patch
       shell: pwsh
       run: |
         ./build/generate-parameterunittests.ps1
         ./build/update-docs.ps1
         ./build/Merge-FormatPs1Xml.ps1
-        # Stage only real content changes and genuinely new files. git diff
-        # normalizes line endings, so cosmetic CRLF/LF churn is not committed.
+        # Collect only real content changes and genuinely new files. git diff
+        # normalizes line endings, so cosmetic CRLF/LF churn is not exported.
+        # No commit and no push here: the trusted publish job owns the push.
         $generated = @(
           'd365bap.tools/tests/functions'
           'docs'
@@ -79,11 +106,151 @@ jobs:
         $dirty += @(git ls-files --others --exclude-standard -- $generated)
         $dirty = @($dirty | Where-Object { $_ -and $_ -ne 'docs/AGENTS.md' -and $_ -ne 'd365bap.tools/tests/functions/AGENTS.md' } | Sort-Object -Unique)
         if ($dirty.Count -eq 0) {
-          Write-Host 'Already in sync, nothing to commit.'
+          Write-Host 'Already in sync, nothing to export.'
+          New-Item -ItemType File -Path regen.patch -Force | Out-Null
+          New-Item -ItemType File -Path regen-files.txt -Force | Out-Null
           exit 0
         }
+        git add -- $dirty
+        git diff --cached --binary --full-index > regen.patch
+        git diff --cached --name-only > regen-files.txt
+        Write-Host ("Exported {0} file(s) for trusted publish:" -f $dirty.Count)
+        Get-Content regen-files.txt | ForEach-Object { Write-Host ("  $_") }
+
+    - name: Upload regen patch
+      uses: actions/upload-artifact@v4
+      with:
+        name: regen-patch
+        path: |
+          regen.patch
+          regen-files.txt
+        if-no-files-found: error
+        retention-days: 1
+
+  publish:
+    name: Publish regeneration onto PR branch (trusted)
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+    - name: Mint regen App token
+      id: app-token
+      if: ${{ secrets.REGEN_APP_ID != '' && secrets.REGEN_APP_PRIVATE_KEY != '' }}
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ secrets.REGEN_APP_ID }}
+        private-key: ${{ secrets.REGEN_APP_PRIVATE_KEY }}
+        # Scope the installation token to the PR head repo: same-repo PRs stay
+        # on this repo, fork PRs push back to the fork.
+        owner: ${{ github.event.pull_request.head.repo.owner.login }}
+        repositories: ${{ github.event.pull_request.head.repo.name }}
+
+    - name: Warn when falling back to GITHUB_TOKEN
+      if: ${{ steps.app-token.outputs.token == '' && secrets.REGEN_PUBLISH_ACCESS_TOKEN == '' }}
+      shell: bash
+      run: |
+        echo '::warning::REGEN_APP_ID/REGEN_APP_PRIVATE_KEY and REGEN_PUBLISH_ACCESS_TOKEN are not configured; pushing with GITHUB_TOKEN. Follow-up pull_request runs will park behind approval (github-actions[bot] gate). Configure the App token to fix that.'
+
+    - uses: actions/checkout@v4
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
+        fetch-depth: 0
+        # Privileged push credential. Applied by the runner to origin, so the
+        # run script below never handles the token value itself.
+        token: ${{ steps.app-token.outputs.token || secrets.REGEN_PUBLISH_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+        persist-credentials: true
+        # Same fork-checkout requirement as above. Safe here: this job runs no
+        # PR code, only trusted inline steps from this base-branch definition.
+        allow-unsafe-pr-checkout: true
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: regen-patch
+        path: /tmp/regen
+
+    - name: Apply and push regeneration
+      shell: bash
+      env:
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        PRIVILEGED_PUSH: ${{ steps.app-token.outputs.token != '' || secrets.REGEN_PUBLISH_ACCESS_TOKEN != '' }}
+      run: |
+        set -euo pipefail
+        PATCH=/tmp/regen/regen.patch
+        if [ ! -f "$PATCH" ]; then
+          echo 'No regen patch artifact; nothing to do.'
+          exit 0
+        fi
+        if [ ! -s "$PATCH" ]; then
+          echo 'Already in sync, nothing to push.'
+          exit 0
+        fi
+
+        echo 'Files in patch:'
+        git apply --numstat "$PATCH" | cut -f3- | tee /tmp/regen/applied-files.txt
+
+        # Whitelist enforcement (fail closed): the patch was produced by
+        # untrusted PR scripts, so refuse anything outside the owned generated
+        # paths before it can reach the PR branch via the privileged token.
+        FAIL=0
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          case "$f" in
+            *'=>'*)
+              echo "::error::Rejected rename/copy in regen patch: $f"
+              FAIL=1
+              continue
+              ;;
+          esac
+          case "$f" in
+            d365bap.tools/tests/functions/*|docs/*|d365bap.tools/xml/d365bap.tools.Table.Format.ps1xml|d365bap.tools/xml/d365bap.tools.List.Format.ps1xml|wiki/Namespaces.md)
+              ;;
+            *)
+              echo "::error::Rejected non-generated path in regen patch: $f"
+              FAIL=1
+              continue
+              ;;
+          esac
+          case "$f" in
+            docs/AGENTS.md|d365bap.tools/tests/functions/AGENTS.md)
+              echo "::error::Rejected hand-owned file in regen patch: $f"
+              FAIL=1
+              ;;
+          esac
+        done < /tmp/regen/applied-files.txt
+        if [ "$FAIL" -ne 0 ]; then
+          echo '::error::Regen patch touched files outside the owned whitelist; refusing to push.'
+          exit 1
+        fi
+
+        if ! git apply --check "$PATCH"; then
+          echo '::warning::Regen patch no longer applies cleanly (PR moved forward); leaving it for the next regen run.'
+          exit 0
+        fi
+        git apply "$PATCH"
+
+        # Defense in depth: stage only the owned paths, and never the hand-owned
+        # AGENTS.md files, regardless of what the patch contained.
+        git add -- d365bap.tools/tests/functions docs d365bap.tools/xml/d365bap.tools.Table.Format.ps1xml d365bap.tools/xml/d365bap.tools.List.Format.ps1xml wiki/Namespaces.md
+        git reset -q -- docs/AGENTS.md d365bap.tools/tests/functions/AGENTS.md || true
+        if git diff --cached --quiet; then
+          echo 'Already in sync after apply, nothing to push.'
+          exit 0
+        fi
+
+        echo 'Pushing:'
+        git diff --cached --name-only
+        # Commit author stays github-actions[bot] so the touch-guard keeps
+        # recognizing regen commits. The approval gate keys off the push
+        # credential (above), not this author string.
         git config user.name 'github-actions[bot]'
         git config user.email 'github-actions[bot]@users.noreply.github.com'
-        git add -- $dirty
-        git commit -m "Regenerate artifacts"
-        git push origin HEAD:${{ github.event.pull_request.head.ref }}
+        git commit -m 'Regenerate artifacts' -q
+        # Origin already carries the privileged credential from checkout.
+        git push origin "HEAD:${HEAD_REF}"
+
+        if [ "${PRIVILEGED_PUSH}" != 'true' ]; then
+          echo '::warning::Pushed with GITHUB_TOKEN; follow-up pull_request runs will need approval until a privileged token (App/PAT) is configured.'
+        fi
