@@ -151,4 +151,4 @@ jobs:
 
     - name: Validate
       shell: pwsh
-      run: build\Test-CompiledImport.ps1\
+      run: ./build/Test-CompiledImport.ps1\
