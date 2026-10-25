@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Get-FscmOdataToken).ParameterSets.Name | Should -Be 'Default', 'Object', 'BearerToken'
 		}
-		
+
 		It 'Should have the expected parameter EnvironmentId' {
 			$parameter = (Get-Command Get-FscmOdataToken).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
@@ -63,7 +63,7 @@
 			$parameter.ParameterSets['Object'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset Default" {
 		<#
 		Default -EnvironmentId

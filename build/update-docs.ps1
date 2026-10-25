@@ -23,6 +23,8 @@ $null = New-MarkdownHelp -Module d365bap.tools -OutputFolder "$path\docs" -Force
 Get-ChildItem -Path "$path\docs\*.md" -Exclude "AGENTS.md" -Recurse -File | ForEach-Object {
 	$content = [IO.File]::ReadAllText($_.FullName)
 	$content = $content -replace "(?ms)^### -(?:Confirm|WhatIf|ProgressAction)\r?\n.*?(?=^### |^## |\Z)", ''
+	$content = ($content -replace '\r?\n', "`r`n" -split "`r`n" | ForEach-Object { "$_".TrimEnd() }) -join "`r`n"
+	$content = $content.TrimEnd() + "`r`n"
 	[IO.File]::WriteAllText($_.FullName, $content, [Text.UTF8Encoding]::new($true))
 }
 
@@ -61,7 +63,7 @@ function Update-NamespacesArticle {
 		$namespacesContent = [regex]::Replace($namespacesContent, $pattern, $evaluator)
 	}
 
-	Set-Content -Path $namespacesFilePath -Value $namespacesContent -NoNewline -Encoding utf8
+	Set-Content -Path $namespacesFilePath -Value ($namespacesContent.TrimEnd() + "`r`n") -NoNewline -Encoding utf8
 }
 
 Update-NamespacesArticle -Path $path

@@ -17,9 +17,7 @@ Switch-BapTenant [-Id] <String> [-Force] [-ProgressAction <ActionPreference>] [<
 ```
 
 ## DESCRIPTION
-This function allows you to switch the current context to a specified BAP tenant based on the tenant details stored in the local PSFramework configuration.
-
-It uses the auth provider set with Set-BapToolsAuthProvider: Az PowerShell context (AzAccount) or Azure CLI (AzCli).
+Switches the current context to a saved BAP tenant, logging in again when needed.
 
 ## EXAMPLES
 
@@ -28,16 +26,14 @@ It uses the auth provider set with Set-BapToolsAuthProvider: Az PowerShell conte
 Switch-BapTenant -Id "Contoso"
 ```
 
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will ensure that the authentication token is valid, prompting for re-authentication if necessary.
+Switches to the Contoso tenant, prompting for login when needed.
 
 ### EXAMPLE 2
 ```
 Switch-BapTenant -Id "Contoso" -Force
 ```
 
-This will switch the current context to the BAP tenant with the id "Contoso".
-It will force an authentication prompt, even if the current token is still valid.
+Switches to Contoso and always prompts for login.
 
 ## PARAMETERS
 
@@ -57,8 +53,7 @@ Accept wildcard characters: False
 ```
 
 ### -Force
-Instruct the function to force an authentication prompt even if the current token is still valid.
-This can be useful if you want to ensure that you are using the most up-to-date credentials or if you want to switch to a different user within the same tenant.
+Forces an authentication prompt, even with a valid token.
 
 ```yaml
 Type: SwitchParameter

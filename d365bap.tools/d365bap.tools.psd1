@@ -119,6 +119,10 @@
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentGroup'
+		, 'Get-PpacFinOpsAsset'
+		, 'Get-PpacFinOpsBuild'
+		, 'Get-PpacFinOpsPlatform'
+		, 'Get-PpacFinOpsVersion'
 		, 'Get-PpacRbacRole'
 		, 'Get-PpacRbacRoleMember'
 

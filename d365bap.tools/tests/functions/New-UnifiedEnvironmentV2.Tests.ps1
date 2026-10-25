@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command New-UnifiedEnvironmentV2).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
-		
+
 		It 'Should have the expected parameter Type' {
 			$parameter = (Get-Command New-UnifiedEnvironmentV2).Parameters['Type']
 			$parameter.Name | Should -Be 'Type'
@@ -207,7 +207,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -Type -Name -Location
