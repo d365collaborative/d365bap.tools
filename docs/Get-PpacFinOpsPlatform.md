@@ -61,7 +61,7 @@ Omitted: first FinOps environment is used.
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: PpacEnvId
 
 Required: False
 Position: 2
