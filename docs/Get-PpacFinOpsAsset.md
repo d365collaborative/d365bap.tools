@@ -57,7 +57,7 @@ Downloads the VHD image parts.
 Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\tmp\D365"
 ```
 
-Downloads the NuGet packages and extracts them to "C:\tmp\D365\\\<build\>\NuGets", avoiding long user profile paths on build agents.
+Downloads NuGet files, extracting under C:\tmp\D365.
 
 ## PARAMETERS
 
@@ -175,12 +175,7 @@ Accept wildcard characters: False
 
 ### -OutputPath
 Custom extraction root.
-Overrides the default under "$env:LOCALAPPDATA\Microsoft\Dynamics365\\\<build\>".
-
-The build version plus "NuGets" / "PackagesLocalDirectory" subfolders are still appended, e.g.
--OutputPath "C:\tmp\D365" extracts to "C:\tmp\D365\\\<build\>\NuGets".
-
-Useful on build agents where the default user profile path is too long for the toolchain.
+Build and asset folders are appended.
 
 ```yaml
 Type: String
