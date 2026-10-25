@@ -828,6 +828,64 @@
       </TableControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.PpacD365OperationWaitResult</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacD365OperationWaitResult</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Width>18</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>36</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>36</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>9</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>7</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>12</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>EnvironmentName</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>CorrelationId</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>OperationId</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Status</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Success</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>TimedOut</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Duration</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.PpacD365Properties</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.PpacD365Properties</TypeName>
