@@ -244,8 +244,6 @@ Accept wildcard characters: False
 ### -Version
 The version of the Finance and Operations application to be installed in the new environment.
 
-Tab completion lists the available application versions.
-
 ```yaml
 Type: Version
 Parameter Sets: (All)
