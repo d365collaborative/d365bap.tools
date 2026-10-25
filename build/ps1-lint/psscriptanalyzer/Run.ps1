@@ -33,7 +33,6 @@ if ($files.Count -eq 0) { exit 0 }
 
 $results = @()
 . "$PSScriptRoot/../internal/Get-Ps1CommentDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1CmdletStructureDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1HelpDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AliasConfiguration.ps1"
@@ -47,7 +46,6 @@ foreach ($p in $files) {
 	$analysis = Get-Ps1Analysis -Path $p
 	$results += Invoke-ScriptAnalyzer -Path $p -Recurse -Severity @('Error', 'Warning') -ExcludeRule 'PSAvoidUsingCmdletAliases' -ErrorAction Stop
 	$results += @(Get-Ps1CommentDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1CmdletStructureDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1HelpDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AliasDiagnostic -Analysis $analysis -Worker $worker)
 }

@@ -1,12 +1,5 @@
-﻿<#
-    .SYNOPSIS
-        Warms the FinOps version cache on import.
-
-    .DESCRIPTION
-        Registers the background preload for the version catalog. All failures stay silent.
-#>
-[CmdletBinding()]
-param()
+﻿# Warms the FinOps version cache on import.
+# Registers the background preload for the version catalog. All failures stay silent.
 
 function Start-FinOpsVersionPreload {
 	<#

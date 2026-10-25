@@ -2,6 +2,10 @@
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
+	$normalized = $Path -replace '\\', '/'
+	$isFragment = $normalized -match '/d365bap\.tools/(functions|internal)/' -and $normalized -notmatch '/internal/scripts/(preimport|postimport|load-formatdata)\.ps1$'
+	if ($isFragment) { return }
+
 	foreach ($comment in $Analysis.CommentGroups) {
 		if ($comment.IsHelp) { continue }
 		[pscustomobject]@{

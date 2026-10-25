@@ -1,12 +1,5 @@
-﻿<#
-    .SYNOPSIS
-        Tab completion for FinOps versions and builds.
-
-    .DESCRIPTION
-        Reads the cached developer tools catalog, so completing never triggers network calls.
-#>
-[CmdletBinding()]
-param()
+﻿# Tab completion for FinOps versions and builds.
+# Reads the cached developer tools catalog, so completing never triggers network calls.
 
 $scbFinOpsAppVersion = {
 	param (
