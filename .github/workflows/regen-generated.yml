@@ -12,7 +12,8 @@ name: regen-generated
 
 on:
   pull_request_target:
-    types: [opened, synchronize]
+    # reopened lets a closed-and-reopened PR get a fresh regen without a push.
+    types: [opened, synchronize, reopened]
 
 concurrency:
   group: regen-${{ github.event.pull_request.number }}
@@ -33,6 +34,13 @@ jobs:
         ref: ${{ github.event.pull_request.head.ref }}
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
+        # Required: GitHub refuses fork checkouts from pull_request_target
+        # otherwise. Accepted risk here: this job runs no secrets, executes
+        # only the repo's own generator scripts, and pushes back solely the
+        # whitelisted generated paths onto the PR branch. Revisit if this
+        # repo ever takes PRs from untrusted forks (then gate on author or
+        # move the push behind a stored bot PAT instead).
+        allow-unsafe-pr-checkout: true
 
     - name: Cache Powershell Modules
       id: cache-powershell-modules
