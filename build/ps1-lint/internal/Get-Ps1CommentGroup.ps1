@@ -43,24 +43,41 @@
 				$owner.Body.ParamBlock.Parameters
 			}
 			else { $owner.ParamBlock.Parameters })
-		$parameterNames = @(foreach ($parameter in $parameters) {
-				if ($null -eq $parameter) { continue }
-				$parameter.Name.VariablePath.UserPath
-				foreach ($attribute in $parameter.Attributes) {
+		$parameterRecords = @()
+		foreach ($parameter in $parameters) {
+			if ($null -eq $parameter -or $null -eq $parameter.Name) { continue }
+			$aliases = @(foreach ($attribute in $parameter.Attributes) {
 					if ($attribute -isnot [Management.Automation.Language.AttributeAst] -or
 						$attribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.AliasAttribute]) { continue }
 					foreach ($argument in $attribute.PositionalArguments) {
 						$argument.FindAll({ param($node) $node -is [Management.Automation.Language.StringConstantExpressionAst] }, $true) |
 						ForEach-Object Value
 					}
+				})
+			$existing = @($parameterRecords | Where-Object { $_.Name -ieq $parameter.Name.VariablePath.UserPath }) | Select-Object -First 1
+			if ($null -ne $existing) {
+				$existing.Aliases = @($existing.Aliases + $aliases | Select-Object -Unique)
+				if ($null -ne $parameter.DefaultValue) { $existing.HasDefault = $true }
+			}
+			else {
+				$parameterRecords += [pscustomobject]@{
+					Name       = $parameter.Name.VariablePath.UserPath
+					Aliases    = @($aliases)
+					HasDefault = ($null -ne $parameter.DefaultValue)
 				}
+			}
+		}
+		$parameterNames = @(foreach ($record in $parameterRecords) {
+				$record.Name
+				$record.Aliases
 			})
 		[pscustomobject]@{
-			IsHelp         = $isHelp
-			ParameterNames = $parameterNames
-			Text           = $source.Substring($first.Extent.StartOffset, $last.Extent.EndOffset - $first.Extent.StartOffset)
-			Line           = $first.Extent.StartLineNumber
-			Column         = $first.Extent.StartColumnNumber
+			IsHelp           = $isHelp
+			ParameterNames   = $parameterNames
+			ParameterRecords = @($parameterRecords)
+			Text             = $source.Substring($first.Extent.StartOffset, $last.Extent.EndOffset - $first.Extent.StartOffset)
+			Line             = $first.Extent.StartLineNumber
+			Column           = $first.Extent.StartColumnNumber
 		}
 	}
 }

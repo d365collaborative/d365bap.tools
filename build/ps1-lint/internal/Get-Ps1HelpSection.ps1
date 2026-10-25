@@ -1,8 +1,10 @@
 ﻿function Get-Ps1HelpSection {
 	param([hashtable] $Analysis)
 
+	$groupId = 0
 	foreach ($comment in $Analysis.CommentGroups) {
 		if (-not $comment.IsHelp) { continue }
+		$groupId++
 		$text = $comment.Text
 		$isBlock = $text.StartsWith('<#')
 		if ($isBlock) { $text = $text.Substring(2, $text.Length - 4) }
@@ -11,6 +13,7 @@
 			[regex]::Matches($text, '(?im)^\s*(?:#\s*)?\.PARAMETER\s+(\S+)\s*$') |
 			ForEach-Object { $_.Groups[1].Value }
 		)
+		$parameterRecords = @($comment.ParameterRecords)
 		$section = $null
 		for ($index = 0; $index -le $lines.Count; $index++) {
 			$line = if ($index -lt $lines.Count) { $lines[$index] } else { $null }
@@ -29,13 +32,17 @@
 					while ($last -ge $first -and $section.Lines[$last] -eq '') { $last-- }
 					$content = @(if ($first -le $last) { $section.Lines.GetRange($first, $last - $first + 1) })
 					[pscustomobject]@{
-						Name           = $section.Name
-						Argument       = $section.Argument
-						Line           = $section.Line
-						Column         = $section.Column
-						Lines          = @($content)
-						Text           = $content -join "`n"
-						ParameterNames = $parameterNames
+						Name             = $section.Name
+						Argument         = $section.Argument
+						Line             = $section.Line
+						Column           = $section.Column
+						Lines            = @($content)
+						Text             = $content -join "`n"
+						ParameterNames   = $parameterNames
+						GroupId          = $groupId
+						CommentLine      = $comment.Line
+						CommentColumn    = $comment.Column
+						ParameterRecords = @($parameterRecords)
 					}
 				}
 				$section = if ($isHeader) {

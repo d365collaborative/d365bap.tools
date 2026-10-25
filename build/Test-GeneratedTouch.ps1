@@ -5,6 +5,16 @@
     .DESCRIPTION
         Compares HEAD against a base ref and reports generated files. Those
         files are owned by the regen workflow.
+
+    .PARAMETER BaseRef
+        The base ref of the three-dot diff.
+
+        Default: origin/main.
+
+    .PARAMETER HeadRef
+        The head ref of the three-dot diff.
+
+        Default: HEAD.
 #>
 [CmdletBinding()]
 param(

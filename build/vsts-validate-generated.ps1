@@ -6,6 +6,11 @@
         Runs the generators and fails when generated files differ. Generated
         files are owned by the regen workflow. Line ending only changes are
         ignored.
+
+    .PARAMETER RepoRoot
+        The repository root to validate.
+
+        Default: the parent of the build directory.
 #>
 [CmdletBinding()]
 param(
