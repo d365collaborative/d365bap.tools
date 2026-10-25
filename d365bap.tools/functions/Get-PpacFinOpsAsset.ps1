@@ -26,6 +26,13 @@
 
         Default: C:\Temp\d365bap.tools\PpacFinOpsAssets
 
+    .PARAMETER OutputPath
+        Custom extraction root. Overrides the default under "$env:LOCALAPPDATA\Microsoft\Dynamics365\<build>".
+
+        The build version plus "NuGets" / "PackagesLocalDirectory" subfolders are still appended, e.g. -OutputPath "C:\tmp\D365" extracts to "C:\tmp\D365\<build>\NuGets".
+
+        Useful on build agents where the default user profile path is too long for the toolchain.
+
     .PARAMETER Force
         Re-download files and re-extract folders.
 
@@ -51,6 +58,11 @@
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Asset Vhd -Download
 
         Downloads the VHD image parts.
+
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\tmp\D365"
+
+        Downloads the NuGet packages and extracts them to "C:\tmp\D365\<build>\NuGets", avoiding long user profile paths on build agents.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -78,7 +90,9 @@ function Get-PpacFinOpsAsset {
 
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[Alias("PpacEnvId")]
-		[string] $EnvironmentId
+		[string] $EnvironmentId,
+
+		[string] $OutputPath
 	)
 
 	begin {
@@ -358,8 +372,15 @@ function Get-PpacFinOpsAsset {
 			return
 		}
 
-		$pathNugetsRoot = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\NuGets"
-		$pathPackagesLocalDirectory = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\PackagesLocalDirectory"
+		if ($PSBoundParameters.ContainsKey('OutputPath') -and -not [string]::IsNullOrWhiteSpace($OutputPath)) {
+			$baseRoot = Join-Path $OutputPath $fullBuild
+			$pathNugetsRoot = Join-Path $baseRoot "NuGets"
+			$pathPackagesLocalDirectory = Join-Path $baseRoot "PackagesLocalDirectory"
+		}
+		else {
+			$pathNugetsRoot = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\NuGets"
+			$pathPackagesLocalDirectory = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\PackagesLocalDirectory"
+		}
 
 		$retryCount = 0
 		$maxRetries = 5
