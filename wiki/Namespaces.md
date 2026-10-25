@@ -76,6 +76,10 @@ This is for all the things that one would normal do from the [PPAC portal](https
 | [Get-PpacD365Version](Get-PpacD365Version) | Get D365 Finance and Operations versions for the environment. |
 | [Get-PpacDeployLocation](Get-PpacDeployLocation) | Get the available deployment locations for Power Platform environments. |
 | [Get-PpacEnvironmentGroup](Get-PpacEnvironmentGroup) | Retrieves Power Platform environment groups. |
+| [Get-PpacFinOpsAsset](Get-PpacFinOpsAsset) | Downloads FinOps assets for any build. |
+| [Get-PpacFinOpsBuild](Get-PpacFinOpsBuild) | Lists quality updates for a FinOps track. |
+| [Get-PpacFinOpsPlatform](Get-PpacFinOpsPlatform) | Resolves the platform version of a build. |
+| [Get-PpacFinOpsVersion](Get-PpacFinOpsVersion) | Lists all published FinOps versions. |
 | [Get-PpacRbacRole](Get-PpacRbacRole) | Get PPAC RBAC roles available in the tenant. |
 | [Get-PpacRbacRoleMember](Get-PpacRbacRoleMember) | Get members of PPAC RBAC roles in the tenant. |
 | [Get-PpacSecurityRole](Get-PpacSecurityRole) | Get information about Power Platform security roles in a given environment. |

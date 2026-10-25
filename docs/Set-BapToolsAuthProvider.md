@@ -23,14 +23,8 @@ Set-BapToolsAuthProvider [-AzCli] [-ProgressAction <ActionPreference>] [<CommonP
 ```
 
 ## DESCRIPTION
-This function sets which provider is used to mint access tokens:
-AzAccount (default, via the Az.Accounts PowerShell module) or
-AzCli (via the Azure CLI, \`az\`).
-
-Switching to AzCli validates the Azure CLI before changing any
-configuration.
-If the validation fails, the current provider is
-left unchanged.
+Sets which provider mints access tokens.
+Switching validates first and keeps the current provider on failure.
 
 ## EXAMPLES
 
@@ -52,12 +46,7 @@ state, then set the token minting provider to AzCli.
 ## PARAMETERS
 
 ### -AzCli
-Use the Azure CLI (\`az\`) for minting tokens.
-
-Before switching, the function verifies that the \`az\` executable
-is available and that it can mint a token for the Power Apps
-resource.
-If either check fails, the provider is not changed.
+Use the Azure CLI for minting tokens.
 
 ```yaml
 Type: SwitchParameter
@@ -72,10 +61,7 @@ Accept wildcard characters: False
 ```
 
 ### -AzAccount
-Use the Az.Accounts PowerShell module for minting tokens.
-
-This is the default provider and requires no validation, as
-Az.Accounts is a required module of d365bap.tools.
+Use the Az.Accounts module for minting tokens.
 
 ```yaml
 Type: SwitchParameter
