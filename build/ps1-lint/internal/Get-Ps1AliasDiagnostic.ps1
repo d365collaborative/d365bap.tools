@@ -36,7 +36,7 @@ function Get-Ps1AliasDiagnostic {
 	}
 	foreach ($parameter in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
 		foreach ($alias in Get-Ps1DeclaredAlias $parameter.Attributes) {
-			if ($rules.PSAvoidParameterAliases) {
+			if ($rules.PSAvoidParameterAliases -and $alias.Name -notin @($rules.AllowedParameterAliases)) {
 				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $alias.Extent "Do not declare parameter aliases. Use '$($parameter.Name.VariablePath.UserPath)'."
 			}
 		}
@@ -118,7 +118,7 @@ function Get-Ps1AliasDiagnostic {
 					$resolved.Command.Aliases.Keys | Where-Object { $_.StartsWith($given, [StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { $resolved.Command.Aliases[$_] }
 				) | Sort-Object -Unique
 			}
-			if (@($parameterMatches).Count -gt 0) {
+			if (@($parameterMatches).Count -gt 0 -and $given -notin @($rules.AllowedParameterAliases)) {
 				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $parameter.Extent "Do not use parameter alias or abbreviation '-$given'. Use the full parameter name: $($parameterMatches -join ', ')."
 			}
 		}

@@ -10,6 +10,12 @@ What runs on `**.ps1`:
   `PSUseCmdletStructure`, `PSHelpSynopsis/Description/Parameter/Notes/Example`,
   `PSAvoidCommandAliases` / `PSAvoidParameterAliases` (opt out per directory
   with a `ps1-lint.json` file, see the internal `Get-Ps1AliasConfiguration.ps1`).
+  A directory can also accept specific aliases without disabling the rule:
+  `"allowedParameterAliases": ["PpacEnvId"]` permits those names (matched
+  case-insensitively, exact spelling only) at declaration and use sites while
+  every other alias still fails. The public functions use this for the
+  established `PpacEnvId` pipeline alias; a new alias fails the check until
+  a reviewer adds it to that list.
   Current help-quality extensions: DESCRIPTION must not repeat SYNOPSIS, and
   parameters with code defaults must document them with a trailing
   `Default: ...` line as the last paragraph of the `.PARAMETER` section.

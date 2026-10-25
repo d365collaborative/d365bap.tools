@@ -1,7 +1,7 @@
 ﻿function Get-Ps1AliasConfiguration {
 	param([string] $Path, [hashtable] $Cache)
 
-	$rules = @{ PSAvoidCommandAliases = $true; PSAvoidParameterAliases = $true }
+	$rules = @{ PSAvoidCommandAliases = $true; PSAvoidParameterAliases = $true; AllowedParameterAliases = @() }
 	$directory = Split-Path (Resolve-Path -LiteralPath $Path).Path -Parent
 	$visited = [Collections.Generic.List[string]]::new()
 	while ($directory) {
@@ -12,6 +12,13 @@
 			try {
 				$config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop
 				if ($config -isnot [Collections.IDictionary]) { throw 'Expected a JSON object.' }
+				if ($config.Contains('allowedParameterAliases')) {
+					if ($config.allowedParameterAliases -isnot [array]) { throw 'allowedParameterAliases must be an array of nonempty strings.' }
+					foreach ($entry in $config.allowedParameterAliases) {
+						if ($entry -isnot [string] -or [string]::IsNullOrWhiteSpace($entry)) { throw 'allowedParameterAliases must be an array of nonempty strings.' }
+					}
+					$rules.AllowedParameterAliases = @($config.allowedParameterAliases)
+				}
 				if ($config.Contains('rules')) {
 					if ($config.rules -isnot [Collections.IDictionary]) { throw 'rules must be an object.' }
 					foreach ($name in $config.rules.Keys) {
