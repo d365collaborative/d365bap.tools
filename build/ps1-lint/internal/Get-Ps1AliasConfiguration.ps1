@@ -1,7 +1,7 @@
 ﻿function Get-Ps1AliasConfiguration {
 	param([string] $Path, [hashtable] $Cache)
 
-	$rules = @{ PSAvoidCommandAliases = $true; PSAvoidParameterAliases = $true }
+	$rules = @{ AllowedCommandAliases = @(); AllowedParameterAliases = @() }
 	$directory = Split-Path (Resolve-Path -LiteralPath $Path).Path -Parent
 	$visited = [Collections.Generic.List[string]]::new()
 	while ($directory) {
@@ -12,13 +12,14 @@
 			try {
 				$config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -AsHashtable -ErrorAction Stop
 				if ($config -isnot [Collections.IDictionary]) { throw 'Expected a JSON object.' }
-				if ($config.Contains('rules')) {
-					if ($config.rules -isnot [Collections.IDictionary]) { throw 'rules must be an object.' }
-					foreach ($name in $config.rules.Keys) {
-						if (-not $rules.ContainsKey($name)) { throw "Unknown alias rule '$name'." }
-						if ($config.rules[$name] -isnot [bool]) { throw "Rule '$name' must be true or false." }
-						$rules[$name] = $config.rules[$name]
+				if ($config.Contains('rules')) { throw 'The rules object is no longer supported. Use allowedCommandAliases and allowedParameterAliases instead.' }
+				foreach ($key in @('allowedCommandAliases', 'allowedParameterAliases')) {
+					if (-not $config.Contains($key)) { continue }
+					if ($config[$key] -isnot [array]) { throw "$key must be an array of nonempty strings." }
+					foreach ($entry in $config[$key]) {
+						if ($entry -isnot [string] -or [string]::IsNullOrWhiteSpace($entry)) { throw "$key must be an array of nonempty strings." }
 					}
+					$rules[$key] = @($config[$key])
 				}
 			}
 			catch { throw "Invalid configuration '$configPath': $($_.Exception.Message)" }
