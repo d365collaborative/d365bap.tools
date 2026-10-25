@@ -54,7 +54,7 @@ $touched = @(
 if ($touched.Count -gt 0) {
 	Write-Host 'This PR touches generated files. Revert them and push only sources:'
 	$touched | ForEach-Object { Write-Host "  $_" }
-	Write-Host 'After review, label `accept-signature-change` and the regen workflow commits the regeneration.'
+	Write-Host 'The regen workflow commits the regeneration to this PR automatically.'
 	exit 1
 }
 

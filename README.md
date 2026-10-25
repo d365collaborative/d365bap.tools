@@ -137,8 +137,8 @@ pwsh -NoProfile -File ./d365bap.tools/tests/pester.ps1 -TestGeneral $false -Test
 
 `prek run --all-files --stage manual` lints the whole tree. Never commit
 generated files (`*.Tests.ps1`, `docs/*.md`, consolidated format xml,
-`wiki/Namespaces.md`) — push only sources and let the regen workflow commit
-the rest after review.
+`wiki/Namespaces.md`) — push only sources and the regen workflow commits the
+rest back onto the PR automatically.
 
 ## Dependencies
 

@@ -1,17 +1,22 @@
 name: regen-generated
 
-# Regenerates owned artifacts back onto the PR branch after a reviewer accepts
-# signature changes. Trigger: add the `accept-signature-change` label. It also
-# re-runs on every push while the label is present, so follow-up source edits
-# get their regeneration without another label round-trip.
+# Regenerates owned artifacts back onto the PR branch automatically.
+# Trigger: every push to a pull request (opened, synchronize). Authors push
+# only sources; if the generators produce anything new, it is committed here.
+# Authors never touch generated files — the touch-guard blocks that, and this
+# workflow overwrites anything but generator output anyway.
 #
 # Runs on pull_request_target so fork PRs can be written back with GITHUB_TOKEN.
 # The workflow definition itself comes from the base branch; the generator
-# scripts that execute are the PR's reviewed versions.
+# scripts that execute are the PR's versions.
 
 on:
   pull_request_target:
-    types: [labeled, synchronize]
+    types: [opened, synchronize]
+
+concurrency:
+  group: regen-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -21,7 +26,6 @@ jobs:
   regen:
     name: Regenerate artifacts onto PR branch
     runs-on: windows-latest
-    if: contains(github.event.pull_request.labels.*.name, 'accept-signature-change')
     steps:
     - uses: actions/checkout@v4
       with:
