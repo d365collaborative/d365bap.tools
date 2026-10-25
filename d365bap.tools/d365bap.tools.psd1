@@ -1,29 +1,29 @@
 ﻿@{
 	# Script module or binary module file associated with this manifest
 	RootModule        = 'd365bap.tools.psm1'
-	
+
 	# Version number of this module.
 	ModuleVersion     = '0.0.10'
-	
+
 	# ID used to uniquely identify this module
 	GUID              = 'adfc3aa2-1269-4648-a3d6-0342d5ef00bf'
-	
+
 	# Author of this module
 	Author            = 'Mötz Jensen'
-	
+
 	# Company or vendor of this module
 	CompanyName       = 'Essence Solutions'
-	
+
 	# Copyright statement for this module
 	Copyright         = 'Copyright (c) 2024 Mötz Jensen'
-	
+
 	# Description of the functionality provided by this module
 	Description       = 'Tools used for Business Application Platform, One Dynamics One Platform - D365FO + Dataverse'
-	
+
 	# The bundled Power Platform SDK requires the .NET 10 runtime in PowerShell 7.6.
 	PowerShellVersion = '7.6'
 	CompatiblePSEditions = @('Core')
-	
+
 	# Modules that must be imported into the global environment prior to importing
 	# this module
 	RequiredModules   = @(
@@ -31,13 +31,13 @@
 		, @{ ModuleName = 'ImportExcel'; ModuleVersion = '7.8.6' }
 		, @{ ModuleName = 'Az.Accounts'; ModuleVersion = '2.17.0' }
 	)
-	
+
 	# Assemblies that must be loaded prior to importing this module
 	# RequiredAssemblies = @('bin\d365bap.tools.dll')
-	
+
 	# Type files (.ps1xml) to be loaded when importing this module
 	# TypesToProcess = @('xml\d365bap.tools.Types.ps1xml')
-	
+
 	# Format files (.ps1xml) to be loaded when importing this module
 	# Do not use FormatsToProcess. Each entry is a nested module load (limit 10),
 	# and RequiredModules already consume that budget — views never register.
@@ -51,50 +51,50 @@
 	ScriptsToProcess  = @(
 		'internal\scripts\load-formatdata.ps1'
 	)
-	
+
 	# Functions to export from this module
 	FunctionsToExport = @(
 		'Add-FscmEntraApplication'
 		, 'Add-FscmSecurityRoleMember'
 		, 'Add-FscmUser'
 		, 'Add-FscmUserFromSecurityGroup'
-		
+
 		, 'Add-PpacAdminManagementApplication'
 		, 'Add-PpacApplicationUser'
-		
+
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
 		, 'Add-PpacUser'
 
 		, 'Add-PpePublisher'
 		, 'Add-PpeSolution'
-		
+
 		, 'Add-UdeWindowsDefenderRules'
-		
+
 		, 'Clear-UdeCredentialCache'
 		, 'Clear-UdeDbJitCache'
 		, 'Clear-UdeOrphanedConfig'
-		
+
 		, 'Compare-BapEnvironmentD365App'
 		, 'Compare-BapEnvironmentUser'
 		, 'Compare-BapEnvironmentVirtualEntity'
-		
+
 		, 'Confirm-BapEnvironmentIntegration'
 		, 'Confirm-UdeVs2022Installation'
-		
+
 		, 'Export-UdeModelLabel'
-		
+
 		, 'Get-BapEnvironment'
 		, 'Get-BapEnvironmentD365App'
 		, 'Get-BapEnvironmentLinkEnterprisePolicy'
 		, 'Get-BapEnvironmentOperation'
 		, 'Get-BapEnvironmentPowerApp'
 		, 'Get-BapEnvironmentVirtualEntity'
-		
+
 		, 'Get-BapTenant'
 		, 'Get-BapTenantDetail'
 		, 'Get-BapToolsAuthProvider'
-		
+
 		, 'Get-FscmDmfEntity'
 		, 'Get-FscmEntraApplication'
 		, 'Get-FscmEnvironmentVersion'
@@ -107,9 +107,9 @@
 		, 'Get-FscmSecurityRole'
 		, 'Get-FscmSecurityRoleMember'
 		, 'Get-FscmUser'
-		
+
 		, 'Get-GraphGroupMember'
-		
+
 		, 'Get-PpacAdminManagementApplication'
 		, 'Get-PpacApplicationUser'
 		, 'Get-PpacD365App'
@@ -128,16 +128,16 @@
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
 		, 'Get-PpacUser'
-		
+
 		, 'Get-PpeOdata'
 		, 'Get-PpeOdataEntity'
 		, 'Get-PpeCustomApi'
 
 		, 'Get-PpePublisher'
-		
+
 		, 'Get-PpeSolution'
 		, 'Get-PpeSolutionHistory'
-		
+
 		, 'Get-UdeConfig'
 		, 'Get-UdeConnection'
 		, 'Get-UdeCredentialCache'
@@ -151,12 +151,12 @@
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
-		
+
 		, 'Get-UnifiedEnvironment'
 		, 'Get-UnifiedEnvironmentModule'
 		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
-		
+
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 		, 'Invoke-BapInstallAzCli'
@@ -168,36 +168,36 @@
 		, 'Invoke-PpacD365AppInstall'
 		, 'Invoke-PpacD365PlatformUpdate'
 		, 'Invoke-PpacD365VersionUpdate'
-		
+
 		, 'Invoke-PpePublishAllCustomizations'
 
 		, 'Invoke-UdeDbQuery'
-		
+
 		, 'New-PpacSecurityRole'
 
 		, 'New-UnifiedEnvironment'
 		, 'New-UnifiedEnvironmentV2'
-		
+
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
 		, 'Remove-PpacUser'
 		, 'Remove-PpeSolution'
 		, 'Remove-UdeEnvironmentModel'
-		
+
 		, 'Remove-UnifiedEnvironmentModule'
 		, 'Remove-UnifiedEnvironmentPackage'
-		
+
 		, 'Remove-UnifiedEnvironment'
-		
+
 		, 'Set-BapAzCopyPath'
-		
+
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
 		, 'Set-BapEnvironmentVirtualEntity'
 		, 'Set-BapTenantDetail'
 		, 'Set-BapToolsAuthProvider'
-		
+
 		, 'Set-FscmUserAccess'
-		
+
 		, 'Set-PpacAdminMode'
 
 		, 'Set-PpacRbacContext'
@@ -206,63 +206,65 @@
 		, 'Set-PpacSecurityGroup'
 		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
-		
+
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
 		, 'Set-UdeEnvironmentInSession'
-		
+
 		, 'Start-UdeDatabaseRefresh'
 		, 'Start-UdeDbSsms'
-		
+
 		, 'Switch-BapTenant'
-		
+
 		, 'Update-BapEnvironmentVirtualEntityMetadata'
+
+		, 'Wait-PpacD365Operation'
 		# BEGIN SDK EXPORTS
 		, 'Get-UnifiedEnvironmentMaintenance'
 		, 'Set-UnifiedEnvironmentMaintenance'
 		, 'Get-PpacTenantD365App'
 		, 'Get-PpacTenantProvisioningDefault'
 		# END SDK EXPORTS
-		
+
 	)
-	
+
 	# Cmdlets to export from this module
 	CmdletsToExport   = ''
-	
+
 	# Variables to export from this module
 	VariablesToExport = ''
-	
+
 	# Aliases to export from this module
 	AliasesToExport   = ''
-	
+
 	# List of all modules packaged with this module
 	ModuleList        = @()
-	
+
 	# List of all files packaged with this module
 	FileList          = @()
-	
+
 	# Private data to pass to the module specified in ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 	PrivateData       = @{
-		
+
 		#Support for PowerShellGet galleries.
 		PSData = @{
-			
+
 			# Tags applied to this module. These help with module discovery in online galleries.
 			# Tags = @()
-			
+
 			# A URL to the license for this module.
 			# LicenseUri = ''
-			
+
 			# A URL to the main website for this project.
 			# ProjectUri = ''
-			
+
 			# A URL to an icon representing this module.
 			# IconUri = ''
-			
+
 			# ReleaseNotes of this module
 			# ReleaseNotes = ''
-			
+
 		} # End of PSData hashtable
-		
+
 	} # End of PrivateData hashtable
 }
