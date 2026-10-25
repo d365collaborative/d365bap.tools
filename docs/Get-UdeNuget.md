@@ -14,7 +14,7 @@ Gets UDE NuGet packages for a specified environment.
 
 ```
 Get-UdeNuget [-EnvironmentId] <String> [[-Path] <String>] [[-Packages] <String[]>] [-Download]
- [-ClearNugetPackages] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-ClearNugetPackages] [[-OutputPath] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -23,6 +23,9 @@ This function retrieves the UDE NuGet packages for a specified environment.
 Uses the same DeveloperTools service as the Power Platform Tools for Visual Studio extension.
 
 The NuGet packages were previously available from LCS, and are now served from developertools.powerplatform.microsoft.com.
+
+This function is a compatibility wrapper around Get-PpacFinOpsAsset and will be removed in a future release.
+Prefer Get-PpacFinOpsAsset directly.
 
 ## EXAMPLES
 
@@ -54,6 +57,14 @@ Get-UdeNuget -EnvironmentId "env-123" -Download -ClearNugetPackages
 
 This will download the UDE NuGet packages for the specified environment ID to the default path.
 It will clear the existing extracted NuGet packages before extracting, ensuring a clean state for the extraction.
+
+### EXAMPLE 5
+```
+Get-UdeNuget -EnvironmentId "env-123" -Download -OutputPath "C:\tmp\D365"
+```
+
+This will download the UDE NuGet packages for the specified environment ID to the default path.
+It will extract the NuGet packages to "C:\tmp\D365\\\<build\>\NuGets", avoiding long user profile paths on build agents.
 
 ## PARAMETERS
 
@@ -130,6 +141,8 @@ Accept wildcard characters: False
 ### -ClearNugetPackages
 Instructs the function to clear the existing extracted NuGet packages before extracting.
 
+Mapped to the -Force handling of Get-PpacFinOpsAsset: files are re-downloaded and re-extracted.
+
 Use with caution as it will delete existing files.
 
 Can be useful when the extraction has failed previously and you want to ensure a clean state for the extraction.
@@ -142,6 +155,27 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -OutputPath
+Custom extraction root for the NuGet packages.
+
+When specified, overrides the default extraction path under "$env:LOCALAPPDATA\Microsoft\Dynamics365\\\<build\>\NuGets".
+The build version and "NuGets" subfolder are still appended, e.g.
+-OutputPath "C:\tmp\D365" extracts to "C:\tmp\D365\\\<build\>\NuGets".
+
+Useful on build agents where the default user profile path is too long for the toolchain.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

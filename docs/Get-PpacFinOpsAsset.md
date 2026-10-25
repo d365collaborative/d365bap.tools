@@ -14,7 +14,8 @@ Downloads FinOps assets for any build.
 
 ```
 Get-PpacFinOpsAsset [[-Build] <String>] [[-Asset] <String[]>] [[-Kind] <String>] [-Download] [[-Path] <String>]
- [-Force] [[-EnvironmentId] <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-Force] [[-EnvironmentId] <String>] [[-OutputPath] <String>] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -50,6 +51,13 @@ Get-PpacFinOpsAsset -Build "10.0.2790.46" -Asset Vhd -Download
 ```
 
 Downloads the VHD image parts.
+
+### EXAMPLE 5
+```
+Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\tmp\D365"
+```
+
+Downloads the NuGet packages and extracts them to "C:\tmp\D365\\\<build\>\NuGets", avoiding long user profile paths on build agents.
 
 ## PARAMETERS
 
@@ -162,6 +170,27 @@ Required: False
 Position: 5
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -OutputPath
+Custom extraction root.
+Overrides the default under "$env:LOCALAPPDATA\Microsoft\Dynamics365\\\<build\>".
+
+The build version plus "NuGets" / "PackagesLocalDirectory" subfolders are still appended, e.g.
+-OutputPath "C:\tmp\D365" extracts to "C:\tmp\D365\\\<build\>\NuGets".
+
+Useful on build agents where the default user profile path is too long for the toolchain.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
