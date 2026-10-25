@@ -1,12 +1,5 @@
-﻿<#
-    .SYNOPSIS
-        Tab completion for FinOps assets and kinds.
-
-    .DESCRIPTION
-        Static value lists with tooltips. Tables stay in the blocks since completers run in caller scope.
-#>
-[CmdletBinding()]
-param()
+﻿# Tab completion for FinOps assets and kinds.
+# Static value lists with tooltips. Tables stay in the blocks since completers run in caller scope.
 
 $scbFinOpsAsset = {
 	param (

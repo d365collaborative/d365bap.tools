@@ -122,3 +122,33 @@ jobs:
     - name: Validate
       shell: pwsh
       run: build\vsts-validate-v2.ps1 -TestGeneral $false -TestFunctions $true
+
+  compiled-import:
+    name: Validate Compiled Module Import
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-v1
+
+    - name: Install Prerequisites
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @('PSFramework','PSModuleDevelopment','ImportExcel','Az.Accounts')
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+    - name: Validate
+      shell: pwsh
+      run: ./build/Test-CompiledImport.ps1

@@ -7,7 +7,7 @@ here on — no submodule, no sync back. Rule changes happen here via normal PRs.
 What runs on `**.ps1`:
 - `psscriptanalyzer/Run.ps1` — native PSScriptAnalyzer (Error + Warning,
   fails on Error) plus repo rules: `PSOnlyCommentBasedHelp`,
-  `PSUseCmdletStructure`, `PSHelpSynopsis/Description/Parameter/Notes/Example`,
+  `PSHelpSynopsis/Description/Parameter/Notes/Example`,
   `PSAvoidCommandAliases` / `PSAvoidParameterAliases`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
