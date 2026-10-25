@@ -8,14 +8,17 @@ What runs on `**.ps1`:
 - `psscriptanalyzer/Run.ps1` — native PSScriptAnalyzer (Error + Warning,
   fails on Error) plus repo rules: `PSOnlyCommentBasedHelp`,
   `PSUseCmdletStructure`, `PSHelpSynopsis/Description/Parameter/Notes/Example`,
-  `PSAvoidCommandAliases` / `PSAvoidParameterAliases` (opt out per directory
-  with a `ps1-lint.json` file, see the internal `Get-Ps1AliasConfiguration.ps1`).
-  A directory can also accept specific aliases without disabling the rule:
-  `"allowedParameterAliases": ["PpacEnvId"]` permits those names (matched
-  case-insensitively, exact spelling only) at declaration and use sites while
-  every other alias still fails. The public functions use this for the
-  established `PpacEnvId` pipeline alias; a new alias fails the check until
-  a reviewer adds it to that list.
+  `PSAvoidCommandAliases` / `PSAvoidParameterAliases`.
+  Both alias rules are always on; the only way to permit an alias is a
+  per-directory `ps1-lint.json` allowlist:
+  `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
+  Listed names (matched case-insensitively, exact spelling only) pass at
+  declaration and use sites; everything else fails, including abbreviations
+  of listed names. There is no off switch: to accept a new alias, add its
+  name to the list in a reviewable diff — the red check on the PR is the
+  signal, the list entry is the acceptance. Invalid configs fail with
+  `PSAliasConfiguration` instead of silently passing. See the internal
+  `Get-Ps1AliasConfiguration.ps1`.
   Current help-quality extensions: DESCRIPTION must not repeat SYNOPSIS, and
   parameters with code defaults must document them with a trailing
   `Default: ...` line as the last paragraph of the `.PARAMETER` section.

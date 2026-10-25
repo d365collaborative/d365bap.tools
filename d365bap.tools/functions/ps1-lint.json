@@ -1,7 +1,5 @@
 {
-  "rules": {
-    "PSAvoidParameterAliases": true
-  },
+  "allowedCommandAliases": [],
   "allowedParameterAliases": [
     "PpacEnvId"
   ]
