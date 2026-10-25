@@ -33,6 +33,7 @@ function Get-PpacFinOpsVersion {
 	[OutputType('System.Object[]')]
 	param (
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Alias("PpacEnvId")]
 		[string] $EnvironmentId,
 
 		[Parameter(ParameterSetName = "Lowest")]

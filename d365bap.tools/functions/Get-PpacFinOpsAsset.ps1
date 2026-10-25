@@ -77,6 +77,7 @@ function Get-PpacFinOpsAsset {
 		[switch] $Force,
 
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Alias("PpacEnvId")]
 		[string] $EnvironmentId
 	)
 

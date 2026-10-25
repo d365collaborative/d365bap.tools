@@ -38,6 +38,7 @@ function Get-PpacFinOpsBuild {
 		[switch] $Latest,
 
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Alias("PpacEnvId")]
 		[string] $EnvironmentId
 	)
 
