@@ -1,0 +1,27 @@
+name: ps1-lint
+
+on: [pull_request]
+
+jobs:
+  ps1-lint:
+    name: PS1 lint (vendored prek hooks, changed files)
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install prek
+      shell: pwsh
+      run: pip install "prek==0.5.7"
+
+    - name: Setup PSScriptAnalyzer for hooks
+      shell: pwsh
+      run: prek run setup --stage manual --config prek.toml
+
+    - name: Lint changed files
+      shell: pwsh
+      # Same prek.toml and hook scripts as local runs. Only files changed in
+      # this PR are checked, so pre-existing violations elsewhere do not fail
+      # the PR; every new or edited .ps1 must pass (blocking).
+      run: prek run --config prek.toml --from-ref origin/${{ github.base_ref }} --to-ref HEAD

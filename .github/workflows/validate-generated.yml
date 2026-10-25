@@ -1,0 +1,51 @@
+name: validate-generated
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  touch-guard:
+    name: Deny hand-edited generated files
+    runs-on: windows-latest
+    # Once a reviewer accepts signature changes, the regen workflow owns these
+    # files, so the guard steps aside.
+    if: "!contains(github.event.pull_request.labels.*.name, 'accept-signature-change')"
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Check for touched generated files
+      shell: pwsh
+      run: ./build/Test-GeneratedTouch.ps1 -BaseRef origin/${{ github.base_ref }}
+
+  freshness:
+    name: Generated artifacts in sync
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Cache Powershell Modules
+      id: cache-powershell-modules
+      uses: actions/cache@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-generated-${{ runner.os }}-v1
+
+    - name: Install Prerequisites
+      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts','platyPS')
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
+
+    - name: Validate generated artifacts
+      shell: pwsh
+      run: ./build/vsts-validate-generated.ps1

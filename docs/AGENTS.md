@@ -1,13 +1,12 @@
 # Module Documentation
 
-Do not hand-edit `*.md` files here. They are generated.
+Do not hand-edit `*.md` files here. They are generated and owned by the regen
+workflow, not by PR authors.
 
-To generate / update all markdown help files after adding or changing a public function, run from the repo root with PowerShell 7:
+After adding or changing a public function, push only the function source.
+CI (`validate-generated`) fails until the markdown help is refreshed; a
+reviewer then adds the `accept-signature-change` label and the regen workflow
+commits the refreshed `*.md` files back onto the PR branch.
 
-```powershell
-pwsh -NoProfile -File ./build/update-docs.ps1
-```
-
-The script takes no parameters. It deletes and regenerates every `*.md` file in this folder, so always run it after a comment-based help change and include the full regeneration in your commit.
-
-Requires `platyPS` (`New-MarkdownHelp`). Install prerequisites with `build/vsts-prerequisites.ps1` if the help command is missing.
+Local preview only (never commit the result):
+`pwsh -NoProfile -File ./build/update-docs.ps1`
