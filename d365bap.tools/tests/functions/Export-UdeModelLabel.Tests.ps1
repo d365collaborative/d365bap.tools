@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Export-UdeModelLabel).ParameterSets.Name | Should -Be 'Active', 'Pipeline'
 		}
-		
+
 		It 'Should have the expected parameter Model' {
 			$parameter = (Get-Command Export-UdeModelLabel).Parameters['Model']
 			$parameter.Name | Should -Be 'Model'
@@ -103,7 +103,7 @@
 			$parameter.ParameterSets['Pipeline'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset Active" {
 		<#
 		Active -

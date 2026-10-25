@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Get-BapTenantDetail).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
-		
+
 		It 'Should have the expected parameter Id' {
 			$parameter = (Get-Command Get-BapTenantDetail).Parameters['Id']
 			$parameter.Name | Should -Be 'Id'
@@ -77,7 +77,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -

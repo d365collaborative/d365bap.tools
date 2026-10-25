@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Get-PpacD365PlatformUpdate).ParameterSets.Name | Should -Be 'Default', 'Lowest', 'Highest'
 		}
-		
+
 		It 'Should have the expected parameter EnvironmentId' {
 			$parameter = (Get-Command Get-PpacD365PlatformUpdate).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
@@ -51,7 +51,7 @@
 			$parameter.ParameterSets['Highest'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset Default" {
 		<#
 		Default -EnvironmentId

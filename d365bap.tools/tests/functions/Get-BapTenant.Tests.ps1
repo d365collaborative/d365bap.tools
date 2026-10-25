@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Get-BapTenant).ParameterSets.Name | Should -Be 'Default', 'Excel', 'HashTable'
 		}
-		
+
 		It 'Should have the expected parameter Upn' {
 			$parameter = (Get-Command Get-BapTenant).Parameters['Upn']
 			$parameter.Name | Should -Be 'Upn'
@@ -64,7 +64,7 @@
 			$parameter.ParameterSets['HashTable'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset Default" {
 		<#
 		Default -

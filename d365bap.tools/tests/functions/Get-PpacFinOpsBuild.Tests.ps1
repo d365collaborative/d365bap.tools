@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Get-PpacFinOpsBuild).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
-		
+
 		It 'Should have the expected parameter AppVersion' {
 			$parameter = (Get-Command Get-PpacFinOpsBuild).Parameters['AppVersion']
 			$parameter.Name | Should -Be 'AppVersion'
@@ -51,7 +51,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -

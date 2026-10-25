@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Confirm-UdeVs2022Installation).ParameterSets.Name | Should -Be '__AllParameterSets'
 		}
-		
+
 		It 'Should have the expected parameter Path' {
 			$parameter = (Get-Command Confirm-UdeVs2022Installation).Parameters['Path']
 			$parameter.Name | Should -Be 'Path'
@@ -38,7 +38,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -

@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Get-PpeOdata).ParameterSets.Name | Should -Be 'Default', 'NextLink'
 		}
-		
+
 		It 'Should have the expected parameter EnvironmentId' {
 			$parameter = (Get-Command Get-PpeOdata).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
@@ -96,7 +96,7 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset Default" {
 		<#
 		Default -EnvironmentId -Entity

@@ -5,12 +5,12 @@
 	AfterAll {
 		# Here is where all the cleanup tasks go
 	}
-	
+
 	Describe "Ensuring unchanged command signature" {
 		It "should have the expected parameter sets" {
 			(Get-Command Set-BapToolsAuthProvider).ParameterSets.Name | Should -Be 'AzAccount', 'AzCli'
 		}
-		
+
 		It 'Should have the expected parameter AzCli' {
 			$parameter = (Get-Command Set-BapToolsAuthProvider).Parameters['AzCli']
 			$parameter.Name | Should -Be 'AzCli'
@@ -38,7 +38,7 @@
 			$parameter.ParameterSets['AzAccount'].ValueFromRemainingArguments | Should -Be $False
 		}
 	}
-	
+
 	Describe "Testing parameterset AzAccount" {
 		<#
 		AzAccount -AzAccount
