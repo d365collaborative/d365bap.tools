@@ -20,7 +20,6 @@ function Get-Ps1AliasDiagnostic {
 		New-Ps1AliasDiagnostic $Path 'PSAliasConfiguration' $ast.Extent $_.Exception.Message
 		return
 	}
-	if (-not $rules.PSAvoidCommandAliases -and -not $rules.PSAvoidParameterAliases) { return }
 	$context = @{ Functions = @{}; Aliases = @{}; RuntimeAliases = $Worker.RuntimeAliases; Cache = $Worker.Cache; CommonParameters = $Worker.CommonParameters }
 	foreach ($function in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
 		$scope = Get-Ps1AliasScope $function.Parent
@@ -36,20 +35,21 @@ function Get-Ps1AliasDiagnostic {
 	}
 	foreach ($parameter in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
 		foreach ($alias in Get-Ps1DeclaredAlias $parameter.Attributes) {
-			if ($rules.PSAvoidParameterAliases) {
+			if ($rules.PSAvoidParameterAliases -and $alias.Name -notin @($rules.AllowedParameterAliases)) {
 				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $alias.Extent "Do not declare parameter aliases. Use '$($parameter.Name.VariablePath.UserPath)'."
 			}
 		}
 	}
 	foreach ($block in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParamBlockAst] }, $true)) {
 		foreach ($alias in Get-Ps1DeclaredAlias $block.Attributes) {
-			if ($rules.PSAvoidCommandAliases) {
+			if ($alias.Name -notin @($rules.AllowedCommandAliases)) {
 				New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $alias.Extent "Do not declare command alias '$($alias.Name)'."
 			}
 		}
 	}
 	$commands = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true))
 	$declarations = [Collections.Generic.HashSet[Management.Automation.Language.CommandAst]]::new()
+	$declarationNames = @{}
 	foreach ($command in $commands) {
 		$name = $command.GetCommandName()
 		if (-not $name) { continue }
@@ -75,6 +75,9 @@ function Get-Ps1AliasDiagnostic {
 			$target = $binding.BoundParameters['Value'].Value.SafeGetValue()
 			$aliasScope = $scope
 			if ($binding.BoundParameters.ContainsKey('Scope') -and $binding.BoundParameters['Scope'].Value.SafeGetValue() -in @('Script', 'Global')) { $aliasScope = $ast }
+			$declaredNames = @($aliasNames | Where-Object { $_ -is [string] })
+			$declarationNames[$command] = @(@($declarationNames[$command]) | Where-Object { $_ -is [string] }) + $declaredNames
+			if ($binding.BoundParameters.ContainsKey('Scope') -and $binding.BoundParameters['Scope'].Value.SafeGetValue() -in @('Script', 'Global')) { $aliasScope = $ast }
 			foreach ($aliasName in $aliasNames) {
 				if ($aliasName -is [string] -and $target -is [string]) {
 					if (-not $context.Aliases.ContainsKey($aliasScope)) { $context.Aliases[$aliasScope] = @{} }
@@ -88,15 +91,16 @@ function Get-Ps1AliasDiagnostic {
 		$name = $command.GetCommandName()
 		if (-not $name) { continue }
 		$resolved = Resolve-Ps1AliasCommand $name (Get-Ps1AliasScope $command) $context
-		if ($rules.PSAvoidCommandAliases) {
-			if ($resolved.IsAlias) {
-				New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $command.CommandElements[0].Extent "Do not use command alias '$name'. Use the full command name '$($resolved.Command.Name)'."
-			}
-			if ($declarations.Contains($command)) {
+		if ($resolved.IsAlias -and $name -notin @($rules.AllowedCommandAliases)) {
+			New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $command.CommandElements[0].Extent "Do not use command alias '$name'. Use the full command name '$($resolved.Command.Name)'."
+		}
+		if ($declarations.Contains($command)) {
+			$declared = @(@($declarationNames[$command]) | Where-Object { $_ -is [string] })
+			if ($declared.Count -eq 0 -or @($declared | Where-Object { $_ -notin @($rules.AllowedCommandAliases) }).Count -gt 0) {
 				New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $command.Extent 'Do not declare command aliases.'
 			}
 		}
-		if (-not $rules.PSAvoidParameterAliases -or $null -eq $resolved.Command) { continue }
+		if ($null -eq $resolved.Command) { continue }
 		$parameters = @(
 			foreach ($element in $command.CommandElements) {
 				if ($element -is [Management.Automation.Language.CommandParameterAst]) {
@@ -118,7 +122,7 @@ function Get-Ps1AliasDiagnostic {
 					$resolved.Command.Aliases.Keys | Where-Object { $_.StartsWith($given, [StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { $resolved.Command.Aliases[$_] }
 				) | Sort-Object -Unique
 			}
-			if (@($parameterMatches).Count -gt 0) {
+			if (@($parameterMatches).Count -gt 0 -and $given -notin @($rules.AllowedParameterAliases)) {
 				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $parameter.Extent "Do not use parameter alias or abbreviation '-$given'. Use the full parameter name: $($parameterMatches -join ', ')."
 			}
 		}
