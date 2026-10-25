@@ -63,7 +63,9 @@ function Start-BapTokenPreload {
             }
         }
 
-        if (Get-Job -Name 'd365bap.tools.token.preload' -State Running -ErrorAction SilentlyContinue) { return }
+        $runningPreload = Get-Job -Name 'd365bap.tools.token.preload' -ErrorAction SilentlyContinue | Where-Object State -eq 'Running'
+
+        if ($runningPreload) { return }
         Get-Job -Name 'd365bap.tools.token.preload' -ErrorAction SilentlyContinue | Remove-Job -Force -ErrorAction SilentlyContinue
 
         # Provider choice cannot be read inside the job: PSFConfig and
