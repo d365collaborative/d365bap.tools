@@ -1,7 +1,7 @@
 ﻿<#
     .SYNOPSIS
         Regenerates the parameter unit tests.
-        
+
     .DESCRIPTION
         Regenerates every Tests.ps1 file from the current cmdlets. Fully automated, do not hand-edit the output.
 #>
