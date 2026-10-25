@@ -10,9 +10,9 @@ Create and maintain each view in its own file:
 `<TypeName>` is the `PSTypeName` on the object (for example `D365Bap.Tools.UdeEnvironmentPackage`).
 
 After adding or changing a per-type file, push only that file. CI
-(`validate-generated`) fails until the consolidated files are rebuilt; a
-reviewer then adds the `accept-signature-change` label and the regen workflow
-commits the rebuilt files back onto the PR branch.
+(`validate-generated`) fails until the regen workflow commits the rebuilt
+files back onto the PR branch automatically — usually within minutes, no
+action needed.
 
 Local preview only (never commit the result):
 `pwsh -NoProfile -File ./build/Merge-FormatPs1Xml.ps1`

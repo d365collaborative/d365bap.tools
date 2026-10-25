@@ -40,7 +40,7 @@ try {
 	$dirty = @($dirty | Where-Object { $_ -and $_ -ne 'docs/AGENTS.md' -and $_ -ne 'd365bap.tools/tests/functions/AGENTS.md' } | Sort-Object -Unique)
 	if ($dirty.Count -gt 0) {
 		Write-Host 'Generated artifacts are out of sync. Do not edit them by hand.'
-		Write-Host 'Push only sources; a reviewer adds label `accept-signature-change` and the regen workflow commits the rest.'
+		Write-Host 'Push only sources; the regen workflow commits the rest to this PR automatically.'
 		$dirty | ForEach-Object { Write-Host $_ }
 		exit 1
 	}

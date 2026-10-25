@@ -8,9 +8,8 @@ jobs:
   touch-guard:
     name: Deny hand-edited generated files
     runs-on: windows-latest
-    # Once a reviewer accepts signature changes, the regen workflow owns these
-    # files, so the guard steps aside.
-    if: "!contains(github.event.pull_request.labels.*.name, 'accept-signature-change')"
+    # No bypass: generated files are never committed by hand. The regen
+    # workflow commits them, and it overwrites anything but generator output.
     steps:
     - uses: actions/checkout@v4
       with:
