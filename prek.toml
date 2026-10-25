@@ -67,11 +67,20 @@ priority = 30
 id = "trailing-whitespace"
 stages = ["pre-commit", "manual"]
 priority = 5
+# Generated unit tests come from Invoke-PSMDTemplate and carry template
+# whitespace. Their content is owned by the regen workflow (see
+# build/vsts-validate-generated.ps1), so whitespace hooks leave them alone.
+exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
 
 [[repos.hooks]]
 id = "end-of-file-fixer"
 stages = ["pre-commit", "manual"]
 priority = 6
+# Same ownership as above, plus the consolidated format files written by
+# Merge-FormatPs1Xml.ps1 and the wiki namespaces article maintained by
+# update-docs.ps1. Freshness checks compare generator output, so
+# normalizing these files would fight the generators.
+exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1", "d365bap.tools/xml/d365bap.tools.Table.Format.ps1xml", "d365bap.tools/xml/d365bap.tools.List.Format.ps1xml", "wiki/Namespaces.md"] }
 
 [[repos.hooks]]
 id = "check-json"
