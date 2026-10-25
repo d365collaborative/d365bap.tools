@@ -1,7 +1,7 @@
 ﻿<#
     .SYNOPSIS
         Tab completion for FinOps versions and builds.
-        
+
     .DESCRIPTION
         Reads the cached developer tools catalog, so completing never triggers network calls.
 #>

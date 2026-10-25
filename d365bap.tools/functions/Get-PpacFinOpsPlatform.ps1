@@ -2,26 +2,26 @@
 <#
     .SYNOPSIS
         Resolves the platform version of a build.
-        
+
     .DESCRIPTION
         Queries the developer tools service for the platform version of one application release.
-        
+
     .PARAMETER Build
         Full build, track or application version. Short forms resolve to the newest build.
-        
+
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsPlatform -Build "10.0.2790.46"
-        
+
         Shows the platform version of that build.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsBuild -Latest | Get-PpacFinOpsPlatform
-        
+
         Shows the platform version of the newest build.
-        
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -35,7 +35,7 @@ function Get-PpacFinOpsPlatform {
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[string] $EnvironmentId
 	)
-    
+
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 

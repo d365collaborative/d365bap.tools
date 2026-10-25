@@ -5,10 +5,10 @@
 
     .DESCRIPTION
         Sets which provider mints access tokens. Switching validates first and keeps the current provider on failure.
-        
+
     .PARAMETER AzAccount
         Use the Az.Accounts module for minting tokens.
-        
+
     .PARAMETER AzCli
         Use the Azure CLI for minting tokens.
 

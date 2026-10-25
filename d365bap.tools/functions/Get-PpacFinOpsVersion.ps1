@@ -2,29 +2,29 @@
 <#
     .SYNOPSIS
         Lists all published FinOps versions.
-        
+
     .DESCRIPTION
         Queries the developer tools service for every published application track. No target environment is needed.
-        
+
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
-        
+
     .PARAMETER Oldest
         Returns only the oldest version.
-        
+
     .PARAMETER Latest
         Returns only the latest version.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsVersion
-        
+
         Lists every published application track.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsVersion -Latest
-        
+
         Returns only the newest track.
-        
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -41,7 +41,7 @@ function Get-PpacFinOpsVersion {
 		[Parameter(ParameterSetName = "Highest")]
 		[switch] $Latest
 	)
-    
+
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 

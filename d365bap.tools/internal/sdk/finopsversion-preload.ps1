@@ -1,7 +1,7 @@
 ﻿<#
     .SYNOPSIS
         Warms the FinOps version cache on import.
-        
+
     .DESCRIPTION
         Registers the background preload for the version catalog. All failures stay silent.
 #>
@@ -12,20 +12,20 @@ function Start-FinOpsVersionPreload {
 	<#
         .SYNOPSIS
             Warms the FinOps version cache in the background.
-        
+
         .DESCRIPTION
             Starts a throttled background job that fetches the catalog. Results assign directly, never wrapped, as Invoke-RestMethod emits arrays non-enumerated.
-        
+
         .PARAMETER MaxAgeHours
             Maximum cache age in hours before refetching.
-            
+
             Default: 24
-        
+
         .EXAMPLE
             PS C:\> Start-FinOpsVersionPreload
-        
+
             Refreshes the cache when older than a day.
-        
+
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>

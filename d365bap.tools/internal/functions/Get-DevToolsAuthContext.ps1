@@ -2,16 +2,16 @@
 <#
     .SYNOPSIS
         Resolves the developer tools auth context.
-        
+
     .DESCRIPTION
         Returns the environment, access token and base values for developer tools calls.
-        
+
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
-        
+
     .EXAMPLE
         PS C:\> $ctx = Get-DevToolsAuthContext -EnvironmentId "env-123"
-        
+
         Resolves the auth context for that environment.
 
     .NOTES

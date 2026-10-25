@@ -1,57 +1,57 @@
 ﻿<#
     .SYNOPSIS
         Downloads FinOps assets for any build.
-        
+
     .DESCRIPTION
         Resolves and downloads NuGet packages, developer files and VHD images. Any published version can be selected.
-        
+
     .PARAMETER Build
         Full build, track or application version to download.
-        
+
     .PARAMETER Asset
         Names to download; "*" selects everything including VHD.
-        
+
         Default: "*".
-        
+
     .PARAMETER Kind
         Kind to keep: NuGet, DeveloperFile or Vhd.
-        
+
         Default: "*".
-        
+
     .PARAMETER Download
         Download the files instead of only resolving URLs.
-        
+
     .PARAMETER Path
         Target folder with a subfolder per build.
-        
+
         Default: C:\Temp\d365bap.tools\PpacFinOpsAssets
-        
+
     .PARAMETER Force
         Re-download files and re-extract folders.
-        
+
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46"
-        
+
         Resolves download URLs for that build.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsBuild -Latest | Get-PpacFinOpsAsset -Kind NuGet -Download
-        
+
         Downloads all NuGet packages of the newest build.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.49" -Kind DeveloperFile | Where-Object Asset -eq 'SystemMetadata' | Get-PpacFinOpsAsset -Download
-        
+
         Downloads the system metadata of that track.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Asset Vhd -Download
-        
+
         Downloads the VHD image parts.
-        
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>

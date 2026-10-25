@@ -2,26 +2,26 @@
 <#
     .SYNOPSIS
         Switches the current context to a specified BAP tenant.
-        
+
     .DESCRIPTION
         Switches the current context to a saved BAP tenant, logging in again when needed.
-        
+
     .PARAMETER Id
         The ID of the BAP tenant to switch to.
-        
+
     .PARAMETER Force
         Forces an authentication prompt, even with a valid token.
-        
+
     .EXAMPLE
         PS C:\> Switch-BapTenant -Id "Contoso"
-        
+
         Switches to the Contoso tenant, prompting for login when needed.
-        
+
     .EXAMPLE
         PS C:\> Switch-BapTenant -Id "Contoso" -Force
-        
+
         Switches to Contoso and always prompts for login.
-        
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -35,12 +35,12 @@ function Switch-BapTenant {
 	)
 
 	begin {
-        
+
 	}
-    
+
 	process {
 		$hashTenants = [hashtable](Get-PSFConfigValue -FullName "d365bap.tools.tenant.details")
-        
+
 		if ($null -eq $hashTenants."$Id") {
 			$messageString = "No tenant details found for Id <c='em'>$Id</c>. Please add the tenant details using <c='em'>Set-BapTenantDetail</c> first."
 
@@ -48,7 +48,7 @@ function Switch-BapTenant {
 			Stop-PSFFunction -Message "Stopping because tenant was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 			return
 		}
-        
+
 		$obj = $hashTenants."$Id"
 		$authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
 
@@ -104,7 +104,7 @@ function Switch-BapTenant {
 			else {
 				Write-PSFMessage -Level Verbose -Message "Force flag is set. Will force an authentication prompt for the <c='em'>$($obj.User)</c>."
 			}
-            
+
 			Start-Sleep -Seconds 2
 
 			if ($authProvider -eq 'AzCli') {
@@ -172,8 +172,8 @@ function Switch-BapTenant {
 			Set-PSFTaskEngineCache -Module d365bap.tools -Name Environments -Value (Get-BapEnvironment -FscmEnabled:$FscmEnabled).EnvName
 		}
 	}
-    
+
 	end {
-        
+
 	}
 }

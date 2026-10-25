@@ -1,15 +1,15 @@
 ﻿<#
     .SYNOPSIS
         Returns the cache file path.
-        
+
     .DESCRIPTION
         Builds the user-scoped path of the FinOps version catalog cache file.
-        
+
     .EXAMPLE
         PS C:\> Get-FinOpsVersionCachePath
-        
+
         Shows where the catalog cache lives.
-        
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -28,15 +28,15 @@ function Get-FinOpsVersionCacheStamp {
 	<#
         .SYNOPSIS
             Returns the current tenant and account.
-        
+
         .DESCRIPTION
             Reads the active login for a best-effort cache stamp.
-        
+
         .EXAMPLE
             PS C:\> Get-FinOpsVersionCacheStamp
-        
+
             Shows the stamp used to validate cached data.
-        
+
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>
@@ -82,20 +82,20 @@ function Get-FinOpsVersionCache {
 	<#
         .SYNOPSIS
             Reads the cached version catalog.
-        
+
         .DESCRIPTION
             Returns the cached catalog or null on a miss.
-        
+
         .PARAMETER MaxAgeHours
             Maximum cache age in hours.
-            
+
             Default: 24
-        
+
         .EXAMPLE
             PS C:\> Get-FinOpsVersionCache
-        
+
             Returns the cached catalog or null.
-        
+
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>
@@ -147,24 +147,24 @@ function Write-FinOpsVersionCache {
 	<#
         .SYNOPSIS
             Merges data into the version cache.
-        
+
         .DESCRIPTION
             Never throws. Foreign tenant entries are dropped, not carried over.
-        
+
         .PARAMETER Versions
             Catalog rows to merge into the cache.
-        
+
         .PARAMETER Builds
             Build lists per track to merge.
-        
+
         .PARAMETER Platforms
             Platform versions per build to merge.
-        
+
         .EXAMPLE
             PS C:\> Write-FinOpsVersionCache -Versions $catalog
-        
+
             Merges fresh catalog rows into the cache.
-        
+
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>
@@ -263,15 +263,15 @@ function Clear-FinOpsVersionCache {
 	<#
         .SYNOPSIS
             Evicts the cached version catalog.
-        
+
         .DESCRIPTION
             Deletes the catalog cache file.
-        
+
         .EXAMPLE
             PS C:\> Clear-FinOpsVersionCache
-        
+
             Deletes the cached catalog.
-        
+
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>

@@ -2,29 +2,29 @@
 <#
     .SYNOPSIS
         Lists quality updates for a FinOps track.
-        
+
     .DESCRIPTION
         Queries the developer tools service for every published build of one application track.
-        
+
     .PARAMETER AppVersion
         Track to list as version, build or full build. Omitted: newest track.
-        
+
     .PARAMETER Latest
         Returns only the newest build.
-        
+
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsBuild -AppVersion "10.0.49"
-        
+
         Lists all builds of the 10.0.49 track.
-        
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsVersion -Latest | Get-PpacFinOpsBuild -Latest
-        
+
         Lists the newest build of the newest track.
-        
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -40,7 +40,7 @@ function Get-PpacFinOpsBuild {
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[string] $EnvironmentId
 	)
-    
+
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
