@@ -148,35 +148,5 @@ Register-PSFTeppArgumentCompleter `
     -Parameter Location `
     -Name "d365bap.tools.tepp.provisioning.locations"
 
-Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacFinOpsBuild `
-    -Parameter AppVersion `
-    -Name "d365bap.tools.tepp.finops.appversions"
-
-Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacFinOpsPlatform `
-    -Parameter Build `
-    -Name "d365bap.tools.tepp.finops.builds"
-
-Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacFinOpsAsset `
-    -Parameter Build `
-    -Name "d365bap.tools.tepp.finops.builds"
-
-Register-PSFTeppArgumentCompleter `
-    -Command New-UnifiedEnvironmentV2 `
-    -Parameter Version `
-    -Name "d365bap.tools.tepp.finops.appversions.only"
-
-Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacFinOpsAsset `
-    -Parameter Asset `
-    -Name "d365bap.tools.tepp.finops.assets"
-
-Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacFinOpsAsset `
-    -Parameter Kind `
-    -Name "d365bap.tools.tepp.finops.kinds"
-
 # Template completion is registered natively in provisioning.templates.tepp.ps1
 # (location-aware via $fakeBoundParameters).

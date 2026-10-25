@@ -155,3 +155,8 @@ $scbFinOpsBuild = {
 }
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.finops.builds" -ScriptBlock $scbFinOpsBuild -Mode Full
+
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsBuild -Parameter AppVersion -Name "d365bap.tools.tepp.finops.appversions"
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsPlatform -Parameter Build -Name "d365bap.tools.tepp.finops.builds"
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsAsset -Parameter Build -Name "d365bap.tools.tepp.finops.builds"
+Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironmentV2 -Parameter Version -Name "d365bap.tools.tepp.finops.appversions.only"

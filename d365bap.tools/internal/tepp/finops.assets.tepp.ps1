@@ -72,3 +72,6 @@ $scbFinOpsKind = {
 }
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.finops.kinds" -ScriptBlock $scbFinOpsKind -Mode Full
+
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsAsset -Parameter Asset -Name "d365bap.tools.tepp.finops.assets"
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsAsset -Parameter Kind -Name "d365bap.tools.tepp.finops.kinds"

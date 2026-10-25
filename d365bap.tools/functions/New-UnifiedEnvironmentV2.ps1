@@ -83,8 +83,6 @@
     .PARAMETER Version
         The version of the Finance and Operations application to be installed in the new environment.
         
-        Tab completion lists the available application versions.
-        
     .PARAMETER SecurityGroup
         Entra Groups security group to restrict access to the new environment.
         
