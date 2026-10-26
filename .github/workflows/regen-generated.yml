@@ -58,7 +58,7 @@ jobs:
     permissions:
       contents: read
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
         ref: ${{ github.event.pull_request.head.ref }}
@@ -71,9 +71,12 @@ jobs:
         # pushes — it only exports a patch for the trusted publish job.
         allow-unsafe-pr-checkout: true
 
-    - name: Cache Powershell Modules
+    # Restore-only: this job runs untrusted PR code with a token that cannot
+    # save caches, so the key is warmed on main by cache-warm.yml instead.
+    # Restoring a main-branch cache from a fork PR is allowed; saving is not.
+    - name: Restore Powershell Modules
       id: cache-powershell-modules
-      uses: actions/cache@v5
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
         key: pwsh-modules-generated-${{ runner.os }}-v1
@@ -121,7 +124,7 @@ jobs:
         Get-Content regen-files.txt | ForEach-Object { Write-Host ("  $_") }
 
     - name: Upload regen patch
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: regen-patch
         path: |
@@ -147,7 +150,7 @@ jobs:
     - name: Mint regen App token
       id: app-token
       if: env.HAS_REGEN_APP == 'true'
-      uses: actions/create-github-app-token@v1
+      uses: actions/create-github-app-token@v3
       with:
         app-id: ${{ secrets.REGEN_APP_ID }}
         private-key: ${{ secrets.REGEN_APP_PRIVATE_KEY }}
@@ -180,7 +183,7 @@ jobs:
           echo 'email=github-actions[bot]@users.noreply.github.com' >> "$GITHUB_OUTPUT"
         fi
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
         ref: ${{ github.event.pull_request.head.ref }}
@@ -193,7 +196,7 @@ jobs:
         # PR code, only trusted inline steps from this base-branch definition.
         allow-unsafe-pr-checkout: true
 
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: regen-patch
         path: /tmp/regen
