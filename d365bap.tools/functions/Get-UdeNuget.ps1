@@ -1,7 +1,7 @@
 ﻿
 <#
     .SYNOPSIS
-        Gets UDE NuGet packages (regen proof).
+        Gets UDE NuGet packages (clean proof).
 
     .DESCRIPTION
         Retrieves UDE NuGet files for an environment via the DeveloperTools service.
