@@ -15,7 +15,10 @@ name: regen-generated
 # behind approval (action_required) even for trusted contributors. The documented
 # fix is to push with a separate GitHub App installation token or PAT instead:
 # https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs
-# Changing the commit author alone does NOT help — the push credential decides.
+# An App token avoids that GITHUB_TOKEN-specific gate, but the App must also
+# satisfy the repository's contributor approval policy.
+# Attribute App-generated commits to its own bot so merged contributions are
+# credited to that identity, rather than to the unrelated github-actions bot.
 #
 # Isolation: the privileged push credential never meets untrusted PR code. The
 # generate job runs the PR's generator scripts with only GITHUB_TOKEN (no
@@ -159,6 +162,24 @@ jobs:
       run: |
         echo '::warning::REGEN_APP_ID/REGEN_APP_PRIVATE_KEY and REGEN_PUBLISH_ACCESS_TOKEN are not configured; pushing with GITHUB_TOKEN. Follow-up pull_request runs will park behind approval (github-actions[bot] gate). Configure the App token to fix that.'
 
+    - name: Resolve regeneration commit author
+      id: commit-author
+      shell: bash
+      env:
+        APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+      run: |
+        set -euo pipefail
+        if [ -n "$APP_SLUG" ]; then
+          bot_login="${APP_SLUG}[bot]"
+          bot_id=$(gh api "users/${bot_login}" --jq '.id')
+          echo "name=${bot_login}" >> "$GITHUB_OUTPUT"
+          echo "email=${bot_id}+${bot_login}@users.noreply.github.com" >> "$GITHUB_OUTPUT"
+        else
+          echo 'name=github-actions[bot]' >> "$GITHUB_OUTPUT"
+          echo 'email=github-actions[bot]@users.noreply.github.com' >> "$GITHUB_OUTPUT"
+        fi
+
     - uses: actions/checkout@v4
       with:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -182,6 +203,8 @@ jobs:
       env:
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
         PRIVILEGED_PUSH: ${{ steps.app-token.outputs.token != '' || env.HAS_REGEN_PAT == 'true' }}
+        REGEN_AUTHOR_NAME: ${{ steps.commit-author.outputs.name }}
+        REGEN_AUTHOR_EMAIL: ${{ steps.commit-author.outputs.email }}
       run: |
         set -euo pipefail
         PATCH=/tmp/regen/regen.patch
@@ -248,11 +271,10 @@ jobs:
 
         echo 'Pushing:'
         git diff --cached --name-only
-        # Commit author stays github-actions[bot] so the touch-guard keeps
-        # recognizing regen commits. The approval gate keys off the push
-        # credential (above), not this author string.
-        git config user.name 'github-actions[bot]'
-        git config user.email 'github-actions[bot]@users.noreply.github.com'
+        # Credit the App that publishes this commit. The touch-guard recognizes
+        # both this repository's App bot and the legacy github-actions bot.
+        git config user.name "$REGEN_AUTHOR_NAME"
+        git config user.email "$REGEN_AUTHOR_EMAIL"
         git commit -m 'Regenerate artifacts' -q
         # Origin already carries the privileged credential from checkout.
         git push origin "HEAD:${HEAD_REF}"

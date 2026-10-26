@@ -18,15 +18,15 @@
         Default: HEAD.
 
     .PARAMETER BotAuthor
-        Commits from this author are treated as bot regeneration.
+        Authors treated as regeneration.
 
-        Default: github-actions[bot].
+        Default: github-actions[bot], d365bap-regen[bot].
 #>
 [CmdletBinding()]
 param(
 	[string] $BaseRef = 'origin/main',
 	[string] $HeadRef = 'HEAD',
-	[string] $BotAuthor = 'github-actions[bot]'
+	[string[]] $BotAuthor = @('github-actions[bot]', 'd365bap-regen[bot]')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,7 +58,7 @@ $offenses = @(
 	foreach ($line in @(git log --format='%H%x01%an%x01%s' --no-merges "$BaseRef..$HeadRef" -- d365bap.tools/tests/functions docs d365bap.tools/xml/d365bap.tools.Table.Format.ps1xml d365bap.tools/xml/d365bap.tools.List.Format.ps1xml wiki/Namespaces.md)) {
 		$parts = $line -split [char]1
 		if ($parts.Count -lt 3) { continue }
-		if ($parts[1] -eq $BotAuthor) { continue }
+		if ($parts[1] -in $BotAuthor) { continue }
 		$touched = @(git diff-tree --no-commit-id --name-only -r $parts[0] | Where-Object { Test-GeneratedFile $_ })
 		if ($touched.Count -eq 0) { continue }
 		[pscustomobject]@{
