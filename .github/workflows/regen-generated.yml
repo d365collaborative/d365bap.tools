@@ -134,10 +134,16 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
+    # Expose secret presence as booleans for `if:` conditions. The `secrets`
+    # context is not allowed in `if:` (actionlint), so check `env` instead.
+    # Values stay masked; only presence ('true'/'false') is exposed.
+    env:
+      HAS_REGEN_APP: ${{ secrets.REGEN_APP_ID != '' && secrets.REGEN_APP_PRIVATE_KEY != '' }}
+      HAS_REGEN_PAT: ${{ secrets.REGEN_PUBLISH_ACCESS_TOKEN != '' }}
     steps:
     - name: Mint regen App token
       id: app-token
-      if: ${{ secrets.REGEN_APP_ID != '' && secrets.REGEN_APP_PRIVATE_KEY != '' }}
+      if: env.HAS_REGEN_APP == 'true'
       uses: actions/create-github-app-token@v1
       with:
         app-id: ${{ secrets.REGEN_APP_ID }}
@@ -148,7 +154,7 @@ jobs:
         repositories: ${{ github.event.pull_request.head.repo.name }}
 
     - name: Warn when falling back to GITHUB_TOKEN
-      if: ${{ steps.app-token.outputs.token == '' && secrets.REGEN_PUBLISH_ACCESS_TOKEN == '' }}
+      if: steps.app-token.outputs.token == '' && env.HAS_REGEN_PAT != 'true'
       shell: bash
       run: |
         echo '::warning::REGEN_APP_ID/REGEN_APP_PRIVATE_KEY and REGEN_PUBLISH_ACCESS_TOKEN are not configured; pushing with GITHUB_TOKEN. Follow-up pull_request runs will park behind approval (github-actions[bot] gate). Configure the App token to fix that.'
@@ -175,7 +181,7 @@ jobs:
       shell: bash
       env:
         HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        PRIVILEGED_PUSH: ${{ steps.app-token.outputs.token != '' || secrets.REGEN_PUBLISH_ACCESS_TOKEN != '' }}
+        PRIVILEGED_PUSH: ${{ steps.app-token.outputs.token != '' || env.HAS_REGEN_PAT == 'true' }}
       run: |
         set -euo pipefail
         PATCH=/tmp/regen/regen.patch
