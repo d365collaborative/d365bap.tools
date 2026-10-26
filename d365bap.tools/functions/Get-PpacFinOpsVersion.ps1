@@ -4,7 +4,7 @@
         Lists all published FinOps versions.
 
     .DESCRIPTION
-        Queries the developer tools service for every published application track. No target environment is needed.
+        Queries the developer tools service for every published application track. No target environment is required.
 
     .PARAMETER AppVersion
         Track to show as version, track or full build. Omitted: everything.
