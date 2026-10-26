@@ -56,9 +56,15 @@ function Get-UdePackageLocalDirectory {
                     $pathPackagesLocal = Join-Path -Path $_.FullName -ChildPath 'PackagesLocalDirectory'
                     if (-not (Test-Path -LiteralPath $pathPackagesLocal)) { return }
 
+                    $verInfo = Resolve-FinOpsVersionFromCache -Build $_.Name
+
                     [PSCustomObject]@{
                         PackagesVersion        = $_.Name
                         PackagesLocalDirectory = $pathPackagesLocal
+                        AppVersion             = if ($null -ne $verInfo) { $verInfo.AppVersion } else { '' }
+                        AppBuild               = if ($null -ne $verInfo) { $verInfo.AppBuild } else { '' }
+                        PlatVersion            = if ($null -ne $verInfo) { $verInfo.PlatVersion } else { '' }
+                        PlatBuild              = if ($null -ne $verInfo) { $verInfo.PlatBuild } else { '' }
                     }
                 } |
                 Sort-Object { [version]$_.PackagesVersion }
@@ -68,7 +74,7 @@ function Get-UdePackageLocalDirectory {
 
         if ($AsExcelOutput) {
             $output | Export-Excel -WorksheetName "Get-UdePackageLocalDirectory" `
-                -NoNumberConversion PackagesVersion
+                -NoNumberConversion PackagesVersion, AppVersion, AppBuild, PlatVersion, PlatBuild
             return
         }
 

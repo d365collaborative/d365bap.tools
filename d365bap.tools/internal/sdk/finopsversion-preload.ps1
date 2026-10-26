@@ -44,7 +44,24 @@ function Start-FinOpsVersionPreload {
 			}
 		}
 
-		if ($null -ne (Get-FinOpsVersionCache -MaxAgeHours $MaxAgeHours -ErrorAction SilentlyContinue)) { return }
+		$cachedCatalog = Get-FinOpsVersionCache -MaxAgeHours $MaxAgeHours -ErrorAction SilentlyContinue
+
+		$cacheComplete = $false
+
+		if ($null -ne $cachedCatalog -and $null -ne $cachedCatalog.versions -and $null -ne $cachedCatalog.builds) {
+			$cacheComplete = $true
+
+			foreach ($catalogEntry in @($cachedCatalog.versions)) {
+				$entryTrack = if ($null -ne $catalogEntry.AppBuild) { "$($catalogEntry.AppBuild)" } else { "$($catalogEntry.appBuild)" }
+
+				if ([string]::IsNullOrWhiteSpace($entryTrack) -or $null -eq $cachedCatalog.builds."$entryTrack" -or @($cachedCatalog.builds."$entryTrack").Count -eq 0) {
+					$cacheComplete = $false
+					break
+				}
+			}
+		}
+
+		if ($cacheComplete) { return }
 
 		$runningPreload = Get-Job -Name 'd365bap.tools.finopsversion.preload' -ErrorAction SilentlyContinue | Where-Object State -eq 'Running'
 
