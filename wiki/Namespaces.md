@@ -179,7 +179,7 @@ This is when one is working, either as a developer against an Ude environment or
 | [Get-UdeDeveloperFile](Get-UdeDeveloperFile) | Gets UDE developer files for a specified environment. |
 | [Get-UdeEnvironment](Get-UdeEnvironment) | Gets UDE environment details. |
 | [Get-UdeEnvironmentModel](Get-UdeEnvironmentModel) | Get UDE environment models. |
-| [Get-UdeNuget](Get-UdeNuget) | Gets UDE NuGet packages for a specified environment. |
+| [Get-UdeNuget](Get-UdeNuget) | Gets UDE NuGet packages (regen proof). |
 | [Get-UdePackageLocalDirectory](Get-UdePackageLocalDirectory) | Gets local UDE PackagesLocalDirectory paths |
 | [Get-UdeVsPackageDeploy](Get-UdeVsPackageDeploy) | Get UDE VS package deploys. |
 | [Get-UdeVsPowerPlatformExtensionHistory](Get-UdeVsPowerPlatformExtensionHistory) | Get UDE VS Power Platform extension history. |
