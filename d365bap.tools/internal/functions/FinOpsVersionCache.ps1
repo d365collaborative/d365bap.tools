@@ -296,11 +296,7 @@ function Get-FinOpsTrackForAppVersion {
             Resolves an application version to its track.
 
         .DESCRIPTION
-            Maps an application version (10.0.49), a track (10.0.2790) or a full
-            build (10.0.2790.46) to the track (AppBuild) using a version catalog
-            as returned by the developer tools service. Property matching is
-            case-insensitive, so raw and cached catalog shapes both work.
-            Returns null when nothing matches.
+            Maps a version string to its track.
 
         .PARAMETER Catalog
             Version catalog entries with appVersion and appBuild properties.
@@ -348,9 +344,7 @@ function Resolve-FinOpsVersionFromCache {
             Maps a build to its catalog versions from cache.
 
         .DESCRIPTION
-            Reads the cached FinOps version catalog without any network calls and
-            returns the AppVersion, AppBuild, PlatVersion and PlatBuild of the
-            track whose AppBuild matches the first three parts of the given build.
+            Returns the cached catalog entry for a track, without any network calls.
 
         .PARAMETER Build
             Full build (10.0.2790.46), track (10.0.2790) or application version (10.0.49).

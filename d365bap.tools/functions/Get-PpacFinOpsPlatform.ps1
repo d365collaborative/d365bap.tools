@@ -7,14 +7,10 @@
         Queries the developer tools service for the platform version of one application release.
 
     .PARAMETER AppVersion
-        Application track to resolve. Accepts an application version, a track or a full build.
-
-        Omitted: derived from -Build, otherwise the newest track.
+        Track to resolve as version, track or full build. Omitted: derived from -Build.
 
     .PARAMETER Build
-        Full build, track or application version. Short forms resolve to the newest build.
-
-        Omitted: newest build of the -AppVersion track.
+        Full build, track or short form. Omitted: newest build of the track.
 
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.

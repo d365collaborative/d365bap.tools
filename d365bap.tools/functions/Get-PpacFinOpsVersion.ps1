@@ -7,9 +7,7 @@
         Queries the developer tools service for every published application track. No target environment is needed.
 
     .PARAMETER AppVersion
-        Application track to show. Accepts an application version, a track or a full build.
-
-        Omitted: every published track.
+        Track to show as version, track or full build. Omitted: everything.
 
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
@@ -85,7 +83,7 @@ function Get-PpacFinOpsVersion {
 				-Property `
 				"appVersion as AppVersion", `
 				"appBuild as AppBuild", `
-				@{Name = "Track"; Expression = { "$($_.appBuild)" } }, `
+			@{Name = "Track"; Expression = { "$($_.appBuild)" } }, `
 				"platVersion as PlatVersion", `
 				"platBuild as PlatBuild"
 		)

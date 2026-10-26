@@ -6,14 +6,10 @@
         Resolves and downloads NuGet packages, developer files and VHD images. Any published version can be selected.
 
     .PARAMETER Build
-        Full build, track or application version to download.
-
-        Omitted: newest build of the -AppVersion track, otherwise the newest track.
+        Full build, track or short form to download. Omitted: newest build of the track.
 
     .PARAMETER AppVersion
-        Application track to download. Accepts an application version, a track or a full build.
-
-        Omitted: derived from -Build, otherwise the newest track.
+        Track to download as version, track or full build. Omitted: from -Build, else newest.
 
     .PARAMETER Asset
         Names to download; "*" selects everything including VHD.

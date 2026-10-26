@@ -2,36 +2,36 @@
 <#
     .SYNOPSIS
         Gets local UDE PackagesLocalDirectory paths
-        
+
     .DESCRIPTION
-        Finds installed packages versions under the local Dynamics 365 developer folder
-        
-        Returns the full PackagesLocalDirectory path for each matching version, sorted ascending by version
-        
+        Finds installed package folders under the local Dynamics 365 developer folder
+
+        Returns the full PackagesLocalDirectory path for each match, sorted ascending
+
     .PARAMETER Version
-        Packages version to include. Supports wildcards. Defaults to '*'
-        
+        Packages version to include. Supports wildcards.
+
+        Default: '*'.
+
     .PARAMETER AsExcelOutput
         Instruct the cmdlet to output all details directly to an Excel file
-        
+
     .EXAMPLE
         PS C:\> Get-UdePackageLocalDirectory
-        
+
         Lists all local PackagesLocalDirectory paths.
         It will only include versions where PackagesLocalDirectory exists.
-        
+
     .EXAMPLE
         PS C:\> Get-UdePackageLocalDirectory -Version '10.0.2345*'
-        
-        Lists PackagesLocalDirectory paths for matching package versions.
-        It will support wildcard search on the version number.
-        
+
+        Lists matching PackagesLocalDirectory paths. Wildcards are supported.
+
     .EXAMPLE
         PS C:\> Get-UdePackageLocalDirectory -AsExcelOutput
-        
-        Lists all local PackagesLocalDirectory paths.
-        It will output all details into an Excel file, that will auto open on your machine.
-        
+
+        Lists all local PackagesLocalDirectory paths into an Excel file.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
