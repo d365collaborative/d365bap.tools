@@ -9,6 +9,9 @@
             <TableControl>
                 <TableHeaders>
                     <TableColumnHeader>
+                        <Width>14</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
                         <Width>18</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
@@ -18,6 +21,9 @@
                 <TableRowEntries>
                     <TableRowEntry>
                         <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>AppVersion</PropertyName>
+                            </TableColumnItem>
                             <TableColumnItem>
                                 <PropertyName>PackagesVersion</PropertyName>
                             </TableColumnItem>

@@ -152,6 +152,7 @@ function Get-PpacFinOpsBuild {
 				Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsBuild" `
 				-Property `
 			@{Name = "AppVersion"; Expression = { $trackAppVersion } }, `
+			@{Name = "AppBuild"; Expression = { $track } }, `
 			@{Name = "Track"; Expression = { $track } }, `
 			@{Name = "Build"; Expression = { "$_" } }
 		)

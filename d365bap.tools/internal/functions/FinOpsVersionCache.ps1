@@ -289,3 +289,111 @@ function Clear-FinOpsVersionCache {
 		Write-PSFMessage -Level Verbose -Message "FinOps version cache eviction skipped: $($_.Exception.Message)"
 	}
 }
+
+function Get-FinOpsTrackForAppVersion {
+	<#
+        .SYNOPSIS
+            Resolves an application version to its track.
+
+        .DESCRIPTION
+            Maps a version string to its track.
+
+        .PARAMETER Catalog
+            Version catalog entries with appVersion and appBuild properties.
+
+        .PARAMETER AppVersion
+            Application version, track or full build to resolve.
+
+        .EXAMPLE
+            PS C:\> Get-FinOpsTrackForAppVersion -Catalog $catalog -AppVersion "10.0.49"
+
+            Returns "10.0.2790".
+
+        .NOTES
+            Author: Mötz Jensen (@Splaxi)
+    #>
+	[CmdletBinding()]
+	[OutputType([string])]
+	param (
+		$Catalog,
+
+		[string] $AppVersion
+	)
+
+	$normalized = "$AppVersion".Replace('-', '.').Trim()
+
+	if ([string]::IsNullOrWhiteSpace($normalized)) { return $null }
+
+	$byVer = @($Catalog | Where-Object { $_.appVersion -eq $normalized } | Select-Object -First 1)
+
+	if ($byVer.Count -gt 0) { return "$($byVer[0].appBuild)" }
+
+	$parts = @($normalized -split '\.')
+	$candidate = if ($parts.Count -ge 3) { "$($parts[0]).$($parts[1]).$($parts[2])" } else { $normalized }
+
+	$byBuild = @($Catalog | Where-Object { $_.appBuild -eq $candidate } | Select-Object -First 1)
+
+	if ($byBuild.Count -gt 0) { return "$($byBuild[0].appBuild)" }
+
+	return $null
+}
+
+function Resolve-FinOpsVersionFromCache {
+	<#
+        .SYNOPSIS
+            Maps a build to its catalog versions from cache.
+
+        .DESCRIPTION
+            Returns the cached catalog entry for a track, without any network calls.
+
+        .PARAMETER Build
+            Full build (10.0.2790.46), track (10.0.2790) or application version (10.0.49).
+
+        .EXAMPLE
+            PS C:\> Resolve-FinOpsVersionFromCache -Build "10.0.2790.46"
+
+            Returns the catalog entry of track 10.0.2790.
+
+        .NOTES
+            Author: Mötz Jensen (@Splaxi)
+    #>
+	[CmdletBinding()]
+	[OutputType([hashtable])]
+	param (
+		[string] $Build
+	)
+
+	$normalized = "$Build".Replace('-', '.').Trim()
+
+	if ([string]::IsNullOrWhiteSpace($normalized)) { return $null }
+
+	$parts = @($normalized -split '\.')
+	$track = if ($parts.Count -ge 3) { "$($parts[0]).$($parts[1]).$($parts[2])" } else { $normalized }
+
+	$cached = Get-FinOpsVersionCache -ErrorAction SilentlyContinue
+
+	if ($null -eq $cached -or $null -eq $cached.versions) { return $null }
+
+	$entry = @($cached.versions | Where-Object {
+			$b = if ($null -ne $_.AppBuild) { "$($_.AppBuild)" } else { "$($_.appBuild)" }
+			$b -eq $track
+		} | Select-Object -First 1)
+
+	if ($entry.Count -eq 0) {
+		$entry = @($cached.versions | Where-Object {
+				$v = if ($null -ne $_.AppVersion) { "$($_.AppVersion)" } else { "$($_.appVersion)" }
+				$v -eq $normalized
+			} | Select-Object -First 1)
+
+		if ($entry.Count -eq 0) { return $null }
+	}
+
+	$e = $entry[0]
+
+	return @{
+		AppVersion  = if ($null -ne $e.AppVersion) { "$($e.AppVersion)" } else { "$($e.appVersion)" }
+		AppBuild    = if ($null -ne $e.AppBuild) { "$($e.AppBuild)" } else { "$($e.appBuild)" }
+		PlatVersion = if ($null -ne $e.PlatVersion) { "$($e.PlatVersion)" } else { "$($e.platVersion)" }
+		PlatBuild   = if ($null -ne $e.PlatBuild) { "$($e.PlatBuild)" } else { "$($e.platBuild)" }
+	}
+}

@@ -6,7 +6,10 @@
         Resolves and downloads NuGet packages, developer files and VHD images. Any published version can be selected.
 
     .PARAMETER Build
-        Full build, track or application version to download.
+        Full build, track or short form to download. Omitted: newest build of the track.
+
+    .PARAMETER AppVersion
+        Track to download as version, track or full build. Omitted: from -Build, else newest.
 
     .PARAMETER Asset
         Names to download; "*" selects everything including VHD.
@@ -67,6 +70,9 @@ function Get-PpacFinOpsAsset {
 	[CmdletBinding()]
 	[OutputType('System.Object[]')]
 	param (
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[string] $AppVersion,
+
 		[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[string] $Build,
 
@@ -144,8 +150,37 @@ function Get-PpacFinOpsAsset {
 		$track = $null
 		$trackAppVersion = $null
 
+		$buildGiven = $PSBoundParameters.ContainsKey('Build') -and -not [string]::IsNullOrWhiteSpace($Build)
+		$appGiven = $PSBoundParameters.ContainsKey('AppVersion') -and -not [string]::IsNullOrWhiteSpace($AppVersion)
+
+		if ($buildGiven -and $appGiven -and "$Build" -like '@{*}') {
+			$Build = ''
+			$buildGiven = $false
+		}
+
+		$appTrack = $null
+
+		if ($appGiven) {
+			$appTrack = Get-FinOpsTrackForAppVersion -Catalog $catalog -AppVersion $AppVersion
+
+			if ($null -eq $appTrack) {
+				$valid = ($catalog | Sort-Object -Property { [version]$_.appVersion } | ForEach-Object { $_.appVersion }) -join ", "
+				$messageString = "Unknown application track <c='em'>$AppVersion</c>. Valid application versions are: $valid."
+				Write-PSFMessage -Level Important -Message $messageString
+				Stop-PSFFunction -Message "Stopping because the application track was not recognized." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+				return
+			}
+		}
+
 		if ([string]::IsNullOrWhiteSpace($Build)) {
-			$entry = @($catalog | Sort-Object -Property { [version]$_.appVersion } | Select-Object -Last 1)
+			$candidates = @($catalog | Sort-Object -Property { [version]$_.appVersion })
+
+			if ($appGiven) {
+				$candidates = @($candidates | Where-Object { $_.appBuild -eq $appTrack })
+			}
+
+			$entry = @($candidates | Select-Object -Last 1)
 
 			if ($null -eq $entry -or $entry.Count -eq 0) {
 				Stop-PSFFunction -Message "Stopping because the version catalog is empty."
@@ -188,6 +223,14 @@ function Get-PpacFinOpsAsset {
 				if ($byBuild.Count -gt 0) {
 					$trackAppVersion = $byBuild[0].appVersion
 				}
+
+				if ($appGiven -and $track -ne $appTrack) {
+					$messageString = "Build <c='em'>$Build</c> is not on the <c='em'>$AppVersion</c> track. Specify a matching build or omit <c='em'>-AppVersion</c>."
+					Write-PSFMessage -Level Important -Message $messageString
+					Stop-PSFFunction -Message "Stopping because the build does not match the application track." `
+						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+					return
+				}
 			}
 			else {
 				$byAppVersion = @($catalog | Where-Object { $_.appVersion -eq $normalized } | Select-Object -First 1)
@@ -210,6 +253,14 @@ function Get-PpacFinOpsAsset {
 					$messageString = "Unknown build or track <c='em'>$Build</c>. Valid application versions are: $valid."
 					Write-PSFMessage -Level Important -Message $messageString
 					Stop-PSFFunction -Message "Stopping because the build was not recognized." `
+						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+					return
+				}
+
+				if ($appGiven -and $track -ne $appTrack) {
+					$messageString = "Build <c='em'>$Build</c> is not on the <c='em'>$AppVersion</c> track. Specify a matching build or omit <c='em'>-AppVersion</c>."
+					Write-PSFMessage -Level Important -Message $messageString
+					Stop-PSFFunction -Message "Stopping because the build does not match the application track." `
 						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 					return
 				}
@@ -353,6 +404,22 @@ function Get-PpacFinOpsAsset {
 				}
 			}
 		)
+
+		$versionInfo = Resolve-FinOpsVersionFromCache -Build $fullBuild
+		$mapAppVersion = if ($null -ne $versionInfo) { $versionInfo.AppVersion } else { '' }
+		$mapAppBuild = if ($null -ne $versionInfo) { $versionInfo.AppBuild } else { '' }
+		$mapPlatVersion = if ($null -ne $versionInfo) { $versionInfo.PlatVersion } else { '' }
+		$mapPlatBuild = if ($null -ne $versionInfo) { $versionInfo.PlatBuild } else { '' }
+
+		foreach ($assetObj in $colAssets) {
+			$assetObj | Add-Member -NotePropertyName "AppVersion" -NotePropertyValue $mapAppVersion -Force
+			$assetObj | Add-Member -NotePropertyName "AppBuild" -NotePropertyValue $mapAppBuild -Force
+			$assetObj | Add-Member -NotePropertyName "Track" -NotePropertyValue $mapAppBuild -Force
+			$assetObj | Add-Member -NotePropertyName "PlatVersion" -NotePropertyValue $mapPlatVersion -Force
+			$assetObj | Add-Member -NotePropertyName "PlatBuild" -NotePropertyValue $mapPlatBuild -Force
+		}
+
+		$colAssets = @($colAssets | Sort-Object -Property Kind, Asset, FileName)
 
 		if (-not $Download) {
 			$colAssets | Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `

@@ -22,6 +22,7 @@ $scbFinOpsAppVersion = {
 		if ($null -eq $cache.versions) { return }
 
 		$seen = @{}
+		$foundVersions = @()
 
 		foreach ($entry in $cache.versions) {
 			$candidates = @(
@@ -34,9 +35,13 @@ $scbFinOpsAppVersion = {
 				$seen[$candidate.Text] = $true
 
 				if ($candidate.Text -like "$filterWord*") {
-					New-PSFTeppCompletionResult -CompletionText $candidate.Text -ToolTip $candidate.Tip
+					$foundVersions += [PsCustomObject]@{ Text = $candidate.Text; Tip = $candidate.Tip }
 				}
 			}
+		}
+
+		foreach ($found in @($foundVersions | Sort-Object -Property { [version]$_.Text })) {
+			New-PSFTeppCompletionResult -CompletionText $found.Text -ToolTip $found.Tip
 		}
 	}
 	catch { }
@@ -65,6 +70,7 @@ $scbFinOpsAppVersionOnly = {
 		if ($null -eq $cache.versions) { return }
 
 		$seen = @{}
+		$foundVersions = @()
 
 		foreach ($entry in $cache.versions) {
 			$completionText = "$($entry.appVersion)"
@@ -73,8 +79,12 @@ $scbFinOpsAppVersionOnly = {
 			$seen[$completionText] = $true
 
 			if ($completionText -like "$filterWord*") {
-				New-PSFTeppCompletionResult -CompletionText $completionText -ToolTip "Track $($entry.appBuild) - Platform $($entry.platBuild)"
+				$foundVersions += [PsCustomObject]@{ Text = $completionText; Tip = "Track $($entry.appBuild) - Platform $($entry.platBuild)" }
 			}
+		}
+
+		foreach ($found in @($foundVersions | Sort-Object -Property { [version]$_.Text })) {
+			New-PSFTeppCompletionResult -CompletionText $found.Text -ToolTip $found.Tip
 		}
 	}
 	catch { }
@@ -102,46 +112,94 @@ $scbFinOpsBuild = {
 
 		if ($null -eq $cache.versions) { return }
 
+		$typed = "$filterWord".Replace('-', '.').Trim()
 		$track = $null
-		$wanted = "$($fakeBoundParameter['AppVersion'])".Replace('-', '.').Trim()
 
-		if (-not [string]::IsNullOrWhiteSpace($wanted)) {
-			$byAppVersion = @($cache.versions | Where-Object { $_.appVersion -eq $wanted } | Select-Object -First 1)
+		if (-not [string]::IsNullOrWhiteSpace($typed)) {
+			$byAppVersion = @($cache.versions | Where-Object { $_.appVersion -eq $typed } | Select-Object -First 1)
 
 			if ($byAppVersion.Count -gt 0) {
-				$track = $byAppVersion[0].appBuild
+				$track = "$($byAppVersion[0].appBuild)"
 			}
 			else {
-				$parts = @($wanted -split '\.')
+				$parts = @($typed -split '\.')
+				$candidate = if ($parts.Count -ge 3) { "$($parts[0]).$($parts[1]).$($parts[2])" } else { $typed }
 
-				if ($parts.Count -eq 4) {
-					$wanted = "$($parts[0]).$($parts[1]).$($parts[2])"
-				}
-
-				$byBuild = @($cache.versions | Where-Object { $_.appBuild -eq $wanted } | Select-Object -First 1)
+				$byBuild = @($cache.versions | Where-Object { $_.appBuild -eq $candidate } | Select-Object -First 1)
 
 				if ($byBuild.Count -gt 0) {
-					$track = $byBuild[0].appBuild
+					$track = "$($byBuild[0].appBuild)"
 				}
 			}
 		}
 
 		if ([string]::IsNullOrWhiteSpace($track)) {
-			$latest = @($cache.versions | Sort-Object -Property { [version]$_.appVersion } | Select-Object -Last 1)
+			$boundApp = "$($fakeBoundParameter['AppVersion'])".Replace('-', '.').Trim()
 
-			if ($latest.Count -eq 0) { return }
+			if (-not [string]::IsNullOrWhiteSpace($boundApp)) {
+				$byBoundVer = @($cache.versions | Where-Object { $_.appVersion -eq $boundApp } | Select-Object -First 1)
 
-			$track = $latest[0].appBuild
+				if ($byBoundVer.Count -gt 0) {
+					$track = "$($byBoundVer[0].appBuild)"
+				}
+				else {
+					$boundParts = @($boundApp -split '\.')
+					$boundCandidate = if ($boundParts.Count -ge 3) { "$($boundParts[0]).$($boundParts[1]).$($boundParts[2])" } else { $boundApp }
+
+					$byBoundBuild = @($cache.versions | Where-Object { $_.appBuild -eq $boundCandidate } | Select-Object -First 1)
+
+					if ($byBoundBuild.Count -gt 0) {
+						$track = "$($byBoundBuild[0].appBuild)"
+					}
+				}
+			}
 		}
 
-		$builds = $cache.builds."$track"
+		$targetBuilds = @()
 
-		if ($null -eq $builds) { return }
+		if (-not [string]::IsNullOrWhiteSpace($track) -and $null -ne $cache.builds) {
+			$targetBuilds = @($cache.builds."$track" | Where-Object { -not [string]::IsNullOrWhiteSpace("$_") })
+		}
 
-		foreach ($build in $builds) {
-			if ("$build" -like "$filterWord*") {
-				New-PSFTeppCompletionResult -CompletionText "$build" -ToolTip "Track $track"
+		if ($targetBuilds.Count -gt 0) {
+			$seen = @{}
+			$foundBuilds = @()
+
+			foreach ($build in $targetBuilds) {
+				if ("$build" -notlike "$filterWord*") { continue }
+				if ($seen.ContainsKey("$build")) { continue }
+				$seen["$build"] = $true
+				$foundBuilds += [PsCustomObject]@{ Build = "$build"; Track = "$track" }
 			}
+
+			foreach ($match in @($foundBuilds | Sort-Object -Property { [version]$_.Build } -Descending)) {
+				New-PSFTeppCompletionResult -CompletionText $match.Build -ToolTip "Track $($match.Track)"
+			}
+
+			return
+		}
+
+		if (-not [string]::IsNullOrWhiteSpace($track)) {
+			New-PSFTeppCompletionResult -CompletionText $track -ToolTip "Track $track - latest build resolves live"
+			return
+		}
+
+		$seen = @{}
+		$foundBuilds = @()
+
+		foreach ($versionEntry in @($cache.versions)) {
+			$offerTrack = "$($versionEntry.appBuild)"
+
+			foreach ($build in @($cache.builds."$offerTrack" | Where-Object { -not [string]::IsNullOrWhiteSpace("$_") })) {
+				if ("$build" -notlike "$filterWord*") { continue }
+				if ($seen.ContainsKey("$build")) { continue }
+				$seen["$build"] = $true
+				$foundBuilds += [PsCustomObject]@{ Build = "$build"; Track = "$offerTrack" }
+			}
+		}
+
+		foreach ($match in @($foundBuilds | Sort-Object -Property { [version]$_.Build } -Descending)) {
+			New-PSFTeppCompletionResult -CompletionText $match.Build -ToolTip "Track $($match.Track)"
 		}
 	}
 	catch { }
@@ -149,7 +207,10 @@ $scbFinOpsBuild = {
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.finops.builds" -ScriptBlock $scbFinOpsBuild -Mode Full
 
-Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsBuild -Parameter AppVersion -Name "d365bap.tools.tepp.finops.appversions"
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsBuild -Parameter AppVersion -Name "d365bap.tools.tepp.finops.appversions.only"
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsVersion -Parameter AppVersion -Name "d365bap.tools.tepp.finops.appversions.only"
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsPlatform -Parameter AppVersion -Name "d365bap.tools.tepp.finops.appversions.only"
 Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsPlatform -Parameter Build -Name "d365bap.tools.tepp.finops.builds"
+Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsAsset -Parameter AppVersion -Name "d365bap.tools.tepp.finops.appversions.only"
 Register-PSFTeppArgumentCompleter -Command Get-PpacFinOpsAsset -Parameter Build -Name "d365bap.tools.tepp.finops.builds"
 Register-PSFTeppArgumentCompleter -Command New-UnifiedEnvironmentV2 -Parameter Version -Name "d365bap.tools.tepp.finops.appversions.only"

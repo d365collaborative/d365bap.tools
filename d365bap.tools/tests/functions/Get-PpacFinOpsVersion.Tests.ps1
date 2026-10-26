@@ -11,6 +11,19 @@
 			(Get-Command Get-PpacFinOpsVersion).ParameterSets.Name | Should -Be 'Default', 'Lowest', 'Highest'
 		}
 
+		It 'Should have the expected parameter AppVersion' {
+			$parameter = (Get-Command Get-PpacFinOpsVersion).Parameters['AppVersion']
+			$parameter.Name | Should -Be 'AppVersion'
+			$parameter.ParameterType.ToString() | Should -Be System.String
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be -2147483648
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $True
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
 		It 'Should have the expected parameter EnvironmentId' {
 			$parameter = (Get-Command Get-PpacFinOpsVersion).Parameters['EnvironmentId']
 			$parameter.Name | Should -Be 'EnvironmentId'
@@ -55,19 +68,19 @@
 	Describe "Testing parameterset Default" {
 		<#
 		Default -
-		Default -EnvironmentId
+		Default -AppVersion -EnvironmentId
 		#>
 	}
  	Describe "Testing parameterset Lowest" {
 		<#
 		Lowest -
-		Lowest -EnvironmentId -Oldest
+		Lowest -AppVersion -EnvironmentId -Oldest
 		#>
 	}
  	Describe "Testing parameterset Highest" {
 		<#
 		Highest -
-		Highest -EnvironmentId -Latest
+		Highest -AppVersion -EnvironmentId -Latest
 		#>
 	}
 

@@ -6,6 +6,9 @@
     .DESCRIPTION
         Queries the developer tools service for every published application track. No target environment is needed.
 
+    .PARAMETER AppVersion
+        Track to show as version, track or full build. Omitted: everything.
+
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
 
@@ -32,6 +35,9 @@ function Get-PpacFinOpsVersion {
 	[CmdletBinding(DefaultParameterSetName = 'Default')]
 	[OutputType('System.Object[]')]
 	param (
+		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[string] $AppVersion,
+
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[Alias("PpacEnvId")]
 		[string] $EnvironmentId,
@@ -77,11 +83,27 @@ function Get-PpacFinOpsVersion {
 				-Property `
 				"appVersion as AppVersion", `
 				"appBuild as AppBuild", `
+			@{Name = "Track"; Expression = { "$($_.appBuild)" } }, `
 				"platVersion as PlatVersion", `
 				"platBuild as PlatBuild"
 		)
 
 		Write-FinOpsVersionCache -Versions $resCol
+
+		if (-not [string]::IsNullOrWhiteSpace($AppVersion)) {
+			$wantedTrack = Get-FinOpsTrackForAppVersion -Catalog $resCol -AppVersion $AppVersion
+
+			if ([string]::IsNullOrWhiteSpace($wantedTrack)) {
+				$valid = ($resCol | Sort-Object -Property { [version]$_.AppVersion } | ForEach-Object { $_.AppVersion }) -join ", "
+				$messageString = "Unknown application track <c='em'>$AppVersion</c>. Valid application versions are: $valid."
+				Write-PSFMessage -Level Important -Message $messageString
+				Stop-PSFFunction -Message "Stopping because the application track was not recognized." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+				return
+			}
+
+			$resCol = @($resCol | Where-Object { $_.AppBuild -eq $wantedTrack })
+		}
 
 		if ($Oldest) {
 			$resCol | Select-Object -First 1
