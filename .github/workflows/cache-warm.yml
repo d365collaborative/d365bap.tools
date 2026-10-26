@@ -28,3 +28,25 @@ jobs:
           Write-Host "Installing $module..."
           Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
         }
+
+    # The regen generate job (and validate-generated freshness job) need the
+    # generator set: base modules plus platyPS. They run on PR refs where the
+    # token cannot save, so this trusted main-branch job owns warming their key.
+    # PR jobs restore it read-only (actions/cache/restore) and get a hit.
+    - name: Cache generated PowerShell modules
+      id: cache-generated-modules
+      uses: actions/cache@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-generated-${{ runner.os }}-v1
+
+    - name: Install generator modules
+      if: steps.cache-generated-modules.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        $modules = @('platyPS')
+        foreach ($module in $modules) {
+          Write-Host "Installing $module..."
+          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
+        }
