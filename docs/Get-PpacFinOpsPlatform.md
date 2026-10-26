@@ -13,8 +13,8 @@ Resolves the platform version of a build.
 ## SYNTAX
 
 ```
-Get-PpacFinOpsPlatform [-Build] <String> [[-EnvironmentId] <String>] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Get-PpacFinOpsPlatform [[-AppVersion] <String>] [[-Build] <String>] [[-EnvironmentId] <String>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -24,12 +24,19 @@ Queries the developer tools service for the platform version of one application 
 
 ### EXAMPLE 1
 ```
+Get-PpacFinOpsPlatform -AppVersion "10.0.49"
+```
+
+Shows the platform version of the newest 10.0.49 build.
+
+### EXAMPLE 2
+```
 Get-PpacFinOpsPlatform -Build "10.0.2790.46"
 ```
 
 Shows the platform version of that build.
 
-### EXAMPLE 2
+### EXAMPLE 3
 ```
 Get-PpacFinOpsBuild -Latest | Get-PpacFinOpsPlatform
 ```
@@ -38,17 +45,33 @@ Shows the platform version of the newest build.
 
 ## PARAMETERS
 
-### -Build
-Full build, track or application version.
-Short forms resolve to the newest build.
+### -AppVersion
+Track to resolve as version, track or full build.
+Omitted: derived from -Build.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: 1
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Build
+Full build, track or short form.
+Omitted: newest build of the track.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
@@ -64,7 +87,7 @@ Parameter Sets: (All)
 Aliases: PpacEnvId
 
 Required: False
-Position: 2
+Position: 3
 Default value: None
 Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False

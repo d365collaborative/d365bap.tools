@@ -18,9 +18,9 @@ Get-UdePackageLocalDirectory [[-Version] <String>] [-AsExcelOutput] [-ProgressAc
 ```
 
 ## DESCRIPTION
-Finds installed packages versions under the local Dynamics 365 developer folder
+Finds installed package folders under the local Dynamics 365 developer folder
 
-Returns the full PackagesLocalDirectory path for each matching version, sorted ascending by version
+Returns the full PackagesLocalDirectory path for each match, sorted ascending
 
 ## EXAMPLES
 
@@ -37,23 +37,23 @@ It will only include versions where PackagesLocalDirectory exists.
 Get-UdePackageLocalDirectory -Version '10.0.2345*'
 ```
 
-Lists PackagesLocalDirectory paths for matching package versions.
-It will support wildcard search on the version number.
+Lists matching PackagesLocalDirectory paths.
+Wildcards are supported.
 
 ### EXAMPLE 3
 ```
 Get-UdePackageLocalDirectory -AsExcelOutput
 ```
 
-Lists all local PackagesLocalDirectory paths.
-It will output all details into an Excel file, that will auto open on your machine.
+Lists all local PackagesLocalDirectory paths into an Excel file.
 
 ## PARAMETERS
 
 ### -Version
 Packages version to include.
 Supports wildcards.
-Defaults to '*'
+
+Default: '*'.
 
 ```yaml
 Type: String

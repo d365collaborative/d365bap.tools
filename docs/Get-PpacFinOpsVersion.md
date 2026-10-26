@@ -14,19 +14,20 @@ Lists all published FinOps versions.
 
 ### Default (Default)
 ```
-Get-PpacFinOpsVersion [-EnvironmentId <String>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### Lowest
 ```
-Get-PpacFinOpsVersion [-EnvironmentId <String>] [-Oldest] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-Oldest]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### Highest
 ```
-Get-PpacFinOpsVersion [-EnvironmentId <String>] [-Latest] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-Latest]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -50,6 +51,22 @@ Get-PpacFinOpsVersion -Latest
 Returns only the newest track.
 
 ## PARAMETERS
+
+### -AppVersion
+Track to show as version, track or full build.
+Omitted: everything.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
 
 ### -EnvironmentId
 Environment for the auth context only.

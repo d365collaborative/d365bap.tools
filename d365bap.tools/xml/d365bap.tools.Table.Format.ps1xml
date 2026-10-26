@@ -996,6 +996,178 @@
       </TableControl>
     </View>
     <View>
+      <Name>D365Bap.Tools.PpacFinOpsAsset</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacFinOpsAsset</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Width>18</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>60</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>18</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Asset</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Kind</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>FileName</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Build</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.PpacFinOpsBuild</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacFinOpsBuild</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>18</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>AppVersion</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>AppBuild</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Track</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Build</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.PpacFinOpsPlatform</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacFinOpsPlatform</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>18</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>18</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>AppVersion</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>AppBuild</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Track</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Build</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>PlatformVersion</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
+      <Name>D365Bap.Tools.PpacFinOpsVersion</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacFinOpsVersion</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>AppVersion</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>AppBuild</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Track</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>PlatVersion</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>PlatBuild</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>D365Bap.Tools.PpacLocation</Name>
       <ViewSelectedBy>
         <TypeName>D365Bap.Tools.PpacLocation</TypeName>
@@ -2007,6 +2179,9 @@
       <TableControl>
         <TableHeaders>
           <TableColumnHeader>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
             <Width>18</Width>
           </TableColumnHeader>
           <TableColumnHeader>
@@ -2016,6 +2191,9 @@
         <TableRowEntries>
           <TableRowEntry>
             <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>AppVersion</PropertyName>
+              </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>PackagesVersion</PropertyName>
               </TableColumnItem>
