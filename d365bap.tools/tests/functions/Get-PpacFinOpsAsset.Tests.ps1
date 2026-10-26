@@ -102,12 +102,25 @@
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $True
 			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
 		}
+		It 'Should have the expected parameter OutputPath' {
+			$parameter = (Get-Command Get-PpacFinOpsAsset).Parameters['OutputPath']
+			$parameter.Name | Should -Be 'OutputPath'
+			$parameter.ParameterType.ToString() | Should -Be System.String
+			$parameter.IsDynamic | Should -Be $False
+			$parameter.ParameterSets.Keys | Should -Be '__AllParameterSets'
+			$parameter.ParameterSets.Keys | Should -Contain '__AllParameterSets'
+			$parameter.ParameterSets['__AllParameterSets'].IsMandatory | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].Position | Should -Be 5
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipeline | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromPipelineByPropertyName | Should -Be $False
+			$parameter.ParameterSets['__AllParameterSets'].ValueFromRemainingArguments | Should -Be $False
+		}
 	}
 
 	Describe "Testing parameterset __AllParameterSets" {
 		<#
 		__AllParameterSets -
-		__AllParameterSets -Build -Asset -Kind -Download -Path -Force -EnvironmentId
+		__AllParameterSets -Build -Asset -Kind -Download -Path -Force -EnvironmentId -OutputPath
 		#>
 	}
 

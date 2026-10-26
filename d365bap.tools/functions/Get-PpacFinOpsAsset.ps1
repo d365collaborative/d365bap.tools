@@ -26,6 +26,9 @@
 
         Default: C:\Temp\d365bap.tools\PpacFinOpsAssets
 
+    .PARAMETER OutputPath
+        Custom extraction root. Build and asset folders are appended.
+
     .PARAMETER Force
         Re-download files and re-extract folders.
 
@@ -51,6 +54,11 @@
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Asset Vhd -Download
 
         Downloads the VHD image parts.
+
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\tmp\D365"
+
+        Downloads NuGet files, extracting under C:\tmp\D365.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -78,7 +86,9 @@ function Get-PpacFinOpsAsset {
 
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[Alias("PpacEnvId")]
-		[string] $EnvironmentId
+		[string] $EnvironmentId,
+
+		[string] $OutputPath
 	)
 
 	begin {
@@ -358,8 +368,15 @@ function Get-PpacFinOpsAsset {
 			return
 		}
 
-		$pathNugetsRoot = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\NuGets"
-		$pathPackagesLocalDirectory = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\PackagesLocalDirectory"
+		if ($PSBoundParameters.ContainsKey('OutputPath') -and -not [string]::IsNullOrWhiteSpace($OutputPath)) {
+			$baseRoot = Join-Path $OutputPath $fullBuild
+			$pathNugetsRoot = Join-Path $baseRoot "NuGets"
+			$pathPackagesLocalDirectory = Join-Path $baseRoot "PackagesLocalDirectory"
+		}
+		else {
+			$pathNugetsRoot = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\NuGets"
+			$pathPackagesLocalDirectory = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\PackagesLocalDirectory"
+		}
 
 		$retryCount = 0
 		$maxRetries = 5
