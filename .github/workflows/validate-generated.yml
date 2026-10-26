@@ -11,7 +11,7 @@ jobs:
     # No bypass: generated files are never committed by hand. The regen
     # workflow commits them, and it overwrites anything but generator output.
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -23,7 +23,7 @@ jobs:
     name: Generated artifacts in sync
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
