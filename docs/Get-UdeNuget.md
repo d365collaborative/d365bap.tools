@@ -8,7 +8,7 @@ schema: 2.0.0
 # Get-UdeNuget
 
 ## SYNOPSIS
-Gets UDE NuGet packages (regen proof).
+Gets UDE NuGet packages (regen proof 2).
 
 ## SYNTAX
 
