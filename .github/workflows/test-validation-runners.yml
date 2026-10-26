@@ -1,0 +1,46 @@
+name: test-validation-runners
+
+# This conditional workflow exercises validation infrastructure changes.
+# Keep it out of required-check rules: unrelated PRs do not trigger it.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/test-validation-runners.yml'
+      - 'build/Test-PesterRunners.ps1'
+      - 'build/Test-PSScriptAnalyzerConsolidation.ps1'
+      - 'build/Install-RequiredModules.ps1'
+      - 'build/ModuleCacheRequirements.json'
+      - 'd365bap.tools/tests/pester.ps1'
+      - 'd365bap.tools/tests/pester-PSScriptAnalyzer.ps1'
+      - 'd365bap.tools/tests/general/PSScriptAnalyzer.Tests.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: Validation runner regression tests
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Restore PowerShell modules
+      uses: actions/cache/restore@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
+    - name: Ensure prerequisites
+      shell: pwsh
+      run: ./build/Install-RequiredModules.ps1 -Set base
+    - name: Test analyzer consolidation
+      shell: pwsh
+      run: ./build/Test-PSScriptAnalyzerConsolidation.ps1
+    - name: Test Pester runners
+      shell: pwsh
+      run: ./build/Test-PesterRunners.ps1

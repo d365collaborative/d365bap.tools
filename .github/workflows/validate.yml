@@ -2,6 +2,10 @@
 
 on: [pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   general-unit-tests:
     name: Validate General Unit Tests

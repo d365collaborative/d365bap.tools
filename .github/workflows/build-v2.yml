@@ -138,7 +138,7 @@ jobs:
   build-and-release:
     name: Build and Release
     runs-on: windows-latest
-    needs: [general-unit-tests, public-functions-unit-tests, internal-functions-unit-tests, individual-unit-tests]
+    needs: [general-unit-tests, public-functions-unit-tests, internal-functions-unit-tests, individual-unit-tests, compiled-import]
     steps:
     - uses: actions/checkout@v1
       with:
