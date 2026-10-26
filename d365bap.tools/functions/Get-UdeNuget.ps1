@@ -1,7 +1,7 @@
 ﻿
 <#
     .SYNOPSIS
-        Gets UDE NuGet packages.
+        Gets UDE NuGet packages for approval check.
 
     .DESCRIPTION
         Retrieves UDE NuGet files for an environment via the DeveloperTools service.
