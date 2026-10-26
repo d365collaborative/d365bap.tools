@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "comment": "Single source of truth for CI PowerShell module caches. The cache key is derived from this file (hashFiles), so changing a version invalidates the cache. The schedule keeps existing caches alive; it does not update their contents.",
+  "base": [
+    { "Name": "Pester", "Version": "6.2.0" },
+    { "Name": "PSFramework", "Version": "1.15.472" },
+    { "Name": "PSModuleDevelopment", "Version": "2.2.13.217" },
+    { "Name": "PSScriptAnalyzer", "Version": "1.25.0" },
+    { "Name": "ImportExcel", "Version": "7.8.10" },
+    { "Name": "Az.Accounts", "Version": "5.5.3" }
+  ],
+  "generated": [
+    { "Name": "Pester", "Version": "6.2.0" },
+    { "Name": "PSFramework", "Version": "1.15.472" },
+    { "Name": "PSModuleDevelopment", "Version": "2.2.13.217" },
+    { "Name": "PSScriptAnalyzer", "Version": "1.25.0" },
+    { "Name": "ImportExcel", "Version": "7.8.10" },
+    { "Name": "Az.Accounts", "Version": "5.5.3" },
+    { "Name": "platyPS", "Version": "0.14.2" }
+  ]
+}

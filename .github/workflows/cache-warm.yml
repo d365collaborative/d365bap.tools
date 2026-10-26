@@ -1,5 +1,8 @@
 ﻿name: Warm Module Cache
 
+# Sole cache producer. Both dependency sets are warmed here on trusted
+# main-branch runs so PR jobs (including pull_request_target regen, whose
+# token cannot save caches) can restore them read-only.
 on:
   push:
     branches: [main]
@@ -8,23 +11,42 @@ on:
   workflow_dispatch:
 
 jobs:
-  warm-cache:
+  warm-base:
+    name: Warm base modules
     runs-on: windows-latest
     steps:
-    - name: Cache PowerShell modules
-      id: cache-powershell-modules
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Cache base PowerShell modules
+      id: cache-base-modules
       uses: actions/cache@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
 
-    - name: Install modules
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    - name: Install base modules
+      if: steps.cache-base-modules.outputs.cache-hit != 'true'
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set base
+
+  warm-generated:
+    name: Warm generator modules
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Cache generated PowerShell modules
+      id: cache-generated-modules
+      uses: actions/cache@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-generated-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+
+    - name: Install generator modules
+      if: steps.cache-generated-modules.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: ./build/Install-RequiredModules.ps1 -Set generated

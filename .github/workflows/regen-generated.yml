@@ -71,23 +71,23 @@ jobs:
         # pushes — it only exports a patch for the trusted publish job.
         allow-unsafe-pr-checkout: true
 
-    - name: Cache Powershell Modules
-      id: cache-powershell-modules
-      uses: actions/cache@v5
+    # Restore-only: this job runs untrusted PR code under pull_request_target
+    # with a token that cannot save caches in the default-branch scope, so the
+    # key is warmed on main by cache-warm.yml. Restoring a main-branch cache
+    # from a fork PR is allowed; saving is not.
+    - name: Restore Powershell Modules
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-generated-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-generated-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-generated-v2-
 
-    - name: Install Prerequisites
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    # Unconditional fallback: a missing or evicted cache makes this slower,
+    # never incorrect.
+    - name: Ensure Prerequisites
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts','platyPS')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set generated
 
     - name: Regenerate and export patch
       shell: pwsh

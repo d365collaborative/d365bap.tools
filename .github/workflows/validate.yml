@@ -11,23 +11,17 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Cache Powershell Modules
-      id: cache-powershell-modules
-      uses: actions/cache@v5
+    - name: Restore Powershell Modules
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
 
-    - name: Install Prerequisites
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    - name: Ensure Prerequisites
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set base
 
     - name: Validate
       shell: pwsh
@@ -41,23 +35,17 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Cache Powershell Modules
-      id: cache-powershell-modules
-      uses: actions/cache@v5
+    - name: Restore Powershell Modules
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
 
-    - name: Install Prerequisites
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    - name: Ensure Prerequisites
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set base
 
     - name: Validate
       shell: pwsh
@@ -71,23 +59,17 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Cache Powershell Modules
-      id: cache-powershell-modules
-      uses: actions/cache@v5
+    - name: Restore Powershell Modules
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
 
-    - name: Install Prerequisites
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    - name: Ensure Prerequisites
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set base
 
     - name: Validate
       shell: pwsh
@@ -101,23 +83,17 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Cache Powershell Modules
-      id: cache-powershell-modules
-      uses: actions/cache@v5
+    - name: Restore Powershell Modules
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
 
-    - name: Install Prerequisites
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    - name: Ensure Prerequisites
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set base
 
     - name: Validate
       shell: pwsh
@@ -131,23 +107,19 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Cache Powershell Modules
-      id: cache-powershell-modules
-      uses: actions/cache@v5
+    # Uses the shared base set (not a 4-module subset under the same key).
+    # A subset install under a shared key races the warmer and poisons hits.
+    - name: Restore Powershell Modules
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
 
-    - name: Install Prerequisites
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    - name: Ensure Prerequisites
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('PSFramework','PSModuleDevelopment','ImportExcel','Az.Accounts')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set base
 
     - name: Validate
       shell: pwsh
