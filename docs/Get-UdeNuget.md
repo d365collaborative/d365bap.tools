@@ -8,7 +8,7 @@ schema: 2.0.0
 # Get-UdeNuget
 
 ## SYNOPSIS
-Gets UDE NuGet packages for approval check.
+Gets UDE NuGet packages.
 
 ## SYNTAX
 
