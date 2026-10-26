@@ -40,7 +40,7 @@ jobs:
       run: ./build/Install-RequiredModules.ps1 -Set base
     - name: Test analyzer consolidation
       shell: pwsh
-      run: ./build/Test-PSScriptAnalyzerConsolidation.ps1
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-PSScriptAnalyzerConsolidation.ps1
     - name: Test Pester runners
       shell: pwsh
-      run: ./build/Test-PesterRunners.ps1
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-PesterRunners.ps1
