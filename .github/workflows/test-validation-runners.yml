@@ -8,6 +8,7 @@ on:
       - '.github/workflows/test-validation-runners.yml'
       - 'build/Test-PesterRunners.ps1'
       - 'build/Test-PSScriptAnalyzerConsolidation.ps1'
+      - 'build/Test-RequiredModules.ps1'
       - 'build/Install-RequiredModules.ps1'
       - 'build/ModuleCacheRequirements.json'
       - 'd365bap.tools/tests/pester.ps1'
@@ -38,6 +39,9 @@ jobs:
     - name: Ensure prerequisites
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
+    - name: Test module prerequisites
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1
     - name: Test analyzer consolidation
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-PSScriptAnalyzerConsolidation.ps1
