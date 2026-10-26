@@ -32,7 +32,7 @@ Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-Latest]
 
 ## DESCRIPTION
 Queries the developer tools service for every published application track.
-No target environment is needed.
+No target environment is required.
 
 ## EXAMPLES
 
