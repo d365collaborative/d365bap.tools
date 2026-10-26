@@ -15,6 +15,9 @@
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
 
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsBuild -AppVersion "10.0.49"
 
@@ -24,6 +27,11 @@
         PS C:\> Get-PpacFinOpsVersion -Latest | Get-PpacFinOpsBuild -Latest
 
         Lists the newest build of the newest track.
+
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsBuild -AsExcelOutput
+
+        Lists all builds of the newest track into an Excel file.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -39,7 +47,9 @@ function Get-PpacFinOpsBuild {
 
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[Alias("PpacEnvId")]
-		[string] $EnvironmentId
+		[string] $EnvironmentId,
+
+		[switch] $AsExcelOutput
 	)
 
 	process {
@@ -159,11 +169,19 @@ function Get-PpacFinOpsBuild {
 
 		Write-FinOpsVersionCache -Versions $catalog -Builds @{$track = @($rawBuilds) }
 
-		if ($Latest) {
+		$output = if ($Latest) {
 			$resCol | Select-Object -First 1
 		}
 		else {
 			$resCol
 		}
+
+		if ($AsExcelOutput) {
+			$output | Export-Excel -WorksheetName "Get-PpacFinOpsBuild" `
+				-NoNumberConversion AppVersion, AppBuild, Track, Build
+			return
+		}
+
+		$output
 	}
 }

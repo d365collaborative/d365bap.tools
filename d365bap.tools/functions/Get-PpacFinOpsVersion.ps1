@@ -18,10 +18,18 @@
     .PARAMETER Latest
         Returns only the latest version.
 
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsVersion
 
         Lists every published application track.
+
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsVersion -AsExcelOutput
+
+        Lists every published application track into an Excel file.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsVersion -Latest
@@ -46,7 +54,9 @@ function Get-PpacFinOpsVersion {
 		[switch] $Oldest,
 
 		[Parameter(ParameterSetName = "Highest")]
-		[switch] $Latest
+		[switch] $Latest,
+
+		[switch] $AsExcelOutput
 	)
 
 	process {
@@ -105,7 +115,7 @@ function Get-PpacFinOpsVersion {
 			$resCol = @($resCol | Where-Object { $_.AppBuild -eq $wantedTrack })
 		}
 
-		if ($Oldest) {
+		$output = if ($Oldest) {
 			$resCol | Select-Object -First 1
 		}
 		elseif ($Latest) {
@@ -114,5 +124,13 @@ function Get-PpacFinOpsVersion {
 		else {
 			$resCol
 		}
+
+		if ($AsExcelOutput) {
+			$output | Export-Excel -WorksheetName "Get-PpacFinOpsVersion" `
+				-NoNumberConversion AppVersion, AppBuild, Track, PlatVersion, PlatBuild
+			return
+		}
+
+		$output
 	}
 }

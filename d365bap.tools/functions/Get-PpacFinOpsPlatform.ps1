@@ -15,6 +15,9 @@
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
 
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsPlatform -AppVersion "10.0.49"
 
@@ -29,6 +32,11 @@
         PS C:\> Get-PpacFinOpsBuild -Latest | Get-PpacFinOpsPlatform
 
         Shows the platform version of the newest build.
+
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsPlatform -Build "10.0.2790.46" -AsExcelOutput
+
+        Shows the platform version of that build into an Excel file.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -45,7 +53,9 @@ function Get-PpacFinOpsPlatform {
 
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[Alias("PpacEnvId")]
-		[string] $EnvironmentId
+		[string] $EnvironmentId,
+
+		[switch] $AsExcelOutput
 	)
 
 	process {
@@ -218,7 +228,7 @@ function Get-PpacFinOpsPlatform {
 
 		$finOpsInfo = Resolve-FinOpsVersionFromCache -Build "$fullBuild"
 
-		[PsCustomObject][Ordered]@{
+		$output = [PsCustomObject][Ordered]@{
 			"AppVersion"      = if ($null -ne $finOpsInfo) { $finOpsInfo.AppVersion } else { '' }
 			"AppBuild"        = if ($null -ne $finOpsInfo) { $finOpsInfo.AppBuild } else { '' }
 			"Track"           = if ($null -ne $finOpsInfo) { $finOpsInfo.AppBuild } else { '' }
@@ -228,5 +238,13 @@ function Get-PpacFinOpsPlatform {
 			-Property *
 
 		Write-FinOpsVersionCache -Platforms @{"$fullBuild" = "$platformVersion" }
+
+		if ($AsExcelOutput) {
+			$output | Export-Excel -WorksheetName "Get-PpacFinOpsPlatform" `
+				-NoNumberConversion AppVersion, AppBuild, Track, Build, PlatformVersion
+			return
+		}
+
+		$output
 	}
 }

@@ -38,6 +38,9 @@
     .PARAMETER EnvironmentId
         Environment for the auth context only. Omitted: first FinOps environment is used.
 
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
+
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46"
 
@@ -62,6 +65,11 @@
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\tmp\D365"
 
         Downloads NuGet files, extracting under C:\tmp\D365.
+
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -AsExcelOutput
+
+        Resolves download URLs for that build into an Excel file.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -94,7 +102,9 @@ function Get-PpacFinOpsAsset {
 		[Alias("PpacEnvId")]
 		[string] $EnvironmentId,
 
-		[string] $OutputPath
+		[string] $OutputPath,
+
+		[switch] $AsExcelOutput
 	)
 
 	begin {
@@ -422,9 +432,17 @@ function Get-PpacFinOpsAsset {
 		$colAssets = @($colAssets | Sort-Object -Property Kind, Asset, FileName)
 
 		if (-not $Download) {
-			$colAssets | Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
+			$output = $colAssets | Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
 				-Property *, `
 			@{Name = "Status"; Expression = { "Available" } }
+
+			if ($AsExcelOutput) {
+				$output | Export-Excel -WorksheetName "Get-PpacFinOpsAsset" `
+					-NoNumberConversion AppVersion, AppBuild, Track, Build, PlatVersion, PlatBuild
+				return
+			}
+
+			$output
 			return
 		}
 
@@ -530,8 +548,16 @@ function Get-PpacFinOpsAsset {
 		[GC]::Collect()
 		[GC]::WaitForPendingFinalizers()
 
-		$colAssets | Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
+		$output = $colAssets | Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
 			-Property *
+
+		if ($AsExcelOutput) {
+			$output | Export-Excel -WorksheetName "Get-PpacFinOpsAsset" `
+				-NoNumberConversion AppVersion, AppBuild, Track, Build, PlatVersion, PlatBuild
+			return
+		}
+
+		$output
 	}
 
 	end {
