@@ -36,51 +36,51 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdePackageLocalDirectory {
-    [CmdletBinding()]
-    [OutputType('D365Bap.Tools.UdePackageLocalDirectory')]
-    param (
-        [string] $Version = '*',
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.UdePackageLocalDirectory')]
+	param (
+		[string] $Version = '*',
 
-        [switch] $AsExcelOutput
-    )
+		[switch] $AsExcelOutput
+	)
 
-    begin {
-        $pathPackagesRoot = Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Dynamics365'
-    }
+	begin {
+		$pathPackagesRoot = Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Microsoft\Dynamics365'
+	}
 
-    process {
-        $resCol = @(
-            Get-ChildItem -LiteralPath $pathPackagesRoot -Directory |
-                Where-Object { $_.Name -match '^\d+(\.\d+)+$' -and $_.Name -like $Version } |
-                ForEach-Object {
-                    $pathPackagesLocal = Join-Path -Path $_.FullName -ChildPath 'PackagesLocalDirectory'
-                    if (-not (Test-Path -LiteralPath $pathPackagesLocal)) { return }
+	process {
+		$resCol = @(
+			Get-ChildItem -LiteralPath $pathPackagesRoot -Directory |
+			Where-Object { $_.Name -match '^\d+(\.\d+)+$' -and $_.Name -like $Version } |
+			ForEach-Object {
+				$pathPackagesLocal = Join-Path -Path $_.FullName -ChildPath 'PackagesLocalDirectory'
+				if (-not (Test-Path -LiteralPath $pathPackagesLocal)) { return }
 
-                    $verInfo = Resolve-FinOpsVersionFromCache -Build $_.Name
+				$verInfo = Resolve-FinOpsVersionFromCache -Build $_.Name
 
-                    [PSCustomObject]@{
-                        PackagesVersion        = $_.Name
-                        PackagesLocalDirectory = $pathPackagesLocal
-                        AppVersion             = if ($null -ne $verInfo) { $verInfo.AppVersion } else { '' }
-                        AppBuild               = if ($null -ne $verInfo) { $verInfo.AppBuild } else { '' }
-                        PlatVersion            = if ($null -ne $verInfo) { $verInfo.PlatVersion } else { '' }
-                        PlatBuild              = if ($null -ne $verInfo) { $verInfo.PlatBuild } else { '' }
-                    }
-                } |
-                Sort-Object { [version]$_.PackagesVersion }
-        )
+				[PSCustomObject]@{
+					PackagesVersion        = $_.Name
+					PackagesLocalDirectory = $pathPackagesLocal
+					AppVersion             = if ($null -ne $verInfo) { $verInfo.AppVersion } else { '' }
+					AppBuild               = if ($null -ne $verInfo) { $verInfo.AppBuild } else { '' }
+					PlatVersion            = if ($null -ne $verInfo) { $verInfo.PlatVersion } else { '' }
+					PlatBuild              = if ($null -ne $verInfo) { $verInfo.PlatBuild } else { '' }
+				}
+			} |
+			Sort-Object { [version]$_.PackagesVersion }
+		)
 
-        $output = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.UdePackageLocalDirectory' -Property *
+		$output = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.UdePackageLocalDirectory' -Property *
 
-        if ($AsExcelOutput) {
-            $output | Export-Excel -WorksheetName "Get-UdePackageLocalDirectory" `
-                -NoNumberConversion PackagesVersion, AppVersion, AppBuild, PlatVersion, PlatBuild
-            return
-        }
+		if ($AsExcelOutput) {
+			$output | Export-Excel -WorksheetName "Get-UdePackageLocalDirectory" `
+				-NoNumberConversion PackagesVersion, AppVersion, AppBuild, PlatVersion, PlatBuild
+			return
+		}
 
-        $output
-    }
+		$output
+	}
 
-    end {
-    }
+	end {
+	}
 }
