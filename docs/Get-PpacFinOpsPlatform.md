@@ -14,7 +14,7 @@ Resolves the platform version of a build.
 
 ```
 Get-PpacFinOpsPlatform [[-AppVersion] <String>] [[-Build] <String>] [[-EnvironmentId] <String>]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-AsExcelOutput] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -42,6 +42,13 @@ Get-PpacFinOpsBuild -Latest | Get-PpacFinOpsPlatform
 ```
 
 Shows the platform version of the newest build.
+
+### EXAMPLE 4
+```
+Get-PpacFinOpsPlatform -Build "10.0.2790.46" -AsExcelOutput
+```
+
+Shows the platform version of that build into an Excel file.
 
 ## PARAMETERS
 
@@ -90,6 +97,21 @@ Required: False
 Position: 3
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -AsExcelOutput
+Instructs the cmdlet to output the results as an Excel file.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

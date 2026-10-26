@@ -14,19 +14,19 @@ Lists all published FinOps versions.
 
 ### Default (Default)
 ```
-Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-AsExcelOutput]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### Lowest
 ```
-Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-Oldest]
+Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-Oldest] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### Highest
 ```
-Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-Latest]
+Get-PpacFinOpsVersion [-AppVersion <String>] [-EnvironmentId <String>] [-Latest] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -44,6 +44,13 @@ Get-PpacFinOpsVersion
 Lists every published application track.
 
 ### EXAMPLE 2
+```
+Get-PpacFinOpsVersion -AsExcelOutput
+```
+
+Lists every published application track into an Excel file.
+
+### EXAMPLE 3
 ```
 Get-PpacFinOpsVersion -Latest
 ```
@@ -105,6 +112,21 @@ Returns only the latest version.
 ```yaml
 Type: SwitchParameter
 Parameter Sets: Highest
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AsExcelOutput
+Instructs the cmdlet to output the results as an Excel file.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
 Aliases:
 
 Required: False

@@ -13,7 +13,7 @@ Lists quality updates for a FinOps track.
 ## SYNTAX
 
 ```
-Get-PpacFinOpsBuild [[-AppVersion] <String>] [-Latest] [[-EnvironmentId] <String>]
+Get-PpacFinOpsBuild [[-AppVersion] <String>] [-Latest] [[-EnvironmentId] <String>] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -35,6 +35,13 @@ Get-PpacFinOpsVersion -Latest | Get-PpacFinOpsBuild -Latest
 ```
 
 Lists the newest build of the newest track.
+
+### EXAMPLE 3
+```
+Get-PpacFinOpsBuild -AsExcelOutput
+```
+
+Lists all builds of the newest track into an Excel file.
 
 ## PARAMETERS
 
@@ -82,6 +89,21 @@ Required: False
 Position: 2
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -AsExcelOutput
+Instructs the cmdlet to output the results as an Excel file.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

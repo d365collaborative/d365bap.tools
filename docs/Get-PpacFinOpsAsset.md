@@ -14,7 +14,7 @@ Downloads FinOps assets for any build.
 
 ```
 Get-PpacFinOpsAsset [[-AppVersion] <String>] [[-Build] <String>] [[-Asset] <String[]>] [[-Kind] <String>]
- [-Download] [[-Path] <String>] [-Force] [[-EnvironmentId] <String>] [[-OutputPath] <String>]
+ [-Download] [[-Path] <String>] [-Force] [[-EnvironmentId] <String>] [[-OutputPath] <String>] [-AsExcelOutput]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -58,6 +58,13 @@ Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\
 ```
 
 Downloads NuGet files, extracting under C:\tmp\D365.
+
+### EXAMPLE 6
+```
+Get-PpacFinOpsAsset -Build "10.0.2790.46" -AsExcelOutput
+```
+
+Resolves download URLs for that build into an Excel file.
 
 ## PARAMETERS
 
@@ -202,6 +209,21 @@ Aliases:
 Required: False
 Position: 7
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AsExcelOutput
+Instructs the cmdlet to output the results as an Excel file.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
