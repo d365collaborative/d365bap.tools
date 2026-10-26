@@ -11,7 +11,7 @@ jobs:
     # No bypass: generated files are never committed by hand. The regen
     # workflow commits them, and it overwrites anything but generator output.
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -23,27 +23,23 @@ jobs:
     name: Generated artifacts in sync
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
-    - name: Cache Powershell Modules
-      id: cache-powershell-modules
-      uses: actions/cache@v5
+    - name: Restore Powershell Modules
+      uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-generated-${{ runner.os }}-v1
+        key: pwsh-modules-${{ runner.os }}-generated-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-generated-v2-
 
-    - name: Install Prerequisites
-      if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+    # Unconditional fallback: a missing or evicted cache makes this slower,
+    # never incorrect.
+    - name: Ensure Prerequisites
       shell: pwsh
-      run: |
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        $modules = @('Pester','PSFramework','PSModuleDevelopment','PSScriptAnalyzer','ImportExcel','Az.Accounts','platyPS')
-        foreach ($module in $modules) {
-          Write-Host "Installing $module..."
-          Install-Module -Name $module -Scope CurrentUser -Force -SkipPublisherCheck
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set generated
 
     - name: Validate generated artifacts
       shell: pwsh
