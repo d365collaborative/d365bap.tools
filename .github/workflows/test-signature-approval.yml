@@ -1,0 +1,19 @@
+name: test-signature-approval
+
+on: [pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  regression-tests:
+    name: Signature gate regression tests
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        persist-credentials: false
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+    - run: node --test build/signature-approval.test.cjs
