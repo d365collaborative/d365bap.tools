@@ -3,11 +3,27 @@ name: ps1-lint
 on: [pull_request]
 
 jobs:
+  guard-hooks:
+    name: Deny hand-edited lint hooks
+    runs-on: windows-latest
+    # The hook scripts under build/ps1-lint/internal implement the repo's
+    # lint rules. A PR that edits the rules alongside the code they check
+    # cannot be trusted, so any touch fails here. Coordinate hook changes
+    # with maintainers instead.
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - name: Check for touched lint hooks
+      shell: pwsh
+      run: ./build/Test-HookTouch.ps1 -BaseRef origin/${{ github.base_ref }}
+
   ps1-lint:
     name: PS1 lint (vendored prek hooks, changed files)
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
