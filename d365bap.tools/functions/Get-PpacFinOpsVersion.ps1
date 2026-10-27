@@ -60,6 +60,7 @@ function Get-PpacFinOpsVersion {
 	)
 
 	process {
+
 		if (Test-PSFFunctionInterrupt) { return }
 
 		$ctx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
