@@ -111,9 +111,7 @@ We know that when you are learning about new stuff and just want to share your f
 ### Web based help and examples
 We have implemented **platyPS** (https://github.com/PowerShell/platyPS) to generate markdown files for each cmdlet / function available in the module. These files are hosted here on github for you to consume in your web browser and the give you the look and feel of other documentation sites.
 
-The generated help markdown files are located inside the **'docs'** folder in this repository. Click this [link](https://github.com/d365collaborative/d365bap.tools/tree/master/docs) to jump straight inside.
-
-They are also available in the [wiki](https://github.com/d365collaborative/d365bap.tools/wiki) in the list of pages.
+The current generated help is available in the [wiki](https://github.com/d365collaborative/d365bap.tools/wiki). The checked-in `docs` directory is a historical snapshot; generated documentation is refreshed and published after changes reach `main`.
 
 ## Contributing
 
@@ -121,8 +119,9 @@ Want to contribute to the project? We'd love to have you! Visit our [contributin
 
 ### Local feedback (optional)
 
-Pull the repo and work as usual — local checks are opt-in. If you skip them,
-the pull request checks on GitHub run the exact same rules.
+Pull the repo and work as usual — local checks are opt-in. Pull requests run
+lint, signature review, and checks selected for the affected files. Broader
+repository checks run after merge and must pass before publishing a release.
 
 ```powershell
 # one-time: PowerShell 7.6+, prek, and the lint prerequisite
@@ -130,15 +129,15 @@ pip install "prek==0.5.7"
 prek install
 prek run setup --stage manual
 
-# fast loop: lint changed files + targeted tests
+# fast loop: lint changed files + offline behavior tests
 prek run
-pwsh -NoProfile -File ./d365bap.tools/tests/pester.ps1 -TestGeneral $false -TestFunctions $true -Include "<ChangedCommand>.Tests.ps1"
+pwsh -NoProfile -File ./build/Test-Behavior.ps1
 ```
 
-`prek run --all-files --stage manual` lints the whole tree. Never commit
-generated files (`*.Tests.ps1`, `docs/*.md`, consolidated format xml,
-`wiki/Namespaces.md`) — push only sources and the regen workflow commits the
-rest back onto the PR automatically.
+`prek run --all-files --stage manual` lints the whole tree. Do not edit generated
+files (`*.Tests.ps1`, `docs/*.md`, consolidated format XML, or
+`wiki/Namespaces.md`) in a pull request. CI builds current runtime formats for
+validation and generates documentation and test snapshots after merge.
 
 ### Accepting public signature changes
 
@@ -146,28 +145,30 @@ rest back onto the PR automatically.
 PR's merge base. Adding or removing commands or parameters, or changing types,
 defaults, aliases, parameter sets, binding attributes, dynamic parameters or
 manifest exports requires explicit acceptance. Changes to implementation bodies,
-help, formatting and regenerated tests do not satisfy or trigger acceptance.
+help, formatting and generated tests do not satisfy or trigger acceptance.
 This is a declaration review gate, not a complete behavioral compatibility test.
 
-Regeneration still writes the tests and docs. A separate **red check** remains
-until a maintainer with repository write access reviews its before/after report
-and posts this exact text as a new PR comment:
+A separate **red check** remains until a maintainer with repository write access
+reviews its before/after report and posts this exact text as a new PR comment:
 
 ```text
 /accept-signature-change
 ```
 
 The comment applies only to the PR head and base recorded by the visible check.
-Wait for that check before commenting. Every new push, including a regen commit,
-requires fresh acceptance, so accept after regeneration finishes. Ordinary PR
+Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
 approval and rerunning workflows do not accept signature changes. Editing or
 deleting the acceptance comment revokes it; post a new comment to accept again.
 Bot accounts cannot accept. Agents must leave acceptance to the human maintainer;
 GitHub cannot distinguish an agent using a person's credentials from that person.
 
 **Repository setup:** merge the workflow onto the default branch, then require
-the **Public signature approval** check (source: GitHub Actions) in the `main`
-branch ruleset/protection. A red check only blocks merging when it is required.
+the **Public signature approval** and **PS1 lint (vendored prek hooks, changed
+files)** checks in the `main` branch ruleset or protection. Keep the existing
+four required validation checks: **Validate Individual Unit Tests** now acts
+as the fail-closed aggregate for the fast PR validation. Checks only block
+merging when required. Require the PR branch to be up to date with `main` as
+well; signature refresh after a base push is best-effort and asynchronous.
 Existing PRs need a new push, reopen, or comment to run the new workflow. The
 workflow reads tooling from the default branch and parses PR Git blobs without
 executing them, so a PR cannot accept itself by editing its tests or gate code.

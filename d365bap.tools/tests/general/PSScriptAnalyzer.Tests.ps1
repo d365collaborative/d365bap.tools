@@ -13,7 +13,7 @@ BeforeDiscovery {
 	$global:__pester_data.ScriptAnalyzer = New-Object System.Collections.ArrayList
 
 	$commandFiles = $CommandPath | ForEach-Object {
-		Get-ChildItem -Path $_ -Recurse | Where-Object Name -like "*.ps1"
+		Get-ChildItem -LiteralPath $_ -Recurse -ErrorAction Stop | Where-Object Name -like "*.ps1"
 	} | ForEach-Object {
 		@{
 			BaseName = $_.BaseName
@@ -30,7 +30,7 @@ Describe 'Invoking PSScriptAnalyzer against commandbase' {
 
 	Context "Analyzing <BaseName>" -ForEach $commandFiles {
 		BeforeAll {
-			$analysis = Invoke-ScriptAnalyzer -Path $FullName -ExcludeRule PSAvoidTrailingWhitespace, PSShouldProcess
+			$analysis = Invoke-ScriptAnalyzer -Path ([WildcardPattern]::Escape($FullName)) -ExcludeRule PSAvoidTrailingWhitespace, PSShouldProcess -ErrorAction Stop
 		}
 
 		It 'Should pass the discovered analyzer rules' {

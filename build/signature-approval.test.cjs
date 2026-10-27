@@ -4,20 +4,28 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const { run, CHECK, ACCEPT } = require('./signature-approval.cjs');
+const { run, CHECK, ACCEPT, validateRevision } = require('./signature-approval.cjs');
+
+test('only full object IDs can be passed to Git', () => {
+  for (const revision of ['a'.repeat(40), 'A'.repeat(64)]) assert.equal(validateRevision(revision), revision);
+  for (const revision of ['--upload-pack=malicious', 'HEAD', 'a'.repeat(39), 'a'.repeat(41), 'g'.repeat(40), '', null]) {
+    assert.throws(() => validateRevision(revision), /full Git object ID/);
+  }
+});
 
 function harness({ existing = true, changed = true } = {}) {
   const stamp = '2026-01-01T00:00:00Z';
   const comment = {
-    id: 42, body: ACCEPT, user: { login: 'maintainer', type: 'User' },
+    id: 42, node_id: 'comment-node', body: ACCEPT, user: { login: 'maintainer', type: 'User' },
     created_at: '2026-01-01T00:01:00Z', updated_at: '2026-01-01T00:01:00Z', html_url: 'https://example.test/comment/42',
+    issue_url: 'https://api.github.com/repos/owner/repo/issues/221', performed_via_github_app: null,
   };
   const state = {
-    pr: { state: 'open', head: { sha: 'head' }, base: { sha: 'base' } },
+    pr: { state: 'open', head: { sha: 'head' }, base: { sha: 'base', ref: 'main' } },
     permission: 'write', comment, updates: [],
     check: existing ? {
       id: 1, name: CHECK, app: { slug: 'github-actions' },
-      external_id: JSON.stringify({ pr: 221, head: 'head', base: 'base' }),
+      external_id: JSON.stringify({ pr: 221, head: 'head', base: 'base', baseRef: 'main' }),
       started_at: stamp, completed_at: stamp, conclusion: 'failure',
       output: { title: 'Signature changes need maintainer acceptance' },
     } : null,
@@ -28,6 +36,7 @@ function harness({ existing = true, changed = true } = {}) {
   };
   const github = {
     paginate: async () => state.check ? [structuredClone(state.check)] : [],
+    graphql: async () => ({ node: { id: 'comment-node', lastEditedAt: state.lastEditedAt ?? null } }),
     rest: {
       pulls: { get: async () => ({ data: structuredClone(state.pr) }) },
       checks: {
@@ -60,7 +69,7 @@ function harness({ existing = true, changed = true } = {}) {
       context.payload = { issue: { number: 221 }, action: 'created', comment: structuredClone(comment) };
     },
     approvedPreviously() {
-      state.check.external_id = JSON.stringify({ pr: 221, head: 'head', base: 'base', commentId: 42 });
+      state.check.external_id = JSON.stringify({ pr: 221, head: 'head', base: 'base', baseRef: 'main', commentId: 42 });
       state.check.conclusion = 'success';
     },
     async result() { await run(args); return state.check.conclusion; },
@@ -92,7 +101,7 @@ test('same-revision reruns preserve verified acceptance', async () => {
 
 test('unrelated reruns do not invalidate a comment after the first report', async () => {
   const h = harness(); h.accept();
-  h.state.check.external_id = JSON.stringify({ pr: 221, head: 'head', base: 'base', readyAt: '2026-01-01T00:00:00Z' });
+  h.state.check.external_id = JSON.stringify({ pr: 221, head: 'head', base: 'base', baseRef: 'main', readyAt: '2026-01-01T00:00:00Z' });
   h.state.check.completed_at = '2026-01-01T00:02:00Z';
   assert.equal(await h.result(), 'success');
 });
@@ -103,13 +112,37 @@ test('editing acceptance revokes it even within the same timestamp second', asyn
   assert.equal(await h.result(), 'failure');
 });
 
-for (const scenario of ['bot', 'reader', 'wrong text', 'edited comment', 'comment predates check', 'check not finished', 'comparison failed', 'no check', 'new head', 'new base']) {
+test('same-second edit revokes acceptance even if its event was superseded', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.state.lastEditedAt = h.state.comment.created_at;
+  assert.equal(await h.result(), 'failure');
+});
+
+test('missing edit marker fails closed', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.args.github.graphql = async () => ({ node: { id: 'comment-node' } });
+  assert.equal(await h.result(), 'failure');
+});
+
+test('edit marker API failure fails closed', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.args.github.graphql = async () => { throw new Error('GraphQL unavailable'); };
+  await assert.rejects(h.result(), /GraphQL unavailable/);
+  assert.equal(h.state.check.conclusion, 'failure');
+});
+
+for (const scenario of ['bot', 'app', 'reader', 'wrong text', 'whitespace', 'other issue', 'mismatched timestamp', 'mismatched author', 'edited comment', 'comment predates check', 'check not finished', 'comparison failed', 'no check', 'new head', 'new base']) {
   test(`cannot accept: ${scenario}`, async () => {
     const h = harness(); h.accept();
     switch (scenario) {
       case 'bot': h.state.comment.user.type = 'Bot'; break;
+      case 'app': h.state.comment.performed_via_github_app = { slug: 'some-app' }; break;
       case 'reader': h.state.permission = 'read'; break;
       case 'wrong text': h.state.comment.body = 'LGTM'; break;
+      case 'whitespace': h.state.comment.body = ` ${ACCEPT}`; break;
+      case 'other issue': h.state.comment.issue_url = 'https://api.github.com/repos/owner/repo/issues/222'; break;
+      case 'mismatched timestamp': h.state.comment.created_at = h.state.comment.updated_at = '2026-01-01T00:02:00Z'; break;
+      case 'mismatched author': h.state.comment.user.login = 'someone-else'; break;
       case 'edited comment': h.state.comment.updated_at = '2026-01-01T00:02:00Z'; break;
       case 'comment predates check': h.args.context.payload.comment.created_at = '2025-12-31T00:00:00Z'; break;
       case 'check not finished': h.state.check.conclusion = null; break;
@@ -122,7 +155,7 @@ for (const scenario of ['bot', 'reader', 'wrong text', 'edited comment', 'commen
   });
 }
 
-for (const scenario of ['deleted', 'edited', 'permission removed', 'new head', 'new base']) {
+for (const scenario of ['deleted', 'edited', 'permission removed', 'new head', 'new base', 'new base ref']) {
   test(`previous acceptance is revoked: ${scenario}`, async () => {
     const h = harness(); h.approvedPreviously();
     switch (scenario) {
@@ -131,6 +164,7 @@ for (const scenario of ['deleted', 'edited', 'permission removed', 'new head', '
       case 'permission removed': h.state.permission = 'read'; break;
       case 'new head': h.state.pr.head.sha = 'new-head'; break;
       case 'new base': h.state.pr.base.sha = 'new-base'; break;
+      case 'new base ref': h.state.pr.base.ref = 'release'; break;
     }
     assert.equal(await h.result(), 'failure');
   });
@@ -143,6 +177,66 @@ test('comparison errors fail closed even with valid acceptance', async () => {
   assert.equal(h.state.check.conclusion, 'failure');
 });
 
+test('invalid comparison output fails closed', async () => {
+  for (const result of [{}, { changes: 'none' }, { changes: [{ name: 'bad', before: null }] }]) {
+    const h = harness(); h.approvedPreviously();
+    h.args.compareSignatures = async () => result;
+    await assert.rejects(h.result(), /Invalid signature comparison result/);
+    assert.equal(h.state.check.conclusion, 'failure');
+  }
+});
+
+test('large reports disclose omissions and log all changes without workflow commands', async () => {
+  const h = harness();
+  const changes = [
+    { name: 'First', before: '', after: 'x'.repeat(30000) },
+    { name: 'Second', before: '', after: `${'y'.repeat(45000)}\n::error::unsafe\r😀` },
+    { name: 'Third', before: null, after: 'new' },
+  ];
+  const logs = [];
+  h.args.core.info = line => logs.push(line);
+  h.args.compareSignatures = async () => ({ changes });
+  assert.equal(await h.result(), 'failure');
+  const summary = h.state.check.output.summary;
+  assert.ok(summary.length <= 60000);
+  assert.match(summary, /Total declaration changes: 3/);
+  assert.match(summary, /Report truncated: 2 of 3/);
+  assert.match(summary, /First/);
+  const reportLines = logs.filter(line => line.startsWith('Signature report JSON part '));
+  assert.ok(reportLines.length > 1);
+  assert.ok(reportLines.every(line => !/[\r\n]/.test(line)));
+  const report = reportLines.map(line => line.replace(/^Signature report JSON part \d+\/\d+: /, '')).join('');
+  assert.deepEqual(JSON.parse(report), { changes });
+});
+
+test('summary limit counts UTF-8 bytes for Unicode declarations', async () => {
+  const h = harness();
+  const logs = [];
+  h.args.core.info = line => logs.push(line);
+  h.args.compareSignatures = async () => ({
+    changes: [{ name: 'Unicode', before: '', after: '😀'.repeat(20000) }],
+  });
+  assert.equal(await h.result(), 'failure');
+  assert.ok(Buffer.byteLength(h.state.check.output.summary, 'utf8') <= 60000);
+  assert.match(h.state.check.output.summary, /Report truncated: 1 of 1/);
+  assert.ok(logs.some(line => line.startsWith('Signature report JSON part ')));
+});
+
+test('acceptance removed while comparing cannot pass', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.args.compareSignatures = async () => {
+    h.state.comment = null;
+    return { changes: [{ name: 'Get-Example', before: 'old', after: 'new' }] };
+  };
+  assert.equal(await h.result(), 'failure');
+});
+
+test('a failed check cannot carry a previous acceptance', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.state.check.conclusion = 'failure';
+  assert.equal(await h.result(), 'failure');
+});
+
 test('permission API errors revoke success and fail closed', async () => {
   const h = harness(); h.approvedPreviously();
   h.args.github.rest.repos.getCollaboratorPermissionLevel = async () => { throw new Error('API unavailable'); };
@@ -153,6 +247,35 @@ test('permission API errors revoke success and fail closed', async () => {
 test('a push during comparison cannot receive stale success', async () => {
   const h = harness(); h.approvedPreviously();
   h.args.compareSignatures = async () => { h.state.pr.head.sha = 'new-head'; return { changes: [] }; };
+  await h.result();
+  assert.equal(h.state.updates.some(update => update.conclusion === 'success'), false);
+});
+
+test('base-branch refresh uses the current PR base and revokes old acceptance', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.state.pr.base.sha = 'new-base';
+  h.args.context.eventName = 'push';
+  h.args.context.payload = {};
+  h.args.pullNumber = 221;
+  let compared;
+  h.args.compareSignatures = async (base, head) => {
+    compared = [base, head];
+    return { changes: [{ name: 'Get-Example', before: 'old', after: 'new' }] };
+  };
+  assert.equal(await h.result(), 'failure');
+  assert.deepEqual(compared, ['new-base', 'head']);
+});
+
+test('a base advance during comparison cannot receive stale success', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.args.compareSignatures = async () => { h.state.pr.base.sha = 'new-base'; return { changes: [] }; };
+  await h.result();
+  assert.equal(h.state.updates.some(update => update.conclusion === 'success'), false);
+});
+
+test('a retarget during comparison cannot receive stale success even with the same base SHA', async () => {
+  const h = harness(); h.approvedPreviously();
+  h.args.compareSignatures = async () => { h.state.pr.base.ref = 'release'; return { changes: [] }; };
   await h.result();
   assert.equal(h.state.updates.some(update => update.conclusion === 'success'), false);
 });
