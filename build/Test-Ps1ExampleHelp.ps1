@@ -18,13 +18,16 @@ $script:caseCount = 0
 
 function Assert-Example {
 	param([string] $Label, [string] $Source, [string[]] $Expected = @())
-	[IO.File]::WriteAllText($fixturePath, $Source)
-	$analysis = Get-Ps1Analysis -Path $fixturePath
-	$diagnostics = @(Get-Ps1HelpDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSHelpExample')
-	$message = $diagnostics.Message -join ' '
-	if ($Expected.Count -eq 0 -and $diagnostics.Count -gt 0) { throw "${Label}: unexpected diagnostics: $message" }
-	foreach ($fragment in $Expected) {
-		if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+	$normalizedSource = $Source.Replace("`r`n", "`n")
+	foreach ($lineEnding in @("`n", "`r`n")) {
+		[IO.File]::WriteAllText($fixturePath, $normalizedSource.Replace("`n", $lineEnding))
+		$analysis = Get-Ps1Analysis -Path $fixturePath
+		$diagnostics = @(Get-Ps1HelpDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSHelpExample')
+		$message = $diagnostics.Message -join ' '
+		if ($Expected.Count -eq 0 -and $diagnostics.Count -gt 0) { throw "${Label}: unexpected diagnostics: $message" }
+		foreach ($fragment in $Expected) {
+			if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+		}
 	}
 	$script:caseCount++
 }
@@ -69,6 +72,7 @@ function New-Fixture {
     )
 }
 '@
+$fixture = $fixture.Replace("`r`n", "`n")
 
 try {
 	Assert-Example 'Separate lines and documented defaults' $fixture
@@ -125,7 +129,7 @@ try {
 	Assert-Example 'Line comment help also works' $lineHelp
 	$other = $fixture.Replace('New-Fixture', 'New-OtherFixture').Replace('Default: tenant currency', 'Currency code.').Replace("    It will use the tenant default for -Currency.`n", '')
 	Assert-Example 'Defaults do not leak between help groups' ($fixture + "`n" + $other)
-	Write-Output "$script:caseCount example-help regression checks passed."
+	Write-Output "$script:caseCount example-help regression cases passed with both LF and CRLF line endings."
 }
 finally {
 	if (Test-Path -LiteralPath $fixturePath) { Remove-Item -LiteralPath $fixturePath -Force }
