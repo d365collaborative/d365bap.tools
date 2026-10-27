@@ -49,6 +49,7 @@ function Get-PpacFinOpsPlatform {
 		[string] $AppVersion,
 
 		[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[Alias("BuildVersion")]
 		[string] $Build,
 
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
