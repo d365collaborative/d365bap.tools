@@ -1,81 +1,34 @@
 ﻿<#
     .SYNOPSIS
-        Deploy a new Unified environment through the Power Platform SDK.
+        Deploy a Unified environment via the Power Platform SDK.
 
     .DESCRIPTION
-        Deploys a new Unified environment in Power Platform Admin Center (PPAC).
+        Deploys a Finance and Operations Unified environment (UDE or USE) through the bundled
+        Power Platform SDK instead of the legacy Business App Platform endpoint.
 
-        This is the second generation of New-UnifiedEnvironment. The shell
-        environment is provisioned through the bundled Power Platform SDK
-        (POST /environmentmanagement/provisioning/environments) instead of
-        the legacy Business App Platform endpoint.
-
-        Support D365 Finance and Operations, either Developer Edition (UDE) or Unified Sandbox Environment (USE).
-
-        Location and template values are validated against the provisioning
-        discovery cache before anything is sent to the API, so an unknown
-        location, an unavailable template, or a license-gated SKU combination
-        fails immediately with the valid values instead of a late timeout.
+        Input is validated against the provisioning cache before anything is sent.
 
     .PARAMETER Type
-        Instructs the cmdlet to create either a Unified Sandbox Environment (USE) or a Unified Developer Environment (UDE).
-
-        Valid values are:
-        - "USE": Deploys a Unified Sandbox Environment (USE) which is a sandbox environment without developer tools.
-        - "UDE": Deploys a Unified Developer Environment (UDE) which is a sandbox environment with developer tools.
-
-        The type constrains the template: "UDE" only works with
-        "D365_DeveloperEdition", while "USE" requires a Finance and
-        Operations template ("D365_FinOps*") and can never use the developer
-        edition.
+        UDE (sandbox with developer tools) or USE (sandbox without developer tools).
 
     .PARAMETER Name
         Name of the new environment as it will be displayed in Power Platform Admin Center (PPAC).
 
     .PARAMETER CustomDomainName
-        The custom domain name to be associated with the new environment.
-
-        E.g. "demo-time" will create the environment URLs:
-        - "https://demo-time.crmX.dynamics.com".
-        - "https://demo-time.operations.eu.dynamics.com"
-
-        Use lowercase. When omitted, Power Platform assigns a domain name.
+        Lowercase domain prefix, e.g. "demo-time". When omitted, Power Platform assigns one.
 
     .PARAMETER Location
-        The deployment location for the new environment.
-
-        Use the location name (e.g. "europe"). Display names such as
-        "Europe" are accepted and normalized. Tab completion lists the
-        available locations.
+        Deployment location, e.g. "europe". Tab completion lists the available locations.
 
     .PARAMETER Template
-        The provisioning template to apply (e.g. "D365_DeveloperEdition").
-
-        Only Finance and Operations templates ("D365_FinOps*") and the
-        developer edition ("D365_DeveloperEdition") are supported.
-
-        The environment type constrains the choice: "UDE" requires
-        "D365_DeveloperEdition", while "USE" requires a "D365_FinOps*"
-        template (its default must be overridden explicitly).
-
-        Tab completion lists the supported templates available for the
-        selected location and type. The template is validated for the
-        Sandbox SKU before anything is provisioned.
+        UDE needs D365_DeveloperEdition, USE a D365_FinOps* template.
+        Default: D365_DeveloperEdition
 
     .PARAMETER Language
-        The base language of the new environment, as a locale id (e.g. 1033)
-        or a language name (e.g. "English (United States)").
-
-        Tab completion lists the available languages for the selected
-        location, with the tenant default first. When omitted, the tenant
-        default language is used.
+        Base language as locale id (e.g. 1033) or name. When omitted, the tenant default is used.
 
     .PARAMETER Currency
-        The currency code of the new environment (e.g. "USD").
-
-        Tab completion lists the available currencies for the selected
-        location, with the tenant default first. When omitted, the tenant
-        default currency is used.
+        Currency code, e.g. "DKK". When omitted, the tenant default currency is used.
 
     .PARAMETER NoDemoDb
         Instructs the cmdlet to create the environment without a demo database.
@@ -87,51 +40,36 @@
         Entra Groups security group to restrict access to the new environment.
 
     .PARAMETER EnvironmentGroup
-        The ID or display name of the environment group in which to create the shell environment.
-
-        Note that this will make the environment a managed environment.
+        ID or display name of the environment group. Makes the environment a managed environment.
 
     .PARAMETER PostProvisionDelaySeconds
-        Additional delay (in seconds) after the shell environment reports as ready.
-
-        This pause helps ensure the platform application package endpoint is fully ready before install is attempted.
+        Extra wait in seconds after the environment is ready, before package install.
+        Default: 60
 
     .PARAMETER ReadyStateTimeoutMinutes
-        Maximum number of minutes to wait for the environment to reach state 'Ready'.
-
-        Prevents endless waiting when an environment is stuck in a non-ready state.
+        Maximum minutes to wait for the environment to reach state Ready.
+        Default: 60
 
     .PARAMETER WaitForCompletion
         Instructs the cmdlet to wait until the final provisioning app installation is completed.
 
     .PARAMETER EarlyRelease
-        Instructs the cmdlet to create the environment in the early release cycle.
-
-        Note that not all locations support early release environments.
+        Creates the environment in the early release cycle. Not all locations support this.
 
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe"
 
-        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "europe" location.
-        It will include a demo database by default.
-        It will get a default/unique domain name assigned by Power Platform.
-        It will take the latest available version of Finance and Operations.
-        It will not restrict access to the environment.
+        Creates UDE "MyUdeEnv" in "europe" with demo data, an assigned domain, the latest version and open access.
 
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe" -CustomDomainName "myudeenv"
 
-        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "europe" location.
-        It will include a demo database by default.
-        It will get the custom domain name "myudeenv".
-        It will take the latest available version of Finance and Operations.
-        It will not restrict access to the environment.
+        Same as above, but with the custom domain name "myudeenv".
 
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe" -Version "10.0.44" -WhatIf
 
-        This will show the resolved provisioning payload without creating anything.
-        It will install version 10.0.44 of Finance and Operations when run without -WhatIf.
+        Shows the resolved provisioning payload without creating anything. Without -WhatIf it installs 10.0.44.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
