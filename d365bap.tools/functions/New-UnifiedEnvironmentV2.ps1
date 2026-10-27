@@ -133,13 +133,6 @@
         This will show the resolved provisioning payload without creating anything.
         It will install version 10.0.44 of Finance and Operations when run without -WhatIf.
         
-    .EXAMPLE
-        PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe" -Currency "EUR"
-        
-        This will create a new Unified Developer Environment (UDE) named "MyUdeEnv" in the "europe" location.
-        It will use "EUR" as the currency of the environment.
-        It will use the tenant default language.
-        
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -240,7 +233,6 @@ function New-UnifiedEnvironmentV2 {
                 throw "Unknown currency '$Currency' for location '$locationName'. Supported values: $($validCurrencies -join ', ')."
             }
             $currencyCode = if ($currencyMatch) { $currencyMatch[0].code } else { $Currency }
-            $currencySymbol = if ($currencyMatch) { $currencyMatch[0].symbol } else { $null }
         }
 
         if (-not $PSBoundParameters.ContainsKey('Language') -or -not $PSBoundParameters.ContainsKey('Currency')) {
@@ -252,7 +244,6 @@ function New-UnifiedEnvironmentV2 {
                     BaseLanguage   = [int]$cachedDefault.language.localeId
                     LanguageName   = $cachedDefault.language.localizedName
                     CurrencyCode   = $cachedDefault.currency.code
-                    CurrencySymbol = $cachedDefault.currency.symbol
                 }
             }
             else {
@@ -265,7 +256,6 @@ function New-UnifiedEnvironmentV2 {
             }
             if (-not $PSBoundParameters.ContainsKey('Currency')) {
                 $currencyCode = $tenantDefault.CurrencyCode
-                $currencySymbol = $tenantDefault.CurrencySymbol
             }
         }
 
@@ -314,7 +304,6 @@ function New-UnifiedEnvironmentV2 {
             BaseLanguage       = $baseLanguage
             LanguageName       = $languageName
             CurrencyCode       = $currencyCode
-            CurrencySymbol     = $currencySymbol
             CustomDomainName   = $CustomDomainName
             DevToolsEnabled    = ($Type -eq 'UDE')
             DemoDataEnabled    = (-not $NoDemoDb)
