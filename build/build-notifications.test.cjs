@@ -102,10 +102,16 @@ test('validation-only and superseded publication runs leave the incident open', 
 test('old runs and old attempts cannot open or close an incident', async () => {
   for (const conclusion of ['failure', 'success']) {
     for (const newer of [{ id: 11, run_attempt: 1 }, { id: 10, run_attempt: 2 }]) {
-      const { state, invoke } = fixture(conclusion);
-      state.latest = [newer];
-      await invoke();
-      assert.equal(state.mutations.length, 0);
+      for (const incidentOpen of [false, true]) {
+        const { run, state, invoke } = fixture();
+        if (incidentOpen) await invoke();
+        run.conclusion = conclusion;
+        state.jobs = conclusion === 'success' ? successfulPublication() : state.jobs;
+        state.latest = [newer];
+        const before = structuredClone(state.issues);
+        await invoke();
+        assert.deepEqual(state.issues, before);
+      }
     }
   }
 });
