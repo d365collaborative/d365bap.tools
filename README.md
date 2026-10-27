@@ -1,4 +1,4 @@
-﻿# **d365bap.tools**
+# **d365bap.tools**
 
 A PowerShell module to handle different management tasks related to Business Application Platform, which consist of Microsoft Dynamics 365 Finance & Operations (D365FO) and Dataverse (PowerPlatform)
 
@@ -122,6 +122,7 @@ Want to contribute to the project? We'd love to have you! Visit our [contributin
 Pull the repo and work as usual — local checks are opt-in. Pull requests run
 lint, signature review, and checks selected for the affected files. Broader
 repository checks run after merge and must pass before publishing a release.
+Documentation-only pull requests skip module tests when no code is affected.
 
 ```powershell
 # one-time: PowerShell 7.6+, prek, and the lint prerequisite
