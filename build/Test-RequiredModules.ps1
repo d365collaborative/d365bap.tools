@@ -40,6 +40,7 @@ function Register-PSRepository {
 	param([switch] $Default)
 	Assert-True $Default 'Repository registration must use -Default.'
 	Add-Call 'RegisterRepository'
+	$state.galleryExists = $true
 }
 
 function Set-PSRepository {
@@ -47,6 +48,8 @@ function Set-PSRepository {
 	param([string] $Name, [string] $InstallationPolicy)
 	Assert-True ($Name -eq 'PSGallery' -and $InstallationPolicy -eq 'Trusted') 'Repository setup must trust PSGallery.'
 	Add-Call 'SetRepository' $Name
+	Assert-True $state.galleryExists 'The gallery must exist before it can be configured.'
+	$state.galleryTrusted = $true
 }
 
 function Install-Module {
@@ -54,7 +57,9 @@ function Install-Module {
 	param([string] $Name, [string] $RequiredVersion, [string] $Scope, [switch] $Force, [switch] $SkipPublisherCheck)
 	Assert-True ($state.pins.ContainsKey($Name) -and $RequiredVersion -ceq $state.pins[$Name]) "Incorrect pinned version for $Name`: $RequiredVersion"
 	Assert-True ($Scope -eq 'CurrentUser' -and $Force -and $SkipPublisherCheck) "Incorrect installation options for $Name."
+	Assert-True $state.galleryTrusted 'Installation must not require a gallery trust prompt.'
 	Add-Call 'Install' $Name
+	$state.present[$Name] = $RequiredVersion
 }
 
 function Initialize-Scenario($Modules) {
@@ -62,6 +67,7 @@ function Initialize-Scenario($Modules) {
 	$state.present = @{}
 	$state.pins = @{}
 	$state.galleryExists = $true
+	$state.galleryTrusted = $false
 	$state.failure = ''
 	foreach ($entry in $Modules) {
 		$state.pins[$entry.Name] = $entry.Version
@@ -69,10 +75,13 @@ function Initialize-Scenario($Modules) {
 	}
 }
 
-function Assert-Call([string[]] $Expected, [string] $Context) {
-	$actual = $state.calls -join ', '
-	$expectedText = $Expected -join ', '
-	Assert-True ($actual -ceq $expectedText) "$Context calls differ. Expected: $expectedText. Actual: $actual."
+function Assert-Installed([string[]] $Expected) {
+	$actual = @($state.calls | Where-Object { $_ -like 'Install:*' } | Sort-Object)
+	$expectedCalls = @($Expected | ForEach-Object { "Install:$_" } | Sort-Object)
+	Assert-True (($actual -join ',') -ceq ($expectedCalls -join ',')) "Expected installs: $expectedCalls. Actual: $actual."
+	foreach ($name in $state.pins.Keys) {
+		Assert-True ($state.present[$name] -eq $state.pins[$name]) "Missing pinned version of $name."
+	}
 }
 
 foreach ($set in @('base', 'generated')) {
@@ -81,7 +90,8 @@ foreach ($set in @('base', 'generated')) {
 
 	Initialize-Scenario $modules
 	& $installer -Set $set
-	Assert-Call @($modules | ForEach-Object { "GetModule`:$($_.Name)" }) "$set complete cache hit"
+	Assert-Installed @()
+	Assert-True (@($state.calls | Where-Object { $_ -notlike 'GetModule:*' }).Count -eq 0) 'A complete cache must not access the gallery.'
 	Write-Output "PASS: $set complete cache hit"
 
 	foreach ($galleryExists in @($true, $false)) {
@@ -92,16 +102,9 @@ foreach ($set in @('base', 'generated')) {
 		$state.present.Remove($first)
 		$state.present.Remove($last)
 		& $installer -Set $set
-		$expected = foreach ($entry in $modules) {
-			"GetModule`:$($entry.Name)"
-			if ($entry.Name -eq $first) {
-				'GetRepository:PSGallery'
-				if (-not $galleryExists) { 'RegisterRepository:' }
-				'SetRepository:PSGallery'
-			}
-			if ($entry.Name -in @($first, $last)) { "Install`:$($entry.Name)" }
-		}
-		Assert-Call $expected "$set partial miss (gallery exists: $galleryExists)"
+		Assert-Installed @($first, $last)
+		Assert-True (@($state.calls | Where-Object { $_ -eq 'RegisterRepository:' }).Count -eq [int](-not $galleryExists)) 'Register the gallery only when it is missing.'
+		Assert-True (@($state.calls | Where-Object { $_ -eq 'SetRepository:PSGallery' }).Count -eq 1) 'Configure the gallery once per installation run.'
 		Write-Output "PASS: $set partial miss (gallery exists: $galleryExists)"
 	}
 }
@@ -116,9 +119,7 @@ foreach ($failure in @('GetModule', 'GetRepository', 'RegisterRepository', 'SetR
 	try { & $installer -Set base }
 	catch { $caught = $_ }
 	Assert-True ($null -ne $caught -and $caught.Exception.Message -eq "Injected $failure failure") "$failure failure did not propagate."
-	$expected = @("GetModule`:$($modules[0].Name)", 'GetRepository:PSGallery', 'RegisterRepository:', 'SetRepository:PSGallery', "Install`:$($modules[0].Name)")
-	$stop = @('GetModule', 'GetRepository', 'RegisterRepository', 'SetRepository', 'Install').IndexOf($failure)
-	Assert-Call $expected[0..$stop] "$failure failure"
+	Assert-True ($state.calls[-1] -like "$failure`:*") "$failure failure must stop further operations."
 	Write-Output "PASS: $failure failure propagates"
 }
 

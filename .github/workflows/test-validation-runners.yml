@@ -46,6 +46,9 @@ jobs:
     - name: Test example help lint
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ExampleHelp.ps1
+    - name: Test module prerequisites
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1
     - name: Restore PowerShell modules
       uses: actions/cache/restore@v5
       with:
@@ -56,9 +59,6 @@ jobs:
     - name: Ensure prerequisites
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
-    - name: Test module prerequisites
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1
     - name: Test analyzer consolidation
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-PSScriptAnalyzerConsolidation.ps1

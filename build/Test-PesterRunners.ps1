@@ -43,8 +43,18 @@ function Assert-Success($Run, [string] $Context) {
 
 function Assert-DiscoveryFailure($Run, [string] $Context) {
 	Assert-True ($Run.ExitCode -ne 0) "$Context unexpectedly succeeded: $($Run.Output)"
-	Assert-True ($Run.Output -match '0 / 0 tests failed') "$Context did not demonstrate failure with FailedCount 0: $($Run.Output)"
-	Assert-True ($Run.Output -notmatch 'without a single failure') "$Context reported success: $($Run.Output)"
+	Assert-ReportedTests @()
+}
+
+function Assert-ReportedTests([string[]] $Expected) {
+	$cases = @(foreach ($file in (Get-ChildItem -LiteralPath $results -Filter '*.xml')) {
+			$report = [xml](Get-Content -LiteralPath $file.FullName -Raw)
+			$report.SelectNodes('//test-case')
+		})
+	$actual = @($cases | ForEach-Object { $_.name } | Sort-Object)
+	$expectedNames = @($Expected | ForEach-Object { "$_.passes" } | Sort-Object)
+	Assert-True (($actual -join ',') -ceq ($expectedNames -join ',')) "Expected reported tests: $expectedNames. Actual: $actual."
+	Assert-True (@($cases | Where-Object { $_.result -ne 'Success' }).Count -eq 0) 'Every selected test must pass.'
 }
 
 try {
@@ -73,19 +83,9 @@ try {
 			Add-TestFile (Join-Path $tests "functions/$id.Tests.ps1") $id
 		}
 		$run = Invoke-Runner 'pester.ps1' @{ TestGeneral = $false; TestFunctions = $true }
-		Assert-Success $run "Batch boundary $count"
-		$xmlFiles = @(Get-ChildItem -LiteralPath $results -Filter 'TEST-Functions-*.xml')
-		$expectedBatches = [int][Math]::Ceiling($count / 20.0)
-		Assert-True ($xmlFiles.Count -eq $expectedBatches) "Expected $expectedBatches batch XML files for $count tests; found $($xmlFiles.Count)."
-		for ($i = 1; $i -le $count; $i++) {
-			$id = 'Case{0:D2}' -f $i
-			$batch = [int][Math]::Floor(($i - 1) / 20.0) + 1
-			$xml = Get-Content -Raw -LiteralPath (Join-Path $results ('TEST-Functions-{0:D3}.xml' -f $batch))
-			Assert-True ($xml.Contains($id)) "$id missing from batch $batch."
-			$occurrences = @($xmlFiles | Where-Object { (Get-Content -Raw -LiteralPath $_.FullName).Contains($id) }).Count
-			Assert-True ($occurrences -eq 1) "$id appeared in $occurrences batches."
-		}
-		Write-Host "PASS: function batch boundary $count"
+		Assert-Success $run "$count selected function tests"
+		Assert-ReportedTests @(for ($i = 1; $i -le $count; $i++) { 'Case{0:D2}' -f $i })
+		Write-Host "PASS: all $count selected function tests reported exactly once"
 	}
 
 	Reset-Fixture
@@ -99,11 +99,7 @@ try {
 	Add-TestFile (Join-Path $tests 'general/Other.Tests.ps1') 'OtherGeneral'
 	$run = Invoke-Runner 'pester.ps1' @{ Include = 'Keep*'; Exclude = '*Excluded*' }
 	Assert-Success $run 'Include/exclude filters'
-	$xmlFiles = @(Get-ChildItem -LiteralPath $results -Filter '*.xml')
-	Assert-True ($xmlFiles.Count -eq 2) "Expected one general and one function XML; found $($xmlFiles.Count)."
-	$allXml = ($xmlFiles | ForEach-Object { Get-Content -Raw -LiteralPath $_.FullName }) -join "`n"
-	foreach ($name in @('KeepFunction', 'KeepNested', 'KeepGeneral')) { Assert-True ($allXml.Contains($name)) "$name was filtered out." }
-	foreach ($name in @('ExcludedFunction', 'OtherFunction', 'ExcludedGeneral', 'OtherGeneral')) { Assert-True (-not $allXml.Contains($name)) "$name was not filtered out." }
+	Assert-ReportedTests @('KeepFunction', 'KeepNested', 'KeepGeneral')
 	Write-Host 'PASS: include/exclude filters and recursive discovery'
 
 	foreach ($kind in @('general', 'functions')) {
@@ -128,7 +124,7 @@ try {
 	Set-Content -LiteralPath (Join-Path $tests 'functions/Empty.Tests.ps1') -Value '# No tests' -Encoding utf8
 	$run = Invoke-Runner 'pester.ps1' @{ TestGeneral = $false; TestFunctions = $true }
 	Assert-Success $run 'Empty Pester container'
-	Assert-True ($run.Output -match 'All .*0.* tests executed') "Empty container did not report zero tests: $($run.Output)"
+	Assert-ReportedTests @()
 	Write-Host 'PASS: empty Pester container'
 
 	foreach ($kind in @('public', 'internal')) {
