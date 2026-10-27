@@ -11,7 +11,7 @@ $scbFinOpsAppVersion = {
 	)
 
 	try {
-		$filterWord = "$wordToComplete" -replace '^[''"]', ''
+		$filterWord = "$wordToComplete".Trim("'", '"')
 		$base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
 		$cachePath = Join-Path (Join-Path $base 'd365bap.tools') 'finopsversions.json'
 
@@ -59,7 +59,7 @@ $scbFinOpsAppVersionOnly = {
 	)
 
 	try {
-		$filterWord = "$wordToComplete" -replace '^[''"]', ''
+		$filterWord = "$wordToComplete".Trim("'", '"')
 		$base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
 		$cachePath = Join-Path (Join-Path $base 'd365bap.tools') 'finopsversions.json'
 
@@ -102,7 +102,7 @@ $scbFinOpsBuild = {
 	)
 
 	try {
-		$filterWord = "$wordToComplete" -replace '^[''"]', ''
+		$filterWord = "$wordToComplete".Trim("'", '"')
 		$base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
 		$cachePath = Join-Path (Join-Path $base 'd365bap.tools') 'finopsversions.json'
 
