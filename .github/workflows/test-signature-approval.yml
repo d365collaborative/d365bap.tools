@@ -1,0 +1,22 @@
+name: test-signature-approval
+
+on: [pull_request]
+
+permissions:
+  # This workflow executes PR-supplied tests and parser code. Keep it separate
+  # from the privileged pull_request_target gate and never grant write access.
+  contents: read
+
+jobs:
+  regression-tests:
+    name: Signature gate regression tests
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        persist-credentials: false
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+    - run: node --test build/signature-approval.test.cjs build/Get-SignatureDelta.test.cjs
