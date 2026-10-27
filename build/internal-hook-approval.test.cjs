@@ -95,12 +95,17 @@ test('protected Git history is inspected without executing PR files', () => {
   }
 });
 
-test('privileged hook workflow loads only trusted default-branch tooling', () => {
-  const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/internal-hook-approval.yml'), 'utf8');
-  assert.match(workflow, /pull_request_target:/);
-  assert.match(workflow, /issue_comment:\s+types: \[created, edited, deleted\]/);
-  assert.equal((workflow.match(/ref: \$\{\{ github\.event\.repository\.default_branch \}\}/g) || []).length, 2);
-  assert.doesNotMatch(workflow, /ref:.*(?:head\.sha|head\.ref)/);
-  assert.match(workflow, /persist-credentials: false/);
-  assert.match(workflow, /checks: write/);
+test('privileged approval workflows load only trusted default-branch tooling', () => {
+  for (const name of ['internal-hook-approval', 'signature-approval']) {
+    const workflow = fs.readFileSync(path.join(__dirname, `../.github/workflows/${name}.yml`), 'utf8');
+    assert.match(workflow, /pull_request_target:/);
+    assert.match(workflow, /issue_comment:\s+types: \[created, edited, deleted\]/);
+    assert.equal((workflow.match(/ref: \$\{\{ github\.event\.repository\.default_branch \}\}/g) || []).length, 2);
+    assert.doesNotMatch(workflow, /ref:.*(?:head\.sha|head\.ref)/);
+    assert.match(workflow, /persist-credentials: false/);
+    assert.match(workflow, /checks: write/);
+    assert.match(workflow, /statuses: write/);
+  }
+  const regression = fs.readFileSync(path.join(__dirname, '../.github/workflows/test-signature-approval.yml'), 'utf8');
+  assert.doesNotMatch(regression, /(?:checks|statuses): write/);
 });

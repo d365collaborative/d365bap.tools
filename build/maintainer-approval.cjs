@@ -72,6 +72,11 @@ async function run({ github, context, core, compareChanges, pullNumber }, policy
     Date.parse(eventComment.created_at) > Date.parse(previous.readyAt || check.completed_at);
 
   const details_url = `${context.serverUrl || 'https://github.com'}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`;
+  const publishStatus = (state, description) => github.rest.repos.createCommitStatus({
+    ...repo, sha: head, context: CHECK, state, description: description.slice(0, 140),
+    target_url: check ? `${context.serverUrl || 'https://github.com'}/${repo.owner}/${repo.repo}/runs/${check.id}` : details_url,
+  });
+  await publishStatus('pending', 'Verifying maintainer acceptance.');
   if (!check) {
     check = (await github.rest.checks.create({
       ...repo, name: CHECK, head_sha: head, status: 'in_progress', details_url,
@@ -147,6 +152,7 @@ async function run({ github, context, core, compareChanges, pullNumber }, policy
       }),
       output: { title, summary: `${intro}${visible.join('\n')}${notice}` },
     });
+    await publishStatus(approved ? 'success' : 'failure', title);
     core.info(title);
   } catch (error) {
     await github.rest.checks.update({
@@ -154,6 +160,7 @@ async function run({ github, context, core, compareChanges, pullNumber }, policy
       completed_at: new Date().toISOString(),
       output: { title: policy.failureTitle, summary: policy.failureSummary },
     });
+    await publishStatus('failure', policy.failureTitle);
     throw error;
   }
 }
