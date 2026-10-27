@@ -2,7 +2,7 @@
 param()
 $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ('pr-plan-tests-' + [guid]::NewGuid().ToString('N'))
-$gitExe = (Get-Command git -CommandType Application).Source
+$gitExe = (Get-Command git -CommandType Application | Select-Object -First 1).Source
 $detector = Join-Path $PSScriptRoot 'Get-PRValidationPlan.ps1'
 
 function Assert-True([bool] $Condition, [string] $Message) { if (-not $Condition) { throw $Message } }
