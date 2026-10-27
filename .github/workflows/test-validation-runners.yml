@@ -9,6 +9,8 @@ on:
       - 'build/Test-PesterRunners.ps1'
       - 'build/Test-PSScriptAnalyzerConsolidation.ps1'
       - 'build/Test-RequiredModules.ps1'
+      - 'build/Test-Ps1ExampleHelp.ps1'
+      - 'build/ps1-lint/**'
       - 'build/Install-RequiredModules.ps1'
       - 'build/ModuleCacheRequirements.json'
       - 'd365bap.tools/tests/pester.ps1'
@@ -29,6 +31,9 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
+    - name: Test example help lint
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ExampleHelp.ps1
     - name: Restore PowerShell modules
       uses: actions/cache/restore@v5
       with:
