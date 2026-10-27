@@ -24,7 +24,7 @@ $scbFinOpsAsset = {
 			"Vhd"              = "VHD image parts, multi-file download (tens of GB)"
 		}
 
-		$filterWord = "$wordToComplete" -replace '^[''"]', ''
+		$filterWord = "$wordToComplete".Trim("'", '"')
 
 		foreach ($entry in $kinds.GetEnumerator()) {
 			if ($entry.Key -like "$filterWord*") {
@@ -53,7 +53,7 @@ $scbFinOpsKind = {
 			"Vhd"           = "The VHD image parts (only with -Asset Vhd)"
 		}
 
-		$filterWord = "$wordToComplete" -replace '^[''"]', ''
+		$filterWord = "$wordToComplete".Trim("'", '"')
 
 		foreach ($entry in $kinds.GetEnumerator()) {
 			if ($entry.Key -like "$filterWord*") {
