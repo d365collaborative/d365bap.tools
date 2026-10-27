@@ -18,6 +18,7 @@ function Start-FinOpsVersionPreload {
             PS C:\> Start-FinOpsVersionPreload
 
             Refreshes the cache when older than a day.
+            It uses -MaxAgeHours 24 to keep the cache for one day.
 
         .NOTES
             Author: Mötz Jensen (@Splaxi)
@@ -35,8 +36,14 @@ function Start-FinOpsVersionPreload {
 			$azCommand = Get-Command az -ErrorAction SilentlyContinue
 			$azLoggedIn = $false
 			if ($null -ne $azCommand) {
-				$null = & az account show -o json 2>$null
-				if ($LASTEXITCODE -eq 0) { $azLoggedIn = $true }
+				$previousExitCode = $global:LASTEXITCODE
+				try {
+					$null = & az account show -o json 2>$null
+					if ($LASTEXITCODE -eq 0) { $azLoggedIn = $true }
+				}
+				finally {
+					$global:LASTEXITCODE = $previousExitCode
+				}
 			}
 			if (-not $azLoggedIn) {
 				Write-PSFMessage -Level Verbose -Message 'FinOps version preload skipped: no Az login detected.'

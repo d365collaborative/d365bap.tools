@@ -1,0 +1,30 @@
+name: Build failure notifications
+
+on:
+  workflow_run:
+    workflows: ['Build and release']
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  group: build-failure-notifications
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    if: github.repository == 'd365collaborative/d365bap.tools'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        ref: main
+        persist-credentials: false
+    - uses: actions/github-script@v8
+      with:
+        script: |
+          await require('./build/build-notifications.cjs')({ github, context, core });

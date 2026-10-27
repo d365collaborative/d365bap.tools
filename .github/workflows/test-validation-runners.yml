@@ -10,6 +10,13 @@ on:
       - 'build/Test-PSScriptAnalyzerConsolidation.ps1'
       - 'build/Test-RequiredModules.ps1'
       - 'build/Test-Ps1ExampleHelp.ps1'
+      - 'build/Test-PreloadExitCode.ps1'
+      - 'build/build-notifications.cjs'
+      - 'build/build-notifications.test.cjs'
+      - '.github/workflows/build-notifications.yml'
+      - '.github/workflows/build-v2.yml'
+      - 'd365bap.tools/internal/sdk/token-preload.ps1'
+      - 'd365bap.tools/internal/sdk/finopsversion-preload.ps1'
       - 'build/ps1-lint/**'
       - 'build/Install-RequiredModules.ps1'
       - 'build/ModuleCacheRequirements.json'
@@ -31,6 +38,11 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
+    - name: Test optional import probes
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-PreloadExitCode.ps1
+    - name: Test build notifications
+      run: node --test build/build-notifications.test.cjs
     - name: Test example help lint
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ExampleHelp.ps1
