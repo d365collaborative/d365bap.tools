@@ -12,7 +12,7 @@ function approvalTests({ run, CHECK, ACCEPT, compareOption, pendingTitle, failur
     };
     const state = {
       pr: { state: 'open', head: { sha: 'head' }, base: { sha: 'base', ref: 'main' } },
-      permission: 'write', comment, updates: [],
+      permission: 'write', comment, updates: [], statuses: [],
       check: existing ? {
         id: 1, name: CHECK, app: { slug: 'github-actions' },
         external_id: JSON.stringify({ pr: 221, head: 'head', base: 'base', baseRef: 'main' }),
@@ -45,7 +45,10 @@ function approvalTests({ run, CHECK, ACCEPT, compareOption, pendingTitle, failur
           if (!state.comment) throw Object.assign(new Error('deleted'), { status: 404 });
           return { data: state.comment };
         } },
-        repos: { getCollaboratorPermissionLevel: async () => ({ data: { permission: state.permission } }) },
+        repos: {
+          getCollaboratorPermissionLevel: async () => ({ data: { permission: state.permission } }),
+          createCommitStatus: async input => { state.statuses.push(input); return { data: input }; },
+        },
       },
     };
     const args = {
@@ -76,6 +79,68 @@ function approvalTests({ run, CHECK, ACCEPT, compareOption, pendingTitle, failur
 
   test('unchanged protected content passes without acceptance', async () => {
     assert.equal(await harness({ changed: false }).result(), 'success');
+  });
+
+  test('publishes a failing commit status until a maintainer accepts', async () => {
+    const h = harness();
+    await h.result();
+    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending', 'failure']);
+    for (const status of h.state.statuses) {
+      assert.equal(status.owner, 'owner');
+      assert.equal(status.repo, 'repo');
+      assert.equal(status.sha, 'head');
+      assert.equal(status.context, CHECK);
+      assert.ok(status.description.length <= 140);
+      assert.match(status.target_url, /^https:\/\/github.com\/owner\/repo\//);
+    }
+  });
+
+  test('publishes successful commit statuses for verified acceptance and unchanged code', async () => {
+    for (const changed of [true, false]) {
+      const h = harness({ changed });
+      if (changed) h.accept();
+      h.args.compareChanges = async () => {
+        assert.equal(h.state.statuses.at(-1).state, 'pending', 'old success must be cleared before evaluating');
+        return { changes: changed ? [{ name: 'example', before: 'old', after: 'new' }] : [] };
+      };
+      assert.equal(await h.result(), 'success');
+      assert.deepEqual(h.state.statuses.map(status => status.state), ['pending', 'success']);
+    }
+  });
+
+  test('revocation also changes a successful commit status to failure', async () => {
+    const h = harness(); h.approvedPreviously();
+    h.state.comment = null;
+    assert.equal(await h.result(), 'failure');
+    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending', 'failure']);
+  });
+
+  test('comparison errors publish failure instead of leaving a successful status', async () => {
+    const h = harness(); h.approvedPreviously();
+    h.args.compareChanges = async () => { throw new Error('comparison unavailable'); };
+    await assert.rejects(h.result(), /comparison unavailable/);
+    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending', 'failure']);
+  });
+
+  test('a concurrent push or base change cannot publish a successful commit status', async () => {
+    for (const target of ['head', 'base']) {
+      const h = harness(); h.approvedPreviously();
+      h.args.compareChanges = async () => { h.state.pr[target].sha = 'new-revision'; return { changes: [] }; };
+      await h.result();
+      assert.deepEqual(h.state.statuses.map(status => status.state), ['pending']);
+    }
+  });
+
+  test('status publication failure fails the approval instead of reporting success', async () => {
+    const h = harness(); h.accept();
+    const publish = h.args.github.rest.repos.createCommitStatus;
+    h.args.github.rest.repos.createCommitStatus = async input => {
+      if (input.state === 'success') throw new Error('status publication failed');
+      return publish(input);
+    };
+    await assert.rejects(h.result(), /status publication failed/);
+    assert.equal(h.state.check.conclusion, 'failure');
+    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending', 'failure']);
   });
 
   test('a fresh fixed maintainer comment accepts the reviewed revision', async () => {

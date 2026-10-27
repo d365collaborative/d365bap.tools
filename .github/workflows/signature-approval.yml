@@ -15,6 +15,7 @@ permissions:
   pull-requests: read
   issues: read
   checks: write
+  statuses: write
 
 jobs:
   signature-approval:
