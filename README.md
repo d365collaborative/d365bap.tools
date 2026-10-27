@@ -140,6 +140,40 @@ generated files (`*.Tests.ps1`, `docs/*.md`, consolidated format xml,
 `wiki/Namespaces.md`) — push only sources and the regen workflow commits the
 rest back onto the PR automatically.
 
+### Accepting public signature changes
+
+`Public signature approval` compares public function declarations against the
+PR's merge base. Adding or removing commands or parameters, or changing types,
+defaults, aliases, parameter sets, binding attributes, dynamic parameters or
+manifest exports requires explicit acceptance. Changes to implementation bodies,
+help, formatting and regenerated tests do not satisfy or trigger acceptance.
+This is a declaration review gate, not a complete behavioral compatibility test.
+
+Regeneration still writes the tests and docs. A separate **red check** remains
+until a maintainer with repository write access reviews its before/after report
+and posts this exact text as a new PR comment:
+
+```text
+/accept-signature-change
+```
+
+The comment applies only to the PR head and base recorded by the visible check.
+Wait for that check before commenting. Every new push, including a regen commit,
+requires fresh acceptance, so accept after regeneration finishes. Ordinary PR
+approval and rerunning workflows do not accept signature changes. Editing or
+deleting the acceptance comment revokes it; post a new comment to accept again.
+Bot accounts cannot accept. Agents must leave acceptance to the human maintainer;
+GitHub cannot distinguish an agent using a person's credentials from that person.
+
+**Repository setup:** merge the workflow onto the default branch, then require
+the **Public signature approval** check (source: GitHub Actions) in the `main`
+branch ruleset/protection. A red check only blocks merging when it is required.
+Existing PRs need a new push, reopen, or comment to run the new workflow. The
+workflow reads tooling from the default branch and parses PR Git blobs without
+executing them, so a PR cannot accept itself by editing its tests or gate code.
+
+Gate regression tests: `node --test build/signature-approval.test.cjs`.
+
 ## Dependencies
 
 This module depends on other modules. The dependencies are documented in the [dependency graph](https://github.com/d365collaborative/d365bap.tools/network/dependencies) and the Dependencies section of the Package Details of the [package listing](https://www.powershellgallery.com/packages/d365bap.tools) in the PowerShell Gallery.
