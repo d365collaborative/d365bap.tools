@@ -156,6 +156,10 @@ reviews its before/after report and posts this exact text as a new PR comment:
 ```
 
 The comment applies only to the PR head and base recorded by the visible check.
+The gate also publishes a commit status with the same name for branch
+protection. The check run retains the detailed report and acceptance metadata;
+the commit status reports the same verified result, including after comment
+events. Rerunning a gate publishes a pending status before revalidating it.
 Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
 approval and rerunning workflows do not accept signature changes. Editing or
 deleting the acceptance comment revokes it; post a new comment to accept again.
@@ -163,8 +167,9 @@ Bot accounts cannot accept. Agents must leave acceptance to the human maintainer
 GitHub cannot distinguish an agent using a person's credentials from that person.
 
 **Repository setup:** merge the workflow onto the default branch, then require
-the **Public signature approval** and **PS1 lint (vendored prek hooks, changed
-files)** checks in the `main` branch ruleset or protection. Keep the existing
+the **Public signature approval**, **Internal hook approval**, and
+**PS1 lint (vendored prek hooks, changed files)** checks in the `main` branch
+ruleset or protection. Keep the existing
 four required validation checks: **Validate Individual Unit Tests** now acts
 as the fail-closed aggregate for the fast PR validation. Checks only block
 merging when required. Require the PR branch to be up to date with `main` as
@@ -174,6 +179,59 @@ workflow reads tooling from the default branch and parses PR Git blobs without
 executing them, so a PR cannot accept itself by editing its tests or gate code.
 
 Gate regression tests: `node --test build/signature-approval.test.cjs`.
+
+### Accepting internal hook changes
+
+`Internal hook approval` replaces the unconditional lint-hook ownership
+failure. Changes to protected lint internals or approval infrastructure stay
+red until a human maintainer with repository write access reviews the report
+and posts exactly this text as a new PR comment:
+
+```text
+/accept-intenal-hook
+```
+
+The command intentionally uses the spelling above. Wait until the current
+revision's failing report is visible before posting it. Acceptance is bound
+to that PR's head, base commit, and base branch. New pushes, base advances,
+or retargeting require fresh acceptance. Edited or deleted comments, bots,
+application comments, and users without write access cannot authorize changes.
+Ordinary PR approval, signature acceptance, and workflow reruns do not accept
+internal-hook changes. Agents must leave the comment to the human maintainer.
+
+The report includes commits that touched protected files, even when a later
+commit reverted the change. It covers lint internals, hook entry points,
+`prek.toml`, validation wiring, and both approval gates. The protected paths
+are declared in `build/internal-hook-approval.cjs`. Code from the PR is read
+from Git objects, never checked out or executed by the write-capable gate.
+Accepting this check does not accept signature changes or bypass formatting,
+lint, or tests; those checks run independently.
+
+Both approval workflows need `checks: write` for their reports and
+`statuses: write` for branch-protection status reporting. A successful workflow
+or check run alone is not proof that merging is allowed. Check GitHub's merge
+box as well: neither approval name should remain "Expected" after its commit
+status is published. A reporting failure blocks acceptance rather than
+publishing success.
+
+**Installation:** merge the setup PR first, then require **Internal hook
+approval** in the `main` branch ruleset alongside the existing required checks.
+Require branches to be up to date with their base. The old unconditional
+ownership step is removed, so the new check must be required before merging
+subsequent PRs. Do not treat an absent check as success.
+
+For an existing PR such as #229, update its branch from `main` after setup,
+keep the removal of `build/Test-HookTouch.ps1` if Git reports a delete/modify
+conflict, and push. Wait for the new report, then have a maintainer post the
+command. A comment event only updates the acceptance check; no lint or test
+rerun is needed to accept it. The setup PR cannot safely use its own new
+workflow for acceptance because privileged workflows load default-branch code.
+
+Approval gate regression tests:
+
+```sh
+node --test build/signature-approval.test.cjs build/internal-hook-approval.test.cjs
+```
 
 ## Dependencies
 

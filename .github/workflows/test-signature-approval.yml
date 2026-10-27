@@ -19,4 +19,4 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 24
-    - run: node --test build/signature-approval.test.cjs build/Get-SignatureDelta.test.cjs
+    - run: node --test build/signature-approval.test.cjs build/Get-SignatureDelta.test.cjs build/internal-hook-approval.test.cjs

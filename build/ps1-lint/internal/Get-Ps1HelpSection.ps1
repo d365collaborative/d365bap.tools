@@ -43,6 +43,7 @@
 						CommentLine      = $comment.Line
 						CommentColumn    = $comment.Column
 						ParameterRecords = @($parameterRecords)
+						CommandName      = $comment.CommandName
 					}
 				}
 				$section = if ($isHeader) {
