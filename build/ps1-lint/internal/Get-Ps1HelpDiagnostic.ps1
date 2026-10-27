@@ -18,6 +18,115 @@ function Get-Ps1ParameterDefaultRecord {
 	$null
 }
 
+function Get-Ps1ExampleMessage {
+	param($Section, $Sections)
+
+	if (@($Section.Lines | Where-Object { $_ -eq '' }).Count -ne 1) {
+		'EXAMPLE must have code, exactly one blank separator, then prose with no blank lines.'
+		return
+	}
+	$separator = [Array]::IndexOf($Section.Lines, '')
+	$prose = @($Section.Lines[($separator + 1)..($Section.Lines.Count - 1)])
+	$dependentPattern = '(?i)' + (@(
+			'\b(?:same as|as (?:shown|described|explained|demonstrated|in|with)|see|refer to|like|unlike|similar to)\s+(?:(?:the|an?)\s+)?(?:above|below|previous|preceding|earlier|next|first|last|other|example\s*\d)'
+			'\b(?:above|below|previous|preceding|earlier|following)\s+example\b'
+			'\bexample\s+(?:above|below|#?\d+)\b'
+			'\b(?:same|similar|as)\s+(?:as\s+)?(?:before|above|below)\b'
+			'\b(?:same|identical)\s+(?:command|operation|result|behavior)\b'
+		) -join '|')
+	if (($prose -join ' ') -match $dependentPattern) {
+		'EXAMPLE prose must stand alone. Do not refer to another example or say "Same as above".'
+	}
+	if ($prose[0] -notmatch '^(?i)It\s+' -and $prose[0].Length -ge 125) {
+		'EXAMPLE summary must be fewer than 125 characters.'
+	}
+	$itLines = @($prose | Where-Object { $_ -match '^(?i)It\s+\S' })
+	foreach ($line in $itLines) {
+		if ($line.Length -gt 80) { 'EXAMPLE It lines must be 80 characters or fewer.'; break }
+	}
+	$details = if ($prose[0] -match '^(?i)It\s+') { $prose } else { @($prose | Select-Object -Skip 1) }
+	if (@($details | Where-Object { $_ -notmatch '^(?i)It\s+\S' }).Count -gt 0) {
+		'EXAMPLE detail lines must each start with "It " or "It will ".'
+	}
+
+	$code = ($Section.Lines[0..($separator - 1)] -join "`n") -replace '(?m)^\s*(?:PS [^>\r\n]*>|>>)\s?', ''
+	$parseErrors = $null
+	$ast = [Management.Automation.Language.Parser]::ParseInput($code, [ref]$null, [ref]$parseErrors)
+	if ($parseErrors.Count -gt 0) {
+		'EXAMPLE code must be valid PowerShell so parameter coverage can be checked.'
+		return
+	}
+	$required = @{}
+	$parameterSections = @($Sections | Where-Object { $_.GroupId -eq $Section.GroupId -and $_.Name -eq 'PARAMETER' })
+	$defaultPattern = '(?i)\bdefaults?\b|\b(?:when|if)\s+(?:omitted|not\s+(?:specified|provided|supplied|set))\b'
+	foreach ($command in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
+		$commandName = $command.GetCommandName()
+		$isOwner = $null -ne $commandName -and [IO.Path]::GetFileNameWithoutExtension(($commandName -split '\\')[-1]) -ieq $Section.CommandName
+		$specified = @{}
+		$elements = @($command.CommandElements | Select-Object -Skip 1)
+		for ($index = 0; $index -lt $elements.Count; $index++) {
+			$element = $elements[$index]
+			if ($element -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
+			$name = $element.ParameterName
+			$record = if ($isOwner) { Get-Ps1ParameterDefaultRecord $Section.ParameterRecords $name }
+			if ($null -ne $record) { $name = $record.Name }
+			$specified[$name] = $true
+			$required[$name] = if ($null -ne $record) { @($record.Name) + @($record.Aliases) } else { @($name) }
+		}
+		if (-not $isOwner) { continue }
+		$positionals = @()
+		for ($index = 0; $index -lt $elements.Count; $index++) {
+			$element = $elements[$index]
+			if ($element -is [Management.Automation.Language.CommandParameterAst]) {
+				$record = Get-Ps1ParameterDefaultRecord $Section.ParameterRecords $element.ParameterName
+				$isSwitch = ($null -ne $record -and $record.IsSwitch) -or $element.ParameterName -in @('WhatIf', 'Confirm', 'Verbose', 'Debug')
+				if ($null -eq $element.Argument -and -not $isSwitch) { $index++ }
+				continue
+			}
+			if ($element -is [Management.Automation.Language.VariableExpressionAst] -and $element.Splatted) {
+				'EXAMPLE must spell out splatted parameters so each can be explained on its own It line.'
+				continue
+			}
+			$positionals += $element
+		}
+		$unbound = @($Section.ParameterRecords | Where-Object { -not $specified.ContainsKey($_.Name) -and -not $_.IsSwitch -and $_.Position -ge 0 } | Sort-Object Position)
+		if ($positionals.Count -gt $unbound.Count) {
+			'EXAMPLE positional arguments could not be matched to declared parameters. Use explicit parameter names.'
+		}
+		for ($index = 0; $index -lt [Math]::Min($positionals.Count, $unbound.Count); $index++) {
+			$record = $unbound[$index]
+			$specified[$record.Name] = $true
+			$required[$record.Name] = @($record.Name) + @($record.Aliases)
+		}
+		foreach ($record in $Section.ParameterRecords) {
+			if ($specified.ContainsKey($record.Name)) { continue }
+			$documented = @($parameterSections | Where-Object { $_.Argument -in (@($record.Name) + @($record.Aliases)) })
+			$defaultLines = @($documented.Lines | Where-Object { $_ -match $defaultPattern })
+			if (-not $record.HasDefault -and $defaultLines.Count -eq 0) { continue }
+			if ($record.IsSearchDefault -or (-not $record.HasDefault -and ($defaultLines -join ' ') -match '[*?\[]|(?i)\b(?:wildcards?|like (?:search|match|pattern))\b|-like\b')) { continue }
+			$required[$record.Name] = @($record.Name) + @($record.Aliases)
+		}
+	}
+
+	$covered = @{}
+	foreach ($line in $itLines) {
+		$names = @(foreach ($name in $required.Keys) {
+				foreach ($candidate in $required[$name]) {
+					if ($line -match ('(?i)(?<![\p{L}\p{N}_-])-' + [regex]::Escape($candidate) + '(?![\p{L}\p{N}_-])')) { $name; break }
+				}
+			})
+		if ($names.Count -gt 1) {
+			"EXAMPLE must explain each parameter on a separate It line: $($names -join ', ')."
+		}
+		elseif ($names.Count -eq 1) { $covered[$names[0]] = $true }
+	}
+	foreach ($name in @($required.Keys | Sort-Object)) {
+		if (-not $covered.ContainsKey($name)) {
+			"EXAMPLE must explain -$name on its own line starting with 'It ' or 'It will ', including its applicable default when omitted."
+		}
+	}
+}
+
 function Get-Ps1HelpDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
@@ -109,14 +218,7 @@ function Get-Ps1HelpDiagnostic {
 				}
 			}
 			'EXAMPLE' {
-				if ($blankLines -ne 1) {
-					'EXAMPLE must have code, exactly one blank separator, then prose with no blank lines and fewer than 125 characters.'
-				}
-				else {
-					$separator = [Array]::IndexOf($section.Lines, '')
-					$prose = $section.Lines[($separator + 1)..($section.Lines.Count - 1)] -join "`n"
-					if ($prose.Length -ge 125) { 'EXAMPLE explanation must be fewer than 125 characters; example code is excluded.' }
-				}
+				Get-Ps1ExampleMessage -Section $section -Sections $Analysis.HelpSections
 			}
 		}
 		if ($message) {

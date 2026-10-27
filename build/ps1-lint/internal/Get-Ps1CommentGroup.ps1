@@ -43,6 +43,14 @@
 				$owner.Body.ParamBlock.Parameters
 			}
 			else { $owner.ParamBlock.Parameters })
+		$paramBlock = if ($owner -is [Management.Automation.Language.FunctionDefinitionAst]) { $owner.Body.ParamBlock } else { $owner.ParamBlock }
+		$positionalBinding = $true
+		foreach ($attribute in $paramBlock.Attributes) {
+			if ($attribute.TypeName.FullName -notin @('CmdletBinding', 'CmdletBindingAttribute')) { continue }
+			foreach ($argument in $attribute.NamedArguments) {
+				if ($argument.ArgumentName -eq 'PositionalBinding' -and $argument.Argument.Extent.Text -ieq '$false') { $positionalBinding = $false }
+			}
+		}
 		$parameterRecords = @()
 		foreach ($parameter in $parameters) {
 			if ($null -eq $parameter -or $null -eq $parameter.Name) { continue }
@@ -60,10 +68,20 @@
 				if ($null -ne $parameter.DefaultValue) { $existing.HasDefault = $true }
 			}
 			else {
+				$position = if ($positionalBinding) { $parameterRecords.Count } else { -1 }
+				foreach ($attribute in $parameter.Attributes) {
+					if ($attribute -isnot [Management.Automation.Language.AttributeAst] -or $attribute.TypeName.FullName -notin @('Parameter', 'ParameterAttribute')) { continue }
+					foreach ($argument in $attribute.NamedArguments) {
+						if ($argument.ArgumentName -eq 'Position' -and $argument.Argument -is [Management.Automation.Language.ConstantExpressionAst]) { $position = [int]$argument.Argument.Value }
+					}
+				}
 				$parameterRecords += [pscustomobject]@{
-					Name       = $parameter.Name.VariablePath.UserPath
-					Aliases    = @($aliases)
-					HasDefault = ($null -ne $parameter.DefaultValue)
+					Name            = $parameter.Name.VariablePath.UserPath
+					Aliases         = @($aliases)
+					HasDefault      = ($null -ne $parameter.DefaultValue)
+					IsSearchDefault = $parameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($parameter.DefaultValue.Value)
+					IsSwitch        = @($parameter.Attributes | Where-Object { $_ -is [Management.Automation.Language.TypeConstraintAst] -and $_.TypeName.FullName -in @('switch', 'System.Management.Automation.SwitchParameter') }).Count -gt 0
+					Position        = $position
 				}
 			}
 		}
@@ -75,6 +93,7 @@
 			IsHelp           = $isHelp
 			ParameterNames   = $parameterNames
 			ParameterRecords = @($parameterRecords)
+			CommandName      = if ($owner -is [Management.Automation.Language.FunctionDefinitionAst]) { $owner.Name } else { [IO.Path]::GetFileNameWithoutExtension($Analysis.Path) }
 			Text             = $source.Substring($first.Extent.StartOffset, $last.Extent.EndOffset - $first.Extent.StartOffset)
 			Line             = $first.Extent.StartLineNumber
 			Column           = $first.Extent.StartColumnNumber
