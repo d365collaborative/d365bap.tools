@@ -156,6 +156,10 @@ reviews its before/after report and posts this exact text as a new PR comment:
 ```
 
 The comment applies only to the PR head and base recorded by the visible check.
+The gate also publishes a commit status with the same name for branch
+protection. The check run retains the detailed report and acceptance metadata;
+the commit status reports the same verified result, including after comment
+events. Rerunning a gate publishes a pending status before revalidating it.
 Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
 approval and rerunning workflows do not accept signature changes. Editing or
 deleting the acceptance comment revokes it; post a new comment to accept again.
@@ -202,6 +206,13 @@ are declared in `build/internal-hook-approval.cjs`. Code from the PR is read
 from Git objects, never checked out or executed by the write-capable gate.
 Accepting this check does not accept signature changes or bypass formatting,
 lint, or tests; those checks run independently.
+
+Both approval workflows need `checks: write` for their reports and
+`statuses: write` for branch-protection status reporting. A successful workflow
+or check run alone is not proof that merging is allowed. Check GitHub's merge
+box as well: neither approval name should remain "Expected" after its commit
+status is published. A reporting failure blocks acceptance rather than
+publishing success.
 
 **Installation:** merge the setup PR first, then require **Internal hook
 approval** in the `main` branch ruleset alongside the existing required checks.
