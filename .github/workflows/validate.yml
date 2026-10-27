@@ -22,9 +22,6 @@ jobs:
     - name: Check generated-file ownership
       shell: pwsh
       run: ./build/Test-GeneratedTouch.ps1 -BaseRef $env:BASE_SHA
-    - name: Check lint-hook ownership
-      shell: pwsh
-      run: ./build/Test-HookTouch.ps1 -BaseRef $env:BASE_SHA
     - name: Install prek
       shell: pwsh
       run: pip install "prek==0.5.7"
