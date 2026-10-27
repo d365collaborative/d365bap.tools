@@ -1,6 +1,8 @@
 # Build and release the d365bap.tools PowerShell module.
 # Validation jobs run in parallel with module caching; build-and-release runs after all pass.
 
+name: Build and release
+
 on:
   push:
     branches: [main]
