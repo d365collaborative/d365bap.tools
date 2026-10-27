@@ -22,9 +22,8 @@ $requirements = Get-Content -LiteralPath $requirementsPath -Raw | ConvertFrom-Js
 $modules = $requirements.$Set
 if (-not $modules) { throw "Unknown module set '$Set' in $requirementsPath" }
 
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-
 $missing = 0
+$galleryReady = $false
 foreach ($entry in $modules) {
 	$name = $entry.Name
 	$version = $entry.Version
@@ -36,6 +35,13 @@ foreach ($entry in $modules) {
 		continue
 	}
 	$missing++
+	if (-not $galleryReady) {
+		if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
+			Register-PSRepository -Default
+		}
+		Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+		$galleryReady = $true
+	}
 	Write-Host "Installing $name $version..."
 	Install-Module -Name $name -RequiredVersion $version -Scope CurrentUser -Force -SkipPublisherCheck
 }

@@ -3,23 +3,84 @@
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'd365bap.tools/functions/**'
-      - 'd365bap.tools/internal/**'
-      - 'd365bap.tools/d365bap.tools.psd1'
-      - 'd365bap.tools/d365bap.tools.psm1'
-      - 'd365bap.tools/xml/**'
-      - 'd365bap.tools/en-us/**'
+    branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
 
 jobs:
+  release-scope:
+    name: Determine release scope
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.scope.outputs.publish }}
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Check changed paths
+      id: scope
+      shell: pwsh
+      env:
+        BEFORE: ${{ github.event.before }}
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        if ($env:EVENT_NAME -eq 'schedule') {
+          'publish=false' >> $env:GITHUB_OUTPUT
+          return
+        }
+        if ($env:EVENT_NAME -eq 'workflow_dispatch') {
+          "publish=$($env:GITHUB_REF -eq 'refs/heads/main')".ToLowerInvariant() >> $env:GITHUB_OUTPUT
+          return
+        }
+        if (-not $env:BEFORE -or $env:BEFORE -match '^0+$') {
+          throw 'Cannot determine release scope without the previous main commit.'
+        }
+        $changed = @(git diff --no-renames --name-only $env:BEFORE $env:GITHUB_SHA)
+        if ($LASTEXITCODE -ne 0) { throw 'Could not compare the push commits.' }
+        $releasePaths = @($changed | Where-Object {
+          $_ -match '^d365bap\.tools/(functions/|internal/|xml/|en-us/|d365bap\.tools\.(psd1|psm1)$)'
+        })
+        "publish=$($releasePaths.Count -gt 0)".ToLowerInvariant() >> $env:GITHUB_OUTPUT
+        Write-Host "Release paths: $($releasePaths -join ', ')"
+
+  generated-docs:
+    name: Generate documentation and tests
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Restore PowerShell modules
+      uses: actions/cache/restore@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-generated-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-generated-v2-
+    - name: Ensure prerequisites
+      shell: pwsh
+      run: ./build/Install-RequiredModules.ps1 -Set generated
+    - name: Generate all artifacts
+      shell: pwsh
+      run: ./build/vsts-validate-generated.ps1
+    - name: Upload generated documentation
+      uses: actions/upload-artifact@v7
+      with:
+        name: generated-docs
+        path: |
+          docs/
+          wiki/
+        if-no-files-found: error
+        retention-days: 90
+
   general-unit-tests:
     name: Validate General Unit Tests
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 1
 
@@ -34,6 +95,10 @@ jobs:
     - name: Ensure Prerequisites
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
+
+    - name: Generate runtime formats
+      shell: pwsh
+      run: ./build/Merge-FormatPs1Xml.ps1
 
     - name: Validate
       shell: pwsh
@@ -43,7 +108,7 @@ jobs:
     name: Validate Public Functions using PSScriptAnalyzer Unit Tests
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 1
 
@@ -58,6 +123,10 @@ jobs:
     - name: Ensure Prerequisites
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
+
+    - name: Generate runtime formats
+      shell: pwsh
+      run: ./build/Merge-FormatPs1Xml.ps1
 
     - name: Validate
       shell: pwsh
@@ -67,7 +136,7 @@ jobs:
     name: Validate Internal Functions using PSScriptAnalyzer Unit Tests
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 1
 
@@ -82,6 +151,10 @@ jobs:
     - name: Ensure Prerequisites
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
+
+    - name: Generate runtime formats
+      shell: pwsh
+      run: ./build/Merge-FormatPs1Xml.ps1
 
     - name: Validate
       shell: pwsh
@@ -91,7 +164,7 @@ jobs:
     name: Validate Individual Unit Tests
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 1
 
@@ -107,15 +180,45 @@ jobs:
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
 
+    - name: Generate runtime formats
+      shell: pwsh
+      run: ./build/Merge-FormatPs1Xml.ps1
+
+    - name: Generate parameter tests
+      shell: pwsh
+      run: ./build/generate-parameterunittests.ps1
+
     - name: Validate
       shell: pwsh
       run: build\vsts-validate-v2.ps1 -TestGeneral $false -TestFunctions $true
+
+  offline-behavior:
+    name: Validate Offline Behavior
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Restore PowerShell modules
+      uses: actions/cache/restore@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
+    - name: Ensure prerequisites
+      shell: pwsh
+      run: ./build/Install-RequiredModules.ps1 -Set base
+    - name: Generate runtime formats
+      shell: pwsh
+      run: ./build/Merge-FormatPs1Xml.ps1
+    - name: Run offline behavior tests
+      shell: pwsh
+      run: ./build/Test-Behavior.ps1
 
   compiled-import:
     name: Validate Compiled Module Import
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 1
 
@@ -135,16 +238,53 @@ jobs:
       shell: pwsh
       run: ./build/Test-CompiledImport.ps1
 
+    - name: Test compiled format validation
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-CompiledImportFormats.ps1
+
   build-and-release:
     name: Build and Release
     runs-on: windows-latest
-    needs: [general-unit-tests, public-functions-unit-tests, internal-functions-unit-tests, individual-unit-tests]
+    needs: [release-scope, generated-docs, general-unit-tests, public-functions-unit-tests, internal-functions-unit-tests, individual-unit-tests, compiled-import, offline-behavior]
+    if: needs.release-scope.outputs.publish == 'true'
+    permissions:
+      contents: write
+    concurrency:
+      group: module-release
+      cancel-in-progress: false
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v5
       with:
-        fetch-depth: 1
+        fetch-depth: 0
+    - name: Skip superseded source releases
+      id: current
+      shell: pwsh
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        git fetch --no-tags origin main
+        if ($LASTEXITCODE -ne 0) { throw 'Could not fetch the current main commit.' }
+        if ($env:EVENT_NAME -eq 'workflow_dispatch') {
+          $latestMain = (git rev-parse FETCH_HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the current main commit.' }
+          $currentMain = $env:GITHUB_REF -eq 'refs/heads/main' -and $env:GITHUB_SHA -eq $latestMain
+          "publish=$currentMain".ToLowerInvariant() >> $env:GITHUB_OUTPUT
+          if (-not $currentMain) { Write-Host 'Manual publication requires the current main commit.' }
+          return
+        }
+        $newer = @(git diff --no-renames --name-only $env:GITHUB_SHA FETCH_HEAD)
+        if ($LASTEXITCODE -ne 0) { throw 'Could not compare against current main.' }
+        $runtimeChanges = @($newer | Where-Object {
+          $_ -match '^d365bap\.tools/(functions/|internal/|xml/|en-us/|d365bap\.tools\.(psd1|psm1)$)'
+        })
+        if ($runtimeChanges.Count -gt 0) {
+          'publish=false' >> $env:GITHUB_OUTPUT
+          Write-Host 'A newer main commit changes release sources; its validation must publish the release.'
+        }
+        else { 'publish=true' >> $env:GITHUB_OUTPUT }
 
     - name: Restore Powershell Modules
+      if: steps.current.outputs.publish == 'true'
       uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
@@ -153,14 +293,27 @@ jobs:
           pwsh-modules-${{ runner.os }}-base-v2-
 
     - name: Ensure Prerequisites
+      if: steps.current.outputs.publish == 'true'
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
 
+    - name: Generate runtime formats for release
+      if: steps.current.outputs.publish == 'true'
+      shell: pwsh
+      run: ./build/Merge-FormatPs1Xml.ps1
+
+    - name: Generate parameter tests for the package
+      if: steps.current.outputs.publish == 'true'
+      shell: pwsh
+      run: ./build/generate-parameterunittests.ps1
+
     - name: Build
+      if: steps.current.outputs.publish == 'true'
       run: .\build\vsts-build.ps1 -ApiKey ${{ secrets.APIKEY }} -AutoVersion:$true -SkipPublish:$false
       shell: pwsh
 
     - name: Get version
+      if: steps.current.outputs.publish == 'true'
       shell: pwsh
       run: |
         $publishDir = Get-Item -Path publish
@@ -169,6 +322,7 @@ jobs:
         "VERSION=$githubReleaseVersion" >> $env:GITHUB_ENV
 
     - name: Create GitHub release
+      if: steps.current.outputs.publish == 'true'
       uses: softprops/action-gh-release@v3
       with:
         name: ${{ env.VERSION }}
@@ -176,3 +330,10 @@ jobs:
         draft: false
         prerelease: true
         generate_release_notes: true
+
+  publish-wiki:
+    name: Publish generated wiki
+    if: github.event_name != 'schedule' && github.ref == 'refs/heads/main'
+    needs: [generated-docs, general-unit-tests, public-functions-unit-tests, internal-functions-unit-tests, individual-unit-tests, compiled-import, offline-behavior]
+    uses: ./.github/workflows/update-wiki.yml
+    secrets: inherit

@@ -1,16 +1,15 @@
 ﻿<#
     .SYNOPSIS
-        Validates generated artifacts are in sync.
+        Generates release documentation and test snapshots.
 
     .DESCRIPTION
-        Runs the generators and fails when generated files differ. Generated
-        files are owned by the regen workflow. Line ending only changes are
-        ignored.
+        Intended for a disposable post-merge checkout. The tracked generated
+        snapshots are not a freshness gate; outputs are published as artifacts.
 
     .PARAMETER RepoRoot
-        The repository root to validate.
+        Repository checkout to generate artifacts in.
 
-        Default: the parent of the build directory.
+        Default: the parent directory of this script.
 #>
 [CmdletBinding()]
 param(
@@ -21,32 +20,10 @@ $ErrorActionPreference = 'Stop'
 
 Push-Location $RepoRoot
 try {
+	& (Join-Path $RepoRoot 'build/Merge-FormatPs1Xml.ps1') -XmlRoot (Join-Path $RepoRoot 'd365bap.tools/xml')
 	& (Join-Path $RepoRoot 'build/generate-parameterunittests.ps1')
-
 	& (Join-Path $RepoRoot 'build/update-docs.ps1')
-
-	& (Join-Path $RepoRoot 'build/Merge-FormatPs1Xml.ps1')
-
-	$generated = @(
-		'd365bap.tools/tests/functions'
-		'docs'
-		'd365bap.tools/xml/d365bap.tools.Table.Format.ps1xml'
-		'd365bap.tools/xml/d365bap.tools.List.Format.ps1xml'
-		'wiki/Namespaces.md'
-	)
-
-	$dirty = @(git diff --name-only -- $generated)
-	$dirty += @(git ls-files --others --exclude-standard -- $generated)
-	$dirty = @($dirty | Where-Object { $_ -and $_ -ne 'docs/AGENTS.md' -and $_ -ne 'd365bap.tools/tests/functions/AGENTS.md' } | Sort-Object -Unique)
-	if ($dirty.Count -gt 0) {
-		Write-Host 'Generated artifacts are out of sync. Do not edit them by hand.'
-		Write-Host 'Push only sources; the regen workflow commits the rest to this PR automatically.'
-		$dirty | ForEach-Object { Write-Host $_ }
-		exit 1
-	}
-
-	Write-Host 'Generated artifacts are in sync.'
-	exit 0
+	Write-Host 'Generated formats, parameter tests, command docs and wiki namespaces.'
 }
 finally {
 	Pop-Location

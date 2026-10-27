@@ -1,27 +1,46 @@
 name: Wiki Update
 
-# Run when contents of the wiki folder are changed
+# Called only after the main workflow generated docs and all full-tree checks pass.
 on:
-  push:
-    paths:
-      - 'wiki/**'
-      - 'docs/**'
-    branches:
-      - main
+  workflow_call:
+    secrets:
+      WIKI_PUBLISH_ACCESS_TOKEN:
+        required: true
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+permissions:
+  contents: read
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
-
+    concurrency:
+      group: generated-wiki-main
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
-
-      - name: Publish wiki folder to repository wiki
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: generated-docs
+          path: generated
+      - name: Check that this run is still the latest main commit
+        id: latest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          if [ "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA" ]; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            echo 'A newer main commit exists; its workflow will publish the wiki.'
+          fi
+      - name: Publish generated documentation to repository wiki
+        if: steps.latest.outputs.publish == 'true'
         uses: FH-Inway/github-wiki-publish-action@rsync
         with:
-          path: "wiki/ docs"
+          path: "generated/wiki/ generated/docs"
         env:
           GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.WIKI_PUBLISH_ACCESS_TOKEN }}

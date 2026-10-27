@@ -1,0 +1,110 @@
+name: signature-approval
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+  issue_comment:
+    types: [created, edited, deleted]
+  # GitHub does not allow expressions in event branch filters. If the default
+  # branch is renamed, update this filter together with the repository setting.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+  checks: write
+
+jobs:
+  signature-approval:
+    if: github.event_name == 'pull_request_target' || (github.event_name == 'issue_comment' && github.event.issue.pull_request)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    concurrency:
+      group: signature-approval-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: false
+    steps:
+    # Execute only default-branch tooling. PR blobs are parsed as data, never
+    # checked out, imported, or executed with the write-capable token.
+    # pull_request_target loads its workflow from the PR's base branch; that
+    # branch's workflow must itself be trusted. Protect workflow changes and
+    # limit who can create or modify eligible base branches in repository rules.
+    # Consequently, changes to this gate cannot protect their own first PR:
+    # test them with the read-only PR regression workflow, merge trusted tooling,
+    # and only then require the resulting check in branch protection. A missing
+    # required check must block merging rather than count as approval.
+    # Checks are bound to a commit SHA, not a PR: two open PRs sharing a head
+    # SHA can have different baselines but the same required check name. A green
+    # result for one can affect the other. Repository policy must require a
+    # unique head SHA for each open PR and enforce that outside this check.
+    # Edits and deletions trigger revalidation, but event delivery can be delayed
+    # or fail; permission changes have no trigger here. A previously green check
+    # can therefore persist until the next successful reevaluation. Repository
+    # controls must independently verify acceptance and permission at merge time
+    # where immediate revocation is required.
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{ github.event.repository.default_branch }}
+        fetch-depth: 0
+        persist-credentials: false
+
+    - uses: actions/github-script@v8
+      with:
+        script: |
+          const gate = require('./build/signature-approval.cjs');
+          await gate.run({ github, context, core });
+
+  # A previous success is attached to the PR head, so it can otherwise remain
+  # green when the base advances. Refresh open PRs after default-branch pushes.
+  # This is best-effort: dispatch is delayed, may fail, and pushes made with
+  # GITHUB_TOKEN do not start push workflows. Branch protection must also require
+  # the head to be up to date with its base before merging, and require the
+  # signature check; the refresh cannot replace either requirement.
+  enumerate_open_prs:
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      pull_numbers: ${{ steps.open_prs.outputs.result }}
+    steps:
+    - id: open_prs
+      uses: actions/github-script@v8
+      with:
+        script: |
+          const prs = await github.paginate(github.rest.pulls.list, {
+            ...context.repo, state: 'open', base: context.payload.repository.default_branch, per_page: 100,
+          });
+          // Actions limits one matrix to 256 jobs. Fail visibly instead of
+          // silently omitting PRs; strict up-to-date protection remains required.
+          if (prs.length > 256) throw new Error('Too many open PRs for signature refresh matrix');
+          return prs.map(pr => pr.number);
+
+  refresh_signatures:
+    needs: enumerate_open_prs
+    if: needs.enumerate_open_prs.outputs.pull_numbers != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        pull_number: ${{ fromJSON(needs.enumerate_open_prs.outputs.pull_numbers) }}
+    runs-on: windows-latest
+    timeout-minutes: 15
+    concurrency:
+      group: signature-approval-${{ matrix.pull_number }}
+      cancel-in-progress: false
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{ github.event.repository.default_branch }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/github-script@v8
+      env:
+        PULL_NUMBER: ${{ matrix.pull_number }}
+      with:
+        script: |
+          const gate = require('./build/signature-approval.cjs');
+          await gate.run({ github, context, core, pullNumber: Number(process.env.PULL_NUMBER) });
