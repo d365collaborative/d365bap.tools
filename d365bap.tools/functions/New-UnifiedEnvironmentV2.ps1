@@ -59,17 +59,49 @@
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe"
 
-        Creates UDE "MyUdeEnv" in "europe" with demo data, an assigned domain, the latest version and open access.
+        Creates a Unified Developer Environment with all optional settings left at their defaults.
+        It creates a sandbox with developer tools, because -Type is "UDE".
+        It shows "MyUdeEnv" as the display name in PPAC, from -Name.
+        It deploys to the "europe" region given by -Location.
+        It uses the default -Template, D365_DeveloperEdition.
+        It uses the tenant default language, because -Language is omitted.
+        It uses the tenant default currency, because -Currency is omitted.
+        It lets Power Platform assign a domain, because -CustomDomainName is omitted.
+        It installs the latest version, because -Version is omitted.
+        It includes a demo database, because -NoDemoDb is not set.
+        It does not restrict access, because -SecurityGroup is omitted.
+        It waits 60 seconds after the environment is ready (-PostProvisionDelaySeconds).
+        It waits up to 60 minutes for the Ready state (-ReadyStateTimeoutMinutes).
 
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe" -CustomDomainName "myudeenv"
 
-        Same as above, but with the custom domain name "myudeenv".
+        Creates a Unified Developer Environment with a custom domain name.
+        It creates a sandbox with developer tools, because -Type is "UDE".
+        It shows "MyUdeEnv" as the display name in PPAC, from -Name.
+        It deploys to the "europe" region given by -Location.
+        It uses "myudeenv" in the environment URLs, from -CustomDomainName.
+        It uses the default -Template, D365_DeveloperEdition.
+        It uses the tenant default language, because -Language is omitted.
+        It uses the tenant default currency, because -Currency is omitted.
+        It waits 60 seconds after the environment is ready (-PostProvisionDelaySeconds).
+        It waits up to 60 minutes for the Ready state (-ReadyStateTimeoutMinutes).
 
     .EXAMPLE
         PS C:\> New-UnifiedEnvironmentV2 -Type "UDE" -Name "MyUdeEnv" -Location "europe" -Version "10.0.44" -WhatIf
 
-        Shows the resolved provisioning payload without creating anything. Without -WhatIf it installs 10.0.44.
+        Shows the resolved provisioning payload without creating anything.
+        It previews a sandbox with developer tools, because -Type is "UDE".
+        It previews "MyUdeEnv" as the display name, from -Name.
+        It previews the "europe" region given by -Location.
+        It would install Finance and Operations 10.0.44, from -Version.
+        It only shows the payload and creates nothing, because of -WhatIf.
+        It shows the default -Template, D365_DeveloperEdition.
+        It shows the tenant default language, because -Language is omitted.
+        It shows the tenant default currency, because -Currency is omitted.
+        It shows no domain, so Power Platform would assign one (-CustomDomainName).
+        It would pause 60 seconds after it is ready (-PostProvisionDelaySeconds).
+        It would wait up to 60 minutes for the Ready state (-ReadyStateTimeoutMinutes).
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
