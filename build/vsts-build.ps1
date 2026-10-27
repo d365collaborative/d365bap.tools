@@ -120,5 +120,5 @@ if ($LocalRepo) {
 }
 else {
 	Write-PSFMessage -Level Important -Message "Publishing the d365bap.tools module to $($Repository)"
-	Publish-Module -Path "$($publishDir.FullName)\d365bap.tools" -NuGetApiKey $ApiKey -Force -Repository $Repository
+	& "$PSScriptRoot\Publish-ModuleWithRetry.ps1" -Path "$($publishDir.FullName)\d365bap.tools" -ApiKey $ApiKey -Repository $Repository
 }

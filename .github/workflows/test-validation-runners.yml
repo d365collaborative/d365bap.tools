@@ -11,6 +11,9 @@ on:
       - 'build/Test-RequiredModules.ps1'
       - 'build/Test-Ps1ExampleHelp.ps1'
       - 'build/Test-PreloadExitCode.ps1'
+      - 'build/Test-ModulePublication.ps1'
+      - 'build/Publish-ModuleWithRetry.ps1'
+      - 'build/vsts-build.ps1'
       - 'build/build-notifications.cjs'
       - 'build/build-notifications.test.cjs'
       - '.github/workflows/build-notifications.yml'
@@ -43,6 +46,9 @@ jobs:
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-PreloadExitCode.ps1
     - name: Test build notifications
       run: node --test build/build-notifications.test.cjs
+    - name: Test module publication
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-ModulePublication.ps1
     - name: Test example help lint
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ExampleHelp.ps1
