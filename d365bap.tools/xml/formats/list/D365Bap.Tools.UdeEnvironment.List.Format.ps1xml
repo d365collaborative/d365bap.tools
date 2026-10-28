@@ -29,6 +29,27 @@
                                 <PropertyName>PpacProvPlatform</PropertyName>
                             </ListItem>
                             <ListItem>
+                                <PropertyName>AppVersion</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AppBuild</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Track</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>Build</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PlatVersion</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PlatBuild</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PlatformVersion</PropertyName>
+                            </ListItem>
+                            <ListItem>
                                 <PropertyName>PpacProvState</PropertyName>
                             </ListItem>
                             <ListItem>
