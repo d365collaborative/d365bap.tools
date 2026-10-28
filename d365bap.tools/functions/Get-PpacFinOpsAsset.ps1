@@ -6,10 +6,14 @@
         Resolves and downloads NuGet packages, developer files and VHD images. Any published version can be selected.
 
     .PARAMETER Build
-        Full build, track or short form to download. Omitted: newest build of the track.
+        Full build, track or short form. Omitted: newest.
+
+        ByBuild set; excludes -EnvironmentId.
 
     .PARAMETER AppVersion
-        Track to download as version, track or full build. Omitted: from -Build, else newest.
+        Track selector. Omitted: from -Build, else newest.
+
+        ByBuild set; excludes -EnvironmentId.
 
     .PARAMETER Asset
         Names to download; "*" selects everything including VHD.
@@ -36,7 +40,9 @@
         Re-download files and re-extract folders.
 
     .PARAMETER EnvironmentId
-        Environment for the auth context only. Omitted: first FinOps environment is used.
+        Build source and auth context.
+
+        ByEnvironment set; excludes -Build and -AppVersion.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -45,63 +51,95 @@
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46"
 
         Resolves download URLs for that build.
+        It selects the version with -Build.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsBuild -Latest | Get-PpacFinOpsAsset -Kind NuGet -Download
 
         Downloads all NuGet packages of the newest build.
+        It takes the newest build with -Latest.
+        It keeps only the -Kind NuGet packages.
+        It downloads the files with -Download.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
-        PS C:\> Get-PpacFinOpsAsset -Build "10.0.49" -Kind DeveloperFile | Where-Object Asset -eq 'SystemMetadata' | Get-PpacFinOpsAsset -Download
+        PS C:\> Get-PpacFinOpsAsset -Build "10.0.49" -Kind DeveloperFile | Where-Object { $_.Asset -eq 'SystemMetadata' } | Get-PpacFinOpsAsset -Download
 
         Downloads the system metadata of that track.
+        It selects the track with -Build.
+        It keeps only the -Kind DeveloperFile files.
+        It filters to the SystemMetadata asset.
+        It downloads the files with -Download.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Asset Vhd -Download
 
         Downloads the VHD image parts.
+        It selects the version with -Build.
+        It keeps only -Asset Vhd.
+        It downloads the files with -Download.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\tmp\D365"
 
         Downloads NuGet files, extracting under C:\tmp\D365.
+        It selects the version with -Build.
+        It keeps only the -Kind NuGet packages.
+        It downloads the files with -Download.
+        It extracts under -OutputPath C:\tmp\D365.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -AsExcelOutput
 
         Resolves download URLs for that build into an Excel file.
+        It selects the version with -Build.
+        It writes an Excel file with -AsExcelOutput.
+        It keeps downloads under the default -Path.
+
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsAsset -EnvironmentId "es-ude-motz-01"
+
+        Resolves download URLs for the provisioned build of that environment.
+        It uses the environment build with -EnvironmentId.
+        It keeps downloads under the default -Path.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-PpacFinOpsAsset {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'ByBuild')]
 	[OutputType('System.Object[]')]
 	param (
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipelineByPropertyName = $true, Position = 0)]
 		[string] $AppVersion,
 
-		[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
 		[string] $Build,
 
 		[ValidateSet('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 2)]
 		[string[]] $Asset = '*',
 
 		[ValidateSet('*', 'NuGet', 'DeveloperFile', 'Vhd')]
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 3)]
 		[string] $Kind = '*',
 
 		[switch] $Download,
 
+		[Parameter(Position = 4)]
 		[string] $Path = "C:\Temp\d365bap.tools\PpacFinOpsAssets",
 
 		[switch] $Force,
 
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByEnvironment', Mandatory = $true, ValueFromPipelineByPropertyName = $true, Position = 5)]
 		[Alias("PpacEnvId")]
 		[string] $EnvironmentId,
 
+		[Parameter(Position = 6)]
 		[string] $OutputPath,
 
 		[switch] $AsExcelOutput
@@ -131,7 +169,14 @@ function Get-PpacFinOpsAsset {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$ctx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
+		$isByEnvironment = $PSCmdlet.ParameterSetName -eq 'ByEnvironment'
+
+		if ($isByEnvironment) {
+			$ctx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
+		}
+		else {
+			$ctx = Get-DevToolsAuthContext
+		}
 
 		if ($null -eq $ctx) { return }
 
@@ -163,9 +208,46 @@ function Get-PpacFinOpsAsset {
 		$buildGiven = $PSBoundParameters.ContainsKey('Build') -and -not [string]::IsNullOrWhiteSpace($Build)
 		$appGiven = $PSBoundParameters.ContainsKey('AppVersion') -and -not [string]::IsNullOrWhiteSpace($AppVersion)
 
-		if ($buildGiven -and $appGiven -and "$Build" -like '@{*}') {
+		if ($buildGiven -and "$Build" -like '@{*}') {
 			$Build = ''
 			$buildGiven = $false
+		}
+
+		if ($isByEnvironment) {
+			$envBuild = $null
+
+			if ($null -ne $ctx.Env -and $null -ne $ctx.Env.PSObject.Properties['PpacProvApp'] -and -not [string]::IsNullOrWhiteSpace("$($ctx.Env.PpacProvApp)")) {
+				$envBuild = "$($ctx.Env.PpacProvApp)"
+			}
+			else {
+				$envDetail = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+
+				if ($null -eq $envDetail) {
+					$messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
+					Write-PSFMessage -Level Important -Message $messageString
+					Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
+						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+					return
+				}
+
+				if ($null -ne $envDetail.PSObject.Properties['PpacProvApp']) {
+					$envBuild = "$($envDetail.PpacProvApp)"
+				}
+			}
+
+			if ([string]::IsNullOrWhiteSpace($envBuild)) {
+				$messageString = "Could not determine the provisioned application build for environment <c='em'>$EnvironmentId</c>. Use <c='em'>-Build</c> or <c='em'>-AppVersion</c> instead (without <c='em'>-EnvironmentId</c>)."
+				Write-PSFMessage -Level Important -Message $messageString
+				Stop-PSFFunction -Message "Stopping because the environment version is unknown." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+				return
+			}
+
+			$Build = $envBuild
+			$buildGiven = $true
+			$appGiven = $false
+
+			Write-PSFMessage -Level Verbose -Message "Using provisioned build <c='em'>$Build</c> from environment <c='em'>$EnvironmentId</c>."
 		}
 
 		$appTrack = $null
