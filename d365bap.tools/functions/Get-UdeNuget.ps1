@@ -114,11 +114,10 @@ function Get-UdeNuget {
 		}
 
 		$assetParams = @{
-			Build         = $build
-			Asset         = $assetNames
-			Kind          = 'NuGet'
-			Path          = $Path
-			EnvironmentId = $EnvironmentId
+			Build  = $build
+			Asset  = $assetNames
+			Kind   = 'NuGet'
+			Path   = $Path
 		}
 
 		if ($Download) { $assetParams['Download'] = $true }

@@ -8,8 +8,12 @@
     .PARAMETER Build
         Full build, track or short form to download. Omitted: newest build of the track.
 
+        Parameter set ByBuild. Cannot be combined with -EnvironmentId.
+
     .PARAMETER AppVersion
         Track to download as version, track or full build. Omitted: from -Build, else newest.
+
+        Parameter set ByBuild. Cannot be combined with -EnvironmentId.
 
     .PARAMETER Asset
         Names to download; "*" selects everything including VHD.
@@ -36,7 +40,9 @@
         Re-download files and re-extract folders.
 
     .PARAMETER EnvironmentId
-        Environment for the auth context only. Omitted: first FinOps environment is used.
+        Environment to resolve the build from and to use for the auth context.
+
+        Parameter set ByEnvironment. Cannot be combined with -Build or -AppVersion.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -71,17 +77,22 @@
 
         Resolves download URLs for that build into an Excel file.
 
+    .EXAMPLE
+        PS C:\> Get-PpacFinOpsAsset -EnvironmentId "es-ude-motz-01"
+
+        Resolves download URLs for the provisioned build of that environment.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-PpacFinOpsAsset {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'ByBuild')]
 	[OutputType('System.Object[]')]
 	param (
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipelineByPropertyName = $true)]
 		[string] $AppVersion,
 
-		[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[string] $Build,
 
 		[ValidateSet('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
@@ -98,7 +109,7 @@ function Get-PpacFinOpsAsset {
 
 		[switch] $Force,
 
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByEnvironment', Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias("PpacEnvId")]
 		[string] $EnvironmentId,
 
@@ -131,7 +142,14 @@ function Get-PpacFinOpsAsset {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$ctx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
+		$isByEnvironment = $PSCmdlet.ParameterSetName -eq 'ByEnvironment'
+
+		if ($isByEnvironment) {
+			$ctx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
+		}
+		else {
+			$ctx = Get-DevToolsAuthContext
+		}
 
 		if ($null -eq $ctx) { return }
 
@@ -163,9 +181,46 @@ function Get-PpacFinOpsAsset {
 		$buildGiven = $PSBoundParameters.ContainsKey('Build') -and -not [string]::IsNullOrWhiteSpace($Build)
 		$appGiven = $PSBoundParameters.ContainsKey('AppVersion') -and -not [string]::IsNullOrWhiteSpace($AppVersion)
 
-		if ($buildGiven -and $appGiven -and "$Build" -like '@{*}') {
+		if ($buildGiven -and "$Build" -like '@{*}') {
 			$Build = ''
 			$buildGiven = $false
+		}
+
+		if ($isByEnvironment) {
+			$envBuild = $null
+
+			if ($null -ne $ctx.Env -and $null -ne $ctx.Env.PSObject.Properties['PpacProvApp'] -and -not [string]::IsNullOrWhiteSpace("$($ctx.Env.PpacProvApp)")) {
+				$envBuild = "$($ctx.Env.PpacProvApp)"
+			}
+			else {
+				$envDetail = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+
+				if ($null -eq $envDetail) {
+					$messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
+					Write-PSFMessage -Level Important -Message $messageString
+					Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
+						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+					return
+				}
+
+				if ($null -ne $envDetail.PSObject.Properties['PpacProvApp']) {
+					$envBuild = "$($envDetail.PpacProvApp)"
+				}
+			}
+
+			if ([string]::IsNullOrWhiteSpace($envBuild)) {
+				$messageString = "Could not determine the provisioned application build for environment <c='em'>$EnvironmentId</c>. Use <c='em'>-Build</c> or <c='em'>-AppVersion</c> instead (without <c='em'>-EnvironmentId</c>)."
+				Write-PSFMessage -Level Important -Message $messageString
+				Stop-PSFFunction -Message "Stopping because the environment version is unknown." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+				return
+			}
+
+			$Build = $envBuild
+			$buildGiven = $true
+			$appGiven = $false
+
+			Write-PSFMessage -Level Verbose -Message "Using provisioned build <c='em'>$Build</c> from environment <c='em'>$EnvironmentId</c>."
 		}
 
 		$appTrack = $null
