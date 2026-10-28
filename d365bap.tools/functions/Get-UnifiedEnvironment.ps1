@@ -191,6 +191,8 @@ function Get-UnifiedEnvironment {
 		}
 
 		if (-not $SkipVersionDetails) {
+			$missedEnvs = @()
+
 			foreach ($envObj in @($resCol)) {
 				if ($null -eq $envObj) { continue }
 
@@ -202,6 +204,10 @@ function Get-UnifiedEnvironment {
 				}
 				else {
 					$verInfo = Resolve-FinOpsVersionFromCache -Build $provApp -ErrorAction SilentlyContinue
+
+					if ($null -eq $verInfo) {
+						$missedEnvs += $envObj
+					}
 				}
 
 				$appVersion = if ($null -ne $verInfo) { "$($verInfo.AppVersion)" } else { "" }
@@ -216,6 +222,48 @@ function Get-UnifiedEnvironment {
 				$envObj | Add-Member -NotePropertyName "PlatVersion" -NotePropertyValue $platVersion -Force
 				$envObj | Add-Member -NotePropertyName "PlatBuild" -NotePropertyValue $platBuild -Force
 				$envObj | Add-Member -NotePropertyName "PlatformVersion" -NotePropertyValue $provPlatform -Force
+			}
+
+			if (@($missedEnvs).Count -gt 0) {
+				$authEnv = @((@($resCol) + @($filteredEnvs)) | Where-Object { $null -ne $_ -and -not [string]::IsNullOrWhiteSpace("$($_.PpacEnvUri)") -and $dataverseTokenMap.ContainsKey("$($_.PpacEnvUri)") } | Select-Object -First 1)
+
+				if (@($authEnv).Count -gt 0) {
+					try {
+						$liveHeaders = @{
+							"Correlationid"           = [guid]::NewGuid().ToString()
+							"Dataverseenvironmenturi" = "$($authEnv[0].PpacEnvUri)"
+							"Authorization"           = "Bearer $($dataverseTokenMap["$($authEnv[0].PpacEnvUri)"])"
+							"Odata-Maxversion"        = "4.0"
+							"Odata-Version"           = "4.0"
+							"Accept"                  = "application/json"
+						}
+
+						$liveCatalog = Invoke-RestMethod -Method Get `
+							-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsversions" `
+							-Headers $liveHeaders `
+							-ErrorAction Stop
+
+						if ($null -ne $liveCatalog -and @($liveCatalog).Count -gt 0) {
+							Write-FinOpsVersionCache -Versions @($liveCatalog)
+
+							foreach ($missedEnv in @($missedEnvs)) {
+								$missedBuild = "$($missedEnv.PpacProvApp)".Trim()
+								$missedInfo = Resolve-FinOpsVersionFromCache -Build $missedBuild -ErrorAction SilentlyContinue
+
+								if ($null -eq $missedInfo) { continue }
+
+								$missedEnv.AppVersion = "$($missedInfo.AppVersion)"
+								$missedEnv.AppBuild = "$($missedInfo.AppBuild)"
+								$missedEnv.Track = "$($missedInfo.AppBuild)"
+								$missedEnv.PlatVersion = "$($missedInfo.PlatVersion)"
+								$missedEnv.PlatBuild = "$($missedInfo.PlatBuild)"
+							}
+						}
+					}
+					catch {
+						Write-PSFMessage -Level Verbose -Message "FinOps version catalog refresh skipped: $($_.Exception.Message)"
+					}
+				}
 			}
 		}
 
