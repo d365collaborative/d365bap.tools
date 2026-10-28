@@ -1,4 +1,4 @@
-BeforeAll {
+﻿BeforeAll {
 	Import-Module PSFramework -ErrorAction Stop
 	$sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 	$fixture = New-Module -Name FinOpsAssetEnvFixture -ArgumentList $sourceRoot -ScriptBlock {
@@ -10,7 +10,6 @@ BeforeAll {
 		$script:restCalls = @()
 		function Get-DevToolsAuthContext {
 			param($EnvironmentId)
-			# Mimics SkipVersionDetails: no PpacProvApp on purpose
 			@{ Env = [pscustomobject]@{ PpacEnvUri = 'https://example.invalid'; PpacEnvName = 'es-ude-motz-01' }; Token = 'fixture' }
 		}
 		function Get-UnifiedEnvironment {

@@ -6,14 +6,14 @@
         Resolves and downloads NuGet packages, developer files and VHD images. Any published version can be selected.
 
     .PARAMETER Build
-        Full build, track or short form to download. Omitted: newest build of the track.
+        Full build, track or short form. Omitted: newest.
 
-        Parameter set ByBuild. Cannot be combined with -EnvironmentId.
+        ByBuild set; excludes -EnvironmentId.
 
     .PARAMETER AppVersion
-        Track to download as version, track or full build. Omitted: from -Build, else newest.
+        Track selector. Omitted: from -Build, else newest.
 
-        Parameter set ByBuild. Cannot be combined with -EnvironmentId.
+        ByBuild set; excludes -EnvironmentId.
 
     .PARAMETER Asset
         Names to download; "*" selects everything including VHD.
@@ -40,9 +40,9 @@
         Re-download files and re-extract folders.
 
     .PARAMETER EnvironmentId
-        Environment to resolve the build from and to use for the auth context.
+        Build source and auth context.
 
-        Parameter set ByEnvironment. Cannot be combined with -Build or -AppVersion.
+        ByEnvironment set; excludes -Build and -AppVersion.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -51,36 +51,61 @@
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46"
 
         Resolves download URLs for that build.
+        It selects the version with -Build.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsBuild -Latest | Get-PpacFinOpsAsset -Kind NuGet -Download
 
         Downloads all NuGet packages of the newest build.
+        It takes the newest build with -Latest.
+        It keeps only the -Kind NuGet packages.
+        It downloads the files with -Download.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
-        PS C:\> Get-PpacFinOpsAsset -Build "10.0.49" -Kind DeveloperFile | Where-Object Asset -eq 'SystemMetadata' | Get-PpacFinOpsAsset -Download
+        PS C:\> Get-PpacFinOpsAsset -Build "10.0.49" -Kind DeveloperFile | Where-Object { $_.Asset -eq 'SystemMetadata' } | Get-PpacFinOpsAsset -Download
 
         Downloads the system metadata of that track.
+        It selects the track with -Build.
+        It keeps only the -Kind DeveloperFile files.
+        It filters to the SystemMetadata asset.
+        It downloads the files with -Download.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Asset Vhd -Download
 
         Downloads the VHD image parts.
+        It selects the version with -Build.
+        It keeps only -Asset Vhd.
+        It downloads the files with -Download.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -Kind NuGet -Download -OutputPath "C:\tmp\D365"
 
         Downloads NuGet files, extracting under C:\tmp\D365.
+        It selects the version with -Build.
+        It keeps only the -Kind NuGet packages.
+        It downloads the files with -Download.
+        It extracts under -OutputPath C:\tmp\D365.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -Build "10.0.2790.46" -AsExcelOutput
 
         Resolves download URLs for that build into an Excel file.
+        It selects the version with -Build.
+        It writes an Excel file with -AsExcelOutput.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-PpacFinOpsAsset -EnvironmentId "es-ude-motz-01"
 
         Resolves download URLs for the provisioned build of that environment.
+        It uses the environment build with -EnvironmentId.
+        It keeps downloads under the default -Path.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
