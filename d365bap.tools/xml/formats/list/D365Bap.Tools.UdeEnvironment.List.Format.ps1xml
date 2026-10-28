@@ -29,6 +29,15 @@
                                 <PropertyName>PpacProvPlatform</PropertyName>
                             </ListItem>
                             <ListItem>
+                                <PropertyName>PpacProvState</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PpacProvType</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PpacEnvUri</PropertyName>
+                            </ListItem>
+                            <ListItem>
                                 <PropertyName>AppVersion</PropertyName>
                             </ListItem>
                             <ListItem>
@@ -48,15 +57,6 @@
                             </ListItem>
                             <ListItem>
                                 <PropertyName>PlatformVersion</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacProvState</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacProvType</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacEnvUri</PropertyName>
                             </ListItem>
                         </ListItems>
                     </ListEntry>
