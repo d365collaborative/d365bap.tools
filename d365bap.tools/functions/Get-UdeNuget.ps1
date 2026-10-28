@@ -33,27 +33,48 @@
     .EXAMPLE
         PS C:\> Get-UdeNuget -EnvironmentId "env-123"
 
-        This will retrieve the UDE NuGet packages for the specified environment ID without downloading them.
+        Lists the UDE NuGet packages without downloading them.
+        It selects the environment with -EnvironmentId.
+        It lists every package with the default -Packages selection.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-UdeNuget -EnvironmentId "env-123" -Download
 
-        This will download the UDE NuGet packages for the specified environment ID to the default path.
+        Downloads the UDE NuGet packages to the default path.
+        It selects the environment with -EnvironmentId.
+        It downloads the files with -Download.
+        It lists every package with the default -Packages selection.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-UdeNuget -EnvironmentId "env-123" -Download -Packages "CompilerPackage","Platform"
 
         Downloads only CompilerPackage and Platform.
+        It selects the environment with -EnvironmentId.
+        It downloads the files with -Download.
+        It keeps only -Packages CompilerPackage and Platform.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-UdeNuget -EnvironmentId "env-123" -Download -ClearNugetPackages
 
         Downloads and re-extracts everything.
+        It selects the environment with -EnvironmentId.
+        It downloads the files with -Download.
+        It re-extracts with -ClearNugetPackages.
+        It lists every package with the default -Packages selection.
+        It keeps downloads under the default -Path.
 
     .EXAMPLE
         PS C:\> Get-UdeNuget -EnvironmentId "env-123" -Download -OutputPath "C:\tmp\D365"
 
         Downloads and extracts under C:\tmp\D365.
+        It selects the environment with -EnvironmentId.
+        It downloads the files with -Download.
+        It extracts under -OutputPath C:\tmp\D365.
+        It lists every package with the default -Packages selection.
+        It keeps downloads under the default -Path.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -114,11 +135,10 @@ function Get-UdeNuget {
 		}
 
 		$assetParams = @{
-			Build         = $build
-			Asset         = $assetNames
-			Kind          = 'NuGet'
-			Path          = $Path
-			EnvironmentId = $EnvironmentId
+			Build = $build
+			Asset = $assetNames
+			Kind  = 'NuGet'
+			Path  = $Path
 		}
 
 		if ($Download) { $assetParams['Download'] = $true }
