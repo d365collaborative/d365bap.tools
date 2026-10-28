@@ -229,10 +229,14 @@ function Get-UnifiedEnvironment {
 
 				if (@($authEnv).Count -gt 0) {
 					try {
+						$authUri = "$($authEnv[0].PpacEnvUri)".TrimEnd("/") + "/"
+						$secureLive = Get-BapAccessToken -ResourceUrl $authUri
+						$liveToken = ConvertFrom-SecureString -AsPlainText -SecureString $secureLive
+
 						$liveHeaders = @{
 							"Correlationid"           = [guid]::NewGuid().ToString()
 							"Dataverseenvironmenturi" = "$($authEnv[0].PpacEnvUri)"
-							"Authorization"           = "Bearer $($dataverseTokenMap["$($authEnv[0].PpacEnvUri)"])"
+							"Authorization"           = "Bearer $liveToken"
 							"Odata-Maxversion"        = "4.0"
 							"Odata-Version"           = "4.0"
 							"Accept"                  = "application/json"

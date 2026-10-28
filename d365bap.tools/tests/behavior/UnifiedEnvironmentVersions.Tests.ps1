@@ -87,6 +87,7 @@
 		}
 		function Get-BapAccessToken {
 			param($ResourceUrl)
+			$script:tokenUrls += @("$ResourceUrl")
 			$secure = [Security.SecureString]::new()
 			foreach ($char in @('fixture-token'.ToCharArray())) { $secure.AppendChar($char) }
 			$secure.MakeReadOnly()
@@ -97,6 +98,7 @@
 		$script:fixtureCatalog = $null
 		$script:catalogCalls = 0
 		$script:failCatalog = $false
+		$script:tokenUrls = @()
 		function Get-FinOpsVersionCache {
 			param([int] $MaxAgeHours = 24)
 			$script:fixtureCatalog
@@ -148,6 +150,7 @@ Describe 'Get-UnifiedEnvironment version details' {
 			$script:catalogCalls = 0
 			$script:failCatalog = $false
 			$script:writeCalls = @()
+			$script:tokenUrls = @()
 		} $catalog
 	}
 
@@ -163,6 +166,8 @@ Describe 'Get-UnifiedEnvironment version details' {
 		$env.PlatBuild | Should -Be '7.0.7120.42'
 		$env.PlatformVersion | Should -Be '7.0.7120.42'
 		& (Get-Module UnifiedEnvBehaviorFixture) { $script:catalogCalls } | Should -Be 0
+		$slashed = @(& (Get-Module UnifiedEnvBehaviorFixture) { @($script:tokenUrls | Where-Object { "$_".EndsWith('/') }) })
+		$slashed.Count | Should -Be 0
 	}
 
 	It 'refreshes a cold cache from the live catalog and resolves the miss' {
@@ -176,6 +181,8 @@ Describe 'Get-UnifiedEnvironment version details' {
 		$env.PlatBuild | Should -Be '7.0.7120.42'
 		$env.PlatformVersion | Should -Be '7.0.7120.42'
 		& (Get-Module UnifiedEnvBehaviorFixture) { $script:catalogCalls } | Should -Be 1
+		$slashed = @(& (Get-Module UnifiedEnvBehaviorFixture) { @($script:tokenUrls | Where-Object { "$_".EndsWith('/') }) })
+		$slashed.Count | Should -Be 1
 		$writes = @(& (Get-Module UnifiedEnvBehaviorFixture) { $script:writeCalls })
 		$writes.Count | Should -Be 1
 		$writes[0].Versions[0].appVersion | Should -Be '10.0.49'
