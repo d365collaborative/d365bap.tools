@@ -114,30 +114,32 @@ function Get-PpacFinOpsAsset {
 	[CmdletBinding(DefaultParameterSetName = 'ByBuild')]
 	[OutputType('System.Object[]')]
 	param (
-		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipelineByPropertyName = $true, Position = 0)]
 		[string] $AppVersion,
 
-		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
 		[string] $Build,
 
 		[ValidateSet('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 2)]
 		[string[]] $Asset = '*',
 
 		[ValidateSet('*', 'NuGet', 'DeveloperFile', 'Vhd')]
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 3)]
 		[string] $Kind = '*',
 
 		[switch] $Download,
 
+		[Parameter(Position = 4)]
 		[string] $Path = "C:\Temp\d365bap.tools\PpacFinOpsAssets",
 
 		[switch] $Force,
 
-		[Parameter(ParameterSetName = 'ByEnvironment', Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByEnvironment', Mandatory = $true, ValueFromPipelineByPropertyName = $true, Position = 5)]
 		[Alias("PpacEnvId")]
 		[string] $EnvironmentId,
 
+		[Parameter(Position = 6)]
 		[string] $OutputPath,
 
 		[switch] $AsExcelOutput
