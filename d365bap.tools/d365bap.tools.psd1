@@ -118,6 +118,7 @@
 		, 'Get-PpacD365Properties'
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironmentDlpPolicy'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacFinOpsAsset'
 		, 'Get-PpacFinOpsBuild'
@@ -131,6 +132,7 @@
 		, 'Get-PpacSecurityRoleTable'
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
+		, 'Get-PpacTenantDlpPolicy'
 		, 'Get-PpacUser'
 
 		, 'Get-PpeOdata'
