@@ -45,5 +45,5 @@ function Get-BapGovernancePolicy {
 		$uri = $nextLink
 	} while (-not [string]::IsNullOrWhiteSpace($uri))
 
-	$policies
+	$policies.ToArray()
 }
