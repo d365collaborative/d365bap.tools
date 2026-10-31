@@ -57,5 +57,5 @@ function Get-BapGovernancePolicyAssignment {
 	}
 
 	$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers -ErrorAction Stop
-	@($response.value)
+	[object[]]@($response.value)
 }
