@@ -52,5 +52,5 @@ function Get-BapDlpPolicy {
 		$uri = $nextLink
 	} while (-not [string]::IsNullOrWhiteSpace($uri))
 
-	$policies
+	$policies.ToArray()
 }
