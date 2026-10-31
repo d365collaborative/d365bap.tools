@@ -118,6 +118,7 @@
 		, 'Get-PpacD365Properties'
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironmentConnection'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacFinOpsAsset'
 		, 'Get-PpacFinOpsBuild'
