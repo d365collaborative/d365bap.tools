@@ -34,14 +34,9 @@ if ($files.Count -eq 0) { exit 0 }
 $results = @()
 . "$PSScriptRoot/../internal/Get-Ps1CommentDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1HelpDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1WildcardDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1EmptyAttributeDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1MandatoryDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ParameterArgumentDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ParameterPositionDiagnostic.ps1"
+. "$PSScriptRoot/../internal/Get-Ps1ParameterContractDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1ParameterLayoutDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1TableFormatDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ExcelOutputDiagnostic.ps1"
+. "$PSScriptRoot/../internal/Get-Ps1StandardOutputDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AddMemberDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AccessTokenDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AliasDiagnostic.ps1"
@@ -57,14 +52,9 @@ foreach ($p in $files) {
 	$results += Invoke-ScriptAnalyzer -Path $p -Recurse -Severity @('Error', 'Warning') -ExcludeRule 'PSAvoidUsingCmdletAliases' -ErrorAction Stop
 	$results += @(Get-Ps1CommentDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1HelpDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1WildcardDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1EmptyAttributeDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1MandatoryDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ParameterArgumentDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ParameterPositionDiagnostic -Analysis $analysis)
+	$results += @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1ParameterLayoutDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1TableFormatDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ExcelOutputDiagnostic -Analysis $analysis)
+	$results += @(Get-Ps1StandardOutputDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AccessTokenDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AliasDiagnostic -Analysis $analysis -Worker $worker)

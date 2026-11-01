@@ -47,7 +47,7 @@ function Test-Ps1ScalarArray {
 	$type.IsValueType -or $type -eq [string]
 }
 
-function Test-Ps1CollectionOutputType {
+function Test-Ps1CollectionOutput {
 	param($Attribute)
 	foreach ($argument in $Attribute.PositionalArguments) {
 		$name = if ($argument -is [Management.Automation.Language.TypeExpressionAst]) {
@@ -76,7 +76,19 @@ function Get-Ps1PipelineStringValue {
 	$null
 }
 
-function Get-Ps1TableFormatDiagnostic {
+function Write-Ps1CollectionOutputDiagnostic {
+	param([string] $Path, [string] $Message, $Extent)
+	[pscustomobject]@{
+		RuleName   = 'PSUseStandardCollectionOutput'
+		Severity   = 'Error'
+		ScriptName = [IO.Path]::GetFileName($Path)
+		Line       = $Extent.StartLineNumber
+		Column     = $Extent.StartColumnNumber
+		Message    = $Message
+	}
+}
+
+function Get-Ps1StandardOutputDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
@@ -84,14 +96,14 @@ function Get-Ps1TableFormatDiagnostic {
 	if ($normalized -notmatch '/d365bap\.tools/functions/[^/]+\.ps1$') { return }
 
 	$function = @($Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true) | Where-Object { $_.Name -eq [IO.Path]::GetFileNameWithoutExtension($Path) })[0]
-	if ($null -eq $function) { return }
+	if ($null -eq $function -or $null -eq $function.Body.ParamBlock) { return }
 
-	$isCollection = @($function.Body.ParamBlock.Attributes | Where-Object {
+	$outputType = @($function.Body.ParamBlock.Attributes | Where-Object {
 			$_ -is [Management.Automation.Language.AttributeAst] -and
 			$_.TypeName.FullName -match '^OutputType(Attribute)?$' -and
-			(Test-Ps1CollectionOutputType $_)
-		}).Count -gt 0
-	if (-not $isCollection) { return }
+			(Test-Ps1CollectionOutput $_)
+		})[0]
+	if ($null -eq $outputType) { return }
 
 	$moduleRoot = Split-Path (Split-Path $Path -Parent) -Parent
 	$types = Get-Ps1TableFormatType (Join-Path $moduleRoot 'xml/formats/table')
@@ -111,14 +123,7 @@ function Get-Ps1TableFormatDiagnostic {
 			if ($seen.ContainsKey($typeName)) { continue }
 			$seen[$typeName] = $true
 			if ($types.ContainsKey($typeName)) { continue }
-			[pscustomobject]@{
-				RuleName   = 'PSUseTableFormatView'
-				Severity   = 'Error'
-				ScriptName = [IO.Path]::GetFileName($Path)
-				Line       = $argument.Extent.StartLineNumber
-				Column     = $argument.Extent.StartColumnNumber
-				Message    = "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional."
-			}
+			Write-Ps1CollectionOutputDiagnostic $Path "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $argument.Extent
 		}
 	}
 
@@ -132,14 +137,18 @@ function Get-Ps1TableFormatDiagnostic {
 			if ($seen.ContainsKey($typeName)) { continue }
 			$seen[$typeName] = $true
 			if ($types.ContainsKey($typeName)) { continue }
-			[pscustomobject]@{
-				RuleName   = 'PSUseTableFormatView'
-				Severity   = 'Error'
-				ScriptName = [IO.Path]::GetFileName($Path)
-				Line       = $value.Extent.StartLineNumber
-				Column     = $value.Extent.StartColumnNumber
-				Message    = "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional."
-			}
+			Write-Ps1CollectionOutputDiagnostic $Path "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $value.Extent
 		}
 	}
+
+	$hasSwitch = @($function.Body.ParamBlock.Parameters | Where-Object {
+			if ($_.Name.VariablePath.UserPath -ne 'AsExcelOutput') { return $false }
+			@($_.Attributes | Where-Object {
+					$_ -is [Management.Automation.Language.TypeConstraintAst] -and
+					$_.TypeName.FullName -in @('switch', 'System.Management.Automation.SwitchParameter')
+				}).Count -gt 0
+		}).Count -gt 0
+	if ($hasSwitch) { return }
+
+	Write-Ps1CollectionOutputDiagnostic $Path "Add [switch] `$AsExcelOutput to $($function.Name). Array output must support Excel export." $outputType.Extent
 }
