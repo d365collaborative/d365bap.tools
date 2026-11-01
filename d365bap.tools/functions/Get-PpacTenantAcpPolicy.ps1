@@ -49,14 +49,12 @@
         Author: d365bap.tools contributors
 #>
 function Get-PpacTenantAcpPolicy {
-	[CmdletBinding(DefaultParameterSetName = 'ByName')]
+	[CmdletBinding()]
 	[OutputType('System.Object[]')]
 	param (
-		[Parameter(ParameterSetName = 'ByName')]
 		[SupportsWildcards()]
 		[string] $Name = '*',
 
-		[Parameter(ParameterSetName = 'ByPolicyId', Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 		[switch] $ExpandConnectors,
@@ -68,6 +66,11 @@ function Get-PpacTenantAcpPolicy {
 
 		$params = @{ Kind = 'Acp' }
 		if ($PSBoundParameters.ContainsKey('Name')) { $params.Name = $Name }
+		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
+			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
+			return
+		}
+
 		if ($PSBoundParameters.ContainsKey('PolicyId')) { $params.PolicyId = $PolicyId }
 
 		$policies = @(Get-PpacTenantRuleBasedPolicy @params)

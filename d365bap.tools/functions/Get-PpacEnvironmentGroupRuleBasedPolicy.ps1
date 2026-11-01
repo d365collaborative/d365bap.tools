@@ -62,20 +62,18 @@
         Author: d365bap.tools contributors
 #>
 function Get-PpacEnvironmentGroupRuleBasedPolicy {
-	[CmdletBinding(DefaultParameterSetName = 'ByName')]
+	[CmdletBinding()]
 	[OutputType('System.Object[]')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $EnvironmentGroupId,
 
-		[Parameter(ParameterSetName = 'ByName')]
 		[SupportsWildcards()]
 		[string] $Name = '*',
 		[ValidateSet('All', 'Acp')]
 		[string] $Kind = 'All',
 
-		[Parameter(ParameterSetName = 'ByPolicyId', Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 		[switch] $AsExcelOutput
@@ -98,7 +96,12 @@ function Get-PpacEnvironmentGroupRuleBasedPolicy {
 
 		if ($Kind -eq 'Acp') { $policies = @($policies | Where-Object Kind -eq 'Acp') }
 
-		if ($PSCmdlet.ParameterSetName -eq 'ByPolicyId') {
+		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
+			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
+			return
+		}
+
+		if ($PSBoundParameters.ContainsKey('PolicyId')) {
 			$policies = @($policies | Where-Object {
 					$_.id -eq $PolicyId -or $_.name -eq $PolicyId
 				})

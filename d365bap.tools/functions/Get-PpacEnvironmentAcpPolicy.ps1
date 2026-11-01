@@ -56,7 +56,7 @@
         Author: d365bap.tools contributors
 #>
 function Get-PpacEnvironmentAcpPolicy {
-	[CmdletBinding(DefaultParameterSetName = 'ByName')]
+	[CmdletBinding()]
 	[OutputType('System.Object[]')]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
@@ -64,11 +64,9 @@ function Get-PpacEnvironmentAcpPolicy {
 		[ValidateNotNullOrEmpty()]
 		[string] $EnvironmentId,
 
-		[Parameter(ParameterSetName = 'ByName')]
 		[SupportsWildcards()]
 		[string] $Name = '*',
 
-		[Parameter(ParameterSetName = 'ByPolicyId', Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 		[switch] $ExpandConnectors,
@@ -83,6 +81,11 @@ function Get-PpacEnvironmentAcpPolicy {
 			EnvironmentId = $EnvironmentId
 		}
 		if ($PSBoundParameters.ContainsKey('Name')) { $params.Name = $Name }
+		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
+			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
+			return
+		}
+
 		if ($PSBoundParameters.ContainsKey('PolicyId')) { $params.PolicyId = $PolicyId }
 
 		$policies = @(Get-PpacEnvironmentRuleBasedPolicy @params)

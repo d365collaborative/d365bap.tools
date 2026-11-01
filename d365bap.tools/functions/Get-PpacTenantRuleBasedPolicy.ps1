@@ -62,16 +62,14 @@
         Author: d365bap.tools contributors
 #>
 function Get-PpacTenantRuleBasedPolicy {
-	[CmdletBinding(DefaultParameterSetName = 'ByName')]
+	[CmdletBinding()]
 	[OutputType('System.Object[]')]
 	param (
-		[Parameter(ParameterSetName = 'ByName')]
 		[SupportsWildcards()]
 		[string] $Name = '*',
 		[ValidateSet('All', 'Acp')]
 		[string] $Kind = 'All',
 
-		[Parameter(ParameterSetName = 'ByPolicyId', Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 		[switch] $AsExcelOutput
@@ -92,7 +90,12 @@ function Get-PpacTenantRuleBasedPolicy {
 
 		if ($Kind -eq 'Acp') { $policies = @($policies | Where-Object Kind -eq 'Acp') }
 
-		if ($PSCmdlet.ParameterSetName -eq 'ByPolicyId') {
+		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
+			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
+			return
+		}
+
+		if ($PSBoundParameters.ContainsKey('PolicyId')) {
 			$policies = @($policies | Where-Object {
 					$_.id -eq $PolicyId -or $_.name -eq $PolicyId
 				})
