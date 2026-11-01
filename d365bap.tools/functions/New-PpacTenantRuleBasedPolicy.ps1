@@ -45,7 +45,10 @@ function New-PpacTenantRuleBasedPolicy {
 			ruleSets = @($RuleSet)
 		} | ConvertTo-Json -Depth 20
 
-		if (-not $PSCmdlet.ShouldProcess($Name, 'Create governance rule-based policy')) { return }
+		$shouldAffected = $Name
+		$shouldLabel = 'Create governance rule-based policy'
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken

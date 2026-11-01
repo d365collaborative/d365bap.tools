@@ -40,8 +40,8 @@ function New-PpacTenantAcpPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$allowed = foreach ($connector in $ConnectorId) {
-			$fullId = if ($connector -like '/providers/*') { $connector } else { "/providers/Microsoft.PowerApps/apis/$connector" }
+		$colAllowed = foreach ($itemConnector in $ConnectorId) {
+			$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
 			[ordered]@{
 				AllowedConnector           = $fullId
 				AllowedActionsMode         = 'AllAllowed'
@@ -49,18 +49,21 @@ function New-PpacTenantAcpPolicy {
 			}
 		}
 
-		$ruleSet = @(
+		$colRuleSet = @(
 			[ordered]@{
 				id      = 'ConnectorManagement'
 				version = '1.0'
-				inputs  = [ordered]@{ AllowedConnectorList = @($allowed) }
+				inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
 			}
 		)
 
-		if (-not $PSCmdlet.ShouldProcess($Name, 'Create advanced connector policy')) { return }
+		$shouldAffected = $Name
+		$shouldLabel = 'Create advanced connector policy'
 
-		$created = @(New-PpacTenantRuleBasedPolicy -Name $Name -RuleSet $ruleSet -Confirm:$false)
-		if ($created.Count -eq 0) { return }
-		Get-PpacTenantAcpPolicy -PolicyId $created[0].PolicyId
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+
+		$colCreated = @(New-PpacTenantRuleBasedPolicy -Name $Name -RuleSet $colRuleSet -Confirm:$false)
+		if ($colCreated.Count -eq 0) { return }
+		Get-PpacTenantAcpPolicy -PolicyId $colCreated[0].PolicyId
 	}
 }

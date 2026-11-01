@@ -73,23 +73,23 @@ function Get-PpacEnvironmentAcpPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$params = @{
+		$hashParams = @{
 			Kind          = 'Acp'
 			EnvironmentId = $EnvironmentId
+			PolicyId      = $PolicyId
 		}
-		if ($PSBoundParameters.ContainsKey('PolicyId')) { $params.PolicyId = $PolicyId }
 
-		$policies = @(Get-PpacEnvironmentRuleBasedPolicy @params)
-		$resCol = @(ConvertTo-PpacAcpPolicy -Policy $policies -TypeName 'D365Bap.Tools.PpacEnvironmentAcpPolicy' -ExpandConnectors:$ExpandConnectors)
+		$colPolicies = @(Get-PpacEnvironmentRuleBasedPolicy @hashParams)
+		$colRes = @(ConvertTo-PpacAcpPolicy -Policy $colPolicies -TypeName 'D365Bap.Tools.PpacEnvironmentAcpPolicy' -ExpandConnectors:$ExpandConnectors)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacEnvironmentAcpPolicy' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentAcpPolicy' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }

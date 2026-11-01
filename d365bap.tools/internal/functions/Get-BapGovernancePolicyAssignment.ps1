@@ -42,7 +42,7 @@ function Get-BapGovernancePolicyAssignment {
 
 	$secureToken = Get-BapAccessToken -PowerPlatform
 	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
-	$headers = @{
+	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 		Accept        = 'application/json'
 	}
@@ -56,6 +56,6 @@ function Get-BapGovernancePolicyAssignment {
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/environments/$EnvironmentId/assignments?api-version=$apiVersion&includeRuleSetCounts=true"
 	}
 
-	$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers -ErrorAction Stop
+	$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $hashHeaders -ErrorAction Stop
 	[object[]]@($response.value)
 }

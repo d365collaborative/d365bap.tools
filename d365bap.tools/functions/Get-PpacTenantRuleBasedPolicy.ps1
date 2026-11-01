@@ -76,7 +76,7 @@ function Get-PpacTenantRuleBasedPolicy {
 		if (Test-PSFFunctionInterrupt) { return }
 
 		try {
-			$policies = @(Get-BapGovernancePolicyView -Policy @(Get-BapGovernancePolicy) -Assignment @() -Scope Tenant)
+			$colPolicies = @(Get-BapGovernancePolicyView -Policy @(Get-BapGovernancePolicy) -Assignment @() -Scope Tenant)
 		}
 		catch {
 			$messageString = "Failed to retrieve governance rule-based policies. $($_.Exception.Message)"
@@ -85,16 +85,16 @@ function Get-PpacTenantRuleBasedPolicy {
 			return
 		}
 
-		if ($Kind -eq 'Acp') { $policies = @($policies | Where-Object Kind -eq 'Acp') }
+		if ($Kind -eq 'Acp') { $colPolicies = @($colPolicies | Where-Object Kind -eq 'Acp') }
 
-		$policies = @($policies | Where-Object {
+		$colPolicies = @($colPolicies | Where-Object {
 				$_.id -like $PolicyId -or $_.name -like $PolicyId
 			})
 
-		$policies = @($policies | Sort-Object -Property name, id)
+		$colPolicies = @($colPolicies | Sort-Object -Property name, id)
 
-		$resCol = @(
-			$policies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantRuleBasedPolicy' -Property `
+		$colRes = @(
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantRuleBasedPolicy' -Property `
 				'id as PolicyId',
 			'name as Name',
 			'Kind as Kind',
@@ -109,13 +109,13 @@ function Get-PpacTenantRuleBasedPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacTenantRuleBasedPolicy' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacTenantRuleBasedPolicy' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }

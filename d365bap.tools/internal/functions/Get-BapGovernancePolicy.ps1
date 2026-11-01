@@ -21,29 +21,29 @@ function Get-BapGovernancePolicy {
 
 	$secureToken = Get-BapAccessToken -PowerPlatform
 	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
-	$headers = @{
+	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 		Accept        = 'application/json'
 	}
 
 	$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 	$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies?api-version=$apiVersion"
-	$policies = [Collections.Generic.List[object]]::new()
-	$visited = [Collections.Generic.HashSet[string]]::new()
+	$colPolicies = [Collections.Generic.List[object]]::new()
+	$colVisited = [Collections.Generic.HashSet[string]]::new()
 
 	do {
-		$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers -ErrorAction Stop
-		foreach ($policy in @($response.value)) { $policies.Add($policy) }
+		$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $hashHeaders -ErrorAction Stop
+		foreach ($itemPolicy in @($response.value)) { $colPolicies.Add($itemPolicy) }
 
 		$nextLink = "$($response.'@odata.nextLink')"
 		if ([string]::IsNullOrWhiteSpace($nextLink)) { $nextLink = "$($response.nextLink)" }
 
-		if (-not [string]::IsNullOrWhiteSpace($nextLink) -and -not $visited.Add($nextLink)) {
+		if (-not [string]::IsNullOrWhiteSpace($nextLink) -and -not $colVisited.Add($nextLink)) {
 			throw 'The governance policy API returned a repeated continuation URL.'
 		}
 
 		$uri = $nextLink
 	} while (-not [string]::IsNullOrWhiteSpace($uri))
 
-	$policies.ToArray()
+	$colPolicies.ToArray()
 }

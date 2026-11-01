@@ -49,18 +49,18 @@ function ConvertTo-PpacAcpPolicy {
 
 	if ($ExpandConnectors) {
 		foreach ($item in $Policy) {
-			$connectorManagement = @($item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
-			foreach ($entry in @($connectorManagement.inputs.AllowedConnectorList)) {
-				if ($null -eq $entry) { continue }
+			$tmpConnectorManagement = @($item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
+			foreach ($itemEntry in @($tmpConnectorManagement.inputs.AllowedConnectorList)) {
+				if ($null -eq $itemEntry) { continue }
 
 				[pscustomobject]@{
 					PolicyId                   = $item.PolicyId
 					PolicyName                 = $item.Name
-					ConnectorId                = $entry.AllowedConnector
-					ConnectorName              = if (-not [string]::IsNullOrWhiteSpace("$($entry.AllowedConnector)")) { ($entry.AllowedConnector -split '/')[-1] }
-					AllowedActionsMode         = $entry.AllowedActionsMode
-					AllowedActions             = @($entry.AllowedActions | Where-Object { $_ }) -join ', '
-					AllowedConnectionTypesMode = $entry.AllowedConnectionTypesMode
+					ConnectorId                = $itemEntry.AllowedConnector
+					ConnectorName              = if (-not [string]::IsNullOrWhiteSpace("$($itemEntry.AllowedConnector)")) { ($itemEntry.AllowedConnector -split '/')[-1] }
+					AllowedActionsMode         = $itemEntry.AllowedActionsMode
+					AllowedActions             = @($itemEntry.AllowedActions | Where-Object { $_ }) -join ', '
+					AllowedConnectionTypesMode = $itemEntry.AllowedConnectionTypesMode
 					AssignmentSource           = $item.AssignmentSource
 					IsEffective                = $item.IsEffective
 					PpacEnvId                  = $item.PpacEnvId
@@ -88,12 +88,12 @@ function ConvertTo-PpacAcpPolicy {
 		'PolicyId as PolicyId',
 	'Name as Name',
 	'LastModified as LastModified',
-	@{ Name = 'RuleSetVersion'; Expression = { $cm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if ($null -ne $cm) { $cm.version } } },
+	@{ Name = 'RuleSetVersion'; Expression = { $objCm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if ($null -ne $objCm) { $objCm.version } } },
 	'AllowedConnectorCount as AllowedConnectorCount',
 	'AssignmentSource as AssignmentSource',
 	'IsEffective as IsEffective',
 	'TenantId as TenantId',
-	@{ Name = 'AllowedConnectors'; Expression = { $cm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if ($null -ne $cm) { @($cm.inputs.AllowedConnectorList) } } },
+	@{ Name = 'AllowedConnectors'; Expression = { $objCm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if ($null -ne $objCm) { @($objCm.inputs.AllowedConnectorList) } } },
 	'PpacEnvId as PpacEnvId',
 	'PpacEnvName as PpacEnvName',
 	'EnvironmentGroupId as EnvironmentGroupId',

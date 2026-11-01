@@ -30,22 +30,25 @@ function Remove-PpacTenantAcpPolicyRuleSet {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$current = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
-		if ($current.Count -eq 0) {
+		$colCurrent = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
+		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No ACP policy matched '$PolicyId'."
 			return
 		}
-		if ($current.Count -gt 1) {
+		if ($colCurrent.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple ACP policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$policyLabel = $current[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+		$policyName = $colCurrent[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, 'Remove the ACP rule set')) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = 'Remove ACP policy rule set'
 
-		$null = Remove-PpacTenantRuleBasedPolicyRuleSet -PolicyId $current[0].PolicyId -RuleSetId 'ConnectorManagement' -Confirm:$false
-		Get-PpacTenantAcpPolicy -PolicyId $current[0].PolicyId
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+
+		$null = Remove-PpacTenantRuleBasedPolicyRuleSet -PolicyId $colCurrent[0].PolicyId -RuleSetId 'ConnectorManagement' -Confirm:$false
+		Get-PpacTenantAcpPolicy -PolicyId $colCurrent[0].PolicyId
 	}
 }

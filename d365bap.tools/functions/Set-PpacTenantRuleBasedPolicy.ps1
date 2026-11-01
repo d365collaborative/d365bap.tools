@@ -71,23 +71,26 @@ function Set-PpacTenantRuleBasedPolicy {
 			return
 		}
 
-		$current = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
-		if ($current.Count -eq 0) {
+		$colCurrent = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
+		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No tenant policy matched '$PolicyId'."
 			return
 		}
-		if ($current.Count -gt 1) {
+		if ($colCurrent.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple tenant policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$payloadName = if ($PSBoundParameters.ContainsKey('Name')) { $Name } else { $current[0].Name }
-		$payloadRuleSets = if ($PSBoundParameters.ContainsKey('RuleSet')) { @($RuleSet) } else { @($current[0].RuleSets) }
+		$payloadName = if ($PSBoundParameters.ContainsKey('Name')) { $Name } else { $colCurrent[0].Name }
+		$payloadRuleSets = if ($PSBoundParameters.ContainsKey('RuleSet')) { @($RuleSet) } else { @($colCurrent[0].RuleSets) }
 
-		$policyLabel = $current[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+		$policyName = $colCurrent[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, 'Update governance policy')) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = 'Update governance policy'
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$body = [ordered]@{
 			name     = $payloadName
@@ -97,7 +100,7 @@ function Set-PpacTenantRuleBasedPolicy {
 		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($current[0].PolicyId)?api-version=$apiVersion"
+		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colCurrent[0].PolicyId)?api-version=$apiVersion"
 		$method = if ($Merge) { 'Patch' } else { 'Put' }
 
 		try {
@@ -113,6 +116,6 @@ function Set-PpacTenantRuleBasedPolicy {
 			return
 		}
 
-		Get-PpacTenantRuleBasedPolicy -PolicyId $current[0].PolicyId
+		Get-PpacTenantRuleBasedPolicy -PolicyId $colCurrent[0].PolicyId
 	}
 }

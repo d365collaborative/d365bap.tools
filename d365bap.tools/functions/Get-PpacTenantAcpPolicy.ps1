@@ -61,20 +61,22 @@ function Get-PpacTenantAcpPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$params = @{ Kind = 'Acp' }
-		if ($PSBoundParameters.ContainsKey('PolicyId')) { $params.PolicyId = $PolicyId }
+		$hashParams = @{
+			Kind     = 'Acp'
+			PolicyId = $PolicyId
+		}
 
-		$policies = @(Get-PpacTenantRuleBasedPolicy @params)
-		$resCol = @(ConvertTo-PpacAcpPolicy -Policy $policies -TypeName 'D365Bap.Tools.PpacTenantAcpPolicy' -ExpandConnectors:$ExpandConnectors)
+		$colPolicies = @(Get-PpacTenantRuleBasedPolicy @hashParams)
+		$colRes = @(ConvertTo-PpacAcpPolicy -Policy $colPolicies -TypeName 'D365Bap.Tools.PpacTenantAcpPolicy' -ExpandConnectors:$ExpandConnectors)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacTenantAcpPolicy' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacTenantAcpPolicy' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }

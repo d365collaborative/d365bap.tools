@@ -73,25 +73,28 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 			$environmentLabel = $envObj.PpacEnvName
 		}
 
-		$policy = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
-		if ($policy.Count -eq 0) {
+		$colPolicy = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
+		if ($colPolicy.Count -eq 0) {
 			Stop-PSFFunction -Message "No governance policy matched '$PolicyId'."
 			return
 		}
-		if ($policy.Count -gt 1) {
+		if ($colPolicy.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple governance policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$policyLabel = $policy[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $policy[0].PolicyId }
+		$policyName = $colPolicy[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colPolicy[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Assign to '$environmentLabel'")) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = "Assign policy to '$environmentLabel'"
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($policy[0].PolicyId)/environments/$routeEnvironmentId/assignments?api-version=$apiVersion"
+		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colPolicy[0].PolicyId)/environments/$routeEnvironmentId/assignments?api-version=$apiVersion"
 
 		try {
 			$null = Invoke-RestMethod -Method Post -Uri $uri -Headers @{
@@ -106,6 +109,6 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 			return
 		}
 
-		Get-PpacEnvironmentRuleBasedPolicy -EnvironmentId $EnvironmentId -PolicyId $policy[0].PolicyId
+		Get-PpacEnvironmentRuleBasedPolicy -EnvironmentId $EnvironmentId -PolicyId $colPolicy[0].PolicyId
 	}
 }

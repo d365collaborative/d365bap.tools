@@ -40,34 +40,37 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 
 		$groupLabel = $EnvironmentGroupId
 		try {
-			$groupObj = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
-			if ($null -ne $groupObj -and -not [string]::IsNullOrWhiteSpace("$($groupObj.DisplayName)")) {
-				$groupLabel = $groupObj.DisplayName
+			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
+			if ($null -ne $objGroup -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+				$groupLabel = $objGroup.DisplayName
 			}
 		}
 		catch {
 			$groupLabel = $EnvironmentGroupId
 		}
 
-		$policy = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
-		if ($policy.Count -eq 0) {
+		$colPolicy = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
+		if ($colPolicy.Count -eq 0) {
 			Stop-PSFFunction -Message "No governance policy matched '$PolicyId'."
 			return
 		}
-		if ($policy.Count -gt 1) {
+		if ($colPolicy.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple governance policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$policyLabel = $policy[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $policy[0].PolicyId }
+		$policyName = $colPolicy[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colPolicy[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Assign to group '$groupLabel'")) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = "Assign policy to group '$groupLabel'"
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($policy[0].PolicyId)/environmentGroups/$EnvironmentGroupId/assignments?api-version=$apiVersion"
+		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colPolicy[0].PolicyId)/environmentGroups/$EnvironmentGroupId/assignments?api-version=$apiVersion"
 
 		try {
 			$null = Invoke-RestMethod -Method Post -Uri $uri -Headers @{
@@ -82,6 +85,6 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 			return
 		}
 
-		Get-PpacEnvironmentGroupRuleBasedPolicy -EnvironmentGroupId $EnvironmentGroupId -PolicyId $policy[0].PolicyId
+		Get-PpacEnvironmentGroupRuleBasedPolicy -EnvironmentGroupId $EnvironmentGroupId -PolicyId $colPolicy[0].PolicyId
 	}
 }

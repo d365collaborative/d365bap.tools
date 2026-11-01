@@ -57,25 +57,25 @@ function Set-PpacTenantAcpPolicy {
 			return
 		}
 
-		$current = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
-		if ($current.Count -eq 0) {
+		$colCurrent = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
+		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No ACP policy matched '$PolicyId'."
 			return
 		}
-		if ($current.Count -gt 1) {
+		if ($colCurrent.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple ACP policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$ruleSet = @($current[0].RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
-		if ($null -eq $ruleSet) {
+		$objRuleSet = @($colCurrent[0].RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
+		if ($null -eq $objRuleSet) {
 			Stop-PSFFunction -Message "Policy '$PolicyId' has no ConnectorManagement rule set."
 			return
 		}
 
 		if ($PSBoundParameters.ContainsKey('ConnectorId')) {
-			$allowed = foreach ($connector in $ConnectorId) {
-				$fullId = if ($connector -like '/providers/*') { $connector } else { "/providers/Microsoft.PowerApps/apis/$connector" }
+			$colAllowed = foreach ($itemConnector in $ConnectorId) {
+				$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
 				[ordered]@{
 					AllowedConnector           = $fullId
 					AllowedActionsMode         = 'AllAllowed'
@@ -83,25 +83,28 @@ function Set-PpacTenantAcpPolicy {
 				}
 			}
 
-			$ruleSet = [ordered]@{
+			$hashRuleSet = [ordered]@{
 				id      = 'ConnectorManagement'
-				version = if ([string]::IsNullOrWhiteSpace("$($ruleSet.version)")) { '1.0' } else { $ruleSet.version }
-				inputs  = [ordered]@{ AllowedConnectorList = @($allowed) }
+				version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) { '1.0' } else { $objRuleSet.version }
+				inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
 			}
 		}
 
-		$policyLabel = $current[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+		$policyName = $colCurrent[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, 'Update advanced connector policy')) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = 'Update advanced connector policy'
 
-		$params = @{
-			PolicyId = $current[0].PolicyId
-			RuleSet  = @($ruleSet)
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+
+		$hashParams = @{
+			PolicyId = $colCurrent[0].PolicyId
+			RuleSet  = @($hashRuleSet)
 		}
-		if ($PSBoundParameters.ContainsKey('Name')) { $params.Name = $Name }
+		if ($PSBoundParameters.ContainsKey('Name')) { $hashParams.Name = $Name }
 
-		$null = Set-PpacTenantRuleBasedPolicy @params -Confirm:$false
-		Get-PpacTenantAcpPolicy -PolicyId $current[0].PolicyId
+		$null = Set-PpacTenantRuleBasedPolicy @hashParams -Confirm:$false
+		Get-PpacTenantAcpPolicy -PolicyId $colCurrent[0].PolicyId
 	}
 }

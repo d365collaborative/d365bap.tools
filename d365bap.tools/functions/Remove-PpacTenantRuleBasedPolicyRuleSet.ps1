@@ -38,30 +38,33 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$current = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
-		if ($current.Count -eq 0) {
+		$colCurrent = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
+		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No governance policy matched '$PolicyId'."
 			return
 		}
-		if ($current.Count -gt 1) {
+		if ($colCurrent.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple governance policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$policyLabel = $current[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+		$policyName = $colCurrent[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Remove rule set '$RuleSetId'")) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = "Remove policy rule set '$RuleSetId'"
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$body = [ordered]@{
-			name     = $current[0].Name
+			name     = $colCurrent[0].Name
 			ruleSets = @([ordered]@{ id = $RuleSetId })
 		} | ConvertTo-Json -Depth 20
 
 		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($current[0].PolicyId)/removeRule?api-version=$apiVersion"
+		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colCurrent[0].PolicyId)/removeRule?api-version=$apiVersion"
 
 		try {
 			$null = Invoke-RestMethod -Method Patch -Uri $uri -Headers @{
@@ -76,6 +79,6 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 			return
 		}
 
-		Get-PpacTenantRuleBasedPolicy -PolicyId $current[0].PolicyId
+		Get-PpacTenantRuleBasedPolicy -PolicyId $colCurrent[0].PolicyId
 	}
 }

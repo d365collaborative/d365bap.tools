@@ -43,13 +43,13 @@ function Get-BapGovernancePolicyView {
 	)
 
 	foreach ($item in $Policy) {
-		$ruleSets = @($item.ruleSets)
-		$connectorManagement = @($ruleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
-		$kind = if ($null -ne $connectorManagement) { 'Acp' } else { 'Other' }
-		$allowedConnectorCount = if ($null -ne $connectorManagement) { @($connectorManagement.inputs.AllowedConnectorList).Count } else { 0 }
+		$tmpRuleSets = @($item.ruleSets)
+		$tmpConnectorManagement = @($tmpRuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
+		$kind = if ($null -ne $tmpConnectorManagement) { 'Acp' } else { 'Other' }
+		$allowedConnectorCount = if ($null -ne $tmpConnectorManagement) { @($tmpConnectorManagement.inputs.AllowedConnectorList).Count } else { 0 }
 
 		$policyId = "$($item.id)"
-		$matchingAssignment = @($Assignment | Where-Object {
+		$tmpMatchingAssignment = @($Assignment | Where-Object {
 				$assignmentPolicyId = if (-not [string]::IsNullOrWhiteSpace("$($_.policyId)")) { "$($_.policyId)" } else { "$($_.PolicyId)" }
 				$assignmentPolicyId -eq $policyId
 			}) | Select-Object -First 1
@@ -57,17 +57,17 @@ function Get-BapGovernancePolicyView {
 		$assignmentSource = switch ($Scope) {
 			'Tenant' { 'Definition' }
 			'Environment' {
-				if ($null -eq $matchingAssignment) { 'None' }
-				elseif ("$($matchingAssignment.resourceType)" -eq 'EnvironmentGroup' -or "$($matchingAssignment.ResourceType)" -eq 'EnvironmentGroup') { 'Inherited' }
+				if ($null -eq $tmpMatchingAssignment) { 'None' }
+				elseif ("$($tmpMatchingAssignment.resourceType)" -eq 'EnvironmentGroup' -or "$($tmpMatchingAssignment.ResourceType)" -eq 'EnvironmentGroup') { 'Inherited' }
 				else { 'Direct' }
 			}
 			'EnvironmentGroup' {
-				if ($null -eq $matchingAssignment) { 'None' } else { 'Direct' }
+				if ($null -eq $tmpMatchingAssignment) { 'None' } else { 'Direct' }
 			}
 		}
 
-		$isEffective = if ($Scope -eq 'Tenant') { $true } else { $null -ne $matchingAssignment }
+		$isEffective = if ($Scope -eq 'Tenant') { $true } else { $null -ne $tmpMatchingAssignment }
 
-		$item | Select-Object *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'ConnectorManagement'; Expression = { $connectorManagement } }, @{ Name = 'AllowedConnectorCount'; Expression = { $allowedConnectorCount } }, @{ Name = 'AssignmentSource'; Expression = { $assignmentSource } }, @{ Name = 'IsEffective'; Expression = { $isEffective } }
+		$item | Select-Object *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'ConnectorManagement'; Expression = { $tmpConnectorManagement } }, @{ Name = 'AllowedConnectorCount'; Expression = { $allowedConnectorCount } }, @{ Name = 'AssignmentSource'; Expression = { $assignmentSource } }, @{ Name = 'IsEffective'; Expression = { $isEffective } }
 	}
 }

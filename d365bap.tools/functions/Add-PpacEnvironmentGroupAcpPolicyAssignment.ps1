@@ -40,32 +40,35 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 
 		$groupLabel = $EnvironmentGroupId
 		try {
-			$groupObj = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
-			if ($null -ne $groupObj -and -not [string]::IsNullOrWhiteSpace("$($groupObj.DisplayName)")) {
-				$groupLabel = $groupObj.DisplayName
+			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
+			if ($null -ne $objGroup -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+				$groupLabel = $objGroup.DisplayName
 			}
 		}
 		catch {
 			$groupLabel = $EnvironmentGroupId
 		}
 
-		$policy = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
-		if ($policy.Count -eq 0) {
+		$colPolicy = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
+		if ($colPolicy.Count -eq 0) {
 			Stop-PSFFunction -Message "No ACP policy matched '$PolicyId'."
 			return
 		}
-		if ($policy.Count -gt 1) {
+		if ($colPolicy.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple ACP policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$policyLabel = $policy[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $policy[0].PolicyId }
+		$policyName = $colPolicy[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colPolicy[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Assign ACP to group '$groupLabel'")) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = "Assign ACP policy to group '$groupLabel'"
 
-		$assigned = @(Add-PpacEnvironmentGroupRuleBasedPolicyAssignment -EnvironmentGroupId $EnvironmentGroupId -PolicyId $policy[0].PolicyId -Confirm:$false)
-		if ($assigned.Count -eq 0) { return }
-		Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId $EnvironmentGroupId -PolicyId $policy[0].PolicyId
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+
+		$colAssigned = @(Add-PpacEnvironmentGroupRuleBasedPolicyAssignment -EnvironmentGroupId $EnvironmentGroupId -PolicyId $colPolicy[0].PolicyId -Confirm:$false)
+		if ($colAssigned.Count -eq 0) { return }
+		Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId $EnvironmentGroupId -PolicyId $colPolicy[0].PolicyId
 	}
 }

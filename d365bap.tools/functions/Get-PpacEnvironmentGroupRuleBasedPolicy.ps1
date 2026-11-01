@@ -80,9 +80,9 @@ function Get-PpacEnvironmentGroupRuleBasedPolicy {
 		if (Test-PSFFunctionInterrupt) { return }
 
 		try {
-			$policies = @(Get-BapGovernancePolicy)
-			$assignments = @(Get-BapGovernancePolicyAssignment -EnvironmentGroupId $EnvironmentGroupId)
-			$policies = @(Get-BapGovernancePolicyView -Policy $policies -Assignment $assignments -Scope EnvironmentGroup)
+			$colPolicies = @(Get-BapGovernancePolicy)
+			$colAssignments = @(Get-BapGovernancePolicyAssignment -EnvironmentGroupId $EnvironmentGroupId)
+			$colPolicies = @(Get-BapGovernancePolicyView -Policy $colPolicies -Assignment $colAssignments -Scope EnvironmentGroup)
 		}
 		catch {
 			$messageString = "Failed to retrieve governance policies for environment group <c='em'>$EnvironmentGroupId</c>. $($_.Exception.Message)"
@@ -91,21 +91,21 @@ function Get-PpacEnvironmentGroupRuleBasedPolicy {
 			return
 		}
 
-		if ($Kind -eq 'Acp') { $policies = @($policies | Where-Object Kind -eq 'Acp') }
+		if ($Kind -eq 'Acp') { $colPolicies = @($colPolicies | Where-Object Kind -eq 'Acp') }
 
-		if ($PSBoundParameters.ContainsKey('PolicyId')) {
-			$policies = @($policies | Where-Object {
+		if ($PolicyId -ne '*') {
+			$colPolicies = @($colPolicies | Where-Object {
 					$_.id -like $PolicyId -or $_.name -like $PolicyId
 				})
 		}
 		else {
-			$policies = @($policies | Where-Object IsEffective)
+			$colPolicies = @($colPolicies | Where-Object IsEffective)
 		}
 
-		$policies = @($policies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
+		$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
 
-		$resCol = @(
-			$policies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentGroupRuleBasedPolicy' -Property `
+		$colRes = @(
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentGroupRuleBasedPolicy' -Property `
 				'id as PolicyId',
 			'name as Name',
 			'Kind as Kind',
@@ -121,13 +121,13 @@ function Get-PpacEnvironmentGroupRuleBasedPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacEnvironmentGroupRuleBasedPolicy' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentGroupRuleBasedPolicy' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }
