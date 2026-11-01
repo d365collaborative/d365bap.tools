@@ -31,6 +31,7 @@ What runs on PowerShell files:
   `PSUseValidationAttributeOnMandatory`,
   `PSUseWildcardParameterAsFilter`,
   `PSUseOrderedPSCustomObject`,
+  `PSAvoidOutNull`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -738,6 +739,28 @@ such as `[pscustomobject]$hashSource` cannot be ordered statically and is
 ignored. It runs on module code (public and internal); build scripts, test
 files, and tepp fixtures are out of scope.
 
+## Output discards
+
+`PSAvoidOutNull` rejects `Out-Null` in module code and the lint tooling. A
+discard redirects to `$null`, which is the faster, allocation-free form and
+keeps the discarded value visible in review:
+
+```powershell
+# Fails
+[int]::TryParse($Value, [ref]$IsInt) | Out-Null
+Out-Null -InputObject (Get-Thing)
+
+# Passes
+[int]::TryParse($Value, [ref]$IsInt) > $null
+Get-Thing > $null
+```
+
+The rule matches the command name, so `Microsoft.PowerShell.Core\Out-Null` and
+`out-null` are reported too. A file that defines `function Out-Null` or
+`Set-Alias Out-Null` is skipped because the local name may have different
+behavior. Test files and tepp fixtures are exempt. Existing call sites in the
+lint tooling migrate as those files are touched.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
@@ -745,6 +768,7 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1WildcardParameterAsFilterRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1OrderedPSCustomObjectRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1OutNullRule.ps1
 ```
 
 ## Example prose
