@@ -101,6 +101,120 @@ function Set-Fixture {
 }
 '@
 
+Assert-Interrupt 'Stop guard with return then check' @'
+function Set-Fixture {
+    process {
+        $route = Get-Route
+        if ($null -eq $route) {
+            Write-PSFMessage -Message 'missing'
+            Stop-PSFFunction -Message 'stop'
+            return
+        }
+
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@ 1 @('preceding Stop-PSFFunction guard')
+
+Assert-Interrupt 'Stop without return leaves the check valid' @'
+function Set-Fixture {
+    process {
+        Stop-PSFFunction -Message 'stop'
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@
+
+Assert-Interrupt 'Direct StepsUpward targets the caller' @'
+function Set-Fixture {
+    process {
+        Stop-PSFFunction -Message 'stop' -StepsUpward 1
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@ 1 @('preceding Stop-PSFFunction guard')
+
+Assert-Interrupt 'StepsUpward zero leaves the check valid' @'
+function Set-Fixture {
+    process {
+        Stop-PSFFunction -Message 'stop' -StepsUpward 0
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@
+
+Assert-Interrupt 'EnableException stops the scope' @'
+function Set-Fixture {
+    process {
+        Stop-PSFFunction -Message 'stop' -EnableException $true
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@ 1 @('preceding Stop-PSFFunction guard')
+
+Assert-Interrupt 'EnableException false leaves the check valid' @'
+function Set-Fixture {
+    process {
+        Stop-PSFFunction -Message 'stop' -EnableException $false
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@
+
+Assert-Interrupt 'Stop guard in a begin block is a different scope' @'
+function Set-Fixture {
+    begin {
+        Stop-PSFFunction -Message 'stop'
+        return
+    }
+
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@
+
+Assert-Interrupt 'Stop guard in a nested scriptblock is a different scope' @'
+function Set-Fixture {
+    process {
+        $items | ForEach-Object {
+            Stop-PSFFunction -Message 'stop'
+            return
+        }
+
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@
+
+Assert-Interrupt 'Stop guard in a try block returns before the check' @'
+function Set-Fixture {
+    process {
+        try {
+            Stop-PSFFunction -Message 'stop'
+            return
+        }
+        catch {
+        }
+
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@ 1 @('preceding Stop-PSFFunction guard')
+
+Assert-Interrupt 'Helper call in a guard is a potential interrupt source' @'
+function Set-Fixture {
+    process {
+        if ($null -eq $route) {
+            Invoke-StopHelper
+            return
+        }
+
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@
+
 Assert-Interrupt 'Process check after an earlier process assignment' @'
 function Set-Fixture {
     process {
