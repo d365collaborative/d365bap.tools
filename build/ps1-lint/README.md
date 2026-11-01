@@ -35,6 +35,7 @@ What runs on PowerShell files:
   `PSUseStandardExcelExport`,
   `PSAvoidLoopAppend`,
   `PSUseOneParameterPerLine`,
+  `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -867,6 +868,35 @@ stays clean. Test files, tepp fixtures, and the rest of `build/` are out of
 scope. The rule runs on changed files only, so the existing multi-parameter
 lines migrate as their files are touched.
 
+## Central API version
+
+`PSUseCentralApiVersion` keeps API versions in one registry,
+`$script:BapApiVersions` in `d365bap.tools/internal/scripts/initialize-sdk.ps1`.
+The version in a URL comes from a variable, never a literal, so a version bump
+is a one-line change:
+
+```powershell
+# Fails
+$uri = "https://api.powerplatform.com/authorization/roleAssignments?api-version=2024-10-01"
+$apiVersion = '2024-10-01'
+
+# Passes
+$apiVersion = $script:BapApiVersions.PowerPlatform
+$uri = 'https://api.powerplatform.com/authorization/roleAssignments?api-version={0}' `
+    -f $apiVersion
+```
+
+The rule reports a string literal that contains `api-version=` followed by a
+digit, and an assignment to a variable whose name ends in `apiVersion` when the
+value is a date literal or an `if` expression that contains one. Plain copies
+such as `$apiVersion = $script:BapSdkApiVersion` are allowed.
+
+Here-strings are exempt because they document example requests, and a format
+placeholder never contains a digit directly after `=`. The registry file is
+exempt from the assignment check only; a literal URL there still fails. Test
+files, tepp fixtures, and `build/` are out of scope. The companion
+`PSUseFormattedUrl` rule owns the `-f` requirement.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
@@ -878,6 +908,44 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1OutNullRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1StandardExcelExportRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1LoopAppendRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1OneParameterPerLineRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1CentralApiVersionRule.ps1
+```
+
+## URL formatting
+
+`PSUseFormattedUrl` requires URL string manipulation to use the format operator
+(`-f`). Interpolation and concatenation are reported:
+
+```powershell
+# Fails
+$uri = "https://api.powerplatform.com/environments?api-version=$apiVersion"
+$uri = 'https://api.powerplatform.com/environments' + $EnvironmentId
+$uri = 'https://api.powerplatform.com/environments?api-version={0}' -f $apiVersion
+$uri = 'https://{1}.example/{0}' -f $Region, $Tenant
+$uri = 'https://{0}.example/{1}' -f $Tenant, $Region
+
+# Passes
+$uri = 'https://api.powerplatform.com/environments?api-version={0}' `
+    -f $apiVersion
+$uri = 'https://{0}.example/{0}' `
+    -f $Tenant
+$uri = 'https://{0}.example/{1}' `
+    -f $Tenant,
+    $Region
+```
+
+A string that contains `https://`, `http://`, or `api-version=` and interpolates
+a value is reported; a plain literal URL and a non-URL string are not. A URL
+string built with `+` is reported when one side contains URL text. `-f` always
+starts its own continuation line. With more than one input, each input gets its
+own line. Placeholders start at `{0}` and must not move backwards; repeats are
+allowed. Here-strings are exempt because they document example requests. Test
+files, tepp fixtures, and `build/` are out of scope.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1FormattedUrlRule.ps1
 ```
 
 ## Example prose

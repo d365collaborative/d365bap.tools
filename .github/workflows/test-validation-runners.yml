@@ -34,6 +34,8 @@ on:
       - 'build/Test-Ps1StandardExcelExportRule.ps1'
       - 'build/Test-Ps1LoopAppendRule.ps1'
       - 'build/Test-Ps1OneParameterPerLineRule.ps1'
+      - 'build/Test-Ps1CentralApiVersionRule.ps1'
+      - 'build/Test-Ps1FormattedUrlRule.ps1'
       - 'build/Test-PreloadExitCode.ps1'
       - 'build/Test-ModulePublication.ps1'
       - 'build/Publish-ModuleWithRetry.ps1'
@@ -148,6 +150,12 @@ jobs:
     - name: Test one-parameter-per-line lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1OneParameterPerLineRule.ps1
+    - name: Test central API version lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1CentralApiVersionRule.ps1
+    - name: Test formatted URL lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1FormattedUrlRule.ps1
     - name: Test module prerequisites
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1
