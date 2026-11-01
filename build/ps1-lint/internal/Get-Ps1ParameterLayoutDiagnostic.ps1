@@ -35,15 +35,18 @@ function Get-Ps1ParameterLayoutDiagnostic {
 		$items = @(
 			foreach ($attribute in $parameter.Attributes) {
 				$rank = if ($attribute -is [Management.Automation.Language.TypeConstraintAst]) {
-					2
+					3
 				}
 				elseif ($attribute.TypeName.GetReflectionAttributeType() -eq [Management.Automation.ParameterAttribute]) {
 					0
 				}
-				else { 1 }
+				elseif ($attribute.TypeName.GetReflectionAttributeType() -eq [Management.Automation.ValidateSetAttribute]) {
+					1
+				}
+				else { 2 }
 				[pscustomobject]@{ Rank = $rank; Ast = $attribute }
 			}
-			[pscustomobject]@{ Rank = 3; Ast = $parameter.Name }
+			[pscustomobject]@{ Rank = 4; Ast = $parameter.Name }
 		)
 
 		$ordered = $true
@@ -53,7 +56,7 @@ function Get-Ps1ParameterLayoutDiagnostic {
 			if ($currentItem.Rank -lt $previousItem.Rank) {
 				if ($ordered) {
 					$ordered = $false
-					Write-Ps1ParameterLayoutDiagnostic $Path "Stack [Parameter()] attributes first, then the remaining attributes, the type constraint, and the parameter name on -$name." $currentItem.Ast.Extent
+					Write-Ps1ParameterLayoutDiagnostic $Path "Stack [Parameter()] attributes first, then [ValidateSet()], then the remaining attributes, the type constraint, and the parameter name on -$name." $currentItem.Ast.Extent
 				}
 			}
 			if ($currentItem.Ast.Extent.StartLineNumber - $previousItem.Ast.Extent.EndLineNumber -gt 1) {
@@ -61,7 +64,7 @@ function Get-Ps1ParameterLayoutDiagnostic {
 			}
 		}
 
-		$type = @($items | Where-Object { $_.Rank -eq 2 })[-1]
+		$type = @($items | Where-Object { $_.Rank -eq 3 })[-1]
 		if ($null -ne $type -and $parameter.Name.Extent.StartLineNumber - $type.Ast.Extent.EndLineNumber -eq 1) {
 			Write-Ps1ParameterLayoutDiagnostic $Path "Keep the type constraint and parameter name on the same line for -$name." $parameter.Name.Extent
 		}

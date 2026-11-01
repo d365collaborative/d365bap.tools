@@ -154,8 +154,8 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
 
 - A blank line before every parameter after the first, including its attributes.
   The first parameter stays directly under `param (`.
-- `[Parameter()]` attributes first, then the remaining attributes, then the type
-  constraint and the parameter name.
+- `[Parameter()]` attributes first, then `[ValidateSet()]`, then the remaining
+  attributes, then the type constraint and the parameter name.
 - No blank line between those stack items. Multi-line attributes are fine; only
   the gaps between stack items are checked.
 - The type constraint and parameter name on one line, with exactly one space

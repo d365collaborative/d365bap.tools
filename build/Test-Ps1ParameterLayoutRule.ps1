@@ -112,6 +112,53 @@ function Get-Fixture {
 }
 '@
 
+Assert-Layout 'ValidateSet before other attributes' @'
+function Get-Fixture {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('a', 'b')]
+        [ValidateNotNullOrEmpty()]
+        [string] $PolicyId
+    )
+}
+'@
+
+Assert-Layout 'ValidateSet after other attributes' @'
+function Get-Fixture {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet('a', 'b')]
+        [string] $PolicyId
+    )
+}
+'@ -Expected 1 @('ValidateSet', '-PolicyId')
+
+Assert-Layout 'ValidateSet before Alias' @'
+function Get-Fixture {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('a', 'b')]
+        [Alias('Policy')]
+        [string] $PolicyId
+    )
+}
+'@
+
+Assert-Layout 'ValidateSet before Parameter' @'
+function Get-Fixture {
+    [CmdletBinding()]
+    param (
+        [ValidateSet('a', 'b')]
+        [Parameter(Mandatory = $true)]
+        [string] $PolicyId
+    )
+}
+'@ -Expected 1 @('Stack [Parameter()] attributes first', '-PolicyId')
+
 Assert-Layout 'No Parameter attribute' @'
 function Get-Fixture {
     [CmdletBinding()]
