@@ -8,26 +8,26 @@
 function Get-Ps1SplatParameter {
 	param($Splat, $Command, $Ast)
 
-	$assignments = @($Ast.FindAll({ param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] }, $true))
+	$colAssignments = @($Ast.FindAll({ param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] }, $true))
 	for ($scope = Get-Ps1AliasScope $Command; $null -ne $scope; $scope = Get-Ps1AliasScope $scope.Parent) {
-		$definitions = @($assignments | Where-Object {
+		$tmpDefinitions = @($colAssignments | Where-Object {
 				$_.Left -is [Management.Automation.Language.VariableExpressionAst] -and
 				$_.Left.VariablePath.UserPath -eq $Splat.VariablePath.UserPath -and
 				$_.Extent.StartOffset -lt $Command.Extent.StartOffset -and
 				(Get-Ps1AliasScope $_) -eq $scope
 			} | Sort-Object { $_.Extent.StartOffset } -Descending)
-		if ($definitions.Count -eq 0) { continue }
-		$table = $definitions[0].Right.Find({ param($node) $node -is [Management.Automation.Language.HashtableAst] }, $true)
-		if ($null -eq $table -or $table.Extent.Text -ne $definitions[0].Right.Extent.Text) { return }
-		foreach ($pair in $table.KeyValuePairs) {
-			if ($pair.Item1 -is [Management.Automation.Language.StringConstantExpressionAst]) {
-				[pscustomobject]@{ Name = $pair.Item1.Value; Extent = $pair.Item1.Extent }
+		if ($tmpDefinitions.Count -eq 0) { continue }
+		$table = $tmpDefinitions[0].Right.Find({ param($node) $node -is [Management.Automation.Language.HashtableAst] }, $true)
+		if ($null -eq $table -or $table.Extent.Text -ne $tmpDefinitions[0].Right.Extent.Text) { return }
+		foreach ($itemPair in $table.KeyValuePairs) {
+			if ($itemPair.Item1 -is [Management.Automation.Language.StringConstantExpressionAst]) {
+				[pscustomobject]@{ Name = $itemPair.Item1.Value; Extent = $itemPair.Item1.Extent }
 			}
 		}
-		foreach ($assignment in $assignments) {
-			if ($assignment.Extent.StartOffset -lt $definitions[0].Extent.EndOffset -or
-				$assignment.Extent.StartOffset -ge $Command.Extent.StartOffset -or (Get-Ps1AliasScope $assignment) -ne $scope) { continue }
-			$left = $assignment.Left
+		foreach ($itemAssignment in $colAssignments) {
+			if ($itemAssignment.Extent.StartOffset -lt $tmpDefinitions[0].Extent.EndOffset -or
+				$itemAssignment.Extent.StartOffset -ge $Command.Extent.StartOffset -or (Get-Ps1AliasScope $itemAssignment) -ne $scope) { continue }
+			$left = $itemAssignment.Left
 			$key = if ($left -is [Management.Automation.Language.IndexExpressionAst] -and
 				$left.Target -is [Management.Automation.Language.VariableExpressionAst] -and $left.Target.VariablePath.UserPath -eq $Splat.VariablePath.UserPath) { $left.Index }
 			elseif ($left -is [Management.Automation.Language.MemberExpressionAst] -and
@@ -43,59 +43,59 @@ function Get-Ps1SplatParameter {
 
 function Get-Ps1DeclaredAlias {
 	param([object[]] $Attributes)
-	foreach ($attribute in $Attributes) {
-		if ($attribute -isnot [Management.Automation.Language.AttributeAst] -or
-			$attribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.AliasAttribute]) { continue }
+	foreach ($itemAttribute in $Attributes) {
+		if ($itemAttribute -isnot [Management.Automation.Language.AttributeAst] -or
+			$itemAttribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.AliasAttribute]) { continue }
 		$found = $false
-		foreach ($argument in $attribute.PositionalArguments) {
-			foreach ($literal in $argument.FindAll({ param($node) $node -is [Management.Automation.Language.StringConstantExpressionAst] }, $true)) {
+		foreach ($itemArgument in $itemAttribute.PositionalArguments) {
+			foreach ($itemLiteral in $itemArgument.FindAll({ param($node) $node -is [Management.Automation.Language.StringConstantExpressionAst] }, $true)) {
 				$found = $true
-				[pscustomobject]@{ Name = $literal.Value; Extent = $attribute.Extent }
+				[pscustomobject]@{ Name = $itemLiteral.Value; Extent = $itemAttribute.Extent }
 			}
 		}
-		if (-not $found) { [pscustomobject]@{ Name = $null; Extent = $attribute.Extent } }
+		if (-not $found) { [pscustomobject]@{ Name = $null; Extent = $itemAttribute.Extent } }
 	}
 }
 
 function Get-Ps1AliasCommandMetadata {
 	param($Command, [hashtable] $CommonParameters)
-	$names = @{}
-	$aliases = @{}
+	$hashNames = @{}
+	$hashAliases = @{}
 	if ($Command -is [Management.Automation.Language.FunctionDefinitionAst]) {
 		$advanced = @($Command.Body.ParamBlock.Attributes | Where-Object {
 				$_ -is [Management.Automation.Language.AttributeAst] -and
 				$_.TypeName.GetReflectionAttributeType() -eq [Management.Automation.CmdletBindingAttribute]
 			}).Count -gt 0
 		if ($advanced) {
-			foreach ($parameter in $CommonParameters.Values) {
-				$names[$parameter.Name] = $parameter.Name
-				foreach ($alias in $parameter.Aliases) { $aliases[$alias] = $parameter.Name }
+			foreach ($itemParameter in $CommonParameters.Values) {
+				$hashNames[$itemParameter.Name] = $itemParameter.Name
+				foreach ($itemAlias in $itemParameter.Aliases) { $hashAliases[$itemAlias] = $itemParameter.Name }
 			}
 		}
-		foreach ($parameter in @($Command.Parameters) + @($Command.Body.ParamBlock.Parameters)) {
-			if ($null -eq $parameter) { continue }
-			$name = $parameter.Name.VariablePath.UserPath
-			$names[$name] = $name
-			foreach ($alias in Get-Ps1DeclaredAlias $parameter.Attributes) {
-				if ($alias.Name) { $aliases[$alias.Name] = $name }
+		foreach ($itemParameter in @($Command.Parameters) + @($Command.Body.ParamBlock.Parameters)) {
+			if ($null -eq $itemParameter) { continue }
+			$name = $itemParameter.Name.VariablePath.UserPath
+			$hashNames[$name] = $name
+			foreach ($itemAlias in Get-Ps1DeclaredAlias $itemParameter.Attributes) {
+				if ($itemAlias.Name) { $hashAliases[$itemAlias.Name] = $name }
 			}
 		}
 	}
 	elseif ($Command.CommandType -in @('Cmdlet', 'Function', 'Filter', 'ExternalScript')) {
-		foreach ($parameter in $Command.Parameters.Values) {
-			$names[$parameter.Name] = $parameter.Name
-			foreach ($alias in $parameter.Aliases) { $aliases[$alias] = $parameter.Name }
+		foreach ($itemParameter in $Command.Parameters.Values) {
+			$hashNames[$itemParameter.Name] = $itemParameter.Name
+			foreach ($itemAlias in $itemParameter.Aliases) { $hashAliases[$itemAlias] = $itemParameter.Name }
 		}
 	}
-	[pscustomobject]@{ Name = $Command.Name -replace '^(global|script|local|private):', ''; Names = $names; Aliases = $aliases }
+	[pscustomobject]@{ Name = $Command.Name -replace '^(global|script|local|private):', ''; Names = $hashNames; Aliases = $hashAliases }
 }
 
 function Resolve-Ps1AliasCommand {
 	param([string] $Name, $Scope, [hashtable] $Context)
 	$currentName = $Name
 	$usedAlias = $false
-	$seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-	while ($currentName -and $seen.Add($currentName)) {
+	$colSeen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+	while ($currentName -and $colSeen.Add($currentName)) {
 		$target = $null
 		$found = $false
 		for ($current = $Scope; $null -ne $current; $current = Get-Ps1AliasScope $current.Parent) {

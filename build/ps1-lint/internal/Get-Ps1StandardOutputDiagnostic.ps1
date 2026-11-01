@@ -3,25 +3,25 @@
 	if ($null -ne $script:Ps1TableFormatTypes -and $script:Ps1TableFormatTypes.Directory -eq $TableDirectory) {
 		return $script:Ps1TableFormatTypes.Types
 	}
-	$types = @{}
+	$hashTypes = @{}
 	if (Test-Path -LiteralPath $TableDirectory -PathType Container) {
-		foreach ($file in Get-ChildItem -LiteralPath $TableDirectory -Filter '*.ps1xml' -File) {
-			try { [xml] $document = Get-Content -LiteralPath $file.FullName -Raw }
+		foreach ($itemFile in Get-ChildItem -LiteralPath $TableDirectory -Filter '*.ps1xml' -File) {
+			try { [xml] $document = Get-Content -LiteralPath $itemFile.FullName -Raw }
 			catch { continue }
-			foreach ($typeName in @($document.Configuration.ViewDefinitions.View.ViewSelectedBy.TypeName)) {
-				if ($null -ne $typeName -and $typeName -ne '') { $types[[string]$typeName] = $true }
+			foreach ($itemTypeName in @($document.Configuration.ViewDefinitions.View.ViewSelectedBy.TypeName)) {
+				if ($null -ne $itemTypeName -and $itemTypeName -ne '') { $hashTypes[[string]$itemTypeName] = $true }
 			}
 		}
 	}
-	$script:Ps1TableFormatTypes = @{ Directory = $TableDirectory; Types = $types }
-	$types
+	$script:Ps1TableFormatTypes = @{ Directory = $TableDirectory; Types = $hashTypes }
+	$hashTypes
 }
 
 function Test-Ps1ScalarArray {
 	param([string] $Name)
 	if ($Name -notmatch '^(?<Element>.+)\[\]$') { return $false }
 	$element = $Matches['Element']
-	$accelerator = @{
+	$hashAccelerator = @{
 		string         = [string]
 		bool           = [bool]
 		byte           = [byte]
@@ -42,19 +42,19 @@ function Test-Ps1ScalarArray {
 		guid           = [guid]
 	}
 	$type = [type]::GetType($element)
-	if ($null -eq $type) { $type = $accelerator[$element.ToLowerInvariant()] }
+	if ($null -eq $type) { $type = $hashAccelerator[$element.ToLowerInvariant()] }
 	if ($null -eq $type) { return $false }
 	$type.IsValueType -or $type -eq [string]
 }
 
 function Test-Ps1CollectionOutput {
 	param($Attribute)
-	foreach ($argument in $Attribute.PositionalArguments) {
-		$name = if ($argument -is [Management.Automation.Language.TypeExpressionAst]) {
-			$argument.TypeName.FullName
+	foreach ($itemArgument in $Attribute.PositionalArguments) {
+		$name = if ($itemArgument -is [Management.Automation.Language.TypeExpressionAst]) {
+			$itemArgument.TypeName.FullName
 		}
-		elseif ($argument -is [Management.Automation.Language.StringConstantExpressionAst]) {
-			$argument.Value
+		elseif ($itemArgument -is [Management.Automation.Language.StringConstantExpressionAst]) {
+			$itemArgument.Value
 		}
 		else { '' }
 		if (Test-Ps1ScalarArray $name) { continue }
@@ -67,9 +67,9 @@ function Get-Ps1PipelineStringValue {
 	param($Value)
 	$expression = $Value
 	if ($expression -is [Management.Automation.Language.PipelineAst]) {
-		$elements = @($expression.PipelineElements)
-		if ($elements.Count -ne 1) { return $null }
-		$expression = $elements[0]
+		$colElements = @($expression.PipelineElements)
+		if ($colElements.Count -ne 1) { return $null }
+		$expression = $colElements[0]
 	}
 	if ($expression -is [Management.Automation.Language.CommandExpressionAst]) { $expression = $expression.Expression }
 	if ($expression -is [Management.Automation.Language.StringConstantExpressionAst]) { return $expression }
@@ -108,34 +108,34 @@ function Get-Ps1StandardOutputDiagnostic {
 	$moduleRoot = Split-Path (Split-Path $Path -Parent) -Parent
 	$types = Get-Ps1TableFormatType (Join-Path $moduleRoot 'xml/formats/table')
 
-	$seen = @{}
-	foreach ($command in $function.Body.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
-		if ($command.GetCommandName() -notmatch '(?:^|\\)Select-PSFObject$') { continue }
-		$elements = @($command.CommandElements)
-		for ($index = 0; $index -lt $elements.Count; $index++) {
-			$element = $elements[$index]
+	$hashSeen = @{}
+	foreach ($itemCommand in $function.Body.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
+		if ($itemCommand.GetCommandName() -notmatch '(?:^|\\)Select-PSFObject$') { continue }
+		$tmpElements = @($itemCommand.CommandElements)
+		for ($index = 0; $index -lt $tmpElements.Count; $index++) {
+			$element = $tmpElements[$index]
 			if ($element -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
 			if ($element.ParameterName -notin @('TypeName', 'Type')) { continue }
-			if ($index + 1 -ge $elements.Count) { continue }
-			$argument = $elements[$index + 1]
+			if ($index + 1 -ge $tmpElements.Count) { continue }
+			$argument = $tmpElements[$index + 1]
 			if ($argument -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
 			$typeName = $argument.Value
-			if ($seen.ContainsKey($typeName)) { continue }
-			$seen[$typeName] = $true
+			if ($hashSeen.ContainsKey($typeName)) { continue }
+			$hashSeen[$typeName] = $true
 			if ($types.ContainsKey($typeName)) { continue }
 			Write-Ps1CollectionOutputDiagnostic $Path "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $argument.Extent
 		}
 	}
 
-	foreach ($hashtable in $function.Body.FindAll({ param($node) $node -is [Management.Automation.Language.HashtableAst] }, $true)) {
-		foreach ($pair in $hashtable.KeyValuePairs) {
-			if ($pair.Item1 -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
-			if ($pair.Item1.Value -ne 'PSTypeName') { continue }
-			$value = Get-Ps1PipelineStringValue $pair.Item2
+	foreach ($itemHashtable in $function.Body.FindAll({ param($node) $node -is [Management.Automation.Language.HashtableAst] }, $true)) {
+		foreach ($itemPair in $itemHashtable.KeyValuePairs) {
+			if ($itemPair.Item1 -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
+			if ($itemPair.Item1.Value -ne 'PSTypeName') { continue }
+			$value = Get-Ps1PipelineStringValue $itemPair.Item2
 			if ($null -eq $value) { continue }
 			$typeName = $value.Value
-			if ($seen.ContainsKey($typeName)) { continue }
-			$seen[$typeName] = $true
+			if ($hashSeen.ContainsKey($typeName)) { continue }
+			$hashSeen[$typeName] = $true
 			if ($types.ContainsKey($typeName)) { continue }
 			Write-Ps1CollectionOutputDiagnostic $Path "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $value.Extent
 		}

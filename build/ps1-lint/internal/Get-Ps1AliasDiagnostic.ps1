@@ -20,54 +20,54 @@ function Get-Ps1AliasDiagnostic {
 		New-Ps1AliasDiagnostic $Path 'PSAliasConfiguration' $ast.Extent $_.Exception.Message
 		return
 	}
-	$context = @{ Functions = @{}; Aliases = @{}; RuntimeAliases = $Worker.RuntimeAliases; Cache = $Worker.Cache; CommonParameters = $Worker.CommonParameters }
-	foreach ($function in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
-		$scope = Get-Ps1AliasScope $function.Parent
-		if ($function.Name -match '^(global|script):') { $scope = $ast }
-		if (-not $context.Functions.ContainsKey($scope)) { $context.Functions[$scope] = @{} }
-		$metadata = Get-Ps1AliasCommandMetadata $function $context.CommonParameters
-		$context.Functions[$scope][$metadata.Name] = $metadata
-		foreach ($alias in Get-Ps1DeclaredAlias $function.Body.ParamBlock.Attributes) {
-			if (-not $alias.Name) { continue }
-			if (-not $context.Aliases.ContainsKey($scope)) { $context.Aliases[$scope] = @{} }
-			$context.Aliases[$scope][$alias.Name] = $metadata.Name
+	$hashContext = @{ Functions = @{}; Aliases = @{}; RuntimeAliases = $Worker.RuntimeAliases; Cache = $Worker.Cache; CommonParameters = $Worker.CommonParameters }
+	foreach ($itemFunction in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+		$scope = Get-Ps1AliasScope $itemFunction.Parent
+		if ($itemFunction.Name -match '^(global|script):') { $scope = $ast }
+		if (-not $hashContext.Functions.ContainsKey($scope)) { $hashContext.Functions[$scope] = @{} }
+		$metadata = Get-Ps1AliasCommandMetadata $itemFunction $hashContext.CommonParameters
+		$hashContext.Functions[$scope][$metadata.Name] = $metadata
+		foreach ($itemAlias in Get-Ps1DeclaredAlias $itemFunction.Body.ParamBlock.Attributes) {
+			if (-not $itemAlias.Name) { continue }
+			if (-not $hashContext.Aliases.ContainsKey($scope)) { $hashContext.Aliases[$scope] = @{} }
+			$hashContext.Aliases[$scope][$itemAlias.Name] = $metadata.Name
 		}
 	}
-	foreach ($parameter in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
-		foreach ($alias in Get-Ps1DeclaredAlias $parameter.Attributes) {
-			if ($rules.PSAvoidParameterAliases -and $alias.Name -notin @($rules.AllowedParameterAliases)) {
-				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $alias.Extent "Do not declare parameter aliases. Use '$($parameter.Name.VariablePath.UserPath)'."
+	foreach ($itemParameter in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
+		foreach ($itemAlias in Get-Ps1DeclaredAlias $itemParameter.Attributes) {
+			if ($rules.PSAvoidParameterAliases -and $itemAlias.Name -notin @($rules.AllowedParameterAliases)) {
+				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $itemAlias.Extent "Do not declare parameter aliases. Use '$($itemParameter.Name.VariablePath.UserPath)'."
 			}
 		}
 	}
-	foreach ($block in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParamBlockAst] }, $true)) {
-		foreach ($alias in Get-Ps1DeclaredAlias $block.Attributes) {
-			if ($alias.Name -notin @($rules.AllowedCommandAliases)) {
-				New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $alias.Extent "Do not declare command alias '$($alias.Name)'."
+	foreach ($itemBlock in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParamBlockAst] }, $true)) {
+		foreach ($itemAlias in Get-Ps1DeclaredAlias $itemBlock.Attributes) {
+			if ($itemAlias.Name -notin @($rules.AllowedCommandAliases)) {
+				New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $itemAlias.Extent "Do not declare command alias '$($itemAlias.Name)'."
 			}
 		}
 	}
-	$commands = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true))
-	$declarations = [Collections.Generic.HashSet[Management.Automation.Language.CommandAst]]::new()
-	$declarationNames = @{}
-	foreach ($command in $commands) {
-		$name = $command.GetCommandName()
+	$colCommands = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true))
+	$colDeclarations = [Collections.Generic.HashSet[Management.Automation.Language.CommandAst]]::new()
+	$hashDeclarationNames = @{}
+	foreach ($itemCommand in $colCommands) {
+		$name = $itemCommand.GetCommandName()
 		if (-not $name) { continue }
-		$scope = Get-Ps1AliasScope $command
-		$resolved = Resolve-Ps1AliasCommand $name $scope $context
+		$scope = Get-Ps1AliasScope $itemCommand
+		$resolved = Resolve-Ps1AliasCommand $name $scope $hashContext
 		if ($resolved.Command.Name -notin @('Set-Alias', 'New-Alias', 'Set-Item', 'New-Item')) { continue }
 		$isAliasCommand = $resolved.Command.Name -in @('Set-Alias', 'New-Alias')
-		if ($isAliasCommand) { $null = $declarations.Add($command) }
-		$binding = [Management.Automation.Language.StaticParameterBinder]::BindCommand($command)
+		if ($isAliasCommand) { $null = $colDeclarations.Add($itemCommand) }
+		$binding = [Management.Automation.Language.StaticParameterBinder]::BindCommand($itemCommand)
 		try {
-			if ($isAliasCommand) { $aliasNames = @($binding.BoundParameters['Name'].Value.SafeGetValue()) }
+			if ($isAliasCommand) { $tmpAliasNames = @($binding.BoundParameters['Name'].Value.SafeGetValue()) }
 			else {
 				$pathParameter = if ($binding.BoundParameters.ContainsKey('LiteralPath')) { 'LiteralPath' } else { 'Path' }
-				$providerPaths = @($binding.BoundParameters[$pathParameter].Value.SafeGetValue())
-				$aliasNames = @(foreach ($providerPath in $providerPaths) {
-						if ($providerPath -isnot [string] -or $providerPath -notmatch '^Alias:') { continue }
-						$null = $declarations.Add($command)
-						$providerName = $providerPath -replace '^Alias:[\\/]*', ''
+				$tmpProviderPaths = @($binding.BoundParameters[$pathParameter].Value.SafeGetValue())
+				$tmpAliasNames = @(foreach ($itemProviderPath in $tmpProviderPaths) {
+						if ($itemProviderPath -isnot [string] -or $itemProviderPath -notmatch '^Alias:') { continue }
+						$null = $colDeclarations.Add($itemCommand)
+						$providerName = $itemProviderPath -replace '^Alias:[\\/]*', ''
 						if ($providerName) { $providerName }
 						elseif ($binding.BoundParameters.ContainsKey('Name')) { $binding.BoundParameters['Name'].Value.SafeGetValue() }
 					})
@@ -75,55 +75,55 @@ function Get-Ps1AliasDiagnostic {
 			$target = $binding.BoundParameters['Value'].Value.SafeGetValue()
 			$aliasScope = $scope
 			if ($binding.BoundParameters.ContainsKey('Scope') -and $binding.BoundParameters['Scope'].Value.SafeGetValue() -in @('Script', 'Global')) { $aliasScope = $ast }
-			$declaredNames = @($aliasNames | Where-Object { $_ -is [string] })
-			$declarationNames[$command] = @(@($declarationNames[$command]) | Where-Object { $_ -is [string] }) + $declaredNames
+			$tmpDeclaredNames = @($tmpAliasNames | Where-Object { $_ -is [string] })
+			$hashDeclarationNames[$itemCommand] = @(@($hashDeclarationNames[$itemCommand]) | Where-Object { $_ -is [string] }) + $tmpDeclaredNames
 			if ($binding.BoundParameters.ContainsKey('Scope') -and $binding.BoundParameters['Scope'].Value.SafeGetValue() -in @('Script', 'Global')) { $aliasScope = $ast }
-			foreach ($aliasName in $aliasNames) {
-				if ($aliasName -is [string] -and $target -is [string]) {
-					if (-not $context.Aliases.ContainsKey($aliasScope)) { $context.Aliases[$aliasScope] = @{} }
-					$context.Aliases[$aliasScope][$aliasName] = $target
+			foreach ($itemAliasName in $tmpAliasNames) {
+				if ($itemAliasName -is [string] -and $target -is [string]) {
+					if (-not $hashContext.Aliases.ContainsKey($aliasScope)) { $hashContext.Aliases[$aliasScope] = @{} }
+					$hashContext.Aliases[$aliasScope][$itemAliasName] = $target
 				}
 			}
 		}
 		catch { continue }
 	}
-	foreach ($command in $commands) {
-		$name = $command.GetCommandName()
+	foreach ($itemCommand in $colCommands) {
+		$name = $itemCommand.GetCommandName()
 		if (-not $name) { continue }
-		$resolved = Resolve-Ps1AliasCommand $name (Get-Ps1AliasScope $command) $context
+		$resolved = Resolve-Ps1AliasCommand $name (Get-Ps1AliasScope $itemCommand) $hashContext
 		if ($resolved.IsAlias -and $name -notin @($rules.AllowedCommandAliases)) {
-			New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $command.CommandElements[0].Extent "Do not use command alias '$name'. Use the full command name '$($resolved.Command.Name)'."
+			New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $itemCommand.CommandElements[0].Extent "Do not use command alias '$name'. Use the full command name '$($resolved.Command.Name)'."
 		}
-		if ($declarations.Contains($command)) {
-			$declared = @(@($declarationNames[$command]) | Where-Object { $_ -is [string] })
-			if ($declared.Count -eq 0 -or @($declared | Where-Object { $_ -notin @($rules.AllowedCommandAliases) }).Count -gt 0) {
-				New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $command.Extent 'Do not declare command aliases.'
+		if ($colDeclarations.Contains($itemCommand)) {
+			$tmpDeclared = @(@($hashDeclarationNames[$itemCommand]) | Where-Object { $_ -is [string] })
+			if ($tmpDeclared.Count -eq 0 -or @($tmpDeclared | Where-Object { $_ -notin @($rules.AllowedCommandAliases) }).Count -gt 0) {
+				New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $itemCommand.Extent 'Do not declare command aliases.'
 			}
 		}
 		if ($null -eq $resolved.Command) { continue }
-		$parameters = @(
-			foreach ($element in $command.CommandElements) {
-				if ($element -is [Management.Automation.Language.CommandParameterAst]) {
-					[pscustomobject]@{ Name = $element.ParameterName; Extent = $element.Extent }
+		$tmpParameters = @(
+			foreach ($itemElement in $itemCommand.CommandElements) {
+				if ($itemElement -is [Management.Automation.Language.CommandParameterAst]) {
+					[pscustomobject]@{ Name = $itemElement.ParameterName; Extent = $itemElement.Extent }
 				}
-				elseif ($element -is [Management.Automation.Language.VariableExpressionAst] -and $element.Splatted) {
-					Get-Ps1SplatParameter $element $command $ast
+				elseif ($itemElement -is [Management.Automation.Language.VariableExpressionAst] -and $itemElement.Splatted) {
+					Get-Ps1SplatParameter $itemElement $itemCommand $ast
 				}
 			}
 		)
-		foreach ($parameter in $parameters) {
-			$given = $parameter.Name
+		foreach ($itemParameter in $tmpParameters) {
+			$given = $itemParameter.Name
 			if ($resolved.Command.Names.ContainsKey($given)) { continue }
-			$parameterMatches = @()
-			if ($resolved.Command.Aliases.ContainsKey($given)) { $parameterMatches = @($resolved.Command.Aliases[$given]) }
+			$tmpParameterMatches = @()
+			if ($resolved.Command.Aliases.ContainsKey($given)) { $tmpParameterMatches = @($resolved.Command.Aliases[$given]) }
 			else {
-				$parameterMatches = @(
+				$tmpParameterMatches = @(
 					$resolved.Command.Names.Keys | Where-Object { $_.StartsWith($given, [StringComparison]::OrdinalIgnoreCase) }
 					$resolved.Command.Aliases.Keys | Where-Object { $_.StartsWith($given, [StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { $resolved.Command.Aliases[$_] }
 				) | Sort-Object -Unique
 			}
-			if (@($parameterMatches).Count -gt 0 -and $given -notin @($rules.AllowedParameterAliases)) {
-				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $parameter.Extent "Do not use parameter alias or abbreviation '-$given'. Use the full parameter name: $($parameterMatches -join ', ')."
+			if (@($tmpParameterMatches).Count -gt 0 -and $given -notin @($rules.AllowedParameterAliases)) {
+				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $itemParameter.Extent "Do not use parameter alias or abbreviation '-$given'. Use the full parameter name: $($tmpParameterMatches -join ', ')."
 			}
 		}
 	}

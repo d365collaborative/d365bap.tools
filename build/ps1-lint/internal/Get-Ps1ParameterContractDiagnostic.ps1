@@ -38,14 +38,14 @@ function Get-Ps1ParameterOwnerFunction {
 
 function Test-Ps1MandatoryParameter {
 	param($Parameter)
-	foreach ($attribute in $Parameter.Attributes) {
-		if ($attribute -isnot [Management.Automation.Language.AttributeAst]) { continue }
-		if ($attribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.ParameterAttribute]) { continue }
-		foreach ($argument in $attribute.NamedArguments) {
-			if ($argument.ArgumentName -ne 'Mandatory') { continue }
-			if ($argument.Argument.Extent.Text -ieq '$true') { return $true }
-			if ($argument.Argument -is [Management.Automation.Language.ConstantExpressionAst] -and
-				$argument.Argument.Value -eq $true) { return $true }
+	foreach ($itemAttribute in $Parameter.Attributes) {
+		if ($itemAttribute -isnot [Management.Automation.Language.AttributeAst]) { continue }
+		if ($itemAttribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.ParameterAttribute]) { continue }
+		foreach ($itemArgument in $itemAttribute.NamedArguments) {
+			if ($itemArgument.ArgumentName -ne 'Mandatory') { continue }
+			if ($itemArgument.Argument.Extent.Text -ieq '$true') { return $true }
+			if ($itemArgument.Argument -is [Management.Automation.Language.ConstantExpressionAst] -and
+				$itemArgument.Argument.Value -eq $true) { return $true }
 		}
 	}
 	$false
@@ -68,13 +68,13 @@ function Test-Ps1ValidateNotNullOrEmpty {
 
 function Get-Ps1ParameterAttributeDefault {
 	if ($null -ne $script:Ps1ParameterAttributeDefaults) { return $script:Ps1ParameterAttributeDefaults }
-	$defaults = @{}
-	foreach ($property in [System.Management.Automation.ParameterAttribute]::new().PSObject.Properties) {
-		if (-not $property.IsSettable) { continue }
-		$defaults[$property.Name] = $property.Value
+	$hashDefaults = @{}
+	foreach ($itemProperty in [System.Management.Automation.ParameterAttribute]::new().PSObject.Properties) {
+		if (-not $itemProperty.IsSettable) { continue }
+		$hashDefaults[$itemProperty.Name] = $itemProperty.Value
 	}
-	$script:Ps1ParameterAttributeDefaults = $defaults
-	$defaults
+	$script:Ps1ParameterAttributeDefaults = $hashDefaults
+	$hashDefaults
 }
 
 function Get-Ps1ArgumentValue {
@@ -105,96 +105,96 @@ function Get-Ps1ParameterContractDiagnostic {
 	$fileName -notlike '*Tests.ps1' -and
 	$fileName -ne 'Get-PpacFinOpsAsset.ps1'
 
-	$functionParameters = [System.Collections.Generic.HashSet[object]]::new()
-	$parameterFunctions = [System.Collections.Generic.Dictionary[object, object]]::new()
-	foreach ($function in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
-		foreach ($parameter in $function.Parameters) {
-			$null = $functionParameters.Add($parameter)
-			if (-not $parameterFunctions.ContainsKey($parameter)) { $parameterFunctions[$parameter] = $function }
+	$colFunctionParameters = [System.Collections.Generic.HashSet[object]]::new()
+	$hashParameterFunctions = [System.Collections.Generic.Dictionary[object, object]]::new()
+	foreach ($itemFunction in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+		foreach ($itemParameter in $itemFunction.Parameters) {
+			$null = $colFunctionParameters.Add($itemParameter)
+			if (-not $hashParameterFunctions.ContainsKey($itemParameter)) { $hashParameterFunctions[$itemParameter] = $itemFunction }
 		}
-		if ($null -eq $function.Body.ParamBlock) { continue }
-		foreach ($parameter in $function.Body.ParamBlock.Parameters) {
-			$null = $functionParameters.Add($parameter)
-			if (-not $parameterFunctions.ContainsKey($parameter)) { $parameterFunctions[$parameter] = $function }
+		if ($null -eq $itemFunction.Body.ParamBlock) { continue }
+		foreach ($itemParameter in $itemFunction.Body.ParamBlock.Parameters) {
+			$null = $colFunctionParameters.Add($itemParameter)
+			if (-not $hashParameterFunctions.ContainsKey($itemParameter)) { $hashParameterFunctions[$itemParameter] = $itemFunction }
 		}
 	}
 
 	$defaults = Get-Ps1ParameterAttributeDefault
 
-	foreach ($parameter in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
-		$name = $parameter.Name.VariablePath.UserPath
+	foreach ($itemParameter in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
+		$name = $itemParameter.Name.VariablePath.UserPath
 
-		foreach ($attribute in $parameter.Attributes) {
-			if ($attribute -isnot [Management.Automation.Language.AttributeAst]) { continue }
-			if ($attribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.ParameterAttribute]) { continue }
+		foreach ($itemAttribute in $itemParameter.Attributes) {
+			if ($itemAttribute -isnot [Management.Automation.Language.AttributeAst]) { continue }
+			if ($itemAttribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.ParameterAttribute]) { continue }
 
-			if ($attribute.NamedArguments.Count -eq 0 -and $attribute.PositionalArguments.Count -eq 0) {
-				Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidRedundantParameterAttribute' "Remove the empty [Parameter()] attribute on -$name. It adds no value." $attribute.Extent
+			if ($itemAttribute.NamedArguments.Count -eq 0 -and $itemAttribute.PositionalArguments.Count -eq 0) {
+				Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidRedundantParameterAttribute' "Remove the empty [Parameter()] attribute on -$name. It adds no value." $itemAttribute.Extent
 			}
 
-			foreach ($argument in $attribute.NamedArguments) {
-				if ($argument.ArgumentName -eq 'Mandatory' -and (Test-Ps1ShorthandMandatory $argument)) {
-					Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidShorthandMandatory' "Use the explicit form [Parameter(Mandatory = `$true)] instead of the shorthand Mandatory on -$name." $argument.Argument.Extent
+			foreach ($itemArgument in $itemAttribute.NamedArguments) {
+				if ($itemArgument.ArgumentName -eq 'Mandatory' -and (Test-Ps1ShorthandMandatory $itemArgument)) {
+					Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidShorthandMandatory' "Use the explicit form [Parameter(Mandatory = `$true)] instead of the shorthand Mandatory on -$name." $itemArgument.Argument.Extent
 				}
 
-				if ($positionAllowed -and $argument.ArgumentName -ieq 'Position') {
-					Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidExplicitParameterPosition' "Remove the explicit Position = $($argument.Argument.Extent.Text) argument from -$name; declaration order defines parameter positions." $argument.Extent
+				if ($positionAllowed -and $itemArgument.ArgumentName -ieq 'Position') {
+					Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidExplicitParameterPosition' "Remove the explicit Position = $($itemArgument.Argument.Extent.Text) argument from -$name; declaration order defines parameter positions." $itemArgument.Extent
 				}
 
 				$default = $null
 				$known = $false
-				foreach ($key in $defaults.Keys) {
-					if ($argument.ArgumentName -ine $key) { continue }
-					$default = $defaults[$key]
+				foreach ($itemKey in $defaults.Keys) {
+					if ($itemArgument.ArgumentName -ine $itemKey) { continue }
+					$default = $defaults[$itemKey]
 					$known = $true
 					break
 				}
 				if (-not $known) { continue }
 
-				$value = Get-Ps1ArgumentValue $argument.Argument
+				$value = Get-Ps1ArgumentValue $itemArgument.Argument
 				if (-not (Test-Ps1SameValue $value $default)) { continue }
-				Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidRedundantParameterAttribute' "Remove the redundant $($argument.ArgumentName) = $($argument.Argument.Extent.Text) argument on -$name; it restates the [Parameter()] default." $argument.Extent
+				Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidRedundantParameterAttribute' "Remove the redundant $($itemArgument.ArgumentName) = $($itemArgument.Argument.Extent.Text) argument on -$name; it restates the [Parameter()] default." $itemArgument.Extent
 			}
 		}
 
-		if ((Test-Ps1MandatoryParameter $parameter) -and $null -eq $parameter.DefaultValue) {
-			$isString = @($parameter.Attributes | Where-Object {
+		if ((Test-Ps1MandatoryParameter $itemParameter) -and $null -eq $itemParameter.DefaultValue) {
+			$isString = @($itemParameter.Attributes | Where-Object {
 					$_ -is [Management.Automation.Language.TypeConstraintAst] -and
 					$_.TypeName.FullName -in @('string', 'System.String', 'string[]', 'System.String[]')
 				}).Count -gt 0
-			if ($isString -and -not (Test-Ps1ValidateNotNullOrEmpty $parameter)) {
-				Write-Ps1ParameterContractDiagnostic $Path 'PSUseValidateNotNullOrEmpty' "Parameter -$name is mandatory but does not declare [ValidateNotNullOrEmpty()]. Add the attribute to reject null or empty values." $parameter.Extent
+			if ($isString -and -not (Test-Ps1ValidateNotNullOrEmpty $itemParameter)) {
+				Write-Ps1ParameterContractDiagnostic $Path 'PSUseValidateNotNullOrEmpty' "Parameter -$name is mandatory but does not declare [ValidateNotNullOrEmpty()]. Add the attribute to reject null or empty values." $itemParameter.Extent
 			}
 		}
 
-		if ($functionParameters.Contains($parameter) -and
-			$null -ne $parameter.DefaultValue -and
-			$parameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and
-			$parameter.DefaultValue.Value.Contains('*')) {
-			$isString = @($parameter.Attributes | Where-Object {
+		if ($colFunctionParameters.Contains($itemParameter) -and
+			$null -ne $itemParameter.DefaultValue -and
+			$itemParameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and
+			$itemParameter.DefaultValue.Value.Contains('*')) {
+			$isString = @($itemParameter.Attributes | Where-Object {
 					$_ -is [Management.Automation.Language.TypeConstraintAst] -and
 					$_.TypeName.FullName -in @('string', 'System.String', 'string[]', 'System.String[]')
 				}).Count -gt 0
-			if ($isString -and -not (Test-Ps1WildcardSupport $parameter)) {
-				Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name has a wildcard default value. Add [SupportsWildcards()] to the parameter." $parameter.DefaultValue.Extent
+			if ($isString -and -not (Test-Ps1WildcardSupport $itemParameter)) {
+				Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name has a wildcard default value. Add [SupportsWildcards()] to the parameter." $itemParameter.DefaultValue.Extent
 			}
 		}
 
-		if ($functionParameters.Contains($parameter)) {
-			$wildcardAttribute = Get-Ps1ParameterWildcardAttribute $parameter
+		if ($colFunctionParameters.Contains($itemParameter)) {
+			$wildcardAttribute = Get-Ps1ParameterWildcardAttribute $itemParameter
 
 			if ($null -ne $wildcardAttribute) {
-				$hasStarDefault = $null -ne $parameter.DefaultValue -and
-				$parameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and
-				$parameter.DefaultValue.Value -eq '*'
+				$hasStarDefault = $null -ne $itemParameter.DefaultValue -and
+				$itemParameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and
+				$itemParameter.DefaultValue.Value -eq '*'
 
 				if (-not $hasStarDefault) {
 					Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name declares [SupportsWildcards()] but does not default to '*'. Wildcard parameters always have a value; set the default to '*'." $wildcardAttribute.Extent
 				}
 
-				if ($parameterFunctions.ContainsKey($parameter)) {
-					$owner = $parameterFunctions[$parameter]
-					$lookups = @($owner.Body.FindAll({
+				if ($hashParameterFunctions.ContainsKey($itemParameter)) {
+					$owner = $hashParameterFunctions[$itemParameter]
+					$tmpLookups = @($owner.Body.FindAll({
 								param($node)
 								$node -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
 								$node.Expression -is [Management.Automation.Language.VariableExpressionAst] -and
@@ -204,16 +204,16 @@ function Get-Ps1ParameterContractDiagnostic {
 								@($node.Arguments).Count -eq 1
 							}, $true))
 
-					foreach ($lookup in $lookups) {
-						if ((Get-Ps1ParameterOwnerFunction -Node $lookup) -ne $owner) { continue }
+					foreach ($itemLookup in $tmpLookups) {
+						if ((Get-Ps1ParameterOwnerFunction -Node $itemLookup) -ne $owner) { continue }
 
-						$argument = @($lookup.Arguments)[0]
-						$key = $null
-						if ($argument -is [Management.Automation.Language.StringConstantExpressionAst]) { $key = $argument.Value }
-						elseif ($argument -is [Management.Automation.Language.ExpandableStringExpressionAst] -and $argument.NestedExpressions.Count -eq 0) { $key = $argument.Value }
-						if ($null -eq $key -or $key -ine $name) { continue }
+						$itemArgument = @($itemLookup.Arguments)[0]
+						$itemKey = $null
+						if ($itemArgument -is [Management.Automation.Language.StringConstantExpressionAst]) { $itemKey = $itemArgument.Value }
+						elseif ($itemArgument -is [Management.Automation.Language.ExpandableStringExpressionAst] -and $itemArgument.NestedExpressions.Count -eq 0) { $itemKey = $itemArgument.Value }
+						if ($null -eq $itemKey -or $itemKey -ine $name) { continue }
 
-						Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name is a wildcard parameter and always has a value, so `$PSBoundParameters.$($lookup.Member.Value)('$name') is unnecessary. Use -$name directly." $lookup.Extent
+						Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name is a wildcard parameter and always has a value, so `$PSBoundParameters.$($itemLookup.Member.Value)('$name') is unnecessary. Use -$name directly." $itemLookup.Extent
 					}
 				}
 			}

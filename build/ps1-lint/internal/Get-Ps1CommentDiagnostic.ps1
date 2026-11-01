@@ -10,16 +10,16 @@
 	if ($normalized -match '/d365bap\.tools/tests/') { return }
 	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
 
-	foreach ($comment in $Analysis.CommentGroups) {
-		if ($comment.IsHelp) { continue }
-		if ($comment.Text -match '^#\s*(?:end)?region\b') { continue }
+	foreach ($itemComment in $Analysis.CommentGroups) {
+		if ($itemComment.IsHelp) { continue }
+		if ($itemComment.Text -match '^#\s*(?:end)?region\b') { continue }
 
 		[pscustomobject]@{
 			RuleName   = 'PSOnlyCommentBasedHelp'
 			Severity   = 'Error'
 			ScriptName = $fileName
-			Line       = $comment.Line
-			Column     = $comment.Column
+			Line       = $itemComment.Line
+			Column     = $itemComment.Column
 			Message    = 'Only comment-based help and #region markers are allowed. Remove this comment or move its documentation into help.'
 		}
 	}

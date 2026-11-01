@@ -2,22 +2,22 @@
 	param([hashtable] $Analysis)
 
 	$groupId = 0
-	foreach ($comment in $Analysis.CommentGroups) {
-		if (-not $comment.IsHelp) { continue }
+	foreach ($itemComment in $Analysis.CommentGroups) {
+		if (-not $itemComment.IsHelp) { continue }
 		$groupId++
-		$text = $comment.Text
+		$text = $itemComment.Text
 		$isBlock = $text.StartsWith('<#')
 		if ($isBlock) { $text = $text.Substring(2, $text.Length - 4) }
 		$lines = $text -split '\r\n|\n|\r'
-		$parameterNames = @($comment.ParameterNames) + @(
+		$parameterNames = @($itemComment.ParameterNames) + @(
 			[regex]::Matches($text, '(?im)^\s*(?:#\s*)?\.PARAMETER\s+(\S+)\s*$') |
 			ForEach-Object { $_.Groups[1].Value }
 		)
-		$parameterRecords = @($comment.ParameterRecords)
+		$tmpParameterRecords = @($itemComment.ParameterRecords)
 		$section = $null
 		for ($index = 0; $index -le $lines.Count; $index++) {
 			$line = if ($index -lt $lines.Count) { $lines[$index] } else { $null }
-			$column = if ($index -eq 0) { $comment.Column + $(if ($isBlock) { 2 } else { 0 }) } else { 1 }
+			$column = if ($index -eq 0) { $itemComment.Column + $(if ($isBlock) { 2 } else { 0 }) } else { 1 }
 			if (-not $isBlock -and $null -ne $line) {
 				$prefix = [regex]::Match($line, '^\s*# ?').Length
 				$column += $prefix
@@ -30,24 +30,24 @@
 					$last = $section.Lines.Count - 1
 					while ($first -le $last -and $section.Lines[$first] -eq '') { $first++ }
 					while ($last -ge $first -and $section.Lines[$last] -eq '') { $last-- }
-					$content = @(if ($first -le $last) { $section.Lines.GetRange($first, $last - $first + 1) })
+					$tmpContent = @(if ($first -le $last) { $section.Lines.GetRange($first, $last - $first + 1) })
 					[pscustomobject]@{
 						Name             = $section.Name
 						Argument         = $section.Argument
 						Line             = $section.Line
 						Column           = $section.Column
-						Lines            = @($content)
-						Text             = $content -join "`n"
+						Lines            = @($tmpContent)
+						Text             = $tmpContent -join "`n"
 						ParameterNames   = $parameterNames
 						GroupId          = $groupId
-						CommentLine      = $comment.Line
-						CommentColumn    = $comment.Column
-						ParameterRecords = @($parameterRecords)
-						CommandName      = $comment.CommandName
+						CommentLine      = $itemComment.Line
+						CommentColumn    = $itemComment.Column
+						ParameterRecords = @($tmpParameterRecords)
+						CommandName      = $itemComment.CommandName
 					}
 				}
 				$section = if ($isHeader) {
-					@{ Name = $Matches.Name.ToUpperInvariant(); Argument = $Matches.Argument; Line = $comment.Line + $index; Column = $column + $line.IndexOf('.'); Lines = [Collections.Generic.List[string]]::new() }
+					@{ Name = $Matches.Name.ToUpperInvariant(); Argument = $Matches.Argument; Line = $itemComment.Line + $index; Column = $column + $line.IndexOf('.'); Lines = [Collections.Generic.List[string]]::new() }
 				}
 				else { $null }
 			}

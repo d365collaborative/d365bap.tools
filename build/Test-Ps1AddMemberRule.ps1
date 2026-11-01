@@ -227,4 +227,8 @@ function Get-Fixture {
 
 Assert-AddMember 'Outside the module' $unused -Directory 'build'
 
+Assert-AddMember 'Lint tooling internal scripts are checked' $unused -Directory 'build/ps1-lint/internal' -Expected 1
+
+Assert-AddMember 'Lint tooling format scripts are checked' $unused -Directory 'build/ps1-lint/ps1-format' -Expected 1
+
 Write-Output "Add-Member rule checks passed: $script:caseCount cases."

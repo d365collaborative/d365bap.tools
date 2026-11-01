@@ -14,18 +14,20 @@
 		.EXAMPLE
 			PS C:\> Invoke-Ps1Format -Path .\scripts\foo.ps1
 
-			Formats foo.ps1 using the repo formatter settings.
+			It formats foo.ps1 using -Path and the repo formatter settings.
 	#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[ValidateNotNullOrEmpty()]
 		[string[]] $Path,
 		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
 		[string] $SettingsPath
 	)
 
 	begin {
-		$allPaths = [System.Collections.Generic.List[string]]::new()
+		$colAllPaths = [System.Collections.Generic.List[string]]::new()
 
 		if (-not (Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue)) {
 			Write-Error 'PSScriptAnalyzer is not installed. Install-Module PSScriptAnalyzer -Scope CurrentUser'
@@ -43,28 +45,28 @@
 	process {
 		foreach ($item in @($Path)) {
 			if (-not [string]::IsNullOrWhiteSpace($item)) {
-				$allPaths.Add($item) | Out-Null
+				$colAllPaths.Add($item) | Out-Null
 			}
 		}
 	}
 
 	end {
-		if ($allPaths.Count -eq 0) {
+		if ($colAllPaths.Count -eq 0) {
 			return
 		}
 
-		$files = @(Resolve-Ps1Path -Path @($allPaths))
+		$colFiles = @(Resolve-Ps1Path -Path @($colAllPaths))
 
-		if ($files.Count -eq 0) {
+		if ($colFiles.Count -eq 0) {
 			Write-Warning 'No .ps1 files found for the given Path.'
 			return
 		}
 
-		$utf8Bom = New-Object System.Text.UTF8Encoding $true
+		$objUtf8Bom = New-Object System.Text.UTF8Encoding $true
 
-		foreach ($file in $files) {
+		foreach ($itemFile in $colFiles) {
 			try {
-				$original = [System.IO.File]::ReadAllText($file, [System.Text.UTF8Encoding]::new($false, $false))
+				$original = [System.IO.File]::ReadAllText($itemFile, [System.Text.UTF8Encoding]::new($false, $false))
 				$formatted = Invoke-Formatter -ScriptDefinition $original -Settings $SettingsPath
 
 				if ($null -eq $formatted) {
@@ -72,19 +74,19 @@
 				}
 
 				if ($formatted -cne $original) {
-					[System.IO.File]::WriteAllText($file, $formatted, $utf8Bom)
+					[System.IO.File]::WriteAllText($itemFile, $formatted, $objUtf8Bom)
 				}
 				else {
-					$bytes = [System.IO.File]::ReadAllBytes($file)
+					$bytes = [System.IO.File]::ReadAllBytes($itemFile)
 					$hasBom = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
 
 					if (-not $hasBom) {
-						[System.IO.File]::WriteAllText($file, $original, $utf8Bom)
+						[System.IO.File]::WriteAllText($itemFile, $original, $objUtf8Bom)
 					}
 				}
 			}
 			catch {
-				Write-Warning "Failed to format '$file': $($_.Exception.Message)"
+				Write-Warning "Failed to format '$itemFile': $($_.Exception.Message)"
 			}
 		}
 	}

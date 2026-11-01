@@ -15,8 +15,8 @@ function Get-Ps1EnvironmentLookupDiagnostic {
 	if ($fileName -like '*Tests.ps1') { return }
 	if ($fileName -in $script:Ps1EnvironmentLookupExemptions) { return }
 
-	foreach ($command in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
-		$commandName = $command.GetCommandName()
+	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
+		$commandName = $itemCommand.GetCommandName()
 		if ($null -eq $commandName) { continue }
 
 		$commandName = ($commandName -split '\\')[-1]
@@ -26,7 +26,7 @@ function Get-Ps1EnvironmentLookupDiagnostic {
 				'Use Get-Environment instead of Get-BapEnvironment; the default shape needs no extra calls.'
 			}
 			'Get-UnifiedEnvironment' {
-				$skipVersion = @($command.CommandElements | Where-Object {
+				$skipVersion = @($itemCommand.CommandElements | Where-Object {
 						$_ -is [Management.Automation.Language.CommandParameterAst] -and
 						'SkipVersionDetails'.StartsWith($_.ParameterName, [StringComparison]::OrdinalIgnoreCase)
 					}).Count -gt 0
@@ -47,8 +47,8 @@ function Get-Ps1EnvironmentLookupDiagnostic {
 			RuleName   = 'PSUseCentralEnvironmentLookup'
 			Severity   = 'Error'
 			ScriptName = $fileName
-			Line       = $command.Extent.StartLineNumber
-			Column     = $command.Extent.StartColumnNumber
+			Line       = $itemCommand.Extent.StartLineNumber
+			Column     = $itemCommand.Extent.StartColumnNumber
 			Message    = $message
 		}
 	}

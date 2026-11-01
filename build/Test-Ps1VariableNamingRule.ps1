@@ -303,6 +303,24 @@ function Get-Fixture {
 }
 '@ -Directory 'build' -Expected 0
 
+Assert-Variable 'Lint tooling internal scripts are checked' @'
+function Get-Fixture {
+    $items = @()
+}
+'@ 1 @("prefix it with 'col'") -Directory 'build/ps1-lint/internal'
+
+Assert-Variable 'Lint tooling format scripts are checked' @'
+function Get-Fixture {
+    $items = @()
+}
+'@ 1 @("prefix it with 'col'") -Directory 'build/ps1-lint/ps1-format'
+
+Assert-Variable 'Lint tooling test files are never checked' @'
+function Get-Fixture {
+    $items = @()
+}
+'@ -FileName 'Get-Ps1VariableNamingRule.Tests.ps1' -Directory 'build/ps1-lint/internal'
+
 Assert-Variable 'Test files are never checked' @'
 function Get-Fixture {
     $items = @()
