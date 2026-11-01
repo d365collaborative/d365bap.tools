@@ -45,7 +45,10 @@ jobs:
           $_ -match '^build/ps1-lint/'
         })
         if ($relevant.Count -gt 0) { 'relevant=true' >> $env:GITHUB_OUTPUT } else { 'relevant=false' >> $env:GITHUB_OUTPUT }
+        $workflows = @($files | Where-Object { $_ -match '^\.github/workflows/' })
+        if ($workflows.Count -gt 0) { 'workflows=true' >> $env:GITHUB_OUTPUT } else { 'workflows=false' >> $env:GITHUB_OUTPUT }
         Write-Host "PowerShell-relevant files: $($relevant.Count)"
+        Write-Host "Workflow files: $($workflows.Count)"
     - name: Install prek
       if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
@@ -58,6 +61,13 @@ jobs:
       if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
       run: prek run --config prek.toml --from-ref $env:BASE_SHA --to-ref HEAD
+    - name: Lint workflow changes
+      if: steps.ps1_scope.outputs.workflows == 'true'
+      shell: pwsh
+      run: |
+        $files = @(Get-ChildItem .github/workflows -Filter *.yml | ForEach-Object { $_.FullName })
+        & go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 @files
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     - name: Report dependency-aware lint scope
       shell: pwsh
       env:
