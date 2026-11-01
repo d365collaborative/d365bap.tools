@@ -13,7 +13,7 @@ What runs on `**.ps1`:
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
   `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`,
-  `PSUseBlankLineBeforeParameter`, `PSUseStandardAttributeStack`.
+  `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -148,34 +148,27 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1TableFormatRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
 ```
 
-## Parameter spacing
+## Parameter layout
 
-`PSUseBlankLineBeforeParameter` requires a blank line before every parameter
-after the first, including its attributes. The first parameter is exempt
-because the codebase keeps it directly under `param (`. The rule applies to
-public functions only; build and internal scripts use their own layouts.
+`PSUseStandardParameterLayout` requires a consistent parameter declaration:
 
-Run its regression checks under PowerShell 7.6 or later:
+- A blank line before every parameter after the first, including its attributes.
+  The first parameter stays directly under `param (`.
+- `[Parameter()]` attributes first, then the remaining attributes, then the type
+  constraint and the parameter name.
+- No blank line between those stack items. Multi-line attributes are fine; only
+  the gaps between stack items are checked.
+- The type constraint and parameter name on one line, with exactly one space
+  between the closing `]` and `$`.
 
-```powershell
-pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterSpacingRule.ps1
-```
-
-## Attribute stacks
-
-`PSUseStandardAttributeStack` requires one order inside a parameter stack:
-
-1. `[Parameter()]` attribute(s) first.
-2. The remaining attributes.
-3. The type constraint and the parameter name on one line.
-
-No blank line is allowed between those items. Multi-line attributes are fine;
-only the gaps between stack items are checked.
+The space check applies to every parameter in the file, including scriptblock
+parameters. The other checks apply to public functions only; build and internal
+scripts use their own layouts.
 
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
-pwsh -NoProfile -NonInteractive -File build/Test-Ps1AttributeStackRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterLayoutRule.ps1
 ```
 
 ## Note properties

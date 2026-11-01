@@ -39,8 +39,7 @@ $results = @()
 . "$PSScriptRoot/../internal/Get-Ps1MandatoryDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1ParameterArgumentDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1ParameterPositionDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ParameterSpacingDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1AttributeStackDiagnostic.ps1"
+. "$PSScriptRoot/../internal/Get-Ps1ParameterLayoutDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1TableFormatDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1ExcelOutputDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AddMemberDiagnostic.ps1"
@@ -62,8 +61,7 @@ foreach ($p in $files) {
 	$results += @(Get-Ps1MandatoryDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1ParameterArgumentDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1ParameterPositionDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ParameterSpacingDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1AttributeStackDiagnostic -Analysis $analysis)
+	$results += @(Get-Ps1ParameterLayoutDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1TableFormatDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1ExcelOutputDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
