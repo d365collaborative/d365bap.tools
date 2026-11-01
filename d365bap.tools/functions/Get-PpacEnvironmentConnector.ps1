@@ -82,8 +82,6 @@ function Get-PpacEnvironmentConnector {
 			return
 		}
 
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$colItems = @($result.value)
 		$colItems = @($colItems | Where-Object {
 				($_.id -like $Name -or $_.id -eq $Name) `

@@ -83,8 +83,6 @@ function Get-PpacEnvironmentConnection {
 			return
 		}
 
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$colItems = @($result.value)
 		$colItems = @($colItems | Where-Object {
 				$connectorName = if ([string]::IsNullOrWhiteSpace("$($_.properties.apiId)")) { $null } else { ($_.properties.apiId -split '/')[-1] }
