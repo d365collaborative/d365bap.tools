@@ -196,6 +196,8 @@
 
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
+		, 'Remove-PpacTenantAcpPolicyRuleSet'
+		, 'Remove-PpacTenantRuleBasedPolicyRuleSet'
 		, 'Remove-PpacUser'
 		, 'Remove-PpeSolution'
 		, 'Remove-UdeEnvironmentModel'
