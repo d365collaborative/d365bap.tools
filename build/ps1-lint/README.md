@@ -8,7 +8,11 @@ What runs on `**.ps1`:
 - `psscriptanalyzer/Run.ps1` — native PSScriptAnalyzer (Error + Warning,
   fails on Error) plus repo rules: `PSOnlyCommentBasedHelp`,
   `PSHelpSynopsis/Description/Parameter/Notes/Example`,
-  `PSAvoidCommandAliases` / `PSAvoidParameterAliases`.
+  `PSAvoidCommandAliases` / `PSAvoidParameterAliases`,
+  `PSUseSupportsWildcards`, `PSAvoidEmptyParameterAttribute`,
+  `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
+  `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
+  `PSUseTableFormatView`, `PSUseAsExcelOutput`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -28,6 +32,126 @@ What runs on `**.ps1`:
 - `ps1-format/Run.ps1` — Invoke-Formatter with `internal/Ps1FormatSettings.psd1`
   plus UTF-8 BOM enforcement. Rewrites files and exits 1 when anything changed.
 - `setup/Run.ps1` — installs PSScriptAnalyzer (CurrentUser) when missing.
+
+## Wildcard parameters
+
+`PSUseSupportsWildcards` fails a function parameter that declares a string
+default containing `*` without a `[SupportsWildcards()]` attribute. A default
+such as `'*'` means the parameter accepts a search pattern, so the attribute
+must advertise that to help and completion. Only `*` is checked; `?` and `[`
+are not used as wildcards in this codebase.
+
+```powershell
+param (
+    [SupportsWildcards()]
+    [string] $Name = "*"
+)
+```
+
+The rule reads the AST, so it ignores wildcard text inside strings and
+comments. Non-string parameters, script-level parameters, and non-constant
+defaults are not checked.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1WildcardRule.ps1
+```
+
+## Empty parameter attributes
+
+`PSAvoidEmptyParameterAttribute` fails `[Parameter()]` declared without
+arguments. The attribute adds nothing to the parameter, so remove it. Use it
+only when it carries information:
+
+```powershell
+param (
+    [Parameter(Mandatory)]
+    [string] $Name,
+
+    [Parameter(ParameterSetName = 'Excel')]
+    [switch] $AsExcelOutput
+)
+```
+
+Other empty attributes such as `[CmdletBinding()]` and `[SupportsWildcards()]`
+are allowed because the attribute itself carries the meaning.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyAttributeRule.ps1
+```
+
+## Mandatory parameters
+
+`PSUseValidateNotNullOrEmpty` fails a mandatory `string` or `string[]`
+parameter without a default value unless it also declares
+`[ValidateNotNullOrEmpty()]`. Mandatory parameters still accept an empty
+string, so the validation attribute is what actually rejects it.
+
+```powershell
+param (
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string] $Name
+)
+```
+
+A parameter with any default assignment is exempt, because the default supplies
+the value when the caller omits it. Value types such as `switch` and `int` are
+exempt because `[ValidateNotNullOrEmpty()]` has no effect on them.
+
+`PSAvoidShorthandMandatory` bans the shorthand `[Parameter(Mandatory)]` and
+requires the explicit `[Parameter(Mandatory = $true)]` form used throughout the
+codebase.
+
+`PSAvoidRedundantParameterArgument` bans named arguments in `[Parameter()]`
+that restate the attribute's default, such as `Mandatory = $false`,
+`ValueFromPipeline = $false`, `ValueFromPipelineByPropertyName = $false`,
+`ValueFromRemainingArguments = $false`, `HelpMessage = $null`,
+`ParameterSetName = '__AllParameterSets'`, and `Position = -2147483648`.
+Defaults come from `ParameterAttribute` itself, so the rule follows the
+platform. State only what changes the default.
+
+`PSAvoidExplicitParameterPosition` bans the `Position` argument in
+`[Parameter()]` for module functions and internal scripts. Parameters bind in
+declaration order, so reorder them instead of numbering them.
+`Get-PpacFinOpsAsset.ps1` is allowlisted because its parameter sets need fixed
+slots; that is the only exception. Build scripts, the installer, and `*Tests.ps1`
+files are not checked.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterPositionRule.ps1
+```
+
+## Collection output
+
+`PSUseTableFormatView` requires a table format view for every `PSTypeName`
+output by a public cmdlet that declares an array `[OutputType]`. The view can
+live in any file under `d365bap.tools/xml/formats/table`. Arrays of scalar
+values (strings, numbers, booleans, dates, GUIDs) are exempt, and a list view is
+optional and not checked.
+
+`PSUseAsExcelOutput` requires every public cmdlet with array output to declare
+a `[switch] $AsExcelOutput` parameter. Arrays of scalar values (strings,
+numbers, booleans, dates, GUIDs) are exempt. It checks presence only; the
+export implementation is not validated.
+
+Run their regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1TableFormatRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
+```
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MandatoryRule.ps1
+```
 
 ## Example prose
 
