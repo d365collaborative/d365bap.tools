@@ -1,4 +1,4 @@
-# ps1-lint (vendored)
+﻿# ps1-lint (vendored)
 
 PowerShell lint hook scripts for `prek.toml`. They started as a copy of the
 PS1 hooks from an internal-only module and are maintained in this repo from
@@ -13,6 +13,7 @@ What runs on `**.ps1`:
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidExplicitParameterPosition`, `PSUseStandardCollectionOutput`,
   `PSAvoidAddMemberInLoop`, `PSUseBapAccessTokenEndpointSwitch`,
+  `PSAvoidOrphanPSFFunctionInterruptCheck`,
   `PSUseCentralEnvironmentLookup`, `PSUseVariableNamingConvention`,
   `PSUseShouldProcessConvention`, `PSUseDeclaredOutputType`,
   `PSUseStandardParameterLayout`.
@@ -459,6 +460,62 @@ Run its regression checks under PowerShell 7.6 or later:
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1VariableNamingRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ShouldProcessRule.ps1
+```
+
+## Function interrupts
+
+`PSAvoidOrphanPSFFunctionInterruptCheck` flags a `Test-PSFFunctionInterrupt` check in a
+process block when nothing before it can interrupt the function:
+
+```powershell
+# Fails: no begin block, nothing has run
+function Set-Fixture {
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+
+# Fails: the begin block only builds a hashtable
+function Set-Fixture {
+    begin {
+        $hashConfig = @{ Key = 'Value' }
+    }
+
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+
+# Passes: a begin command may interrupt
+function Set-Fixture {
+    begin {
+        $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    }
+
+    process {
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+
+# Passes: the check follows the command that can stop
+function Set-Fixture {
+    process {
+        $envObj = Get-Environment -EnvironmentId $EnvironmentId
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+```
+
+Empty begin blocks and assignment-only begin blocks do not count. The rule does
+not trace helper call graphs: any preceding command is treated as a possible
+interrupt source, which avoids false positives when a begin block calls a helper
+that uses `Stop-PSFFunction -StepsUpward`. Test files and tepp scripts are
+exempt.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1FunctionInterruptRule.ps1
 ```
 
 ## Example prose
