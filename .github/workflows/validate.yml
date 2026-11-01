@@ -19,25 +19,62 @@ jobs:
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0
+    - name: Check generated-file ownership
+      shell: pwsh
+      run: ./build/Test-GeneratedTouch.ps1 -BaseRef $env:BASE_SHA
+    - name: Determine PowerShell scope
+      id: ps1_scope
+      shell: pwsh
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.sha }}
+      run: |
+        $files = @(git diff --name-only --diff-filter=ACMR $env:BASE_SHA $env:HEAD_SHA --)
+        $relevant = @($files | Where-Object {
+          $_ -match '\.(ps1|psm1|psd1)$' -or
+          $_ -eq 'prek.toml' -or
+          $_ -match '^d365bap\.tools/xml/.+\.ps1xml$' -or
+          [IO.Path]::GetFileName($_) -ieq 'ps1-lint.json' -or
+          $_ -match '^build/ps1-lint/'
+        })
+        if ($relevant.Count -gt 0) { 'relevant=true' >> $env:GITHUB_OUTPUT } else { 'relevant=false' >> $env:GITHUB_OUTPUT }
+        $workflows = @($files | Where-Object { $_ -match '^\.github/workflows/' })
+        if ($workflows.Count -gt 0) { 'workflows=true' >> $env:GITHUB_OUTPUT } else { 'workflows=false' >> $env:GITHUB_OUTPUT }
+        Write-Host "PowerShell-relevant files: $($relevant.Count)"
+        Write-Host "Workflow files: $($workflows.Count)"
     - name: Restore PowerShell modules
+      if: steps.ps1_scope.outputs.relevant == 'true'
       uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
         key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
         restore-keys: |
           pwsh-modules-${{ runner.os }}-base-v2-
-    - name: Check generated-file ownership
-      shell: pwsh
-      run: ./build/Test-GeneratedTouch.ps1 -BaseRef $env:BASE_SHA
     - name: Install prek
+      if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
       run: pip install "prek==0.5.7"
     - name: Setup PSScriptAnalyzer for hooks
+      if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
       run: prek run setup --stage manual --config prek.toml
     - name: Lint changed files
+      if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
       run: prek run --config prek.toml --from-ref $env:BASE_SHA --to-ref HEAD
+    - name: Lint workflow changes
+      if: steps.ps1_scope.outputs.workflows == 'true'
+      shell: pwsh
+      run: |
+        $files = @(Get-ChildItem .github/workflows -Filter *.yml | ForEach-Object { $_.FullName })
+        & go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 @files
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - name: Report dependency-aware lint scope
+      shell: pwsh
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.sha }}
+      run: ./build/Invoke-Ps1LintScope.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -RunAnalyzer
 
   changes:
     name: Determine validation scope
@@ -84,7 +121,7 @@ jobs:
     - name: Test change-aware validation infrastructure
       shell: pwsh
       run: |
-        foreach ($test in @('Test-PRValidationPlan', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness')) {
+        foreach ($test in @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness')) {
           & pwsh -NoProfile -NonInteractive -File "./build/$test.ps1"
           if ($LASTEXITCODE -ne 0) { throw "Validation infrastructure regression failed: $test" }
         }
