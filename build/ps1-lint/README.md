@@ -13,7 +13,8 @@ What runs on `**.ps1`:
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidExplicitParameterPosition`, `PSUseStandardCollectionOutput`,
   `PSAvoidAddMemberInLoop`, `PSUseBapAccessTokenEndpointSwitch`,
-  `PSUseCentralEnvironmentLookup`, `PSUseStandardParameterLayout`.
+  `PSUseCentralEnvironmentLookup`, `PSUseVariableNamingConvention`,
+  `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -311,6 +312,40 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1EnvironmentLookupRule.ps1
+```
+
+## Variable naming
+
+`PSUseVariableNamingConvention` keeps variable names readable as types:
+
+| Variable | Prefix | Example |
+| --- | --- | --- |
+| Collection, array, hashtable, list | `col` | `$colAssets = @(...)` |
+| Single object at the function root | `obj` | `$objPolicy = $colPolicies \| Select-Object -First 1` |
+| Single object inside a loop | `tmp` | `$tmpAsset = [pscustomobject]@{ ... }` |
+| `foreach` item | `tmp` | `foreach ($tmpAsset in $colAssets) { }` |
+
+```powershell
+$colAssets = @(Get-Thing)
+foreach ($tmpAsset in $colAssets) {
+    $tmpName = $tmpAsset.Name
+}
+```
+
+The rule reads the AST. It recognizes `@(...)`, `@()`, array literals, hashtables,
+`[System.Collections.*]` constructors, `foreach` sources, `[pscustomobject]`,
+`New-Object`, and pipelines ending in `Select-Object -First`. Strings, numbers,
+booleans, member access, parameters, automatic variables, and scope-qualified
+variables are not checked. A `Get-Environment` result keeps its `$envObj` name
+because the environment rule owns that contract.
+
+The rule runs on changed files only, so the existing names are reshaped as their
+files are touched.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1VariableNamingRule.ps1
 ```
 
 ## Example prose
