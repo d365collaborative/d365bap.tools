@@ -26,46 +26,24 @@ function Get-DevToolsAuthContext {
 	)
 
 	process {
-		$envObj = $null
-
 		if (-not [string]::IsNullOrWhiteSpace($EnvironmentId)) {
 			$envObj = Get-Environment `
 				-EnvironmentId $EnvironmentId `
 				-Unified | `
 				Select-Object -First 1
-
-			if ($null -eq $envObj) {
-				$messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
-
-				Write-PSFMessage -Level Important -Message $messageString
-				Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
-					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-				return $null
-			}
 		}
 		else {
-			$candidates = @(Get-Environment -Unified | Sort-Object PpacEnvName)
-
-			if ($candidates.Count -eq 0) {
-				$messageString = "No FinOps environments found. Please verify access with <c='em'>Get-UnifiedEnvironment</c> and try again."
-
-				Write-PSFMessage -Level Important -Message $messageString
-				Stop-PSFFunction -Message "Stopping because no environment is available as auth context." `
-					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-				return $null
-			}
-
-			$envObj = $candidates | Select-Object -First 1
+			$envObj = Get-Environment -Unified | Sort-Object PpacEnvName | Select-Object -First 1
 
 			Write-PSFMessage -Level Verbose -Message "No environment specified, using <c='em'>$($envObj.PpacEnvName)</c> as auth context. The requested version is independent of this environment."
 		}
 
 		$baseUri = $envObj.PpacEnvUri + "/"
 
-		$secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 
-		return @{
+		@{
 			Env   = $envObj
 			Token = $tokenValue
 		}
