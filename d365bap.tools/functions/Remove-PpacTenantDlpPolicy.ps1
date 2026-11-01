@@ -40,7 +40,10 @@ function Remove-PpacTenantDlpPolicy {
 			return
 		}
 
-		if (-not $PSCmdlet.ShouldProcess($current[0].PolicyId, 'Delete tenant DLP policy')) { return }
+		$policyLabel = $current[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, 'Delete tenant DLP policy')) { return }
 
 		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken

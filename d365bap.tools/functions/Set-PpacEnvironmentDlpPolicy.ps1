@@ -49,7 +49,8 @@ function Set-PpacEnvironmentDlpPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$routeEnvironmentId = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
+		$route = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
+		$routeEnvironmentId = $route.RouteId
 		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
 			Stop-PSFFunction -Message "No environment matched '$EnvironmentId'."
 			return
@@ -65,7 +66,10 @@ function Set-PpacEnvironmentDlpPolicy {
 			return
 		}
 
-		if (-not $PSCmdlet.ShouldProcess($EnvironmentId, "Update environment DLP policy $($current[0].PolicyId)")) { return }
+		$policyLabel = $current[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Update in '$($route.Name)'")) { return }
 
 		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
