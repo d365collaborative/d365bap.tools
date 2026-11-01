@@ -117,4 +117,122 @@ function Get-Fixture {
 }
 '@
 
+Assert-Wildcard 'Attribute without a star default' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name
+    )
+}
+'@ -Expected 1 -ExpectedText @('does not default to')
+
+Assert-Wildcard 'Attribute with a prefix default' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = "demo*"
+    )
+}
+'@ -Expected 1 -ExpectedText @('does not default to')
+
+Assert-Wildcard 'Attribute with a star default' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+}
+'@
+
+Assert-Wildcard 'Bound parameter check for a wildcard parameter' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    if ($PSBoundParameters.ContainsKey('Name')) {
+        $used = $Name
+    }
+}
+'@ -Expected 1 -ExpectedText @('PSBoundParameters', '-Name')
+
+Assert-Wildcard 'Contains method for a wildcard parameter' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    if ($PSBoundParameters.Contains('Name')) {
+        $used = $Name
+    }
+}
+'@ -Expected 1 -ExpectedText @('PSBoundParameters', '-Name')
+
+Assert-Wildcard 'Bound parameter check outside an if' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    $given = $PSBoundParameters.ContainsKey('Name')
+}
+'@ -Expected 1
+
+Assert-Wildcard 'Bound parameter check for another name' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    if ($PSBoundParameters.ContainsKey('Other')) {
+        $used = $Name
+    }
+}
+'@
+
+Assert-Wildcard 'Bound parameter check without the attribute' @'
+function Get-Fixture {
+    param (
+        [string] $Name = 'demo'
+    )
+
+    if ($PSBoundParameters.ContainsKey('Name')) {
+        $used = $Name
+    }
+}
+'@
+
+Assert-Wildcard 'Bound parameter check in a nested function' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    function Test-Inner {
+        if ($PSBoundParameters.ContainsKey('Name')) {
+            $used = $Name
+        }
+    }
+}
+'@
+
+Assert-Wildcard 'Bound parameter check with a variable name' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    $key = 'Name'
+    if ($PSBoundParameters.ContainsKey($key)) {
+        $used = $Name
+    }
+}
+'@
+
 Write-Output "Wildcard rule checks passed: $script:caseCount cases."
