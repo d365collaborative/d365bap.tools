@@ -43,6 +43,7 @@ $results = @()
 . "$PSScriptRoot/../internal/Get-Ps1TableFormatDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1ExcelOutputDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AddMemberDiagnostic.ps1"
+. "$PSScriptRoot/../internal/Get-Ps1AccessTokenDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/../internal/Resolve-Ps1AliasCommand.ps1"
@@ -65,6 +66,7 @@ foreach ($p in $files) {
 	$results += @(Get-Ps1TableFormatDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1ExcelOutputDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
+	$results += @(Get-Ps1AccessTokenDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AliasDiagnostic -Analysis $analysis -Worker $worker)
 }
 

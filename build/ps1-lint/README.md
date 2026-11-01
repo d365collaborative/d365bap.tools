@@ -13,7 +13,7 @@ What runs on `**.ps1`:
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
   `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`,
-  `PSUseStandardParameterLayout`.
+  `PSUseBapAccessTokenEndpointSwitch`, `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -146,6 +146,45 @@ Run their regression checks under PowerShell 7.6 or later:
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1TableFormatRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
+```
+
+## Access token endpoints
+
+`PSUseBapAccessTokenEndpointSwitch` fails a module script that requests a known
+audience through a literal `-ResourceUrl` value. Each known audience has a
+dedicated switch on `Get-BapAccessToken`, so the audience stays defined once:
+
+```powershell
+# Fails
+$secure = Get-BapAccessToken -ResourceUrl 'https://graph.microsoft.com/'
+
+# Passes
+$secure = Get-BapAccessToken -Graph
+```
+
+| Audience | Switch |
+| --- | --- |
+| Business Application Platform | `-Bap` |
+| Power Platform API | `-PowerPlatform` |
+| Power Platform admin API | `-PowerPlatformAdmin` |
+| Microsoft Graph | `-Graph` |
+
+Trailing slashes and case are ignored, so
+`-ResourceUrl 'https://api.powerplatform.com/'` is the same violation as
+`-ResourceUrl 'https://api.powerplatform.com'`. An explicit resource for
+anything else stays legitimate, for example a Dataverse environment URL. The
+rule reads the AST; variables, splats, and URLs with a path are not checked. It
+only runs on changed files, so remaining call sites migrate as their cmdlets are
+touched.
+
+The regression check also compares the rule map with
+`$script:BapAccessTokenEndpoints` in `Get-BapAccessToken.ps1`; adding an endpoint
+in only one place fails the check.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1AccessTokenRule.ps1
 ```
 
 ## Parameter layout
