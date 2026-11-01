@@ -529,6 +529,19 @@ function Set-Fixture {
     }
 }
 
+# Fails: the Stop guard returns before the check
+function Set-Fixture {
+    process {
+        $route = Get-Route
+        if ($null -eq $route) {
+            Stop-PSFFunction -Message 'not found'
+            return
+        }
+
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+
 # Passes: a begin command may interrupt
 function Set-Fixture {
     begin {
@@ -549,11 +562,14 @@ function Set-Fixture {
 }
 ```
 
-Empty begin blocks and assignment-only begin blocks do not count. The rule does
-not trace helper call graphs: any preceding command is treated as a possible
-interrupt source, which avoids false positives when a begin block calls a helper
-that uses `Stop-PSFFunction -StepsUpward`. Test files and tepp scripts are
-exempt.
+Empty begin blocks and assignment-only begin blocks do not count. A
+`Test-PSFFunctionInterrupt` check immediately after a same-scope
+`Stop-PSFFunction` guard is also reported when the guard returns, uses
+`-StepsUpward`, or uses `-EnableException $true`; that guard cannot reach the
+check. A helper call in the guard and a `Stop-PSFFunction` in `begin` remain
+valid sources, as does a direct stop that lets the function continue. The rule
+does not trace helper call graphs, which avoids false positives when a helper
+uses `Stop-PSFFunction -StepsUpward`. Test files and tepp scripts are exempt.
 
 ## Return values
 
