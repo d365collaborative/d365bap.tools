@@ -375,6 +375,11 @@ are reshaped as their files are touched.
   or description. An id alone is not human friendly.
 - `$shouldLabel` must be a string literal describing the action, not a bare id or a
   variable.
+- `$shouldAffected` expands to at most 85 characters and `$shouldLabel` to at most
+  125. Every variable or property counts as 36 characters; literal text counts as
+  written.
+- The two assignments sit on consecutive lines, followed by exactly one blank line
+  and then the `if` statement.
 
 ```powershell
 $shouldAffected = "$($envObj.EnvName) ($($envObj.EnvId))"

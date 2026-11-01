@@ -3,9 +3,9 @@
     Tests the ShouldProcess convention lint rule.
 
 .DESCRIPTION
-    Parses fixture cmdlets and checks that a declared SupportsShouldProcess is
-    implemented, that ShouldProcess uses two arguments, and that the target and
-    label follow the $shouldAffected / $shouldLabel convention.
+    Parses fixtures and checks declared SupportsShouldProcess, the ShouldProcess
+    arguments, the human-friendly target and label, and the length and layout
+    limits.
 #>
 [CmdletBinding()]
 param()
@@ -36,22 +36,24 @@ function Assert-ShouldProcess {
 	$script:caseCount++
 }
 
-$compliant = @'
+function Get-Fixture([string] $Affected = '$envObj.EnvName', [string] $Label = '"Assign ACP $($policy.PolicyId) - $($policy.Name)"', [string] $Call = '$PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)', [string] $Body = 'return', [string] $Condition = '-not ') {
+	@"
 function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param (
-        [string] $EnvironmentId
-    )
+    [CmdletBinding(SupportsShouldProcess = `$true)]
+    param ()
 
-    $envObj = [pscustomobject]@{ EnvName = 'env-01'; EnvId = 'env-id' }
-    $policy = [pscustomobject]@{ PolicyId = 'p-1'; Name = 'Policy One' }
+    `$envObj = [pscustomobject]@{ EnvName = 'env-01'; EnvId = 'env-id'; DisplayName = 'env display' }
+    `$policy = [pscustomobject]@{ PolicyId = 'p-1'; Name = 'Policy One' }
 
-    $shouldAffected = $envObj.EnvName
-    $shouldLabel = "Assign ACP $($policy.PolicyId) - $($policy.Name)"
+    `$shouldAffected = $Affected
+    `$shouldLabel = $Label
 
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+    if ($Condition$Call) { $Body }
 }
-'@
+"@
+}
+
+$compliant = Get-Fixture -Affected '"$($envObj.EnvName) ($($envObj.EnvId))"'
 Assert-ShouldProcess 'Compliant convention' $compliant
 
 Assert-ShouldProcess 'Declared without a call' @'
@@ -68,112 +70,32 @@ function Set-Fixture {
     [CmdletBinding()]
     param ()
 
-    $shouldAffected = 'env-01'
+    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
+    $shouldAffected = $envObj.EnvName
     $shouldLabel = 'Do the thing'
+
     if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 }
 '@ 1 @('without declaring SupportsShouldProcess')
 
-Assert-ShouldProcess 'One-argument call' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param ()
+Assert-ShouldProcess 'One-argument call' (Get-Fixture -Call '$PSCmdlet.ShouldProcess($shouldAffected)') 1 @('two-argument form')
+Assert-ShouldProcess 'Three-argument call' (Get-Fixture -Call "`$PSCmdlet.ShouldProcess(`$shouldAffected, `$shouldLabel, 'caption')") 1 @('two-argument form')
 
-    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
-    $shouldAffected = $envObj.EnvName
-    $shouldLabel = 'Do the thing'
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected)) { return }
-}
-'@ 1 @('two-argument form')
+Assert-ShouldProcess 'Bare id as the first argument' (Get-Fixture -Call '$PSCmdlet.ShouldProcess($EnvironmentId, $shouldLabel)') 1 @('first ShouldProcess argument must be the local variable $shouldAffected')
 
-Assert-ShouldProcess 'Three-argument call' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param ()
+Assert-ShouldProcess 'Literal as the second argument' (Get-Fixture -Call "`$PSCmdlet.ShouldProcess(`$shouldAffected, 'Do the thing')") 1 @('second ShouldProcess argument must be the local variable $shouldLabel')
 
-    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
-    $shouldAffected = $envObj.EnvName
-    $shouldLabel = 'Do the thing'
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel, 'caption')) { return }
-}
-'@ 1 @('two-argument form')
+Assert-ShouldProcess 'Bare id target' (Get-Fixture -Affected '$EnvironmentId') 1 @('an id alone is not human friendly')
 
-Assert-ShouldProcess 'Bare id as the first argument' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param (
-        [string] $EnvironmentId
-    )
+Assert-ShouldProcess 'Object id property target' (Get-Fixture -Affected '$envObj.EnvId') 1 @('an id alone is not human friendly')
 
-    $shouldLabel = 'Do the thing'
-    if (-not $PSCmdlet.ShouldProcess($EnvironmentId, $shouldLabel)) { return }
-}
-'@ 1 @('first ShouldProcess argument must be the local variable $shouldAffected')
+Assert-ShouldProcess 'Name with id target' (Get-Fixture -Affected '"$($envObj.EnvName) ($($envObj.EnvId))"')
 
-Assert-ShouldProcess 'Literal as the second argument' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param ()
+Assert-ShouldProcess 'Display name target' (Get-Fixture -Affected '$envObj.DisplayName')
 
-    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
-    $shouldAffected = $envObj.EnvName
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected, 'Do the thing')) { return }
-}
-'@ 1 @('second ShouldProcess argument must be the local variable $shouldLabel')
+Assert-ShouldProcess 'Variable label' (Get-Fixture -Label '$envObj.EnvName') 1 @('must be a string literal')
 
-Assert-ShouldProcess 'Bare id target' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param (
-        [string] $EnvironmentId
-    )
-
-    $shouldAffected = $EnvironmentId
-    $shouldLabel = 'Do the thing'
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
-}
-'@ 1 @('an id alone is not human friendly')
-
-Assert-ShouldProcess 'Object id property target' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param ()
-
-    $envObj = [pscustomobject]@{ EnvName = 'env-01'; EnvId = 'env-id' }
-    $shouldAffected = $envObj.EnvId
-    $shouldLabel = 'Do the thing'
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
-}
-'@ 1 @('an id alone is not human friendly')
-
-Assert-ShouldProcess 'Name with id target' ($compliant.Replace('$shouldAffected = $envObj.EnvName', '$shouldAffected = "$($envObj.EnvName) ($($envObj.EnvId))"'))
-
-Assert-ShouldProcess 'Display name target' ($compliant.Replace('$shouldAffected = $envObj.EnvName', '$shouldAffected = $envObj.DisplayName'))
-
-Assert-ShouldProcess 'Variable label' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param ()
-
-    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
-    $shouldAffected = $envObj.EnvName
-    $shouldLabel = $envObj.EnvName
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
-}
-'@ 1 @('must be a string literal')
-
-Assert-ShouldProcess 'Bare id label' @'
-function Set-Fixture {
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param ()
-
-    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
-    $policy = [pscustomobject]@{ PolicyId = 'p-1' }
-    $shouldAffected = $envObj.EnvName
-    $shouldLabel = "$($policy.PolicyId)"
-    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
-}
-'@ 1 @('must be a string literal')
+Assert-ShouldProcess 'Bare id label' (Get-Fixture -Label '"$($policy.PolicyId)"') 1 @('must be a string literal')
 
 Assert-ShouldProcess 'Missing target assignment' @'
 function Set-Fixture {
@@ -181,6 +103,7 @@ function Set-Fixture {
     param ()
 
     $shouldLabel = 'Do the thing'
+
     if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 }
 '@ 1 @('Assign $shouldAffected before calling ShouldProcess')
@@ -191,6 +114,7 @@ function Set-Fixture {
     param ()
 
     $shouldLabel = 'Do the thing'
+
     if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
     $shouldAffected = 'env-01'
 }
@@ -205,7 +129,7 @@ function Set-Fixture {
 }
 '@
 
-Assert-ShouldProcess 'Bare SupportsShouldProcess argument' ($compliant.Replace('SupportsShouldProcess = $true', 'SupportsShouldProcess'))
+Assert-ShouldProcess 'Bare SupportsShouldProcess argument' (Get-Fixture).Replace('SupportsShouldProcess = $true', 'SupportsShouldProcess')
 
 Assert-ShouldProcess 'Second call violates the convention' @'
 function Set-Fixture {
@@ -215,12 +139,74 @@ function Set-Fixture {
     $envObj = [pscustomobject]@{ EnvName = 'env-01' }
     $shouldAffected = $envObj.EnvName
     $shouldLabel = 'Do the thing'
+
     if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
     if (-not $PSCmdlet.ShouldProcess($envObj, $shouldLabel)) { return }
 }
 '@ 1 @('first ShouldProcess argument must be the local variable $shouldAffected')
 
-Assert-ShouldProcess 'Internal functions are checked' $compliant -Directory 'd365bap.tools/internal' -Expected 0
+Assert-ShouldProcess 'Affected target above the length limit' (Get-Fixture -Affected '"$($envObj.EnvName) ($($envObj.EnvId)) extra long suffix"') 1 @('keep it to 85 or fewer')
+
+Assert-ShouldProcess 'Label above the length limit' (Get-Fixture -Label "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'") 1 @('keep it to 125 or fewer')
+
+Assert-ShouldProcess 'Blank line between the assignments' @'
+function Set-Fixture {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param ()
+
+    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
+    $shouldAffected = $envObj.EnvName
+
+    $shouldLabel = 'Do the thing'
+
+    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+}
+'@ 1 @('consecutive lines')
+
+Assert-ShouldProcess 'No blank line before the if' @'
+function Set-Fixture {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param ()
+
+    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
+    $shouldAffected = $envObj.EnvName
+    $shouldLabel = 'Do the thing'
+    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+}
+'@ 1 @('one blank line')
+
+Assert-ShouldProcess 'Missing negation' (Get-Fixture -Condition '') 1 @('Negate ShouldProcess with -not')
+
+Assert-ShouldProcess 'Body is not a return' (Get-Fixture -Body "Write-Output 'confirmed'") 1 @('Return immediately')
+
+Assert-ShouldProcess 'Call outside an if statement' @'
+function Set-Fixture {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param ()
+
+    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
+    $shouldAffected = $envObj.EnvName
+    $shouldLabel = 'Do the thing'
+
+    $null = $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)
+}
+'@ 1 @('Wrap ShouldProcess in')
+
+Assert-ShouldProcess 'Statement between the assignments and the if' @'
+function Set-Fixture {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param ()
+
+    $envObj = [pscustomobject]@{ EnvName = 'env-01' }
+    $shouldAffected = $envObj.EnvName
+    $shouldLabel = 'Do the thing'
+    Write-Output 'between'
+
+    if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+}
+'@ 1 @('directly before the ShouldProcess if statement')
+
+Assert-ShouldProcess 'Internal functions are checked' $compliant -Directory 'd365bap.tools/internal'
 Assert-ShouldProcess 'Outside the module' $compliant -Directory 'build'
 Assert-ShouldProcess 'Test files are never checked' $compliant -FileName 'Set-Fixture.Tests.ps1'
 Assert-ShouldProcess 'Tepp files are exempt' $compliant -FileName 'set.fixture.tepp.ps1' -Directory 'd365bap.tools/internal/tepp'
