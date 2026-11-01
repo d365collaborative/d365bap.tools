@@ -84,7 +84,7 @@ jobs:
     - name: Test change-aware validation infrastructure
       shell: pwsh
       run: |
-        foreach ($test in @('Test-PRValidationPlan', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling')) {
+        foreach ($test in @('Test-PRValidationPlan', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness')) {
           & pwsh -NoProfile -NonInteractive -File "./build/$test.ps1"
           if ($LASTEXITCODE -ne 0) { throw "Validation infrastructure regression failed: $test" }
         }
