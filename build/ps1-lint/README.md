@@ -353,10 +353,35 @@ declared in the loop body is still `$tmp*`.
 The rule reads the AST. It recognizes `@(...)`, `@()`, array literals, hashtables,
 `[ordered]`, `[hashtable]`, `[System.Collections.*]` constructors, `foreach`
 sources, `[pscustomobject]`, `New-Object`, and pipelines ending in
-`Select-Object -First`. Strings, numbers, booleans, member access, parameters,
+`Select-Object -First 1`. It also reads the called module function's
+`[OutputType()]` attribute. Strings, numbers, booleans, member access, parameters,
 automatic variables, and scope-qualified variables are not checked. A
 `Get-Environment` result keeps its `$envObj` name because the environment rule
 owns that contract.
+
+```powershell
+function Get-Route {
+    [OutputType([PSCustomObject])]
+    param()
+}
+
+function Get-Routes {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+$objRoute = Get-Route
+$objFirst = Get-Routes | Select-Object -First 1
+$colRoutes = Get-Routes
+```
+
+`Object[]` and collection types require `col`; hashtable and dictionary types
+require `hash`; `PSCustomObject`, `PSObject`, and custom classes require `obj`;
+scalar types such as `string`, `bool`, `int`, and `guid` are ignored.
+`Select-Object -First 1` turns a collection result into `obj`; other `-First`
+values keep the collection requirement. External cmdlet `[OutputType]` is not
+used because it describes the element type, not whether the command emits one or
+many items.
 
 The rule runs on module code and build scripts under `build/`. Test files and
 tepp scripts are exempt. It runs on changed files only, so the existing names

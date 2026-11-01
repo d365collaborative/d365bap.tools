@@ -13,13 +13,12 @@ $ErrorActionPreference = 'Stop'
 foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1VariableNamingDiagnostic')) {
 	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
 }
-$fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('variable-naming-rule-' + [guid]::NewGuid().ToString('N'))
-$null = New-Item -ItemType Directory -Path $fixtureRoot -Force
 $script:caseCount = 0
 
 function Assert-Variable {
 	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @(), [string] $FileName = 'Get-Fixture.ps1', [string] $Directory = 'd365bap.tools/functions')
-	$folder = Join-Path $fixtureRoot $Directory
+	$root = Join-Path ([IO.Path]::GetTempPath()) ('variable-naming-rule-' + [guid]::NewGuid().ToString('N'))
+	$folder = Join-Path $root $Directory
 	$null = New-Item -ItemType Directory -Path $folder -Force
 	$path = Join-Path $folder $FileName
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
@@ -134,6 +133,160 @@ function Get-Fixture {
 Assert-Variable 'Single object from Select-Object with prefix' @'
 function Get-Fixture {
     $objPolicy = $colPolicies | Select-Object -First 1
+}
+'@
+
+Assert-Variable 'OutputType PSCustomObject requires obj' @'
+function Get-Route {
+    [OutputType([PSCustomObject])]
+    param()
+}
+
+function Get-Fixture {
+    $route = Get-Route
+}
+'@ 1 @("prefix it with 'obj'")
+
+Assert-Variable 'OutputType PSCustomObject with obj prefix' @'
+function Get-Route {
+    [OutputType([PSCustomObject])]
+    param()
+}
+
+function Get-Fixture {
+    $objRoute = Get-Route
+}
+'@
+
+Assert-Variable 'OutputType Object array requires col' @'
+function Get-Routes {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+function Get-Fixture {
+    $routes = Get-Routes
+}
+'@ 1 @("prefix it with 'col'")
+
+Assert-Variable 'OutputType Object array with col prefix' @'
+function Get-Routes {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+function Get-Fixture {
+    $colRoutes = Get-Routes
+}
+'@
+
+Assert-Variable 'OutputType hashtable requires hash' @'
+function Get-Config {
+    [OutputType([hashtable])]
+    param()
+}
+
+function Get-Fixture {
+    $config = Get-Config
+}
+'@ 1 @("prefix it with 'hash'")
+
+Assert-Variable 'OutputType scalar is ignored' @'
+function Get-Name {
+    [OutputType([string])]
+    param()
+}
+
+function Get-Fixture {
+    $name = Get-Name
+}
+'@
+
+Assert-Variable 'Select-Object First 1 turns a collection into obj' @'
+function Get-Routes {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+function Get-Fixture {
+    $route = Get-Routes | Select-Object -First 1
+}
+'@ 1 @("prefix it with 'obj'")
+
+Assert-Variable 'Select-Object First 1 with obj prefix' @'
+function Get-Routes {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+function Get-Fixture {
+    $objRoute = Get-Routes | Select-Object -First 1
+}
+'@
+
+Assert-Variable 'Select-Object First 1 rejects the col prefix' @'
+function Get-Routes {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+function Get-Fixture {
+    $colRoutes = Get-Routes | Select-Object -First 1
+}
+'@ 1 @("prefix it with 'obj'")
+
+Assert-Variable 'Select-Object First 5 stays a collection' @'
+function Get-Routes {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+function Get-Fixture {
+    $route = Get-Routes | Select-Object -First 5
+}
+'@ 1 @("prefix it with 'col'")
+
+Assert-Variable 'Select-Object First 1 over a single object' @'
+function Get-Route {
+    [OutputType([PSCustomObject])]
+    param()
+}
+
+function Get-Fixture {
+    $objRoute = Get-Route | Select-Object -First 1
+}
+'@
+
+Assert-Variable 'OutputType System.Object is ignored' @'
+function Get-Value {
+    [OutputType([System.Object])]
+    param()
+}
+
+function Get-Fixture {
+    $value = Get-Value
+}
+'@
+
+Assert-Variable 'OutputType mixed kinds are ignored' @'
+function Get-Value {
+    [OutputType([PSCustomObject], [string])]
+    param()
+}
+
+function Get-Fixture {
+    $value = Get-Value
+}
+'@
+
+Assert-Variable 'Get-Environment stays owned by the environment rule' @'
+function Get-Environment {
+    [OutputType('System.Object[]')]
+    param()
+}
+
+function Get-Fixture {
+    $envObj = Get-Environment
 }
 '@
 
