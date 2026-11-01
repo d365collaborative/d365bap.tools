@@ -120,12 +120,14 @@ function Get-PpacFinOpsAsset {
 		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
 		[string] $Build,
 
-		[ValidateSet('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
 		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 2)]
+		[ValidateSet('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
+		[SupportsWildcards()]
 		[string[]] $Asset = '*',
 
-		[ValidateSet('*', 'NuGet', 'DeveloperFile', 'Vhd')]
 		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 3)]
+		[ValidateSet('*', 'NuGet', 'DeveloperFile', 'Vhd')]
+		[SupportsWildcards()]
 		[string] $Kind = '*',
 
 		[switch] $Download,
@@ -136,6 +138,7 @@ function Get-PpacFinOpsAsset {
 		[switch] $Force,
 
 		[Parameter(ParameterSetName = 'ByEnvironment', Mandatory = $true, ValueFromPipelineByPropertyName = $true, Position = 5)]
+		[ValidateNotNullOrEmpty()]
 		[Alias("PpacEnvId")]
 		[string] $EnvironmentId,
 
@@ -503,12 +506,24 @@ function Get-PpacFinOpsAsset {
 		$mapPlatVersion = if ($null -ne $versionInfo) { $versionInfo.PlatVersion } else { '' }
 		$mapPlatBuild = if ($null -ne $versionInfo) { $versionInfo.PlatBuild } else { '' }
 
-		foreach ($assetObj in $colAssets) {
-			$assetObj | Add-Member -NotePropertyName "AppVersion" -NotePropertyValue $mapAppVersion -Force
-			$assetObj | Add-Member -NotePropertyName "AppBuild" -NotePropertyValue $mapAppBuild -Force
-			$assetObj | Add-Member -NotePropertyName "Track" -NotePropertyValue $mapAppBuild -Force
-			$assetObj | Add-Member -NotePropertyName "PlatVersion" -NotePropertyValue $mapPlatVersion -Force
-			$assetObj | Add-Member -NotePropertyName "PlatBuild" -NotePropertyValue $mapPlatBuild -Force
+		$versionProperties = @(
+			@{Name = "AppVersion"; Expression = { $mapAppVersion } }
+			@{Name = "AppBuild"; Expression = { $mapAppBuild } }
+			@{Name = "Track"; Expression = { $mapAppBuild } }
+			@{Name = "PlatVersion"; Expression = { $mapPlatVersion } }
+			@{Name = "PlatBuild"; Expression = { $mapPlatBuild } }
+		)
+
+		$colAssets = @($colAssets | Select-Object -Property (@('*') + $versionProperties))
+
+		if ($Download) {
+			$downloadProperties = @(
+				@{Name = "Path"; Expression = { Join-Path $downloadDir $_.FileName } }
+				@{Name = "Status"; Expression = { "" } }
+				@{Name = "ExtractedPath"; Expression = { $null } }
+			)
+
+			$colAssets = @($colAssets | Select-Object -Property (@('*') + $downloadProperties))
 		}
 
 		$colAssets = @($colAssets | Sort-Object -Property Kind, Asset, FileName)
@@ -552,12 +567,11 @@ function Get-PpacFinOpsAsset {
 			$retryCount++
 
 			foreach ($assetObj in $colAssets) {
-				$outputPath = Join-Path $downloadDir $assetObj.FileName
-				$assetObj | Add-Member -NotePropertyName "Path" -NotePropertyValue $outputPath -Force
+				$outputPath = $assetObj.Path
 
 				if ([System.IO.File]::Exists($outputPath) -and -not $Force) {
 					Write-PSFMessage -Level Verbose -Message "Skipping $($assetObj.FileName), already on disk. Use -Force to re-download."
-					$assetObj | Add-Member -NotePropertyName "Status" -NotePropertyValue "Skipped" -Force
+					$assetObj.Status = "Skipped"
 					continue
 				}
 
@@ -573,10 +587,10 @@ function Get-PpacFinOpsAsset {
 
 				if ([System.IO.File]::Exists($outputPath)) {
 					Unblock-File -Path $outputPath
-					$assetObj | Add-Member -NotePropertyName "Status" -NotePropertyValue "Downloaded" -Force
+					$assetObj.Status = "Downloaded"
 				}
 				else {
-					$assetObj | Add-Member -NotePropertyName "Status" -NotePropertyValue "Failed" -Force
+					$assetObj.Status = "Failed"
 				}
 			}
 		} while (
@@ -586,8 +600,6 @@ function Get-PpacFinOpsAsset {
 		)
 
 		foreach ($assetObj in $colAssets) {
-			$assetObj | Add-Member -NotePropertyName "ExtractedPath" -NotePropertyValue $null -Force
-
 			if ($assetObj.Status -ne "Downloaded" -and -not ([System.IO.File]::Exists($assetObj.Path))) {
 				continue
 			}
