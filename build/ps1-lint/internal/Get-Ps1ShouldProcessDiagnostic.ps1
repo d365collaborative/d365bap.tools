@@ -4,15 +4,15 @@
 	$paramBlock = $Function.Body.ParamBlock
 	if ($null -eq $paramBlock) { return $false }
 
-	foreach ($attribute in @($paramBlock.Attributes)) {
-		if ($attribute -isnot [Management.Automation.Language.AttributeAst]) { continue }
-		if ($attribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.CmdletBindingAttribute]) { continue }
+	foreach ($itemAttribute in @($paramBlock.Attributes)) {
+		if ($itemAttribute -isnot [Management.Automation.Language.AttributeAst]) { continue }
+		if ($itemAttribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.CmdletBindingAttribute]) { continue }
 
-		foreach ($argument in @($attribute.NamedArguments)) {
-			if ($argument.ArgumentName -ine 'SupportsShouldProcess') { continue }
-			if ($null -eq $argument.Argument) { return $true }
-			if ($argument.Argument -is [Management.Automation.Language.VariableExpressionAst] -and $argument.Argument.VariablePath.UserPath -ieq 'true') { return $true }
-			if ($argument.Argument -is [Management.Automation.Language.ConstantExpressionAst] -and $argument.Argument.Value -eq $true) { return $true }
+		foreach ($itemArgument in @($itemAttribute.NamedArguments)) {
+			if ($itemArgument.ArgumentName -ine 'SupportsShouldProcess') { continue }
+			if ($null -eq $itemArgument.Argument) { return $true }
+			if ($itemArgument.Argument -is [Management.Automation.Language.VariableExpressionAst] -and $itemArgument.Argument.VariablePath.UserPath -ieq 'true') { return $true }
+			if ($itemArgument.Argument -is [Management.Automation.Language.ConstantExpressionAst] -and $itemArgument.Argument.Value -eq $true) { return $true }
 		}
 	}
 
@@ -43,7 +43,7 @@ function Get-Ps1ShouldProcessOwner {
 function Get-Ps1ShouldProcessAssignment {
 	param($Function, [string] $Name, $Call)
 
-	$matches = @($Function.Body.FindAll({
+	$colMatches = @($Function.Body.FindAll({
 				param($Node)
 				$Node -is [Management.Automation.Language.AssignmentStatementAst] -and
 				$Node.Left -is [Management.Automation.Language.VariableExpressionAst] -and
@@ -52,8 +52,8 @@ function Get-Ps1ShouldProcessAssignment {
 				(Get-Ps1ShouldProcessOwner -Node $Node) -eq $Function
 			}, $true))
 
-	if ($matches.Count -eq 0) { return $null }
-	return ($matches | Sort-Object { $_.Extent.StartOffset } | Select-Object -Last 1)
+	if ($colMatches.Count -eq 0) { return $null }
+	return ($colMatches | Sort-Object { $_.Extent.StartOffset } | Select-Object -Last 1)
 }
 
 function Get-Ps1ShouldProcessValue {
@@ -64,9 +64,9 @@ function Get-Ps1ShouldProcessValue {
 		$value = $value.Expression
 	}
 	elseif ($value -is [Management.Automation.Language.PipelineAst]) {
-		$elements = @($value.PipelineElements)
-		if ($elements.Count -eq 1 -and $elements[0] -is [Management.Automation.Language.CommandExpressionAst]) {
-			$value = $elements[0].Expression
+		$colElements = @($value.PipelineElements)
+		if ($colElements.Count -eq 1 -and $colElements[0] -is [Management.Automation.Language.CommandExpressionAst]) {
+			$value = $colElements[0].Expression
 		}
 	}
 	return $value
@@ -76,16 +76,16 @@ function Test-Ps1ShouldProcessHumanTarget {
 	param($Expression)
 
 	$value = Get-Ps1ShouldProcessValue -Expression $Expression
-	$tokens = @(
-		foreach ($member in $value.FindAll({ param($Node) $Node -is [Management.Automation.Language.MemberExpressionAst] -and $Node.Member -is [Management.Automation.Language.StringConstantExpressionAst] }, $true)) {
-			$member.Member.Value
+	$colTokens = @(
+		foreach ($itemMember in $value.FindAll({ param($Node) $Node -is [Management.Automation.Language.MemberExpressionAst] -and $Node.Member -is [Management.Automation.Language.StringConstantExpressionAst] }, $true)) {
+			$itemMember.Member.Value
 		}
-		foreach ($variable in $value.FindAll({ param($Node) $Node -is [Management.Automation.Language.VariableExpressionAst] }, $true)) {
-			$variable.VariablePath.UserPath
+		foreach ($itemVariable in $value.FindAll({ param($Node) $Node -is [Management.Automation.Language.VariableExpressionAst] }, $true)) {
+			$itemVariable.VariablePath.UserPath
 		}
 	)
 
-	@($tokens | Where-Object { $_ -match '(?i)(displayname|name|title|text|description)' }).Count -gt 0
+	@($colTokens | Where-Object { $_ -match '(?i)(displayname|name|title|text|description)' }).Count -gt 0
 }
 
 function Test-Ps1ShouldProcessLabel {
@@ -100,8 +100,8 @@ function Test-Ps1ShouldProcessLabel {
 	if ($value -isnot [Management.Automation.Language.ExpandableStringExpressionAst]) { return $false }
 
 	$literal = $value.Value
-	foreach ($nested in @($value.NestedExpressions)) {
-		$literal = $literal.Replace($nested.Extent.Text, '')
+	foreach ($itemNested in @($value.NestedExpressions)) {
+		$literal = $literal.Replace($itemNested.Extent.Text, '')
 	}
 
 	return $literal -match '[A-Za-z]{2,}'
@@ -116,8 +116,8 @@ function Get-Ps1ShouldProcessLength {
 
 	if ($value -is [Management.Automation.Language.ExpandableStringExpressionAst]) {
 		$literal = $value.Value
-		foreach ($nested in @($value.NestedExpressions)) {
-			$literal = $literal.Replace($nested.Extent.Text, '')
+		foreach ($itemNested in @($value.NestedExpressions)) {
+			$literal = $literal.Replace($itemNested.Extent.Text, '')
 		}
 		return $literal.Length + 36 * @($value.NestedExpressions).Count
 	}
@@ -177,14 +177,14 @@ function Get-Ps1ShouldProcessStructureMessage {
 		return 'Place the ShouldProcess if statement directly after the assignments.'
 	}
 
-	$statements = @($parent.Statements)
-	$index = [Array]::IndexOf($statements, $if)
+	$colStatements = @($parent.Statements)
+	$index = [Array]::IndexOf($colStatements, $if)
 	if ($index -lt 2) {
 		return 'Place the $shouldAffected and $shouldLabel assignments directly before the ShouldProcess if statement.'
 	}
 
-	$affected = $statements[$index - 2]
-	$label = $statements[$index - 1]
+	$affected = $colStatements[$index - 2]
+	$label = $colStatements[$index - 1]
 
 	if (-not (Test-Ps1ShouldProcessAssignmentStatement -Statement $affected -Name 'shouldAffected') -or
 		-not (Test-Ps1ShouldProcessAssignmentStatement -Statement $label -Name 'shouldLabel')) {
@@ -224,33 +224,33 @@ function Get-Ps1ShouldProcessDiagnostic {
 	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
 	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
 
-	foreach ($function in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
-		$declares = Test-Ps1SupportsShouldProcess -Function $function
-		$calls = @($function.Body.FindAll({ param($Node) Test-Ps1ShouldProcessCall -Node $Node }, $true) |
-			Where-Object { (Get-Ps1ShouldProcessOwner -Node $_) -eq $function })
+	foreach ($itemFunction in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+		$declares = Test-Ps1SupportsShouldProcess -Function $itemFunction
+		$tmpCalls = @($itemFunction.Body.FindAll({ param($Node) Test-Ps1ShouldProcessCall -Node $Node }, $true) |
+			Where-Object { (Get-Ps1ShouldProcessOwner -Node $_) -eq $itemFunction })
 
-		if ($declares -and $calls.Count -eq 0) {
-			New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $function.Name.Extent `
+		if ($declares -and $tmpCalls.Count -eq 0) {
+			New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $itemFunction.Name.Extent `
 				-Message 'Declares SupportsShouldProcess but never calls ShouldProcess. Add $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel).'
 			continue
 		}
 
-		foreach ($call in $calls) {
+		foreach ($itemCall in $tmpCalls) {
 			if (-not $declares) {
-				New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $call.Extent `
+				New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $itemCall.Extent `
 					-Message 'Calls ShouldProcess without declaring SupportsShouldProcess on CmdletBinding.'
 				continue
 			}
 
-			$arguments = @($call.Arguments)
-			if ($arguments.Count -ne 2) {
-				New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $call.Extent `
+			$tmpArguments = @($itemCall.Arguments)
+			if ($tmpArguments.Count -ne 2) {
+				New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $itemCall.Extent `
 					-Message 'ShouldProcess must use the two-argument form: $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel).'
 				continue
 			}
 
-			$first = $arguments[0]
-			$second = $arguments[1]
+			$first = $tmpArguments[0]
+			$second = $tmpArguments[1]
 			$firstOk = $first -is [Management.Automation.Language.VariableExpressionAst] -and $first.VariablePath.UserPath -ieq 'shouldAffected'
 			$secondOk = $second -is [Management.Automation.Language.VariableExpressionAst] -and $second.VariablePath.UserPath -ieq 'shouldLabel'
 
@@ -262,9 +262,9 @@ function Get-Ps1ShouldProcessDiagnostic {
 					-Message 'The first ShouldProcess argument must be the local variable $shouldAffected.'
 			}
 			else {
-				$affectedAssignment = Get-Ps1ShouldProcessAssignment -Function $function -Name 'shouldAffected' -Call $call
+				$affectedAssignment = Get-Ps1ShouldProcessAssignment -Function $itemFunction -Name 'shouldAffected' -Call $itemCall
 				if ($null -eq $affectedAssignment) {
-					New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $call.Extent `
+					New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $itemCall.Extent `
 						-Message 'Assign $shouldAffected before calling ShouldProcess, using the target object, system or endpoint.'
 				}
 				elseif (-not (Test-Ps1ShouldProcessHumanTarget -Expression $affectedAssignment.Right)) {
@@ -285,9 +285,9 @@ function Get-Ps1ShouldProcessDiagnostic {
 					-Message 'The second ShouldProcess argument must be the local variable $shouldLabel.'
 			}
 			else {
-				$labelAssignment = Get-Ps1ShouldProcessAssignment -Function $function -Name 'shouldLabel' -Call $call
+				$labelAssignment = Get-Ps1ShouldProcessAssignment -Function $itemFunction -Name 'shouldLabel' -Call $itemCall
 				if ($null -eq $labelAssignment) {
-					New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $call.Extent `
+					New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $itemCall.Extent `
 						-Message 'Assign $shouldLabel before calling ShouldProcess with a human-readable action.'
 				}
 				elseif (-not (Test-Ps1ShouldProcessLabel -Expression $labelAssignment.Right)) {
@@ -304,9 +304,9 @@ function Get-Ps1ShouldProcessDiagnostic {
 			}
 
 			if ($firstOk -and $secondOk -and $null -ne $affectedAssignment -and $null -ne $labelAssignment) {
-				$structureMessage = Get-Ps1ShouldProcessStructureMessage -Call $call
+				$structureMessage = Get-Ps1ShouldProcessStructureMessage -Call $itemCall
 				if ($null -ne $structureMessage) {
-					New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $call.Extent -Message $structureMessage
+					New-Ps1ShouldProcessDiagnostic -Path $Path -Extent $itemCall.Extent -Message $structureMessage
 				}
 			}
 		}
