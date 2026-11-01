@@ -12,7 +12,8 @@ What runs on `**.ps1`:
   `PSUseSupportsWildcards`, `PSAvoidEmptyParameterAttribute`,
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
-  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`.
+  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`,
+  `PSReviewAddMemberInLoop`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -150,8 +151,9 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
 ## Note properties
 
 `PSAvoidAddMemberInLoop` fails a `foreach` whose body only adds note properties
-to the loop variable. Add those properties in the existing projection instead
-of a second pass:
+to the loop variable. `PSReviewAddMemberInLoop` warns when the loop also does
+other work but still adds note properties to the loop variable at the top level.
+Add those properties in the existing projection instead of a second pass:
 
 ```powershell
 $resCol = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.Example' -Property `
@@ -160,8 +162,9 @@ $resCol = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.Example' -Property
     @{ Name = 'PpacEnvName'; Expression = { $routeEnvironmentName } }
 ```
 
-Conditional properties, different targets, and loops with other statements are
-not reported. Run its regression checks under PowerShell 7.6 or later:
+Conditional properties, different targets, and nested `if` blocks are not
+reported. The warning does not fail the build; it points at loops that can be
+simplified when they are next touched. Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1AddMemberRule.ps1

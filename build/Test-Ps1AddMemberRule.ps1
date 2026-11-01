@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Parses fixture scripts and checks that a foreach loop which only adds note
-    properties to the loop variable is reported.
+    properties is an error, and that a mixed loop is a review warning.
 #>
 [CmdletBinding()]
 param()
@@ -18,13 +18,13 @@ $null = New-Item -ItemType Directory -Path $fixtureRoot -Force
 $script:caseCount = 0
 
 function Assert-AddMember {
-	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @(), [string] $Directory = 'd365bap.tools/functions')
+	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @(), [string] $Directory = 'd365bap.tools/functions', [string] $Rule = 'PSAvoidAddMemberInLoop')
 	$folder = Join-Path $fixtureRoot $Directory
 	$null = New-Item -ItemType Directory -Path $folder -Force
 	$path = Join-Path $folder 'Get-Fixture.ps1'
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
-	$diagnostics = @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
+	$diagnostics = @(Get-Ps1AddMemberDiagnostic -Analysis $analysis | Where-Object RuleName -eq $Rule)
 	if ($diagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
 	}
@@ -45,7 +45,9 @@ function Get-Fixture {
     }
 }
 '@
-Assert-AddMember 'Note properties added in a loop' $loop 1 @('PSAvoidAddMemberInLoop', 'Select-PSFObject')
+Assert-AddMember 'Note properties added in a pure loop' $loop 1 @('PSAvoidAddMemberInLoop', 'Select-PSFObject')
+
+Assert-AddMember 'Pure loop is not a review warning' $loop -Rule 'PSReviewAddMemberInLoop'
 
 Assert-AddMember 'Single note property' (@'
 function Get-Fixture {
@@ -77,6 +79,20 @@ function Get-Fixture {
 }
 '@) -Expected 1
 
+$mixed = @'
+function Get-Fixture {
+    $resCol = @()
+
+    foreach ($item in $resCol) {
+        $item | Add-Member -NotePropertyName PpacEnvId -NotePropertyValue $envId
+        $item.Marker = $true
+    }
+}
+'@
+Assert-AddMember 'Mixed loop is a review warning' $mixed -Rule 'PSReviewAddMemberInLoop' -Expected 1 @('PSReviewAddMemberInLoop', 'PpacEnvId', 'Select-PSFObject')
+
+Assert-AddMember 'Mixed loop is not an error' $mixed
+
 Assert-AddMember 'Different target' (@'
 function Get-Fixture {
     $resCol = @()
@@ -84,17 +100,6 @@ function Get-Fixture {
 
     foreach ($item in $resCol) {
         $envObj | Add-Member -NotePropertyName PpacEnvId -NotePropertyValue $envId
-    }
-}
-'@)
-
-Assert-AddMember 'Additional statement' (@'
-function Get-Fixture {
-    $resCol = @()
-
-    foreach ($item in $resCol) {
-        $item | Add-Member -NotePropertyName PpacEnvId -NotePropertyValue $envId
-        $item.Marker = $true
     }
 }
 '@)
@@ -110,6 +115,18 @@ function Get-Fixture {
     }
 }
 '@)
+
+Assert-AddMember 'Conditional note property is not a warning' (@'
+function Get-Fixture {
+    $resCol = @()
+
+    foreach ($item in $resCol) {
+        if ($item.Id) {
+            $item | Add-Member -NotePropertyName PpacEnvId -NotePropertyValue $envId
+        }
+    }
+}
+'@) -Rule 'PSReviewAddMemberInLoop'
 
 Assert-AddMember 'Other member type' (@'
 function Get-Fixture {
