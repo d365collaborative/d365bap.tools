@@ -95,9 +95,6 @@ function Get-UnifiedEnvironment {
 	process {
 		$filteredEnvs = $colEnv | Where-Object FinOpsMetadataEnvType -eq "Internal"
 
-		# ForEach-Object -Parallel runs in isolated runspaces that do not
-		# inherit module functions (Get-BapAccessToken is unavailable there).
-		# Mint the Power Platform API token up-front and pass it via $using:.
 		$tokenPowerApiValue = ''
 
 		if (-not $SkipVersionDetails -and @($filteredEnvs).Count -gt 0) {
@@ -127,7 +124,6 @@ function Get-UnifiedEnvironment {
 
 			Import-Module PSFramework -ErrorAction SilentlyContinue
 
-			# Version details come from the Power Platform API FinOps properties endpoint.
 			$Response = $null
 
 			try {
