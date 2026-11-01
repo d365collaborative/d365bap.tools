@@ -12,7 +12,7 @@ What runs on `**.ps1`:
   `PSUseSupportsWildcards`, `PSAvoidEmptyParameterAttribute`,
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
-  `PSUseTableFormatView`, `PSUseAsExcelOutput`.
+  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -145,6 +145,26 @@ Run their regression checks under PowerShell 7.6 or later:
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1TableFormatRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
+```
+
+## Note properties
+
+`PSAvoidAddMemberInLoop` fails a `foreach` whose body only adds note properties
+to the loop variable. Add those properties in the existing projection instead
+of a second pass:
+
+```powershell
+$resCol = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.Example' -Property `
+    'id as ConnectionId',
+    @{ Name = 'PpacEnvId'; Expression = { $routeEnvironmentId } },
+    @{ Name = 'PpacEnvName'; Expression = { $routeEnvironmentName } }
+```
+
+Conditional properties, different targets, and loops with other statements are
+not reported. Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1AddMemberRule.ps1
 ```
 
 Run its regression checks under PowerShell 7.6 or later:
