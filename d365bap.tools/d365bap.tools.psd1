@@ -61,6 +61,10 @@
 
 		, 'Add-PpacAdminManagementApplication'
 		, 'Add-PpacApplicationUser'
+		, 'Add-PpacEnvironmentAcpPolicyAssignment'
+		, 'Add-PpacEnvironmentGroupAcpPolicyAssignment'
+		, 'Add-PpacEnvironmentGroupRuleBasedPolicyAssignment'
+		, 'Add-PpacEnvironmentRuleBasedPolicyAssignment'
 
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
@@ -184,6 +188,8 @@
 		, 'Invoke-UdeDbQuery'
 
 		, 'New-PpacSecurityRole'
+		, 'New-PpacTenantAcpPolicy'
+		, 'New-PpacTenantRuleBasedPolicy'
 
 		, 'New-UnifiedEnvironment'
 		, 'New-UnifiedEnvironmentV2'
@@ -216,6 +222,8 @@
 		, 'Set-PpacSecurityGroup'
 		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
+		, 'Set-PpacTenantAcpPolicy'
+		, 'Set-PpacTenantRuleBasedPolicy'
 
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
