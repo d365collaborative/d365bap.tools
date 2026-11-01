@@ -47,7 +47,7 @@
 #>
 function Get-PpacTenantConnector {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacTenantConnector[]', [object[]])]
 	param (
 		[SupportsWildcards()]
 		[string] $Name = '*',
@@ -59,8 +59,6 @@ function Get-PpacTenantConnector {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		if ($PSBoundParameters.ContainsKey('ConnectorId') -and $Name -ne '*') {
 			Stop-PSFFunction -Message "Specify -Name or -ConnectorId, not both."
 			return
@@ -74,8 +72,8 @@ function Get-PpacTenantConnector {
 		}
 
 		$routeId = "Default-$tenantId"
-		$secureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$filter = [uri]::EscapeDataString("environment eq '$routeId'")
 		$isItemLookup = $PSBoundParameters.ContainsKey('ConnectorId')

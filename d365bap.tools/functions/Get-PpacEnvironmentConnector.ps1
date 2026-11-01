@@ -45,7 +45,7 @@
 #>
 function Get-PpacEnvironmentConnector {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentConnector[]', [object[]])]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias('PpacEnvId')]
@@ -59,29 +59,19 @@ function Get-PpacEnvironmentConnector {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
+		$objRoute = Get-PpacConnectivityRoute -EnvironmentId $EnvironmentId
 
-		$route = Get-PpacConnectivityRoute -EnvironmentId $EnvironmentId
-		if ($null -eq $route) {
-			$messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-Environment</c> cmdlet."
-			Write-PSFMessage -Level Important -Message $messageString
-			Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-			return
-		}
-
-		if (Test-PSFFunctionInterrupt) { return }
-
-		$secureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$filter = [uri]::EscapeDataString("environment eq '$($route.RouteId -replace "'", "''")'")
-		$requestUri = "https://api.powerplatform.com/connectivity/environments/$($route.RouteId)/connectors?`$filter=$filter&api-version=$apiVersion"
+		$filter = [uri]::EscapeDataString("environment eq '$($objRoute.RouteId -replace "'", "''")'")
+		$requestUri = "https://api.powerplatform.com/connectivity/environments/$($objRoute.RouteId)/connectors?`$filter=$filter&api-version=$apiVersion"
 
 		try {
 			$result = Invoke-BapSdkRequest `
 				-Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Connectivity.Environments.Item.Connectors.ConnectorsRequestBuilder' } `
 				-Method 'GetAsync' `
-				-EnvironmentId $route.RouteId `
+				-EnvironmentId $objRoute.RouteId `
 				-Token $tokenValue `
 				-RequestUrl $requestUri
 		}
@@ -116,8 +106,8 @@ function Get-PpacEnvironmentConnector {
 			'properties.createdTime as CreatedTime',
 			'properties.changedTime as ChangedTime',
 			'properties.description as Description',
-			@{ Name = 'PpacEnvId'; Expression = { $route.RouteId } },
-			@{ Name = 'PpacEnvName'; Expression = { $route.RouteName } }
+			@{ Name = 'PpacEnvId'; Expression = { $objRoute.RouteId } },
+			@{ Name = 'PpacEnvName'; Expression = { $objRoute.RouteName } }
 		)
 
 		if ($AsExcelOutput) {
