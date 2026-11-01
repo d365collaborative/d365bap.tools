@@ -19,6 +19,13 @@ jobs:
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0
+    - name: Restore PowerShell modules
+      uses: actions/cache/restore@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
     - name: Check generated-file ownership
       shell: pwsh
       run: ./build/Test-GeneratedTouch.ps1 -BaseRef $env:BASE_SHA

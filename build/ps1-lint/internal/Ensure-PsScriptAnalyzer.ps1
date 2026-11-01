@@ -1,24 +1,34 @@
 ﻿function Ensure-PsScriptAnalyzer {
 	<#
 		.SYNOPSIS
-			Ensures PSScriptAnalyzer is available.
+			Ensures the pinned PSScriptAnalyzer version is available.
 
 		.DESCRIPTION
-			Returns true when PSScriptAnalyzer is available. Otherwise installs it
-			silently for CurrentUser. Returns false when installation fails or the
-			module is still unavailable.
+			Returns true when the requested module is available. Otherwise
+			installs it silently for CurrentUser. Returns false when installation
+			fails or the module is still unavailable.
+
+		.PARAMETER Version
+			The module version to use.
+
+			Default: 1.25.0
 
 		.EXAMPLE
 			PS C:\> Ensure-PsScriptAnalyzer
 
 			Returns $true once PSScriptAnalyzer is importable.
+			It will use -Version 1.25.0 by default.
 	#>
 	[CmdletBinding()]
-	param()
+	param(
+		[ValidateNotNullOrEmpty()]
+		[string] $Version = '1.25.0'
+	)
 
-	if (Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue) {
-		return $true
-	}
+	$targetVersion = [version] $Version
+	$colInstalled = @(Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue |
+		Where-Object { $_.Version -eq $targetVersion })
+	if ($colInstalled.Count -gt 0) { $true; return }
 
 	try {
 		$repo = Get-PSRepository -Name PSGallery -ErrorAction Stop
@@ -27,7 +37,7 @@
 		}
 	}
 	catch {
-		return $false
+		$false; return
 	}
 
 	if (-not (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue)) {
@@ -36,7 +46,8 @@
 
 	$ProgressPreference = 'SilentlyContinue'
 
-	$null = Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -SkipPublisherCheck -AllowClobber -ErrorAction SilentlyContinue
+	$null = Install-Module -Name PSScriptAnalyzer -RequiredVersion $Version -Scope CurrentUser -Force -SkipPublisherCheck -AllowClobber -ErrorAction SilentlyContinue
 
-	return (Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue) -ne $null
+	@(Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue |
+		Where-Object { $_.Version -eq $targetVersion }).Count -gt 0
 }

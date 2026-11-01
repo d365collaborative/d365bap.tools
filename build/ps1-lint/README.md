@@ -48,7 +48,8 @@ What runs on PowerShell files:
   plus UTF-8 BOM enforcement. Rewrites files and exits 1 when anything changed
   or a file could not be formatted. A formatting failure no longer disappears
   as a warning when the file content stays unchanged.
-- `setup/Run.ps1` — installs PSScriptAnalyzer (CurrentUser) when missing.
+- `setup/Run.ps1` — installs the pinned PSScriptAnalyzer 1.25.0 (CurrentUser)
+  when that version is missing.
 
 ## Wildcard parameters
 

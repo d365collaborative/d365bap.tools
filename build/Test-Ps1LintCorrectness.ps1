@@ -72,6 +72,12 @@ try {
 	}
 	Assert-True $threw 'Missing formatter settings must throw.'
 
+	# The hook dependency is pinned, not whatever happens to be installed.
+	. (Join-Path $PSScriptRoot 'ps1-lint/internal/Ensure-PsScriptAnalyzer.ps1')
+	Assert-True (Ensure-PsScriptAnalyzer -Version '1.25.0') 'PSScriptAnalyzer 1.25.0 must be available.'
+	$colInstalled = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ ([version] '1.25.0'))
+	Assert-True ($colInstalled.Count -gt 0) 'The pinned PSScriptAnalyzer version must be installed.'
+
 	# The documented semantics must match the rule messages.
 	$readmeText = Get-Content -LiteralPath $readme -Raw
 	Assert-True ($readmeText -match 'already rejects null and empty values') 'README must describe mandatory string binding accurately.'
