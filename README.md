@@ -135,9 +135,9 @@ pwsh -NoProfile -File ./build/Test-Behavior.ps1
 ```
 
 `prek run --all-files --stage manual` lints the whole tree. Do not edit generated
-files (`*.Tests.ps1`, `docs/*.md`, consolidated format XML, or
-`wiki/Namespaces.md`) in a pull request. CI builds current runtime formats for
-validation and generates documentation and test snapshots after merge.
+files (`d365bap.tools/tests/functions/*.Tests.ps1`, `docs/*.md`, consolidated
+format XML, or `wiki/Namespaces.md`) in a pull request. CI builds current runtime
+formats for validation and generates documentation and test snapshots after merge.
 
 ### Accepting public signature changes
 
@@ -157,17 +157,19 @@ reviews its before/after report and posts this exact text as a new PR comment:
 
 The comment applies only to the PR head and base recorded by the visible check.
 The gate also publishes a commit status with the same name for branch
-protection. The check run retains the detailed report and acceptance metadata;
-the commit status reports the same verified result, including after comment
-events. Rerunning a gate publishes a pending status before revalidating it.
-Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
+protection. The check run retains the detailed report and acceptance metadata,
+and is the only red result while acceptance is outstanding. The commit status
+stays pending until the gate is accepted, then flips to success, so one gate
+shows one red check. Rerunning a gate resets the status to pending before
+revalidating it. Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
 approval and rerunning workflows do not accept signature changes. Editing or
 deleting the acceptance comment revokes it; post a new comment to accept again.
 Bot accounts cannot accept. Agents must leave acceptance to the human maintainer;
 GitHub cannot distinguish an agent using a person's credentials from that person.
 
 **Repository setup:** merge the workflow onto the default branch, then require
-the **Public signature approval**, **Internal hook approval**, and
+the **Public signature approval**, **Internal hook approval**,
+**Test file approval**, and
 **PS1 lint (vendored prek hooks, changed files)** checks in the `main` branch
 ruleset or protection. Keep the existing
 four required validation checks: **Validate Individual Unit Tests** now acts
@@ -207,10 +209,31 @@ from Git objects, never checked out or executed by the write-capable gate.
 Accepting this check does not accept signature changes or bypass formatting,
 lint, or tests; those checks run independently.
 
-Both approval workflows need `checks: write` for their reports and
+### Accepting hand-written test files
+
+`Test file approval` fails a pull request that adds or edits a `*Tests.ps1`
+file outside the generated `d365bap.tools/tests/functions` directory. Deleting
+an existing test file needs no acceptance. Generated parameter tests are exempt
+from both additions and edits; `Test-GeneratedTouch.ps1` already rejects hand
+edits to that directory.
+
+A separate **red check** remains until a maintainer with repository write access
+reviews the changed files and posts this exact text as a new PR comment:
+
+```text
+/accept-test-file
+```
+
+The comment applies only to the PR head and base recorded by the visible check.
+Every new push, new edit, or base advance requires fresh acceptance.
+Editing or deleting the comment revokes it. Bots, application comments, and
+users without write access cannot accept. Agents must leave acceptance to the
+human maintainer, who decides whether the new test earns its maintenance cost.
+
+All approval workflows need `checks: write` for their reports and
 `statuses: write` for branch-protection status reporting. A successful workflow
 or check run alone is not proof that merging is allowed. Check GitHub's merge
-box as well: neither approval name should remain "Expected" after its commit
+box as well: no approval name should remain "Expected" after its commit
 status is published. A reporting failure blocks acceptance rather than
 publishing success.
 
@@ -230,7 +253,7 @@ workflow for acceptance because privileged workflows load default-branch code.
 Approval gate regression tests:
 
 ```sh
-node --test build/signature-approval.test.cjs build/internal-hook-approval.test.cjs
+node --test build/signature-approval.test.cjs build/internal-hook-approval.test.cjs build/test-file-approval.test.cjs
 ```
 
 ## Dependencies

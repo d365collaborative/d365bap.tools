@@ -11,9 +11,11 @@ const PROTECTED_PATHS = [
   'build/internal-hook-approval.cjs',
   'build/maintainer-approval.cjs',
   'build/signature-approval.cjs',
+  'build/test-file-approval.cjs',
   'build/Test-HookTouch.ps1',
   '.github/workflows/internal-hook-approval.yml',
   '.github/workflows/signature-approval.yml',
+  '.github/workflows/test-file-approval.yml',
   '.github/workflows/validate.yml',
   'prek.toml',
 ];

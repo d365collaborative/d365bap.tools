@@ -81,10 +81,10 @@ function approvalTests({ run, CHECK, ACCEPT, compareOption, pendingTitle, failur
     assert.equal(await harness({ changed: false }).result(), 'success');
   });
 
-  test('publishes a failing commit status until a maintainer accepts', async () => {
+  test('leaves the commit status pending until a maintainer accepts', async () => {
     const h = harness();
     await h.result();
-    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending', 'failure']);
+    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending']);
     for (const status of h.state.statuses) {
       assert.equal(status.owner, 'owner');
       assert.equal(status.repo, 'repo');
@@ -108,11 +108,11 @@ function approvalTests({ run, CHECK, ACCEPT, compareOption, pendingTitle, failur
     }
   });
 
-  test('revocation also changes a successful commit status to failure', async () => {
+  test('revocation clears a successful commit status', async () => {
     const h = harness(); h.approvedPreviously();
     h.state.comment = null;
     assert.equal(await h.result(), 'failure');
-    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending', 'failure']);
+    assert.deepEqual(h.state.statuses.map(status => status.state), ['pending']);
   });
 
   test('comparison errors publish failure instead of leaving a successful status', async () => {
