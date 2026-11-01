@@ -30,5 +30,5 @@
 		'PSAvoidUsingInvokeExpression'
 		'PSUseProcessBlockForPipelineCommand'
 	)
-	HighSignalPathPattern  = '/d365bap\.tools/(functions|internal/functions|internal/sdk)/|/build/'
+	HighSignalPathPattern  = '/d365bap\.tools/(?!internal/tepp/|tests/)|/build/'
 }
