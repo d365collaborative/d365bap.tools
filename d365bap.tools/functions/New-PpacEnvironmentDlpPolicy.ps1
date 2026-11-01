@@ -49,7 +49,7 @@ function New-PpacEnvironmentDlpPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess($EnvironmentId, 'Create environment DLP policy')) { return }
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://service.powerapps.com/'
+		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/$routeEnvironmentId/apiPolicies?api-version=2018-10-01"
 

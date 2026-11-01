@@ -42,7 +42,7 @@ function Remove-PpacTenantDlpPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess($current[0].PolicyId, 'Delete tenant DLP policy')) { return }
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://service.powerapps.com/'
+		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies/$($current[0].PolicyId)?api-version=2018-10-01"
 

@@ -34,7 +34,7 @@ function New-PpacTenantDlpPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess("$($Policy.displayName)", 'Create tenant DLP policy')) { return }
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://service.powerapps.com/'
+		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2018-10-01'
 

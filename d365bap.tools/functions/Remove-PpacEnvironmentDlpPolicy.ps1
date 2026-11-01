@@ -57,7 +57,7 @@ function Remove-PpacEnvironmentDlpPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess($EnvironmentId, "Delete environment DLP policy $($current[0].PolicyId)")) { return }
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://service.powerapps.com/'
+		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/$routeEnvironmentId/apiPolicies/$($current[0].PolicyId)?api-version=2018-10-01"
 

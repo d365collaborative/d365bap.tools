@@ -20,7 +20,7 @@ function Get-BapDlpPolicy {
 	[OutputType('System.Object[]')]
 	param ()
 
-	$secureToken = Get-BapAccessToken -ResourceUrl 'https://service.powerapps.com/'
+	$secureToken = Get-BapAccessToken -Bap
 	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 	$headers = @{
 		Authorization = "Bearer $tokenValue"
