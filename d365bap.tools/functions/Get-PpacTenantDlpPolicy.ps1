@@ -44,7 +44,7 @@
 #>
 function Get-PpacTenantDlpPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacTenantDlpPolicy[]', [object[]])]
 	param (
 		[SupportsWildcards()]
 		[ValidateNotNullOrEmpty()]
@@ -54,8 +54,6 @@ function Get-PpacTenantDlpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		try {
 			$colPolicies = @(Get-BapDlpPolicy | Where-Object { $_.environmentType -ne 'SingleEnvironment' })
 		}

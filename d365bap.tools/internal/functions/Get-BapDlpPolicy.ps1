@@ -17,11 +17,11 @@
 #>
 function Get-BapDlpPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType([PSCustomObject], [object[]])]
 	param ()
 
-	$secureToken = Get-BapAccessToken -Bap
-	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+	$objSecureToken = Get-BapAccessToken -Bap
+	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 	}

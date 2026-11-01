@@ -26,7 +26,7 @@
 #>
 function New-PpacEnvironmentDlpPolicy {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentDlpPolicy')]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias('PpacEnvId')]
@@ -39,8 +39,6 @@ function New-PpacEnvironmentDlpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$objRoute = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
 		$routeEnvironmentId = $objRoute.RouteId
 		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
@@ -57,8 +55,8 @@ function New-PpacEnvironmentDlpPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$secureToken = Get-BapAccessToken -Bap
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -Bap
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/$routeEnvironmentId/apiPolicies?api-version=2018-10-01"
 
 		try {

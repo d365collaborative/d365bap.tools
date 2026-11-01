@@ -26,7 +26,7 @@
 #>
 function Set-PpacTenantDlpPolicy {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacTenantDlpPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -38,8 +38,6 @@ function Set-PpacTenantDlpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$colCurrent = @(Get-PpacTenantDlpPolicy -PolicyId $PolicyId)
 		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No tenant DLP policy matched '$PolicyId'."
@@ -58,8 +56,8 @@ function Set-PpacTenantDlpPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$secureToken = Get-BapAccessToken -Bap
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -Bap
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies/$($colCurrent[0].PolicyId)?api-version=2018-10-01"
 
 		try {
