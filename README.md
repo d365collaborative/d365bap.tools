@@ -157,10 +157,11 @@ reviews its before/after report and posts this exact text as a new PR comment:
 
 The comment applies only to the PR head and base recorded by the visible check.
 The gate also publishes a commit status with the same name for branch
-protection. The check run retains the detailed report and acceptance metadata;
-the commit status reports the same verified result, including after comment
-events. Rerunning a gate publishes a pending status before revalidating it.
-Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
+protection. The check run retains the detailed report and acceptance metadata,
+and is the only red result while acceptance is outstanding. The commit status
+stays pending until the gate is accepted, then flips to success, so one gate
+shows one red check. Rerunning a gate resets the status to pending before
+revalidating it. Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
 approval and rerunning workflows do not accept signature changes. Editing or
 deleting the acceptance comment revokes it; post a new comment to accept again.
 Bot accounts cannot accept. Agents must leave acceptance to the human maintainer;

@@ -152,7 +152,7 @@ async function run({ github, context, core, compareChanges, pullNumber }, policy
       }),
       output: { title, summary: `${intro}${visible.join('\n')}${notice}` },
     });
-    await publishStatus(approved ? 'success' : 'failure', title);
+    if (approved) await publishStatus('success', title);
     core.info(title);
   } catch (error) {
     await github.rest.checks.update({
