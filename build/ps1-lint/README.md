@@ -241,6 +241,39 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1MandatoryRule.ps1
 ```
 
+## Internal comments
+
+`PSOnlyCommentBasedHelp` fails every comment that is not comment-based help. It
+covers module functions and internal scripts as well as build scripts, so a
+changed cmdlet replaces inline notes with help or with self-explanatory code.
+Region markers are the only exception because they fold code rather than
+document it:
+
+```powershell
+# Fails
+$cache = 1 # fill the cache
+
+# Passes
+<#
+    .SYNOPSIS
+        Fills the cache.
+
+    .EXAMPLE
+        PS C:\> Get-Fixture
+
+        Fills the cache.
+#>
+```
+
+`#requires` statements and shebangs are ignored. The rule runs on changed files
+only, so the remaining comments are removed as their files are touched.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1CommentRule.ps1
+```
+
 ## Environment lookups
 
 `PSUseCentralEnvironmentLookup` requires module code to look environments up
