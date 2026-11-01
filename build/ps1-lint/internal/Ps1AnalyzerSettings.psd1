@@ -1,4 +1,6 @@
 @{
+	# The analyzer always imports this exact version. The setup hook installs it.
+	PSScriptAnalyzerVersion = '1.25.0'
 	# These rules are owned by another hook or by a repository rule:
 	#   PSAvoidUsingCmdletAliases  -> PSAvoidCommandAliases / PSAvoidParameterAliases
 	#   PSAvoidTrailingWhitespace  -> ps1-format hook

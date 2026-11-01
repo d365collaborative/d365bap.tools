@@ -15,14 +15,19 @@ function New-Ps1Analyzer {
 		[string] $SettingsPath = (Join-Path $PSScriptRoot 'Ps1AnalyzerSettings.psd1')
 	)
 
-	if (-not (Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue)) {
-		throw 'PSScriptAnalyzer is not installed. Install-Module PSScriptAnalyzer -Scope CurrentUser'
+	$hashSettings = Get-Ps1AnalyzerSettings -Path $SettingsPath
+	$targetVersion = [version] $hashSettings.PSScriptAnalyzerVersion
+	$colAvailable = @(Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue |
+		Where-Object { $_.Version -eq $targetVersion })
+
+	if ($colAvailable.Count -eq 0) {
+		throw "PSScriptAnalyzer $($hashSettings.PSScriptAnalyzerVersion) is not installed. Run build/ps1-lint/setup/Run.ps1."
 	}
 
-	Import-Module PSScriptAnalyzer -ErrorAction Stop
+	Import-Module PSScriptAnalyzer -RequiredVersion $hashSettings.PSScriptAnalyzerVersion -ErrorAction Stop
 
 	[pscustomobject]@{
-		Settings = Get-Ps1AnalyzerSettings -Path $SettingsPath
+		Settings = $hashSettings
 		Worker   = Get-Ps1AnalysisWorker
 	}
 }

@@ -73,8 +73,10 @@ try {
 	Assert-True $threw 'Missing formatter settings must throw.'
 
 	# The hook dependency is pinned, not whatever happens to be installed.
+	$hashSettings = Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal/Ps1AnalyzerSettings.psd1')
+	Assert-True ($hashSettings.PSScriptAnalyzerVersion -eq '1.25.0') 'The analyzer settings must pin PSScriptAnalyzer 1.25.0.'
 	. (Join-Path $PSScriptRoot 'ps1-lint/internal/Ensure-PsScriptAnalyzer.ps1')
-	Assert-True (Ensure-PsScriptAnalyzer -Version '1.25.0') 'PSScriptAnalyzer 1.25.0 must be available.'
+	Assert-True (Ensure-PsScriptAnalyzer) 'The setup hook default must make the pinned analyzer available.'
 	$colInstalled = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ ([version] '1.25.0'))
 	Assert-True ($colInstalled.Count -gt 0) 'The pinned PSScriptAnalyzer version must be installed.'
 
