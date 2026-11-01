@@ -1,8 +1,14 @@
 ﻿[CmdletBinding()]
 param(
-	[Parameter(Mandatory)] [string] $ModuleRoot,
-	[Parameter(Mandatory)] [string[]] $CommandPath,
-	[Parameter(Mandatory)] [string] $ExceptionsFile
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $ModuleRoot,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string[]] $CommandPath,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $ExceptionsFile
 )
 $ErrorActionPreference = 'Stop'
 Import-Module PSModuleDevelopment -ErrorAction Stop

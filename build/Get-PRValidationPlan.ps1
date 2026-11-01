@@ -1,8 +1,14 @@
 ﻿[CmdletBinding()]
 param(
-	[Parameter(Mandatory)] [string] $BaseSha,
-	[Parameter(Mandatory)] [string] $HeadSha,
-	[Parameter(Mandatory)] [string] $OutputPath,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $BaseSha,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $HeadSha,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $OutputPath,
 	[string] $RepositoryPath = (Join-Path $PSScriptRoot '..')
 )
 
@@ -16,7 +22,7 @@ function Invoke-GitBytes([string[]] $Arguments) {
 	$start.UseShellExecute = $false
 	$start.RedirectStandardOutput = $true
 	$start.RedirectStandardError = $true
-	foreach ($argument in $Arguments) { $null = $start.ArgumentList.Add($argument) }
+	foreach ($itemArgument in $Arguments) { $null = $start.ArgumentList.Add($itemArgument) }
 	$process = [System.Diagnostics.Process]::Start($start)
 	try {
 		$errorTask = $process.StandardError.ReadToEndAsync()

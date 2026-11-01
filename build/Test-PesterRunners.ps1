@@ -17,11 +17,11 @@ function Assert-True([bool] $Condition, [string] $Message) {
 }
 
 function Reset-Fixture {
-	foreach ($directory in @($tests, $results, (Join-Path $project 'functions'), (Join-Path $project 'internal'))) {
-		if (Test-Path -LiteralPath $directory) { Remove-Item -LiteralPath $directory -Recurse -Force }
+	foreach ($itemDirectory in @($tests, $results, (Join-Path $project 'functions'), (Join-Path $project 'internal'))) {
+		if (Test-Path -LiteralPath $itemDirectory) { Remove-Item -LiteralPath $itemDirectory -Recurse -Force }
 	}
-	foreach ($directory in @($tests, (Join-Path $tests 'general'), (Join-Path $tests 'functions'), (Join-Path $project 'functions'), (Join-Path $project 'internal/functions'))) {
-		$null = New-Item -ItemType Directory -Path $directory -Force
+	foreach ($itemDirectory in @($tests, (Join-Path $tests 'general'), (Join-Path $tests 'functions'), (Join-Path $project 'functions'), (Join-Path $project 'internal/functions'))) {
+		$null = New-Item -ItemType Directory -Path $itemDirectory -Force
 	}
 	Copy-Item -LiteralPath (Join-Path $source 'pester.ps1'), (Join-Path $source 'pester-PSScriptAnalyzer.ps1') -Destination $tests
 }
@@ -47,14 +47,14 @@ function Assert-DiscoveryFailure($Run, [string] $Context) {
 }
 
 function Assert-ReportedTests([string[]] $Expected) {
-	$cases = @(foreach ($file in (Get-ChildItem -LiteralPath $results -Filter '*.xml')) {
-			$report = [xml](Get-Content -LiteralPath $file.FullName -Raw)
+	$colCases = @(foreach ($itemFile in (Get-ChildItem -LiteralPath $results -Filter '*.xml')) {
+			$report = [xml](Get-Content -LiteralPath $itemFile.FullName -Raw)
 			$report.SelectNodes('//test-case')
 		})
-	$actual = @($cases | ForEach-Object { $_.name } | Sort-Object)
-	$expectedNames = @($Expected | ForEach-Object { "$_.passes" } | Sort-Object)
-	Assert-True (($actual -join ',') -ceq ($expectedNames -join ',')) "Expected reported tests: $expectedNames. Actual: $actual."
-	Assert-True (@($cases | Where-Object { $_.result -ne 'Success' }).Count -eq 0) 'Every selected test must pass.'
+	$colActual = @($colCases | ForEach-Object { $_.name } | Sort-Object)
+	$colExpectedNames = @($Expected | ForEach-Object { "$_.passes" } | Sort-Object)
+	Assert-True (($colActual -join ',') -ceq ($colExpectedNames -join ',')) "Expected reported tests: $colExpectedNames. Actual: $colActual."
+	Assert-True (@($colCases | Where-Object { $_.result -ne 'Success' }).Count -eq 0) 'Every selected test must pass.'
 }
 
 try {

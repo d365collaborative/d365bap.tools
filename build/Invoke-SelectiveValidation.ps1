@@ -1,6 +1,7 @@
 ﻿[CmdletBinding()]
 param(
-	[Parameter(Mandatory)]
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
 	[string] $PlanPath
 )
 
@@ -13,14 +14,14 @@ if ($plan.Mode -ne 'selective' -or $plan.PublicPaths -isnot [array]) {
 }
 
 function Resolve-SelectedFiles([object[]] $Paths, [string] $Pattern) {
-	$seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-	foreach ($path in $Paths) {
-		if ($path -isnot [string] -or $path -notmatch $Pattern -or $path -match '(^|/)\.\.?(/|$)' -or $path.Contains('\')) {
-			throw "Invalid selected path: $path"
+	$colSeen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+	foreach ($itemPath in $Paths) {
+		if ($itemPath -isnot [string] -or $itemPath -notmatch $Pattern -or $itemPath -match '(^|/)\.\.?(/|$)' -or $itemPath.Contains('\')) {
+			throw "Invalid selected path: $itemPath"
 		}
-		$full = Join-Path $repoRoot $path
-		if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { throw "Selected file is missing: $path" }
-		if (-not $seen.Add($full)) { throw "Duplicate selected path: $path" }
+		$full = Join-Path $repoRoot $itemPath
+		if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { throw "Selected file is missing: $itemPath" }
+		if (-not $colSeen.Add($full)) { throw "Duplicate selected path: $itemPath" }
 		(Resolve-Path -LiteralPath $full).Path
 	}
 }

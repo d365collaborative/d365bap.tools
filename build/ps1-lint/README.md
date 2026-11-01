@@ -240,7 +240,8 @@ $resCol = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.Example' -Property
 
 Dynamic property names, non-variable targets, and other member types are not
 checked. The rule reads and writes inside the loop as usage; a property used
-only after all loops must be projected outside. Run its regression checks under PowerShell 7.6 or later:
+only after all loops must be projected outside. The rule runs on module code and
+the lint tooling under `build/ps1-lint`. Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1AddMemberRule.ps1
@@ -278,8 +279,9 @@ $cache = 1 # fill the cache
 
 `#requires` statements and shebangs are ignored. Test files (`*Tests.ps1` and
 everything under `d365bap.tools/tests`) and tepp files (`*.tepp.ps1` and
-`internal/tepp`) are exempt. The rule runs on changed files only, so the
-remaining comments are removed as their files are touched.
+`internal/tepp`) are exempt. Build scripts are also exempt because they carry
+operational comments; the rule targets module code. The rule runs on changed
+files only, so the remaining comments are removed as their files are touched.
 
 Run its regression checks under PowerShell 7.6 or later:
 
@@ -355,8 +357,9 @@ automatic variables, and scope-qualified variables are not checked. A
 `Get-Environment` result keeps its `$envObj` name because the environment rule
 owns that contract.
 
-The rule runs on changed files only, so the existing names are reshaped as their
-files are touched.
+The rule runs on module code and build scripts under `build/`. Test files and
+tepp scripts are exempt. It runs on changed files only, so the existing names
+are reshaped as their files are touched.
 
 Run its regression checks under PowerShell 7.6 or later:
 

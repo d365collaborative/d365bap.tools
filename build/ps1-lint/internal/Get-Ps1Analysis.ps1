@@ -2,20 +2,20 @@
 	param([string] $Path)
 	$tokens = $null
 	$ast = [Management.Automation.Language.Parser]::ParseFile($Path, [ref]$tokens, [ref]$null)
-	$analysis = @{ Path = $Path; Ast = $ast; Tokens = $tokens }
-	$analysis.CommentGroups = @(Get-Ps1CommentGroup -Analysis $analysis)
-	$analysis.HelpSections = @(Get-Ps1HelpSection -Analysis $analysis)
-	$analysis
+	$hashAnalysis = @{ Path = $Path; Ast = $ast; Tokens = $tokens }
+	$hashAnalysis.CommentGroups = @(Get-Ps1CommentGroup -Analysis $hashAnalysis)
+	$hashAnalysis.HelpSections = @(Get-Ps1HelpSection -Analysis $hashAnalysis)
+	$hashAnalysis
 }
 
 function Get-Ps1AnalysisWorker {
-	$worker = @{ RuntimeAliases = @{}; CommonParameters = @{}; Cache = @{}; Configuration = @{} }
-	foreach ($alias in Get-Alias) { $worker.RuntimeAliases[$alias.Name] = $alias.Definition }
-	foreach ($parameter in (Get-Command Microsoft.PowerShell.Management\Remove-Item).Parameters.Values) {
-		if ([Management.Automation.Cmdlet]::CommonParameters.Contains($parameter.Name) -or
-			[Management.Automation.Cmdlet]::OptionalCommonParameters.Contains($parameter.Name)) {
-			$worker.CommonParameters[$parameter.Name] = $parameter
+	$hashWorker = @{ RuntimeAliases = @{}; CommonParameters = @{}; Cache = @{}; Configuration = @{} }
+	foreach ($itemAlias in Get-Alias) { $hashWorker.RuntimeAliases[$itemAlias.Name] = $itemAlias.Definition }
+	foreach ($itemParameter in (Get-Command Microsoft.PowerShell.Management\Remove-Item).Parameters.Values) {
+		if ([Management.Automation.Cmdlet]::CommonParameters.Contains($itemParameter.Name) -or
+			[Management.Automation.Cmdlet]::OptionalCommonParameters.Contains($itemParameter.Name)) {
+			$hashWorker.CommonParameters[$itemParameter.Name] = $itemParameter
 		}
 	}
-	$worker
+	$hashWorker
 }

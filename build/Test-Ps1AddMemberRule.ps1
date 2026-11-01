@@ -24,13 +24,13 @@ function Assert-AddMember {
 	$path = Join-Path $folder 'Get-Fixture.ps1'
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
-	$diagnostics = @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
-	if ($diagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
+	$colDiagnostics = @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
+	if ($colDiagnostics.Count -ne $Expected) {
+		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
-	$message = @($diagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($fragment in $ExpectedText) {
-		if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
+	foreach ($itemFragment in $ExpectedText) {
+		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 	}
 	$script:caseCount++
 }
@@ -226,5 +226,9 @@ function Get-Fixture {
 '@)
 
 Assert-AddMember 'Outside the module' $unused -Directory 'build'
+
+Assert-AddMember 'Lint tooling internal scripts are checked' $unused -Directory 'build/ps1-lint/internal' -Expected 1
+
+Assert-AddMember 'Lint tooling format scripts are checked' $unused -Directory 'build/ps1-lint/ps1-format' -Expected 1
 
 Write-Output "Add-Member rule checks passed: $script:caseCount cases."

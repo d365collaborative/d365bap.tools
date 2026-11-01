@@ -4,7 +4,8 @@
 
 .DESCRIPTION
     Parses fixture scripts and checks that only comment-based help and region
-    markers are accepted. The rule covers module fragments and other scripts.
+    markers are accepted. The rule covers module fragments and other scripts,
+    while build scripts are exempt because they carry operational comments.
 #>
 [CmdletBinding()]
 param()
@@ -24,13 +25,13 @@ function Assert-Comment {
 	$path = Join-Path $folder $FileName
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
-	$diagnostics = @(Get-Ps1CommentDiagnostic -Analysis $analysis)
-	if ($diagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
+	$colDiagnostics = @(Get-Ps1CommentDiagnostic -Analysis $analysis)
+	if ($colDiagnostics.Count -ne $Expected) {
+		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
-	$message = @($diagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($fragment in $ExpectedText) {
-		if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
+	foreach ($itemFragment in $ExpectedText) {
+		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 	}
 	$script:caseCount++
 }
@@ -43,7 +44,9 @@ function Get-Fixture {
 Assert-Comment 'Inline comment in a function' $inline 1 @('PSOnlyCommentBasedHelp', 'Remove this comment')
 
 Assert-Comment 'Inline comment in an internal script' $inline -Directory 'd365bap.tools/internal' -Expected 1
-Assert-Comment 'Inline comment outside the module' $inline -Directory 'build' -Expected 1
+Assert-Comment 'Inline comment outside the module' $inline -Directory 'scripts' -Expected 1
+Assert-Comment 'Build scripts are exempt' $inline -Directory 'build'
+Assert-Comment 'Lint tooling is exempt' $inline -Directory 'build/ps1-lint/internal'
 Assert-Comment 'Comment in a string is not a comment' @'
 function Get-Fixture {
     $text = "# fill the cache"
