@@ -10,7 +10,7 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterPositionDiagnostic')) {
+foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterContractDiagnostic')) {
 	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
 }
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('parameter-position-rule-' + [guid]::NewGuid().ToString('N'))
@@ -24,7 +24,7 @@ function Assert-Position {
 	$path = Join-Path $folder $FileName
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
-	$diagnostics = @(Get-Ps1ParameterPositionDiagnostic -Analysis $analysis)
+	$diagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSAvoidExplicitParameterPosition')
 	if ($diagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
 	}

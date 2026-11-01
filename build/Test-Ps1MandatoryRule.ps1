@@ -10,7 +10,7 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1MandatoryDiagnostic')) {
+foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterContractDiagnostic')) {
 	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
 }
 $fixturePath = Join-Path ([IO.Path]::GetTempPath()) ('mandatory-rule-' + [guid]::NewGuid().ToString('N') + '.ps1')
@@ -20,7 +20,7 @@ function Assert-Mandatory {
 	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @(), [string] $Rule = 'PSUseValidateNotNullOrEmpty')
 	[IO.File]::WriteAllText($fixturePath, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $fixturePath
-	$diagnostics = @(Get-Ps1MandatoryDiagnostic -Analysis $analysis | Where-Object RuleName -eq $Rule)
+	$diagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object RuleName -eq $Rule)
 	if ($diagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
 	}

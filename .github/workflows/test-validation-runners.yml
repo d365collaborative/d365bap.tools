@@ -15,9 +15,10 @@ on:
       - 'build/Test-Ps1MandatoryRule.ps1'
       - 'build/Test-Ps1ParameterArgumentRule.ps1'
       - 'build/Test-Ps1ParameterPositionRule.ps1'
-      - 'build/Test-Ps1TableFormatRule.ps1'
-      - 'build/Test-Ps1ExcelOutputRule.ps1'
+      - 'build/Test-Ps1StandardOutputRule.ps1'
+      - 'build/Test-Ps1ParameterLayoutRule.ps1'
       - 'build/Test-Ps1AddMemberRule.ps1'
+      - 'build/Test-Ps1AccessTokenRule.ps1'
       - 'build/Test-PreloadExitCode.ps1'
       - 'build/Test-ModulePublication.ps1'
       - 'build/Publish-ModuleWithRetry.ps1'
@@ -75,15 +76,18 @@ jobs:
     - name: Test explicit parameter position lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ParameterPositionRule.ps1
-    - name: Test table format lint rule
+    - name: Test collection output lint rule
       shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1TableFormatRule.ps1
-    - name: Test Excel output lint rule
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1StandardOutputRule.ps1
+    - name: Test parameter layout lint rule
       shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ExcelOutputRule.ps1
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ParameterLayoutRule.ps1
     - name: Test Add-Member lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1AddMemberRule.ps1
+    - name: Test access token endpoint lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1AccessTokenRule.ps1
     - name: Test module prerequisites
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1

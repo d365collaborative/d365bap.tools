@@ -9,10 +9,11 @@ What runs on `**.ps1`:
   fails on Error) plus repo rules: `PSOnlyCommentBasedHelp`,
   `PSHelpSynopsis/Description/Parameter/Notes/Example`,
   `PSAvoidCommandAliases` / `PSAvoidParameterAliases`,
-  `PSUseSupportsWildcards`, `PSAvoidEmptyParameterAttribute`,
+  `PSUseSupportsWildcards`, `PSAvoidRedundantParameterAttribute`,
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
-  `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
-  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`.
+  `PSAvoidExplicitParameterPosition`, `PSUseStandardCollectionOutput`,
+  `PSAvoidAddMemberInLoop`, `PSUseBapAccessTokenEndpointSwitch`,
+  `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -58,15 +59,27 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1WildcardRule.ps1
 ```
 
-## Empty parameter attributes
+## Redundant parameter attributes
 
-`PSAvoidEmptyParameterAttribute` fails `[Parameter()]` declared without
-arguments. The attribute adds nothing to the parameter, so remove it. Use it
-only when it carries information:
+`PSAvoidRedundantParameterAttribute` fails two shapes that add nothing:
+
+- `[Parameter()]` declared without arguments. Use it only when it carries
+  information.
+- Named arguments that restate the attribute default, such as
+  `Mandatory = $false`, `ValueFromPipeline = $false`,
+  `ValueFromPipelineByPropertyName = $false`,
+  `ValueFromRemainingArguments = $false`, `HelpMessage = $null`,
+  `ParameterSetName = '__AllParameterSets'`, and `Position = -2147483648`.
+
+Defaults come from `ParameterAttribute` itself, so the rule follows the
+platform. State only what changes the default. Other empty attributes such as
+`[CmdletBinding()]` and `[SupportsWildcards()]` are allowed because the
+attribute itself carries the meaning.
 
 ```powershell
 param (
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name,
 
     [Parameter(ParameterSetName = 'Excel')]
@@ -74,13 +87,11 @@ param (
 )
 ```
 
-Other empty attributes such as `[CmdletBinding()]` and `[SupportsWildcards()]`
-are allowed because the attribute itself carries the meaning.
-
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyAttributeRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterArgumentRule.ps1
 ```
 
 ## Mandatory parameters
@@ -106,14 +117,6 @@ exempt because `[ValidateNotNullOrEmpty()]` has no effect on them.
 requires the explicit `[Parameter(Mandatory = $true)]` form used throughout the
 codebase.
 
-`PSAvoidRedundantParameterArgument` bans named arguments in `[Parameter()]`
-that restate the attribute's default, such as `Mandatory = $false`,
-`ValueFromPipeline = $false`, `ValueFromPipelineByPropertyName = $false`,
-`ValueFromRemainingArguments = $false`, `HelpMessage = $null`,
-`ParameterSetName = '__AllParameterSets'`, and `Position = -2147483648`.
-Defaults come from `ParameterAttribute` itself, so the rule follows the
-platform. State only what changes the default.
-
 `PSAvoidExplicitParameterPosition` bans the `Position` argument in
 `[Parameter()]` for module functions and internal scripts. Parameters bind in
 declaration order, so reorder them instead of numbering them.
@@ -129,22 +132,83 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterPositionRule.ps1
 
 ## Collection output
 
-`PSUseTableFormatView` requires a table format view for every `PSTypeName`
-output by a public cmdlet that declares an array `[OutputType]`. The view can
-live in any file under `d365bap.tools/xml/formats/table`. Arrays of scalar
-values (strings, numbers, booleans, dates, GUIDs) are exempt, and a list view is
-optional and not checked.
+`PSUseStandardCollectionOutput` requires every public cmdlet with array output
+to meet two contracts:
 
-`PSUseAsExcelOutput` requires every public cmdlet with array output to declare
-a `[switch] $AsExcelOutput` parameter. Arrays of scalar values (strings,
-numbers, booleans, dates, GUIDs) are exempt. It checks presence only; the
-export implementation is not validated.
+- A table format view for every `PSTypeName` it emits. The view can live in any
+  file under `d365bap.tools/xml/formats/table`.
+- A `[switch] $AsExcelOutput` parameter. Presence only; the export
+  implementation is not validated.
 
-Run their regression checks under PowerShell 7.6 or later:
+Arrays of scalar values (strings, numbers, booleans, dates, GUIDs) are exempt
+from both. A list view is optional and not checked.
+
+Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
-pwsh -NoProfile -NonInteractive -File build/Test-Ps1TableFormatRule.ps1
-pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1StandardOutputRule.ps1
+```
+
+## Access token endpoints
+
+`PSUseBapAccessTokenEndpointSwitch` fails a module script that requests a known
+audience through a literal `-ResourceUrl` value. Each known audience has a
+dedicated switch on `Get-BapAccessToken`, so the audience stays defined once:
+
+```powershell
+# Fails
+$secure = Get-BapAccessToken -ResourceUrl 'https://graph.microsoft.com/'
+
+# Passes
+$secure = Get-BapAccessToken -Graph
+```
+
+| Audience | Switch |
+| --- | --- |
+| Business Application Platform | `-Bap` |
+| Power Platform API | `-PowerPlatform` |
+| Power Platform admin API | `-PowerPlatformAdmin` |
+| Microsoft Graph | `-Graph` |
+
+Trailing slashes and case are ignored, so
+`-ResourceUrl 'https://api.powerplatform.com/'` is the same violation as
+`-ResourceUrl 'https://api.powerplatform.com'`. An explicit resource for
+anything else stays legitimate, for example a Dataverse environment URL. The
+rule reads the AST; variables, splats, and URLs with a path are not checked. It
+only runs on changed files, so remaining call sites migrate as their cmdlets are
+touched.
+
+The regression check also compares the rule map with
+`$script:BapAccessTokenEndpoints` in `Get-BapAccessToken.ps1`; adding an endpoint
+in only one place fails the check.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1AccessTokenRule.ps1
+```
+
+## Parameter layout
+
+`PSUseStandardParameterLayout` requires a consistent parameter declaration:
+
+- A blank line before every parameter after the first, including its attributes.
+  The first parameter stays directly under `param (`.
+- `[Parameter()]` attributes first, then `[ValidateSet()]`, then the remaining
+  attributes, then the type constraint and the parameter name.
+- No blank line between those stack items. Multi-line attributes are fine; only
+  the gaps between stack items are checked.
+- The type constraint and parameter name on one line, with exactly one space
+  between the closing `]` and `$`.
+
+The space check applies to every parameter in the file, including scriptblock
+parameters. The other checks apply to public functions only; build and internal
+scripts use their own layouts.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterLayoutRule.ps1
 ```
 
 ## Note properties
