@@ -84,7 +84,10 @@ function Set-PpacTenantRuleBasedPolicy {
 		$payloadName = if ($PSBoundParameters.ContainsKey('Name')) { $Name } else { $current[0].Name }
 		$payloadRuleSets = if ($PSBoundParameters.ContainsKey('RuleSet')) { @($RuleSet) } else { @($current[0].RuleSets) }
 
-		if (-not $PSCmdlet.ShouldProcess($current[0].PolicyId, 'Update governance rule-based policy')) { return }
+		$policyLabel = $current[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, 'Update governance policy')) { return }
 
 		$body = [ordered]@{
 			name     = $payloadName

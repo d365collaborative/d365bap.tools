@@ -48,7 +48,10 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 			return
 		}
 
-		if (-not $PSCmdlet.ShouldProcess($current[0].PolicyId, "Remove rule set $RuleSetId")) { return }
+		$policyLabel = $current[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Remove rule set '$RuleSetId'")) { return }
 
 		$body = [ordered]@{
 			name     = $current[0].Name

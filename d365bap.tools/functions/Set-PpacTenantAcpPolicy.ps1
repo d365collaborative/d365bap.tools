@@ -90,7 +90,10 @@ function Set-PpacTenantAcpPolicy {
 			}
 		}
 
-		if (-not $PSCmdlet.ShouldProcess($PolicyId, 'Update advanced connector policy')) { return }
+		$policyLabel = $current[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, 'Update advanced connector policy')) { return }
 
 		$params = @{
 			PolicyId = $current[0].PolicyId

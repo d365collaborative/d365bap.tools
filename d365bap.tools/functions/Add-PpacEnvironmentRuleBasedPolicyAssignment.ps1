@@ -68,6 +68,11 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 			return
 		}
 
+		$environmentLabel = $EnvironmentId
+		if ($null -ne $envObj -and -not [string]::IsNullOrWhiteSpace("$($envObj.PpacEnvName)")) {
+			$environmentLabel = $envObj.PpacEnvName
+		}
+
 		$policy = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
 		if ($policy.Count -eq 0) {
 			Stop-PSFFunction -Message "No governance policy matched '$PolicyId'."
@@ -78,7 +83,10 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 			return
 		}
 
-		if (-not $PSCmdlet.ShouldProcess($EnvironmentId, "Assign governance policy $($policy[0].PolicyId)")) { return }
+		$policyLabel = $policy[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $policy[0].PolicyId }
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Assign to '$environmentLabel'")) { return }
 
 		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken

@@ -38,10 +38,34 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		if (-not $PSCmdlet.ShouldProcess($EnvironmentGroupId, "Assign ACP policy $PolicyId")) { return }
+		$groupLabel = $EnvironmentGroupId
+		try {
+			$groupObj = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
+			if ($null -ne $groupObj -and -not [string]::IsNullOrWhiteSpace("$($groupObj.DisplayName)")) {
+				$groupLabel = $groupObj.DisplayName
+			}
+		}
+		catch {
+			$groupLabel = $EnvironmentGroupId
+		}
 
-		$assigned = @(Add-PpacEnvironmentGroupRuleBasedPolicyAssignment -EnvironmentGroupId $EnvironmentGroupId -PolicyId $PolicyId -Confirm:$false)
+		$policy = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
+		if ($policy.Count -eq 0) {
+			Stop-PSFFunction -Message "No ACP policy matched '$PolicyId'."
+			return
+		}
+		if ($policy.Count -gt 1) {
+			Stop-PSFFunction -Message "Multiple ACP policies matched '$PolicyId'. Use a policy GUID."
+			return
+		}
+
+		$policyLabel = $policy[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $policy[0].PolicyId }
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Assign ACP to group '$groupLabel'")) { return }
+
+		$assigned = @(Add-PpacEnvironmentGroupRuleBasedPolicyAssignment -EnvironmentGroupId $EnvironmentGroupId -PolicyId $policy[0].PolicyId -Confirm:$false)
 		if ($assigned.Count -eq 0) { return }
-		Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId $EnvironmentGroupId -PolicyId $PolicyId
+		Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId $EnvironmentGroupId -PolicyId $policy[0].PolicyId
 	}
 }

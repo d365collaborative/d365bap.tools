@@ -39,10 +39,34 @@ function Add-PpacEnvironmentAcpPolicyAssignment {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		if (-not $PSCmdlet.ShouldProcess($EnvironmentId, "Assign ACP policy $PolicyId")) { return }
+		$policy = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
+		if ($policy.Count -eq 0) {
+			Stop-PSFFunction -Message "No ACP policy matched '$PolicyId'."
+			return
+		}
+		if ($policy.Count -gt 1) {
+			Stop-PSFFunction -Message "Multiple ACP policies matched '$PolicyId'. Use a policy GUID."
+			return
+		}
 
-		$assigned = @(Add-PpacEnvironmentRuleBasedPolicyAssignment -EnvironmentId $EnvironmentId -PolicyId $PolicyId -Confirm:$false)
+		$policyLabel = $policy[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $policy[0].PolicyId }
+
+		$environmentLabel = $EnvironmentId
+		try {
+			$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+			if ($null -ne $envObj -and -not [string]::IsNullOrWhiteSpace("$($envObj.PpacEnvName)")) {
+				$environmentLabel = $envObj.PpacEnvName
+			}
+		}
+		catch {
+			$environmentLabel = $EnvironmentId
+		}
+
+		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Assign ACP to '$environmentLabel'")) { return }
+
+		$assigned = @(Add-PpacEnvironmentRuleBasedPolicyAssignment -EnvironmentId $EnvironmentId -PolicyId $policy[0].PolicyId -Confirm:$false)
 		if ($assigned.Count -eq 0) { return }
-		Get-PpacEnvironmentAcpPolicy -EnvironmentId $EnvironmentId -PolicyId $PolicyId
+		Get-PpacEnvironmentAcpPolicy -EnvironmentId $EnvironmentId -PolicyId $policy[0].PolicyId
 	}
 }
