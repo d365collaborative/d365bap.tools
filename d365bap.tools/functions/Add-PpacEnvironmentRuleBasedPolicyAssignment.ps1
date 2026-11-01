@@ -39,7 +39,7 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
 		if ($null -ne $envObj) {
 			$routeEnvironmentId = $envObj.PpacEnvId
 		}

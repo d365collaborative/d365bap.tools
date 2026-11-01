@@ -80,7 +80,7 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$envObj = Get-BapEnvironment `
+		$envObj = Get-Environment `
 			-EnvironmentId $EnvironmentId | `
 			Select-Object -First 1
 
