@@ -1,62 +1,79 @@
-﻿function Test-Ps1NotePropertyCommand {
-	param($Command, [string] $Variable, $PipelineTarget)
-	if ($Command.GetCommandName() -ne 'Add-Member') { return $false }
-	$elements = @($Command.CommandElements)
-	$hasName = $false
-	$hasValue = $false
-	$memberType = $null
-	$target = $PipelineTarget
-	for ($index = 0; $index -lt $elements.Count; $index++) {
-		$element = $elements[$index]
-		if ($element -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
-		switch ($element.ParameterName) {
-			'NotePropertyName' { $hasName = $true }
-			'NotePropertyValue' { $hasValue = $true }
-			'Name' { $hasName = $true }
-			'Value' { $hasValue = $true }
-			'MemberType' {
-				if ($index + 1 -lt $elements.Count) { $memberType = $elements[$index + 1].Extent.Text.Trim("'", '"') }
-			}
-			'InputObject' {
-				if ($index + 1 -lt $elements.Count) { $target = $elements[$index + 1] }
-			}
+﻿function Get-Ps1IterationScope {
+	param($Node)
+	$parent = $Node.Parent
+	while ($null -ne $parent) {
+		if ($parent -is [Management.Automation.Language.ForEachStatementAst] -or
+			$parent -is [Management.Automation.Language.ForStatementAst] -or
+			$parent -is [Management.Automation.Language.WhileStatementAst] -or
+			$parent -is [Management.Automation.Language.DoWhileStatementAst] -or
+			$parent -is [Management.Automation.Language.DoUntilStatementAst]) {
+			return $parent
 		}
-	}
-	if ($null -ne $memberType -and $memberType -ne 'NoteProperty') { return $false }
-	if (-not ($hasName -and $hasValue)) { return $false }
-	if ($target -isnot [Management.Automation.Language.VariableExpressionAst]) { return $false }
-	$target.VariablePath.UserPath -eq $Variable
-}
-
-function Test-Ps1AddMemberStatement {
-	param($Statement, [string] $Variable)
-	if ($Statement -isnot [Management.Automation.Language.PipelineAst]) { return $false }
-	$elements = @($Statement.PipelineElements)
-	$command = $null
-	$pipelineTarget = $null
-	if ($elements.Count -eq 1 -and $elements[0] -is [Management.Automation.Language.CommandAst]) {
-		$command = $elements[0]
-	}
-	elseif ($elements.Count -eq 2 -and $elements[0] -is [Management.Automation.Language.CommandExpressionAst] -and $elements[1] -is [Management.Automation.Language.CommandAst]) {
-		$command = $elements[1]
-		$pipelineTarget = $elements[0].Expression
-	}
-	else { return $false }
-	Test-Ps1NotePropertyCommand $command $Variable $pipelineTarget
-}
-
-function Get-Ps1NotePropertyName {
-	param($Statement)
-	$command = @($Statement.PipelineElements)[-1]
-	$elements = @($command.CommandElements)
-	for ($index = 0; $index -lt $elements.Count; $index++) {
-		$element = $elements[$index]
-		if ($element -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
-		if ($element.ParameterName -notin @('NotePropertyName', 'Name')) { continue }
-		if ($index + 1 -ge $elements.Count) { return $null }
-		return $elements[$index + 1].Extent.Text.Trim("'", '"')
+		if ($parent -is [Management.Automation.Language.CommandAst] -and $parent.GetCommandName() -eq 'ForEach-Object') { return $parent }
+		if ($parent -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
+			$parent.Member -is [Management.Automation.Language.StringConstantExpressionAst] -and
+			$parent.Member.Value -eq 'ForEach') {
+			return $parent
+		}
+		$parent = $parent.Parent
 	}
 	$null
+}
+
+function Get-Ps1AddMemberTarget {
+	param($Command)
+	$target = $null
+	if ($Command.Parent -is [Management.Automation.Language.PipelineAst]) {
+		$elements = @($Command.Parent.PipelineElements)
+		$index = [Array]::IndexOf($elements, $Command)
+		if ($index -gt 0 -and $elements[$index - 1] -is [Management.Automation.Language.CommandExpressionAst]) {
+			$target = $elements[$index - 1].Expression
+		}
+	}
+	$elements = @($Command.CommandElements)
+	for ($index = 0; $index -lt $elements.Count; $index++) {
+		if ($elements[$index] -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
+		if ($elements[$index].ParameterName -ne 'InputObject') { continue }
+		if ($index + 1 -lt $elements.Count) { $target = $elements[$index + 1] }
+	}
+	if ($target -isnot [Management.Automation.Language.VariableExpressionAst]) { return $null }
+	$target
+}
+
+function Get-Ps1AddMemberNoteProperty {
+	param($Command)
+	$elements = @($Command.CommandElements)
+	$name = $null
+	$hasNotePropertyName = $false
+	$memberType = $null
+	for ($index = 0; $index -lt $elements.Count; $index++) {
+		$element = $elements[$index]
+		if ($element -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
+		if ($index + 1 -ge $elements.Count) { continue }
+		$value = $elements[$index + 1]
+		if ($value -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
+		switch ($element.ParameterName) {
+			'NotePropertyName' { $hasNotePropertyName = $true; $name = $value.Value }
+			'MemberType' { $memberType = $value.Value }
+			'Name' { $name = $value.Value }
+		}
+	}
+	if (-not $hasNotePropertyName -and $memberType -ne 'NoteProperty') { return $null }
+	$name
+}
+
+function Test-Ps1PropertyUsedInScope {
+	param($Scope, [string] $Variable, [string] $PropertyName, $Exclude)
+	foreach ($member in $Scope.FindAll({ param($node) $node -is [Management.Automation.Language.MemberExpressionAst] }, $true)) {
+		if ($null -ne $Exclude -and $member.Extent.StartOffset -ge $Exclude.StartOffset -and $member.Extent.EndOffset -le $Exclude.EndOffset) { continue }
+		if ($member.Member -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
+		if ($member.Member.Value -ne $PropertyName) { continue }
+		$expression = $member.Expression
+		if ($expression -isnot [Management.Automation.Language.VariableExpressionAst]) { continue }
+		$name = $expression.VariablePath.UserPath
+		if ($name -eq $Variable -or $name -in @('_', 'PSItem')) { return $true }
+	}
+	$false
 }
 
 function Get-Ps1AddMemberDiagnostic {
@@ -66,36 +83,25 @@ function Get-Ps1AddMemberDiagnostic {
 	$normalized = $Path -replace '\\', '/'
 	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
 
-	foreach ($loop in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.ForEachStatementAst] }, $true)) {
-		$variable = $loop.Variable.VariablePath.UserPath
-		$statements = @($loop.Body.Statements)
-		if ($statements.Count -eq 0) { continue }
+	foreach ($command in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Add-Member' }, $true)) {
+		$property = Get-Ps1AddMemberNoteProperty $command
+		if ([string]::IsNullOrEmpty($property)) { continue }
 
-		$addMembers = @($statements | Where-Object { Test-Ps1AddMemberStatement $_ $variable })
-		if ($addMembers.Count -eq 0) { continue }
+		$target = Get-Ps1AddMemberTarget $command
+		if ($null -eq $target) { continue }
 
-		$pure = $addMembers.Count -eq $statements.Count
-		$names = @($addMembers | ForEach-Object { Get-Ps1NotePropertyName $_ } | Where-Object { $_ } | Select-Object -Unique)
-		if ($pure) {
-			[pscustomobject]@{
-				RuleName   = 'PSAvoidAddMemberInLoop'
-				Severity   = 'Error'
-				ScriptName = [IO.Path]::GetFileName($Path)
-				Line       = $loop.Extent.StartLineNumber
-				Column     = $loop.Extent.StartColumnNumber
-				Message    = 'Add the note properties in the Select-PSFObject or Select-Object projection instead of a foreach loop with Add-Member.'
-			}
-			continue
-		}
+		$scope = Get-Ps1IterationScope $command
+		if ($null -eq $scope) { continue }
 
-		$list = if ($names.Count -gt 0) { $names -join ', ' } else { 'the note properties' }
+		if (Test-Ps1PropertyUsedInScope $scope $target.VariablePath.UserPath $property $command) { continue }
+
 		[pscustomobject]@{
-			RuleName   = 'PSReviewAddMemberInLoop'
-			Severity   = 'Warning'
+			RuleName   = 'PSAvoidAddMemberInLoop'
+			Severity   = 'Error'
 			ScriptName = [IO.Path]::GetFileName($Path)
-			Line       = $loop.Extent.StartLineNumber
-			Column     = $loop.Extent.StartColumnNumber
-			Message    = "Review adding $list in the Select-PSFObject or Select-Object projection after the foreach instead of inside it."
+			Line       = $command.Extent.StartLineNumber
+			Column     = $command.Extent.StartColumnNumber
+			Message    = "Property '$property' is added inside a loop but never read or written inside it. Move it out and add it in the Select-PSFObject or Select-Object projection after the loop."
 		}
 	}
 }

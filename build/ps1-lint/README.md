@@ -12,8 +12,7 @@ What runs on `**.ps1`:
   `PSUseSupportsWildcards`, `PSAvoidEmptyParameterAttribute`,
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
-  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`,
-  `PSReviewAddMemberInLoop`.
+  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -150,10 +149,12 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
 
 ## Note properties
 
-`PSAvoidAddMemberInLoop` fails a `foreach` whose body only adds note properties
-to the loop variable. `PSReviewAddMemberInLoop` warns when the loop also does
-other work but still adds note properties to the loop variable at the top level.
-Add those properties in the existing projection instead of a second pass:
+`PSAvoidAddMemberInLoop` fails a note property added inside an iteration
+construct when the property is never read or written inside that loop. It
+covers `foreach`, `for`, `while`, `do/while`, `do/until`, `ForEach-Object`, and
+`.ForEach()`. Every property added inside a loop must be used inside that loop;
+otherwise move it out and add it in the Select-PSFObject or Select-Object
+projection after the loop:
 
 ```powershell
 $resCol = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.Example' -Property `
@@ -162,9 +163,9 @@ $resCol = $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.Example' -Property
     @{ Name = 'PpacEnvName'; Expression = { $routeEnvironmentName } }
 ```
 
-Conditional properties, different targets, and nested `if` blocks are not
-reported. The warning does not fail the build; it points at loops that can be
-simplified when they are next touched. Run its regression checks under PowerShell 7.6 or later:
+Dynamic property names, non-variable targets, and other member types are not
+checked. The rule reads and writes inside the loop as usage; a property used
+only after all loops must be projected outside. Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1AddMemberRule.ps1
