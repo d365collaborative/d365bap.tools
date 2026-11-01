@@ -65,7 +65,7 @@ function Get-PpacEnvironmentConnection {
 
 		$route = Get-PpacConnectivityRoute -EnvironmentId $EnvironmentId
 		if ($null -eq $route) {
-			$messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
+			$messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-Environment</c> cmdlet."
 			Write-PSFMessage -Level Important -Message $messageString
 			Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 			return

@@ -28,7 +28,7 @@ function Get-PpacConnectivityRoute {
 		[string] $EnvironmentId
 	)
 
-	$envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+	$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
 	if ($null -ne $envObj) {
 		return [pscustomobject]@{
 			RouteId   = $envObj.PpacEnvId

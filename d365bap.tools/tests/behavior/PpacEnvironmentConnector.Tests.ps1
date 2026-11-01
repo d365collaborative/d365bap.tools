@@ -14,7 +14,7 @@
 			throw $Message
 		}
 		function Get-BapContext { [pscustomobject]@{ TenantId = '11111111-1111-1111-1111-111111111111'; TenantName = 'Fixture Tenant' } }
-		function Get-BapEnvironment {
+		function Get-Environment {
 			param($EnvironmentId)
 			if ("$EnvironmentId" -eq 'es-ude-motz-01') {
 				[pscustomobject]@{ PpacEnvId = 'af6c129c-c893-e544-8b42-e38a584ba34c'; PpacEnvName = 'es-ude-motz-01' }
