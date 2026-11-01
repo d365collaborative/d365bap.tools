@@ -95,8 +95,8 @@ function Get-PpacEnvironmentConnection {
 
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$items = @($result.value)
-		$items = @($items | Where-Object {
+		$colItems = @($result.value)
+		$colItems = @($colItems | Where-Object {
 				$connectorName = if ([string]::IsNullOrWhiteSpace("$($_.properties.apiId)")) { $null } else { ($_.properties.apiId -split '/')[-1] }
 				($_.id -like $Name -or $_.id -eq $Name) `
 					-or ($_.name -like $Name -or $_.name -eq $Name) `
@@ -104,10 +104,10 @@ function Get-PpacEnvironmentConnection {
 					-or ($_.properties.apiId -like $Name -or $_.properties.apiId -eq $Name) `
 					-or ($connectorName -like $Name -or $connectorName -eq $Name)
 			})
-		$items = @($items | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
+		$colItems = @($colItems | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
 
-		$resCol = @(
-			$items | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnection' -Property `
+		$colRes = @(
+			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnection' -Property `
 				'id as ConnectionId',
 			'name as ConnectionName',
 			'properties.displayName as DisplayName',
@@ -129,13 +129,13 @@ function Get-PpacEnvironmentConnection {
 		)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnection' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnection' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }

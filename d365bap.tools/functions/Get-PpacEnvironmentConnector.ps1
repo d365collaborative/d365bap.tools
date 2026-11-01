@@ -94,16 +94,16 @@ function Get-PpacEnvironmentConnector {
 
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$items = @($result.value)
-		$items = @($items | Where-Object {
+		$colItems = @($result.value)
+		$colItems = @($colItems | Where-Object {
 				($_.id -like $Name -or $_.id -eq $Name) `
 					-or ($_.name -like $Name -or $_.name -eq $Name) `
 					-or ($_.properties.displayName -like $Name -or $_.properties.displayName -eq $Name)
 			})
-		$items = @($items | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
+		$colItems = @($colItems | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
 
-		$resCol = @(
-			$items | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnector' -Property `
+		$colRes = @(
+			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnector' -Property `
 				'id as ConnectorId',
 			'name as ConnectorName',
 			'properties.displayName as DisplayName',
@@ -121,13 +121,13 @@ function Get-PpacEnvironmentConnector {
 		)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnector' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnector' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }
