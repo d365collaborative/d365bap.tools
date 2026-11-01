@@ -44,6 +44,7 @@ $results = @()
 . "$PSScriptRoot/../internal/Get-Ps1ShouldProcessDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1OutputTypeDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1FunctionInterruptDiagnostic.ps1"
+. "$PSScriptRoot/../internal/Get-Ps1ReturnValueDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/../internal/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/../internal/Resolve-Ps1AliasCommand.ps1"
@@ -67,6 +68,7 @@ foreach ($p in $files) {
 	$results += @(Get-Ps1ShouldProcessDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1OutputTypeDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1FunctionInterruptDiagnostic -Analysis $analysis)
+	$results += @(Get-Ps1ReturnValueDiagnostic -Analysis $analysis)
 	$results += @(Get-Ps1AliasDiagnostic -Analysis $analysis -Worker $worker)
 }
 
