@@ -107,5 +107,103 @@ Assert-EnvironmentLookup 'Internal functions are checked' $bap -Directory 'd365b
 Assert-EnvironmentLookup 'Outside the module' $bap -Directory 'build'
 Assert-EnvironmentLookup 'Test files are never checked' $bap -FileName 'Get-Ps1EnvironmentLookupRule.Tests.ps1'
 
+Assert-EnvironmentLookup 'Central lookup assigned to envObj' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+}
+'@
+
+Assert-EnvironmentLookup 'Central lookup piped to the first result' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+}
+'@
+
+Assert-EnvironmentLookup 'Central lookup assigned to another name' @'
+function Get-Fixture {
+    $environment = Get-Environment -EnvironmentId $EnvironmentId
+}
+'@ 1 @('named $envObj')
+
+Assert-EnvironmentLookup 'Central lookup discarded to null' @'
+function Get-Fixture {
+    $null = Get-Environment -EnvironmentId $EnvironmentId
+}
+'@ 1 @('named $envObj')
+
+Assert-EnvironmentLookup 'Central lookup without an assignment' @'
+function Get-Fixture {
+    Get-Environment -EnvironmentId $EnvironmentId
+}
+'@ 1 @('named $envObj')
+
+Assert-EnvironmentLookup 'Central lookup inside try catch' @'
+function Get-Fixture {
+    try {
+        $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    }
+    catch {
+        $envObj = $null
+    }
+}
+'@ 1 @('Do not wrap Get-Environment in try/catch')
+
+Assert-EnvironmentLookup 'Null check with null on the left' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    if ($null -ne $envObj) {
+        $name = $envObj.PpacEnvName
+    }
+}
+'@ 1 @('is never null')
+
+Assert-EnvironmentLookup 'Null check with null on the right' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    if ($envObj -eq $null) {
+        return
+    }
+}
+'@ 1 @('is never null')
+
+Assert-EnvironmentLookup 'Property null check is allowed' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    if ($null -ne $envObj.PpacEnvName) {
+        $name = $envObj.PpacEnvName
+    }
+}
+'@
+
+Assert-EnvironmentLookup 'Null check after a call without an id' @'
+function Get-Fixture {
+    $envObj = Get-Environment
+    if ($null -ne $envObj) {
+        $name = $envObj.PpacEnvName
+    }
+}
+'@ 1 @('is never null')
+
+Assert-EnvironmentLookup 'Null check in a nested function' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+
+    function Test-Inner {
+        if ($null -ne $envObj) {
+            $name = $envObj.PpacEnvName
+        }
+    }
+}
+'@
+
+Assert-EnvironmentLookup 'Truthiness check is allowed' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    if ($envObj) {
+        $name = $envObj.PpacEnvName
+    }
+}
+'@
+
 $script:caseCount++
 Write-Output "Environment lookup rule checks passed: $script:caseCount cases."

@@ -301,12 +301,15 @@ through `Get-Environment`, which returns the cheapest shape the caller asks for:
 | --- | --- | --- |
 | BAP environment | ~0.6 s | `Get-Environment -EnvironmentId $id` |
 | Unified, no provisioning data | ~0.7 s | `Get-Environment -EnvironmentId $id -Unified` |
-| Unified with provisioning data | ~15 s | `Get-Environment -EnvironmentId $id -Unified -VersionDetails` |
+| Unified with provisioning data | ~2.3 s warm | `Get-Environment -EnvironmentId $id -Unified -VersionDetails` |
 
 ```powershell
 # Fails
 $envObj = Get-BapEnvironment -EnvironmentId $id | Select-Object -First 1
 $envObj = Get-UnifiedEnvironment -EnvironmentId $id | Select-Object -First 1
+$environment = Get-Environment -EnvironmentId $id
+try { $envObj = Get-Environment -EnvironmentId $id } catch { }
+if ($null -ne $envObj) { }
 
 # Passes
 $envObj = Get-Environment -EnvironmentId $id | Select-Object -First 1
@@ -314,14 +317,20 @@ $envObj = Get-Environment -EnvironmentId $id -Unified | Select-Object -First 1
 $envObj = Get-Environment -EnvironmentId $id -Unified -VersionDetails | Select-Object -First 1
 ```
 
+`Get-Environment` stops execution with an actionable message when no environment
+matches. Callers assign it to a local variable named `$envObj` (the prefix is what
+later analysis keys on), do not wrap it in `try`/`catch`, and do not test the
+variable for `$null`. The variable is always set.
+
 The per-environment provisioning lookup is what makes the full shape expensive,
 so only callers that read fields such as `PpacProvApp` should ask for it. The
 rule reports `Get-UnifiedEnvironment -SkipVersionDetails` as `-Unified` and a
 plain `Get-UnifiedEnvironment` as `-Unified -VersionDetails`.
 
 `Get-BapEnvironment.ps1`, `Get-UnifiedEnvironment.ps1`, and `Get-Environment.ps1`
-are exempt because they implement the lookup. The rule runs on changed files
-only, so callers migrate as their files are touched.
+are exempt because they implement the lookup; test files and the tepp scripts are
+exempt too. The rule runs on changed files only, so callers migrate as their files
+are touched.
 
 Run its regression checks under PowerShell 7.6 or later:
 

@@ -4,12 +4,12 @@
         Gets environments in the cheapest shape a caller needs.
 
     .DESCRIPTION
-        Returns BAP environments by default. Extra data is fetched only when the
-        caller opts in, because per-environment data costs seconds per environment.
-        The default therefore stays a single environment list call.
+        Returns BAP environments by default and only pays for richer shapes on request.
+        When no environment matches, it stops execution with an actionable message so
+        callers never need a null check.
 
     .PARAMETER EnvironmentId
-        Environment name, GUID, or LCS id to match. Supports wildcards.
+        Environment name, GUID, or LCS id. Supports wildcards.
 
         Default: "*".
 
@@ -57,13 +57,23 @@ function Get-Environment {
 		[switch] $VersionDetails
 	)
 
-	if ($Unified) {
+	$result = if ($Unified) {
 		if ($VersionDetails) {
-			return Get-UnifiedEnvironment -EnvironmentId $EnvironmentId
+			Get-UnifiedEnvironment -EnvironmentId $EnvironmentId
 		}
-
-		return Get-UnifiedEnvironment -EnvironmentId $EnvironmentId -SkipVersionDetails
+		else {
+			Get-UnifiedEnvironment -EnvironmentId $EnvironmentId -SkipVersionDetails
+		}
+	}
+	else {
+		Get-BapEnvironment -EnvironmentId $EnvironmentId
 	}
 
-	return Get-BapEnvironment -EnvironmentId $EnvironmentId
+	if ($null -eq $result -or @($result).Count -eq 0) {
+		$messageString = "Could not find any environment matching <c='em'>$EnvironmentId</c>. Please verify the id or list the available environments using <c='em'>Get-BapEnvironment</c> or <c='em'>Get-UnifiedEnvironment</c>."
+		Write-PSFMessage -Level Important -Message $messageString
+		Stop-PSFFunction -Message "Stopping because no environment matched the supplied id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -EnableException $true
+	}
+
+	return $result
 }
