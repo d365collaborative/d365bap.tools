@@ -20,13 +20,13 @@ function Assert-ParameterArgument {
 	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @())
 	[IO.File]::WriteAllText($fixturePath, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $fixturePath
-	$diagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object { $_.RuleName -eq 'PSAvoidRedundantParameterAttribute' -and $_.Message -like 'Remove the redundant*' })
-	if ($diagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
+	$colDiagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object { $_.RuleName -eq 'PSAvoidRedundantParameterAttribute' -and $_.Message -like 'Remove the redundant*' })
+	if ($colDiagnostics.Count -ne $Expected) {
+		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
-	$message = @($diagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($fragment in $ExpectedText) {
-		if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
+	foreach ($itemFragment in $ExpectedText) {
+		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 	}
 	$script:caseCount++
 }

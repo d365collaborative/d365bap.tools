@@ -39,10 +39,10 @@ $allowedGenerated = @(
 
 function Test-GeneratedFile {
 	param([string] $File)
-	foreach ($pattern in $patterns) {
-		if ($File -notmatch $pattern) { continue }
-		foreach ($allowed in $allowedGenerated) {
-			if ($File -match $allowed) { return $false }
+	foreach ($itemPattern in $patterns) {
+		if ($File -notmatch $itemPattern) { continue }
+		foreach ($itemAllowed in $allowedGenerated) {
+			if ($File -match $itemAllowed) { return $false }
 		}
 		return $true
 	}

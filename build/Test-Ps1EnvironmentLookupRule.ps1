@@ -25,13 +25,13 @@ function Assert-EnvironmentLookup {
 	$path = Join-Path $folder $FileName
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
-	$diagnostics = @(Get-Ps1EnvironmentLookupDiagnostic -Analysis $analysis)
-	if ($diagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
+	$colDiagnostics = @(Get-Ps1EnvironmentLookupDiagnostic -Analysis $analysis)
+	if ($colDiagnostics.Count -ne $Expected) {
+		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
-	$message = @($diagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($fragment in $ExpectedText) {
-		if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
+	foreach ($itemFragment in $ExpectedText) {
+		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 	}
 	$script:caseCount++
 }

@@ -357,9 +357,9 @@ automatic variables, and scope-qualified variables are not checked. A
 `Get-Environment` result keeps its `$envObj` name because the environment rule
 owns that contract.
 
-The rule runs on module code and the lint tooling under `build/ps1-lint`. Test
-files and tepp scripts are exempt. It runs on changed files only, so the existing
-names are reshaped as their files are touched.
+The rule runs on module code and build scripts under `build/`. Test files and
+tepp scripts are exempt. It runs on changed files only, so the existing names
+are reshaped as their files are touched.
 
 Run its regression checks under PowerShell 7.6 or later:
 

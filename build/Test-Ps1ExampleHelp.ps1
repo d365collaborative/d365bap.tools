@@ -19,14 +19,14 @@ $script:caseCount = 0
 function Assert-Example {
 	param([string] $Label, [string] $Source, [string[]] $Expected = @())
 	$normalizedSource = $Source.Replace("`r`n", "`n")
-	foreach ($lineEnding in @("`n", "`r`n")) {
-		[IO.File]::WriteAllText($fixturePath, $normalizedSource.Replace("`n", $lineEnding))
+	foreach ($itemLineEnding in @("`n", "`r`n")) {
+		[IO.File]::WriteAllText($fixturePath, $normalizedSource.Replace("`n", $itemLineEnding))
 		$analysis = Get-Ps1Analysis -Path $fixturePath
-		$diagnostics = @(Get-Ps1HelpDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSHelpExample')
-		$message = $diagnostics.Message -join ' '
-		if ($Expected.Count -eq 0 -and $diagnostics.Count -gt 0) { throw "${Label}: unexpected diagnostics: $message" }
-		foreach ($fragment in $Expected) {
-			if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+		$tmpDiagnostics = @(Get-Ps1HelpDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSHelpExample')
+		$message = $tmpDiagnostics.Message -join ' '
+		if ($Expected.Count -eq 0 -and $tmpDiagnostics.Count -gt 0) { throw "${Label}: unexpected diagnostics: $message" }
+		foreach ($itemFragment in $Expected) {
+			if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 		}
 	}
 	$script:caseCount++

@@ -33,23 +33,23 @@ $jobs = @(
 )
 
 function New-ConfigDoc {
-	$d = New-Object System.Xml.XmlDocument
-	$d.PreserveWhitespace = $false
-	[void]$d.AppendChild($d.CreateXmlDeclaration('1.0', 'utf-8', $null))
-	[void]$d.AppendChild($d.CreateElement('Configuration'))
-	return $d
+	$objDocument = New-Object System.Xml.XmlDocument
+	$objDocument.PreserveWhitespace = $false
+	[void]$objDocument.AppendChild($objDocument.CreateXmlDeclaration('1.0', 'utf-8', $null))
+	[void]$objDocument.AppendChild($objDocument.CreateElement('Configuration'))
+	return $objDocument
 }
 
 function Save-PrettyXml {
 	param([System.Xml.XmlDocument]$Doc, [string]$FilePath)
 
-	$settings = New-Object System.Xml.XmlWriterSettings
-	$settings.Indent = $true
-	$settings.IndentChars = '  '
-	$settings.Encoding = [System.Text.UTF8Encoding]::new($false)
-	$settings.OmitXmlDeclaration = $false
+	$objSettings = New-Object System.Xml.XmlWriterSettings
+	$objSettings.Indent = $true
+	$objSettings.IndentChars = '  '
+	$objSettings.Encoding = [System.Text.UTF8Encoding]::new($false)
+	$objSettings.OmitXmlDeclaration = $false
 
-	$writer = [System.Xml.XmlWriter]::Create($FilePath, $settings)
+	$writer = [System.Xml.XmlWriter]::Create($FilePath, $objSettings)
 	try { $Doc.Save($writer) } finally { $writer.Dispose() }
 }
 
@@ -64,8 +64,8 @@ function Merge-Kind {
 		throw "Source directory not found: $SourceDir"
 	}
 
-	$files = @(Get-ChildItem -Path $SourceDir -Filter '*.ps1xml' -File | Sort-Object Name)
-	if ($files.Count -eq 0) {
+	$colFiles = @(Get-ChildItem -Path $SourceDir -Filter '*.ps1xml' -File | Sort-Object Name)
+	if ($colFiles.Count -eq 0) {
 		throw "No .ps1xml files in $SourceDir"
 	}
 
@@ -73,44 +73,44 @@ function Merge-Kind {
 	$viewDefs = $doc.CreateElement('ViewDefinitions')
 	[void]$doc.DocumentElement.AppendChild($viewDefs)
 
-	$sharedCopied = @{}
+	$hashSharedCopied = @{}
 	$viewCount = 0
 
-	foreach ($file in $files) {
-		$src = New-Object System.Xml.XmlDocument
-		$src.Load($file.FullName)
+	foreach ($itemFile in $colFiles) {
+		$tmpSource = New-Object System.Xml.XmlDocument
+		$tmpSource.Load($itemFile.FullName)
 
-		if ($src.DocumentElement.Name -ne 'Configuration') {
-			throw "Root element in $($file.Name) is <$($src.DocumentElement.Name)>, expected <Configuration>."
+		if ($tmpSource.DocumentElement.Name -ne 'Configuration') {
+			throw "Root element in $($itemFile.Name) is <$($tmpSource.DocumentElement.Name)>, expected <Configuration>."
 		}
 
-		foreach ($section in 'Controls', 'SelectionSets') {
-			$node = $src.DocumentElement.SelectSingleNode($section)
-			if ($node -and -not $sharedCopied.ContainsKey($section)) {
+		foreach ($itemSection in 'Controls', 'SelectionSets') {
+			$node = $tmpSource.DocumentElement.SelectSingleNode($itemSection)
+			if ($node -and -not $hashSharedCopied.ContainsKey($itemSection)) {
 				[void]$doc.DocumentElement.InsertBefore(
 					$doc.ImportNode($node, $true),
 					$viewDefs
 				)
-				$sharedCopied[$section] = $true
+				$hashSharedCopied[$itemSection] = $true
 			}
 		}
 
-		$views = $src.DocumentElement.SelectNodes('ViewDefinitions/View')
-		if ($views.Count -eq 0) {
-			Write-Warning "No <View> in $($file.Name); skipped."
+		$tmpViews = $tmpSource.DocumentElement.SelectNodes('ViewDefinitions/View')
+		if ($tmpViews.Count -eq 0) {
+			Write-Warning "No <View> in $($itemFile.Name); skipped."
 			continue
 		}
 
-		foreach ($view in $views) {
-			[void]$viewDefs.AppendChild($doc.ImportNode($view, $true))
+		foreach ($itemView in $tmpViews) {
+			[void]$viewDefs.AppendChild($doc.ImportNode($itemView, $true))
 			$viewCount++
 		}
 
-		Write-Host ("  {0,-6} {1}" -f $Kind, $file.Name)
+		Write-Host ("  {0,-6} {1}" -f $Kind, $itemFile.Name)
 	}
 
 	Save-PrettyXml -Doc $doc -FilePath $OutFile
-	Write-Host ("Wrote {0} ({1} view(s) from {2} file(s))" -f $OutFile, $viewCount, $files.Count) -ForegroundColor Green
+	Write-Host ("Wrote {0} ({1} view(s) from {2} file(s))" -f $OutFile, $viewCount, $colFiles.Count) -ForegroundColor Green
 }
 
 foreach ($job in $jobs) {

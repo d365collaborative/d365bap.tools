@@ -87,15 +87,15 @@ function Get-ParsedBlob {
 	$parseErrors = $null
 	$ast = [System.Management.Automation.Language.Parser]::ParseInput($sourceText, [ref]$tokens, [ref]$parseErrors)
 	if ($parseErrors.Count -gt 0) { throw "Cannot parse ${Revision}:$Path" }
-	$parsed = [pscustomobject]@{ SourceText = $sourceText; Ast = $ast }
-	$script:ParsedBlobs[$ObjectId] = $parsed
-	return $parsed
+	$objParsed = [pscustomobject]@{ SourceText = $sourceText; Ast = $ast }
+	$script:ParsedBlobs[$ObjectId] = $objParsed
+	return $objParsed
 }
 
 function Get-PublicDeclaration {
 	param([string] $Revision)
 
-	$declarations = [ordered]@{}
+	$hashDeclarations = [ordered]@{}
 	$manifestPath = 'd365bap.tools/d365bap.tools.psd1'
 	$sdkMapping = 'd365bap.tools/internal/sdk/commands.psd1'
 	$sdkGenerator = 'd365bap.tools/internal/scripts/initialize-sdk.ps1'
@@ -104,73 +104,73 @@ function Get-PublicDeclaration {
 	$sdkBinary = 'd365bap.tools/bin/PowerPlatformSdk/Microsoft.PowerPlatform.Management.dll'
 	$sdkBridge = 'library/PowerPlatformSdk/SdkClient.cs'
 	$sdkBridgeBinary = 'd365bap.tools/bin/PowerPlatformSdk/D365Bap.Tools.PowerPlatformSdk.dll'
-	$loaderPaths = @('d365bap.tools/d365bap.tools.psm1', 'd365bap.tools/internal/scripts/preimport.ps1', 'd365bap.tools/internal/scripts/postimport.ps1')
-	$tree = @(Invoke-GitRead (@('-c', 'core.quotePath=true', 'ls-tree', '-r', $Revision, '--', 'd365bap.tools/functions', $manifestPath, $sdkMapping, $sdkGenerator, $sdkRuntime, 'library/PowerPlatformSdk', 'd365bap.tools/bin/PowerPlatformSdk') + $loaderPaths))
-	$objects = [ordered]@{}
-	foreach ($entry in $tree) {
-		if ($entry -notmatch '^([0-9]{6}) blob ([a-f0-9]+)\t(.+)$') { throw "Invalid Git tree entry in revision $Revision" }
-		$mode, $objectId, $path = $Matches[1], $Matches[2], $Matches[3]
-		if ($path.StartsWith('"')) { throw "Unsupported quoted Git path in revision $Revision" }
-		if ($mode -notin @('100644', '100755')) { throw "Unsupported Git file mode ${mode}: ${Revision}:$path" }
-		if ($objects.Contains($path)) { throw "Case-insensitive Git path collision: ${Revision}:$path" }
-		$objects[$path] = $objectId
+	$colLoaderPaths = @('d365bap.tools/d365bap.tools.psm1', 'd365bap.tools/internal/scripts/preimport.ps1', 'd365bap.tools/internal/scripts/postimport.ps1')
+	$colTree = @(Invoke-GitRead (@('-c', 'core.quotePath=true', 'ls-tree', '-r', $Revision, '--', 'd365bap.tools/functions', $manifestPath, $sdkMapping, $sdkGenerator, $sdkRuntime, 'library/PowerPlatformSdk', 'd365bap.tools/bin/PowerPlatformSdk') + $colLoaderPaths))
+	$hashObjects = [ordered]@{}
+	foreach ($itemEntry in $colTree) {
+		if ($itemEntry -notmatch '^([0-9]{6}) blob ([a-f0-9]+)\t(.+)$') { throw "Invalid Git tree entry in revision $Revision" }
+		$mode, $objectId, $itemPath = $Matches[1], $Matches[2], $Matches[3]
+		if ($itemPath.StartsWith('"')) { throw "Unsupported quoted Git path in revision $Revision" }
+		if ($mode -notin @('100644', '100755')) { throw "Unsupported Git file mode ${mode}: ${Revision}:$itemPath" }
+		if ($hashObjects.Contains($itemPath)) { throw "Case-insensitive Git path collision: ${Revision}:$itemPath" }
+		$hashObjects[$itemPath] = $objectId
 	}
-	$paths = @($objects.Keys)
-	if ($manifestPath -cnotin $paths) { throw "Missing module manifest: ${Revision}:$manifestPath" }
-	$sdkPaths = @($sdkMapping, $sdkGenerator, $sdkRuntime, $sdkProject, $sdkBinary, $sdkBridge, $sdkBridgeBinary)
-	if (@($sdkPaths | Where-Object { $_ -cin $paths }).Count -gt 0) {
-		foreach ($sdkPath in $sdkPaths) {
-			if ($sdkPath -cnotin $paths) { throw "Missing SDK signature input: ${Revision}:$sdkPath" }
+	$colPaths = @($hashObjects.Keys)
+	if ($manifestPath -cnotin $colPaths) { throw "Missing module manifest: ${Revision}:$manifestPath" }
+	$colSdkPaths = @($sdkMapping, $sdkGenerator, $sdkRuntime, $sdkProject, $sdkBinary, $sdkBridge, $sdkBridgeBinary)
+	if (@($colSdkPaths | Where-Object { $_ -cin $colPaths }).Count -gt 0) {
+		foreach ($itemSdkPath in $colSdkPaths) {
+			if ($itemSdkPath -cnotin $colPaths) { throw "Missing SDK signature input: ${Revision}:$itemSdkPath" }
 		}
 	}
-	foreach ($path in $paths) {
-		if ($path -clike 'library/PowerPlatformSdk/*' -or ($path -clike 'd365bap.tools/bin/PowerPlatformSdk/*' -and $path -match '\.dll$')) {
-			$declarations["sdk/$path"] = $objects[$path]
+	foreach ($itemPath in $colPaths) {
+		if ($itemPath -clike 'library/PowerPlatformSdk/*' -or ($itemPath -clike 'd365bap.tools/bin/PowerPlatformSdk/*' -and $itemPath -match '\.dll$')) {
+			$hashDeclarations["sdk/$itemPath"] = $hashObjects[$itemPath]
 			continue
 		}
-		if ($path -notmatch '\.(ps1|psd1|psm1)$') { continue }
-		$parsed = Get-ParsedBlob -ObjectId $objects[$path] -Path $path -Revision $Revision
+		if ($itemPath -notmatch '\.(ps1|psd1|psm1)$') { continue }
+		$parsed = Get-ParsedBlob -ObjectId $hashObjects[$itemPath] -Path $itemPath -Revision $Revision
 		$sourceText = $parsed.SourceText
 		$ast = $parsed.Ast
 
-		if ($path -cin $loaderPaths) {
-			$declarations["loader/$path"] = ConvertTo-SignatureText $sourceText
+		if ($itemPath -cin $colLoaderPaths) {
+			$hashDeclarations["loader/$itemPath"] = ConvertTo-SignatureText $sourceText
 			continue
 		}
-		if ($path -eq $sdkMapping -or $path -eq $sdkGenerator) {
-			$declarations["sdk/$path"] = ConvertTo-SignatureText $sourceText
+		if ($itemPath -eq $sdkMapping -or $itemPath -eq $sdkGenerator) {
+			$hashDeclarations["sdk/$itemPath"] = ConvertTo-SignatureText $sourceText
 			continue
 		}
-		if ($path -eq $sdkRuntime) {
-			foreach ($functionName in @('Get-BapSdkParameter', 'Import-BapSdk')) {
-				$generators = @($ast.EndBlock.Statements | Where-Object {
-						$_ -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq $functionName
+		if ($itemPath -eq $sdkRuntime) {
+			foreach ($itemFunctionName in @('Get-BapSdkParameter', 'Import-BapSdk')) {
+				$tmpGenerators = @($ast.EndBlock.Statements | Where-Object {
+						$_ -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq $itemFunctionName
 					})
-				if ($generators.Count -ne 1) { throw "Expected one SDK parameter generator or importer ($functionName): ${Revision}:$path" }
-				$declarations["sdk/$path/$functionName"] = ConvertTo-SignatureText $generators[0].Extent.Text
+				if ($tmpGenerators.Count -ne 1) { throw "Expected one SDK parameter generator or importer ($itemFunctionName): ${Revision}:$itemPath" }
+				$hashDeclarations["sdk/$itemPath/$itemFunctionName"] = ConvertTo-SignatureText $tmpGenerators[0].Extent.Text
 			}
 			continue
 		}
-		if ($path -eq $manifestPath) {
-			$statements = @($ast.EndBlock.Statements)
-			if ($statements.Count -ne 1 -or $statements[0] -isnot [System.Management.Automation.Language.PipelineAst] -or
-				$statements[0].PipelineElements.Count -ne 1 -or $statements[0].PipelineElements[0] -isnot [System.Management.Automation.Language.CommandExpressionAst] -or
-				$statements[0].PipelineElements[0].Expression -isnot [System.Management.Automation.Language.HashtableAst]) {
-				throw "Expected a literal module manifest table: ${Revision}:$path"
+		if ($itemPath -eq $manifestPath) {
+			$tmpStatements = @($ast.EndBlock.Statements)
+			if ($tmpStatements.Count -ne 1 -or $tmpStatements[0] -isnot [System.Management.Automation.Language.PipelineAst] -or
+				$tmpStatements[0].PipelineElements.Count -ne 1 -or $tmpStatements[0].PipelineElements[0] -isnot [System.Management.Automation.Language.CommandExpressionAst] -or
+				$tmpStatements[0].PipelineElements[0].Expression -isnot [System.Management.Automation.Language.HashtableAst]) {
+				throw "Expected a literal module manifest table: ${Revision}:$itemPath"
 			}
-			foreach ($pair in $statements[0].PipelineElements[0].Expression.KeyValuePairs) {
-				$key = $pair.Item1.Extent.Text.Trim("'", '"')
+			foreach ($itemPair in $tmpStatements[0].PipelineElements[0].Expression.KeyValuePairs) {
+				$key = $itemPair.Item1.Extent.Text.Trim("'", '"')
 				if ($key -in @('FunctionsToExport', 'CmdletsToExport', 'AliasesToExport', 'VariablesToExport', 'RootModule', 'ModuleToProcess', 'NestedModules', 'RequiredAssemblies', 'ScriptsToProcess')) {
-					if ($declarations.Contains("manifest/$key")) { throw "Duplicate manifest export key: ${Revision}:$key" }
-					$declarations["manifest/$key"] = ConvertTo-SignatureText $pair.Item2.Extent.Text
+					if ($hashDeclarations.Contains("manifest/$key")) { throw "Duplicate manifest export key: ${Revision}:$key" }
+					$hashDeclarations["manifest/$key"] = ConvertTo-SignatureText $itemPair.Item2.Extent.Text
 				}
 			}
 			continue
 		}
 
-		$functions = @($ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.FunctionDefinitionAst] })
-		if ($functions.Count -eq 0) { throw "No top-level function declaration: $path" }
-		$topLevelStatements = @(
+		$tmpFunctions = @($ast.EndBlock.Statements | Where-Object { $_ -is [System.Management.Automation.Language.FunctionDefinitionAst] })
+		if ($tmpFunctions.Count -eq 0) { throw "No top-level function declaration: $itemPath" }
+		$tmpTopLevelStatements = @(
 			if ($ast.ParamBlock) { $ast.ParamBlock.Extent.Text }
 			if ($ast.DynamicParamBlock) { $ast.DynamicParamBlock.Extent.Text }
 			if ($ast.BeginBlock) { $ast.BeginBlock.Extent.Text }
@@ -179,22 +179,22 @@ function Get-PublicDeclaration {
 			if ($ast.EndBlock -and -not $ast.EndBlock.Unnamed) { 'end' }
 			$ast.EndBlock.Statements | Where-Object { $_ -isnot [System.Management.Automation.Language.FunctionDefinitionAst] } | ForEach-Object { $_.Extent.Text }
 		)
-		if ($topLevelStatements.Count -gt 0) {
-			$declarations["$path/<top-level>"] = ConvertTo-SignatureText ($topLevelStatements -join "`n")
+		if ($tmpTopLevelStatements.Count -gt 0) {
+			$hashDeclarations["$itemPath/<top-level>"] = ConvertTo-SignatureText ($tmpTopLevelStatements -join "`n")
 		}
-		foreach ($function in $functions) {
-			$parts = @(
-				if ($function.IsFilter) { 'filter' } else { 'function' }
-				$function.Name
-				foreach ($parameter in $function.Parameters) { $parameter.Extent.Text }
-				foreach ($attribute in $function.Body.ParamBlock.Attributes) { $attribute.Extent.Text }
-				$function.Body.ParamBlock.Extent.Text
-				$function.Body.DynamicParamBlock.Extent.Text
+		foreach ($itemFunction in $tmpFunctions) {
+			$tmpParts = @(
+				if ($itemFunction.IsFilter) { 'filter' } else { 'function' }
+				$itemFunction.Name
+				foreach ($itemParameter in $itemFunction.Parameters) { $itemParameter.Extent.Text }
+				foreach ($itemAttribute in $itemFunction.Body.ParamBlock.Attributes) { $itemAttribute.Extent.Text }
+				$itemFunction.Body.ParamBlock.Extent.Text
+				$itemFunction.Body.DynamicParamBlock.Extent.Text
 			)
-			$declarations["$path/$($function.Name)"] = ConvertTo-SignatureText ($parts -join "`n")
+			$hashDeclarations["$itemPath/$($itemFunction.Name)"] = ConvertTo-SignatureText ($tmpParts -join "`n")
 		}
 	}
-	$declarations
+	$hashDeclarations
 }
 
 $baseCommit = Invoke-GitRead @('rev-parse', '--verify', "$BaseRef^{commit}")

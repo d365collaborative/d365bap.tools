@@ -7,9 +7,9 @@ $detector = Join-Path $PSScriptRoot 'Get-PRValidationPlan.ps1'
 
 function Assert-True([bool] $Condition, [string] $Message) { if (-not $Condition) { throw $Message } }
 function Git([string[]] $Arguments) {
-	$output = @(& $gitExe -C $root @Arguments 2>&1)
-	if ($LASTEXITCODE -ne 0) { throw "git $Arguments failed: $output" }
-	return ($output -join "`n")
+	$colOutput = @(& $gitExe -C $root @Arguments 2>&1)
+	if ($LASTEXITCODE -ne 0) { throw "git $Arguments failed: $colOutput" }
+	return ($colOutput -join "`n")
 }
 function Write-Fixture([string] $Path, [string] $Content) {
 	$file = Join-Path $root $Path

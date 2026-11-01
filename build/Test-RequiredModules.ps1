@@ -69,18 +69,18 @@ function Initialize-Scenario($Modules) {
 	$state.galleryExists = $true
 	$state.galleryTrusted = $false
 	$state.failure = ''
-	foreach ($entry in $Modules) {
-		$state.pins[$entry.Name] = $entry.Version
-		$state.present[$entry.Name] = $entry.Version
+	foreach ($itemEntry in $Modules) {
+		$state.pins[$itemEntry.Name] = $itemEntry.Version
+		$state.present[$itemEntry.Name] = $itemEntry.Version
 	}
 }
 
 function Assert-Installed([string[]] $Expected) {
-	$actual = @($state.calls | Where-Object { $_ -like 'Install:*' } | Sort-Object)
-	$expectedCalls = @($Expected | ForEach-Object { "Install:$_" } | Sort-Object)
-	Assert-True (($actual -join ',') -ceq ($expectedCalls -join ',')) "Expected installs: $expectedCalls. Actual: $actual."
-	foreach ($name in $state.pins.Keys) {
-		Assert-True ($state.present[$name] -eq $state.pins[$name]) "Missing pinned version of $name."
+	$colActual = @($state.calls | Where-Object { $_ -like 'Install:*' } | Sort-Object)
+	$colExpectedCalls = @($Expected | ForEach-Object { "Install:$_" } | Sort-Object)
+	Assert-True (($colActual -join ',') -ceq ($colExpectedCalls -join ',')) "Expected installs: $colExpectedCalls. Actual: $colActual."
+	foreach ($itemName in $state.pins.Keys) {
+		Assert-True ($state.present[$itemName] -eq $state.pins[$itemName]) "Missing pinned version of $itemName."
 	}
 }
 

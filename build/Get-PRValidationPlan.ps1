@@ -22,7 +22,7 @@ function Invoke-GitBytes([string[]] $Arguments) {
 	$start.UseShellExecute = $false
 	$start.RedirectStandardOutput = $true
 	$start.RedirectStandardError = $true
-	foreach ($argument in $Arguments) { $null = $start.ArgumentList.Add($argument) }
+	foreach ($itemArgument in $Arguments) { $null = $start.ArgumentList.Add($itemArgument) }
 	$process = [System.Diagnostics.Process]::Start($start)
 	try {
 		$errorTask = $process.StandardError.ReadToEndAsync()

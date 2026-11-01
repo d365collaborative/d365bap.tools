@@ -22,11 +22,11 @@ function Write-TableFormat {
 	param([string[]] $TypeName)
 	Remove-Item -Path (Join-Path $tableDirectory '*.ps1xml') -Force -ErrorAction Ignore
 	$index = 0
-	foreach ($name in $TypeName) {
+	foreach ($itemName in $TypeName) {
 		$index++
 		$document = @"
 <?xml version="1.0" encoding="utf-8"?>
-<Configuration><ViewDefinitions><View><Name>$name</Name><ViewSelectedBy><TypeName>$name</TypeName></ViewSelectedBy><ListControl><ListEntries><ListEntry><ListItems><ListItem><PropertyName>Name</PropertyName></ListItem></ListItems></ListEntry></ListEntries></ListControl></View></ViewDefinitions></Configuration>
+<Configuration><ViewDefinitions><View><Name>$itemName</Name><ViewSelectedBy><TypeName>$itemName</TypeName></ViewSelectedBy><ListControl><ListEntries><ListEntry><ListItems><ListItem><PropertyName>Name</PropertyName></ListItem></ListItems></ListEntry></ListEntries></ListControl></View></ViewDefinitions></Configuration>
 "@
 		[IO.File]::WriteAllText((Join-Path $tableDirectory "Type$index.Table.Format.ps1xml"), $document)
 	}
@@ -40,15 +40,15 @@ function Assert-Output {
 	$path = Join-Path $folder 'Get-Fixture.ps1'
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
-	$diagnostics = @(Get-Ps1StandardOutputDiagnostic -Analysis $analysis)
-	if ($Kind -eq 'table') { $diagnostics = @($diagnostics | Where-Object { $_.Message.StartsWith('Add a table format view') }) }
-	if ($Kind -eq 'excel') { $diagnostics = @($diagnostics | Where-Object { $_.Message.StartsWith('Add [switch]') }) }
-	if ($diagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($diagnostics.Count): $($diagnostics.Message -join ' ')"
+	$colDiagnostics = @(Get-Ps1StandardOutputDiagnostic -Analysis $analysis)
+	if ($Kind -eq 'table') { $colDiagnostics = @($colDiagnostics | Where-Object { $_.Message.StartsWith('Add a table format view') }) }
+	if ($Kind -eq 'excel') { $colDiagnostics = @($colDiagnostics | Where-Object { $_.Message.StartsWith('Add [switch]') }) }
+	if ($colDiagnostics.Count -ne $Expected) {
+		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
-	$message = @($diagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($fragment in $ExpectedText) {
-		if (-not $message.Contains($fragment)) { throw "${Label}: missing '$fragment' in '$message'" }
+	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
+	foreach ($itemFragment in $ExpectedText) {
+		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 	}
 	$script:caseCount++
 }

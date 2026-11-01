@@ -189,8 +189,8 @@ function Get-Ps1VariableNamingDiagnostic {
 
 	$normalized = $Path -replace '\\', '/'
 	$isModuleFile = $normalized -match '/d365bap\.tools/(functions|internal)/'
-	$isLintTooling = $normalized -match '/build/ps1-lint/'
-	if (-not $isModuleFile -and -not $isLintTooling) { return }
+	$isBuildScript = $normalized -match '/build/'
+	if (-not $isModuleFile -and -not $isBuildScript) { return }
 	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
 	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
 
