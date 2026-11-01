@@ -30,8 +30,6 @@
 	'$'
 )
 
-$script:Ps1VariableOutputTypeCache = @{}
-
 function Get-Ps1OutputTypeKind {
 	param([string[]] $Types)
 
@@ -63,8 +61,8 @@ function Get-Ps1OutputTypeKind {
 	}
 
 	$colUnique = @($colKinds | Sort-Object -Unique)
-	if ($colUnique.Count -ne 1) { return $null }
-	if ($colUnique[0] -eq 'scalar') { return $null }
+	if ($colUnique.Count -ne 1) { return }
+	if ($colUnique[0] -eq 'scalar') { return }
 	$colUnique[0]
 }
 
@@ -72,7 +70,7 @@ function Get-Ps1FunctionOutputType {
 	param($Function)
 
 	$paramBlock = $Function.Body.ParamBlock
-	if ($null -eq $paramBlock) { return @() }
+	if ($null -eq $paramBlock) { return }
 
 	$colTypes = [System.Collections.Generic.List[string]]::new()
 	foreach ($itemAttribute in @($paramBlock.Attributes)) {
@@ -96,64 +94,37 @@ function Get-Ps1FunctionOutputType {
 }
 
 function Get-Ps1OutputTypeMap {
-	param([string] $Path)
+	param([string] $Path, [hashtable] $Worker)
 
-	$normalized = $Path -replace '\\', '/'
-	$marker = '/d365bap.tools/'
-	$index = $normalized.LastIndexOf($marker, [StringComparison]::OrdinalIgnoreCase)
-	if ($index -lt 0) { return @{} }
+	if ($null -eq $Worker) { $Worker = Get-Ps1AnalysisWorker }
 
-	$moduleRoot = $normalized.Substring(0, $index) + '/d365bap.tools'
-	$cacheKey = $moduleRoot.ToLowerInvariant()
-	if ($script:Ps1VariableOutputTypeCache.ContainsKey($cacheKey)) {
-		return $script:Ps1VariableOutputTypeCache[$cacheKey]
-	}
+	$moduleRoot = Get-Ps1ModuleRoot -Path $Path
+	if ($null -eq $moduleRoot) { @{}; return }
 
-	$hashMap = @{}
-	foreach ($itemRelativeRoot in @('functions', 'internal/functions')) {
-		$folder = Join-Path $moduleRoot $itemRelativeRoot
-		if (-not (Test-Path -LiteralPath $folder)) { continue }
-
-		foreach ($itemFile in @(Get-ChildItem -LiteralPath $folder -Recurse -File -Filter '*.ps1')) {
-			$tokens = $null
-			$ast = [Management.Automation.Language.Parser]::ParseFile($itemFile.FullName, [ref]$tokens, [ref]$null)
-			foreach ($itemFunction in $ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
-				$tmpTypes = @(Get-Ps1FunctionOutputType -Function $itemFunction)
-				if ($tmpTypes.Count -eq 0) { continue }
-
-				$outputKind = Get-Ps1OutputTypeKind -Types $tmpTypes
-				if ($null -eq $outputKind) { continue }
-
-				$hashMap[$itemFunction.Name] = $outputKind
-			}
-		}
-	}
-
-	$script:Ps1VariableOutputTypeCache[$cacheKey] = $hashMap
-	$hashMap
+	(Get-Ps1RepositoryIndex -ModuleRoot $moduleRoot -Worker $Worker).OutputTypes
 }
 
 function Get-Ps1VariableOutputTypeKind {
 	param($Right, [hashtable] $OutputTypes)
 
-	if ($null -eq $OutputTypes -or $OutputTypes.Count -eq 0) { return $null }
+	if ($null -eq $OutputTypes -or $OutputTypes.Count -eq 0) { return }
 
 	$value = Get-Ps1VariableValue -Right $Right
 	$command = $null
 	if ($value -is [Management.Automation.Language.PipelineAst]) {
 		$colElements = @($value.PipelineElements)
-		if ($colElements.Count -eq 0) { return $null }
+		if ($colElements.Count -eq 0) { return }
 		if ($colElements[0] -is [Management.Automation.Language.CommandAst]) { $command = $colElements[0] }
 	}
 	elseif ($value -is [Management.Automation.Language.CommandAst]) {
 		$command = $value
 	}
-	if ($null -eq $command) { return $null }
+	if ($null -eq $command) { return }
 
 	$commandName = $command.GetCommandName()
-	if ($null -eq $commandName) { return $null }
+	if ($null -eq $commandName) { return }
 	$commandName = ($commandName -split '\\')[-1]
-	if (-not $OutputTypes.ContainsKey($commandName)) { return $null }
+	if (-not $OutputTypes.ContainsKey($commandName)) { return }
 	$OutputTypes[$commandName]
 }
 
@@ -162,7 +133,7 @@ function Get-Ps1VariableOwnerFunction {
 
 	$parent = $Node.Parent
 	while ($null -ne $parent) {
-		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { return $parent }
+		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { $parent; return }
 		$parent = $parent.Parent
 	}
 	$null
@@ -178,10 +149,10 @@ function Get-Ps1VariableIterationScope {
 			$parent -is [Management.Automation.Language.WhileStatementAst] -or
 			$parent -is [Management.Automation.Language.DoWhileStatementAst] -or
 			$parent -is [Management.Automation.Language.DoUntilStatementAst]) {
-			return $parent
+			$parent; return
 		}
-		if ($parent -is [Management.Automation.Language.CommandAst] -and $parent.GetCommandName() -eq 'ForEach-Object') { return $parent }
-		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { return $null }
+		if ($parent -is [Management.Automation.Language.CommandAst] -and $parent.GetCommandName() -eq 'ForEach-Object') { $parent; return }
+		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { return }
 		$parent = $parent.Parent
 	}
 	$null
@@ -197,7 +168,7 @@ function Get-Ps1VariableValue {
 		$value.PipelineElements[0] -is [Management.Automation.Language.CommandExpressionAst]) {
 		$value = $value.PipelineElements[0].Expression
 	}
-	return $value
+	$value; return
 }
 
 function Test-Ps1VariableCollectionValue {
@@ -208,14 +179,14 @@ function Test-Ps1VariableCollectionValue {
 	if ($value -is [Management.Automation.Language.ArrayExpressionAst] -or
 		$value -is [Management.Automation.Language.ArrayLiteralAst] -or
 		$value -is [Management.Automation.Language.ForEachStatementAst]) {
-		return $true
+		$true; return
 	}
 
 	if ($value -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
 		$value.Member -is [Management.Automation.Language.StringConstantExpressionAst] -and
 		$value.Member.Value -ieq 'new' -and
 		$value.Expression.Extent.Text -match 'Collections') {
-		return $true
+		$true; return
 	}
 
 	$false
@@ -226,31 +197,31 @@ function Test-Ps1VariableHashtableValue {
 
 	$value = Get-Ps1VariableValue -Right $Right
 
-	if ($value -is [Management.Automation.Language.HashtableAst]) { return $true }
+	if ($value -is [Management.Automation.Language.HashtableAst]) { $true; return }
 
 	if ($value -is [Management.Automation.Language.ConvertExpressionAst]) {
 		$typeName = $value.Type.TypeName.Name
 
-		if ($typeName -match 'hashtable|ordered|dictionary') { return $true }
-		if ($value.Child -is [Management.Automation.Language.HashtableAst] -and $typeName -notmatch 'pscustomobject') { return $true }
+		if ($typeName -match 'hashtable|ordered|dictionary') { $true; return }
+		if ($value.Child -is [Management.Automation.Language.HashtableAst] -and $typeName -notmatch 'pscustomobject') { $true; return }
 	}
 
 	if ($value -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
 		$value.Member -is [Management.Automation.Language.StringConstantExpressionAst] -and
 		$value.Member.Value -ieq 'new' -and
 		$value.Expression.Extent.Text -match 'hashtable|ordered|dictionary') {
-		return $true
+		$true; return
 	}
 
-	if ($value -isnot [Management.Automation.Language.PipelineAst]) { return $false }
+	if ($value -isnot [Management.Automation.Language.PipelineAst]) { $false; return }
 
 	$colElements = @($value.PipelineElements)
-	if ($colElements.Count -eq 0) { return $false }
+	if ($colElements.Count -eq 0) { $false; return }
 
 	$last = $colElements[-1]
-	if ($last -isnot [Management.Automation.Language.CommandAst] -or $last.GetCommandName() -ne 'New-Object') { return $false }
+	if ($last -isnot [Management.Automation.Language.CommandAst] -or $last.GetCommandName() -ne 'New-Object') { $false; return }
 
-	return @($last.CommandElements | Where-Object {
+	@($last.CommandElements | Where-Object {
 			$_ -is [Management.Automation.Language.StringConstantExpressionAst] -and
 			$_.Value -match 'hashtable|ordered|dictionary'
 		}).Count -gt 0
@@ -261,25 +232,25 @@ function Test-Ps1VariableObjectValue {
 
 	$value = Get-Ps1VariableValue -Right $Right
 
-	if ($value -is [Management.Automation.Language.ConvertExpressionAst] -and $value.Type.TypeName.Name -ieq 'pscustomobject') { return $true }
+	if ($value -is [Management.Automation.Language.ConvertExpressionAst] -and $value.Type.TypeName.Name -ieq 'pscustomobject') { $true; return }
 
 	if ($value -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
 		$value.Member -is [Management.Automation.Language.StringConstantExpressionAst] -and
 		$value.Member.Value -ieq 'new' -and
 		$value.Expression.Extent.Text -match 'pscustomobject') {
-		return $true
+		$true; return
 	}
 
-	if ($value -isnot [Management.Automation.Language.PipelineAst]) { return $false }
+	if ($value -isnot [Management.Automation.Language.PipelineAst]) { $false; return }
 
 	$colElements = @($value.PipelineElements)
-	if ($colElements.Count -eq 0) { return $false }
+	if ($colElements.Count -eq 0) { $false; return }
 
 	$last = $colElements[-1]
-	if ($last -isnot [Management.Automation.Language.CommandAst]) { return $false }
+	if ($last -isnot [Management.Automation.Language.CommandAst]) { $false; return }
 
 	$commandName = $last.GetCommandName()
-	if ($commandName -eq 'New-Object') { return $true }
+	if ($commandName -eq 'New-Object') { $true; return }
 
 	if ($commandName -eq 'Select-Object') {
 		$colElements = @($last.CommandElements)
@@ -292,14 +263,14 @@ function Test-Ps1VariableObjectValue {
 			if ($null -ne $tmpElement.Argument) { $tmpArgument = $tmpElement.Argument }
 			elseif ($index + 1 -lt $colElements.Count) { $tmpArgument = $colElements[$index + 1] }
 
-			if ($tmpArgument -is [Management.Automation.Language.ConstantExpressionAst] -and "$($tmpArgument.Value)" -eq '1') { return $true }
-			return $false
+			if ($tmpArgument -is [Management.Automation.Language.ConstantExpressionAst] -and "$($tmpArgument.Value)" -eq '1') { $true; return }
+			$false; return
 		}
 
-		return $false
+		$false; return
 	}
 
-	return $false
+	$false; return
 }
 
 function Test-Ps1VariableGetEnvironmentValue {
@@ -322,8 +293,9 @@ function New-Ps1VariableNamingDiagnostic {
 }
 
 function Get-Ps1VariableNamingDiagnostic {
-	param([hashtable] $Analysis)
+	param([hashtable] $Analysis, [hashtable] $Worker)
 	$Path = $Analysis.Path
+	if ($null -eq $Worker) { $Worker = Get-Ps1AnalysisWorker }
 
 	$normalized = $Path -replace '\\', '/'
 	$isModuleFile = $normalized -match '/d365bap\.tools/(functions|internal)/'
@@ -361,7 +333,7 @@ function Get-Ps1VariableNamingDiagnostic {
 			-Message "The foreach item variable $name should be prefixed with 'item'."
 	}
 
-	$hashOutputTypes = if ($isModuleFile) { Get-Ps1OutputTypeMap -Path $Path } else { @{} }
+	$hashOutputTypes = if ($isModuleFile) { Get-Ps1OutputTypeMap -Path $Path -Worker $Worker } else { @{} }
 
 	foreach ($itemAssignment in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.AssignmentStatementAst] }, $true)) {
 		if ($itemAssignment.Left -isnot [Management.Automation.Language.VariableExpressionAst]) { continue }

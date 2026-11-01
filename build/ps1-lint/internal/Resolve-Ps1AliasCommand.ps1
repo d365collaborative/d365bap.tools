@@ -1,7 +1,15 @@
 ﻿function Get-Ps1AliasScope {
 	param([Management.Automation.Language.Ast] $Node)
 	for ($current = $Node; $null -ne $current; $current = $current.Parent) {
-		if ($current -is [Management.Automation.Language.ScriptBlockAst]) { return $current }
+		if ($current -is [Management.Automation.Language.ScriptBlockAst]) { $current; return }
+	}
+}
+
+function Get-Ps1AliasScopeChain {
+	param($Scope)
+
+	for ($current = $Scope; $null -ne $current; $current = $current.Parent) {
+		if ($current -is [Management.Automation.Language.ScriptBlockAst]) { $current }
 	}
 }
 
@@ -95,12 +103,13 @@ function Resolve-Ps1AliasCommand {
 	$currentName = $Name
 	$usedAlias = $false
 	$colSeen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+	$colScopes = @(Get-Ps1AliasScopeChain -Scope $Scope)
 	while ($currentName -and $colSeen.Add($currentName)) {
 		$target = $null
 		$found = $false
-		for ($current = $Scope; $null -ne $current; $current = Get-Ps1AliasScope $current.Parent) {
-			if ($Context.Aliases.ContainsKey($current) -and $Context.Aliases[$current].ContainsKey($currentName)) {
-				$target = $Context.Aliases[$current][$currentName]
+		foreach ($itemCurrent in $colScopes) {
+			if ($Context.Aliases.ContainsKey($itemCurrent) -and $Context.Aliases[$itemCurrent].ContainsKey($currentName)) {
+				$target = $Context.Aliases[$itemCurrent][$currentName]
 				$found = $true
 				break
 			}
@@ -114,10 +123,17 @@ function Resolve-Ps1AliasCommand {
 			$currentName = $target
 			continue
 		}
-		for ($current = $Scope; $null -ne $current; $current = Get-Ps1AliasScope $current.Parent) {
-			if ($Context.Functions.ContainsKey($current) -and $Context.Functions[$current].ContainsKey($currentName)) {
-				return [pscustomobject]@{ IsAlias = $usedAlias; Command = $Context.Functions[$current][$currentName] }
+		foreach ($itemCurrent in $colScopes) {
+			if ($Context.Functions.ContainsKey($itemCurrent) -and $Context.Functions[$itemCurrent].ContainsKey($currentName)) {
+				[pscustomobject]@{ IsAlias = $usedAlias; Command = $Context.Functions[$itemCurrent][$currentName] }
+				return
 			}
+		}
+		if ($Context.ContainsKey('RepositoryFunctions') -and
+			$null -ne $Context.RepositoryFunctions -and
+			$Context.RepositoryFunctions.ContainsKey($currentName)) {
+			[pscustomobject]@{ IsAlias = $usedAlias; Command = $Context.RepositoryFunctions[$currentName] }
+			return
 		}
 		if (-not $Context.Cache.ContainsKey($currentName)) {
 			$command = Get-Command -Name ([Management.Automation.WildcardPattern]::Escape($currentName)) -ErrorAction SilentlyContinue
@@ -134,7 +150,8 @@ function Resolve-Ps1AliasCommand {
 			$currentName = $cached.Target
 			continue
 		}
-		return [pscustomobject]@{ IsAlias = $usedAlias; Command = $cached.Metadata }
+		[pscustomobject]@{ IsAlias = $usedAlias; Command = $cached.Metadata }
+		return
 	}
 	[pscustomobject]@{ IsAlias = $usedAlias; Command = $null }
 }

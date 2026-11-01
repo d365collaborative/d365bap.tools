@@ -20,27 +20,26 @@ BeforeDiscovery {
 			FullName = $_.FullName
 		}
 	}
-
-	$ruleNames = @(Get-ScriptAnalyzerRule | ForEach-Object { $_.RuleName })
-	if ($ruleNames.Count -eq 0) { throw 'PSScriptAnalyzer returned no rules; cannot validate scripts.' }
-	foreach ($commandFile in $commandFiles) { $commandFile.RuleNames = $ruleNames }
 }
 
-Describe 'Invoking PSScriptAnalyzer against commandbase' {
+Describe 'Invoking the shared analyzer against commandbase' {
+	BeforeAll {
+		. (Join-Path $PSScriptRoot '../../../build/ps1-lint/internal/Invoke-Ps1Analysis.ps1')
+		$analyzer = New-Ps1Analyzer
+	}
 
 	Context "Analyzing <BaseName>" -ForEach $commandFiles {
 		BeforeAll {
-			$analysis = Invoke-ScriptAnalyzer -Path ([WildcardPattern]::Escape($FullName)) -ExcludeRule PSAvoidTrailingWhitespace, PSShouldProcess -ErrorAction Stop
+			$analysisResult = Invoke-Ps1Analysis -Path $FullName -Analyzer $analyzer -SkipCustomRules
 		}
 
-		It 'Should pass the discovered analyzer rules' {
-			$diagnostics = foreach ($ruleName in $RuleNames) {
-				$analysis | Where-Object RuleName -EQ $ruleName | ForEach-Object {
-					"$($_.RuleName): $($_.Severity) at Line $($_.Line) Column $($_.Column) with '$($_.Extent)'"
-					$null = $global:__pester_data.ScriptAnalyzer.Add($_)
-				}
+		It 'Should pass the shared analyzer policy' {
+			foreach ($diagnostic in @($analysisResult.Diagnostics)) {
+				"$($diagnostic.RuleName): $($diagnostic.Severity) at Line $($diagnostic.Line) Column $($diagnostic.Column) with '$($diagnostic.Extent)'"
+				$null = $global:__pester_data.ScriptAnalyzer.Add($diagnostic)
 			}
-			$diagnostics | Should -BeNullOrEmpty
+
+			$analysisResult.Failed | Should -BeFalse
 		}
 	}
 }

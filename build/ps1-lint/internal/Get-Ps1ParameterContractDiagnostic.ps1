@@ -30,7 +30,7 @@ function Get-Ps1ParameterOwnerFunction {
 
 	$parent = $Node.Parent
 	while ($null -ne $parent) {
-		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { return $parent }
+		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { $parent; return }
 		$parent = $parent.Parent
 	}
 	$null
@@ -43,9 +43,9 @@ function Test-Ps1MandatoryParameter {
 		if ($itemAttribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.ParameterAttribute]) { continue }
 		foreach ($itemArgument in $itemAttribute.NamedArguments) {
 			if ($itemArgument.ArgumentName -ne 'Mandatory') { continue }
-			if ($itemArgument.Argument.Extent.Text -ieq '$true') { return $true }
+			if ($itemArgument.Argument.Extent.Text -ieq '$true') { $true; return }
 			if ($itemArgument.Argument -is [Management.Automation.Language.ConstantExpressionAst] -and
-				$itemArgument.Argument.Value -eq $true) { return $true }
+				$itemArgument.Argument.Value -eq $true) { $true; return }
 		}
 	}
 	$false
@@ -67,7 +67,7 @@ function Test-Ps1ValidateNotNullOrEmpty {
 }
 
 function Get-Ps1ParameterAttributeDefault {
-	if ($null -ne $script:Ps1ParameterAttributeDefaults) { return $script:Ps1ParameterAttributeDefaults }
+	if ($null -ne $script:Ps1ParameterAttributeDefaults) { $script:Ps1ParameterAttributeDefaults; return }
 	$hashDefaults = @{}
 	foreach ($itemProperty in [System.Management.Automation.ParameterAttribute]::new().PSObject.Properties) {
 		if (-not $itemProperty.IsSettable) { continue }
@@ -79,19 +79,19 @@ function Get-Ps1ParameterAttributeDefault {
 
 function Get-Ps1ArgumentValue {
 	param($Argument)
-	if ($Argument -is [Management.Automation.Language.ConstantExpressionAst]) { return $Argument.Value }
+	if ($Argument -is [Management.Automation.Language.ConstantExpressionAst]) { $Argument.Value; return }
 	$text = $Argument.Extent.Text
-	if ($text -ieq '$true') { return $true }
-	if ($text -ieq '$false') { return $false }
-	if ($text -ieq '$null') { return $null }
+	if ($text -ieq '$true') { $true; return }
+	if ($text -ieq '$false') { $false; return }
+	if ($text -ieq '$null') { return }
 	[System.DBNull]::Value
 }
 
 function Test-Ps1SameValue {
 	param($Left, $Right)
-	if ($null -eq $Left -and $null -eq $Right) { return $true }
-	if ($null -eq $Left -or $null -eq $Right) { return $false }
-	if ($Left.GetType() -ne $Right.GetType()) { return $false }
+	if ($null -eq $Left -and $null -eq $Right) { $true; return }
+	if ($null -eq $Left -or $null -eq $Right) { $false; return }
+	if ($Left.GetType() -ne $Right.GetType()) { $false; return }
 	$Left.Equals($Right)
 }
 
@@ -163,7 +163,7 @@ function Get-Ps1ParameterContractDiagnostic {
 					$_.TypeName.FullName -in @('string', 'System.String', 'string[]', 'System.String[]')
 				}).Count -gt 0
 			if ($isString -and -not (Test-Ps1ValidateNotNullOrEmpty $itemParameter)) {
-				Write-Ps1ParameterContractDiagnostic $Path 'PSUseValidateNotNullOrEmpty' "Parameter -$name is mandatory but does not declare [ValidateNotNullOrEmpty()]. Add the attribute to reject null or empty values." $itemParameter.Extent
+				Write-Ps1ParameterContractDiagnostic $Path 'PSUseValidateNotNullOrEmpty' "Parameter -$name is mandatory but does not declare [ValidateNotNullOrEmpty()]. Add the attribute to state the non-empty contract explicitly." $itemParameter.Extent
 			}
 		}
 

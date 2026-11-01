@@ -38,7 +38,13 @@ foreach ($file in $files) {
 	$before[$file] = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
 }
 
-Invoke-Ps1Format -Path $files -SettingsPath $settingsPath
+try {
+	Invoke-Ps1Format -Path $files -SettingsPath $settingsPath
+}
+catch {
+	Write-Host "  formatting failed: $($_.Exception.Message)"
+	exit 1
+}
 
 $changed = 0
 

@@ -4,8 +4,9 @@
     Checks PowerShell scripts and help conventions.
 
 .DESCRIPTION
-    Runs PSScriptAnalyzer plus repository rules. Shows warnings and
-    errors, but fails only on errors.
+    Runs the shared analyzer entry point: PSScriptAnalyzer plus repository
+    rules. Shows every diagnostic and fails according to the shared policy
+    in Ps1AnalyzerSettings.psd1. Parse errors always fail.
 #>
 [CmdletBinding()]
 param(
@@ -21,7 +22,7 @@ $files = @(
 
 		if ($item -match '^-') { continue }
 
-		if ($item -notmatch '\.ps1$') { continue }
+		if ($item -notmatch '\.(ps1|psm1|psd1)$') { continue }
 
 		if (-not (Test-Path -LiteralPath $item)) { continue }
 
@@ -31,55 +32,27 @@ $files = @(
 
 if ($files.Count -eq 0) { exit 0 }
 
+. "$PSScriptRoot/../internal/Invoke-Ps1Analysis.ps1"
+$analyzer = New-Ps1Analyzer
+
 $results = @()
-. "$PSScriptRoot/../internal/Get-Ps1CommentDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1HelpDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ParameterContractDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ParameterLayoutDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1StandardOutputDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1AddMemberDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1AccessTokenDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1EnvironmentLookupDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1VariableNamingDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ShouldProcessDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1OutputTypeDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1FunctionInterruptDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1ReturnValueDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1AliasDiagnostic.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1AliasConfiguration.ps1"
-. "$PSScriptRoot/../internal/Resolve-Ps1AliasCommand.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1CommentGroup.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1HelpSection.ps1"
-. "$PSScriptRoot/../internal/Get-Ps1Analysis.ps1"
-$worker = Get-Ps1AnalysisWorker
+$failedFiles = @()
 
 foreach ($p in $files) {
-	$analysis = Get-Ps1Analysis -Path $p
-	$results += Invoke-ScriptAnalyzer -Path $p -Recurse -Severity @('Error', 'Warning') -ExcludeRule 'PSAvoidUsingCmdletAliases' -ErrorAction Stop
-	$results += @(Get-Ps1CommentDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1HelpDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ParameterLayoutDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1StandardOutputDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1AccessTokenDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1EnvironmentLookupDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1VariableNamingDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ShouldProcessDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1OutputTypeDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1FunctionInterruptDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1ReturnValueDiagnostic -Analysis $analysis)
-	$results += @(Get-Ps1AliasDiagnostic -Analysis $analysis -Worker $worker)
+	$fileResult = Invoke-Ps1Analysis -Path $p -Analyzer $analyzer -SkipCustomRules:($p -notmatch '\.ps1$')
+	$results += @($fileResult.Diagnostics)
+
+	if ($fileResult.Failed) {
+		$failedFiles += $p
+	}
 }
 
 if ($results.Count -gt 0) {
 	$results | Format-Table -AutoSize -Wrap | Out-String | Write-Host
 }
 
-$errors = @($results | Where-Object { $_.Severity -eq 'Error' })
-
-if ($errors.Count -gt 0) {
-	Write-Output "$($errors.Count) PSScriptAnalyzer errors."
+if ($failedFiles.Count -gt 0) {
+	Write-Output "$($failedFiles.Count) file(s) failed PSScriptAnalyzer or repository rules."
 	exit 1
 }
 

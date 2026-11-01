@@ -53,7 +53,7 @@ Assert-ReturnValue 'Return null' @'
 function Set-Fixture {
     return $null
 }
-'@ 1 @('Use a bare return to stop execution')
+'@ 1 @('emit $null explicitly')
 
 Assert-ReturnValue 'Return an expression' @'
 function Set-Fixture {

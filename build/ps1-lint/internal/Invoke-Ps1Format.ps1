@@ -28,17 +28,16 @@
 
 	begin {
 		$colAllPaths = [System.Collections.Generic.List[string]]::new()
+		$colFailures = [System.Collections.Generic.List[string]]::new()
 
 		if (-not (Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue)) {
-			Write-Error 'PSScriptAnalyzer is not installed. Install-Module PSScriptAnalyzer -Scope CurrentUser'
-			return
+			throw 'PSScriptAnalyzer is not installed. Install-Module PSScriptAnalyzer -Scope CurrentUser'
 		}
 
 		Import-Module PSScriptAnalyzer -ErrorAction Stop
 
 		if (-not (Test-Path -LiteralPath $SettingsPath)) {
-			Write-Error "Formatter settings not found: $SettingsPath"
-			return
+			throw "Formatter settings not found: $SettingsPath"
 		}
 	}
 
@@ -86,8 +85,12 @@
 				}
 			}
 			catch {
-				Write-Warning "Failed to format '$itemFile': $($_.Exception.Message)"
+				$colFailures.Add("Failed to format '$itemFile': $($_.Exception.Message)") | Out-Null
 			}
+		}
+
+		if ($colFailures.Count -gt 0) {
+			throw ($colFailures -join [Environment]::NewLine)
 		}
 	}
 }

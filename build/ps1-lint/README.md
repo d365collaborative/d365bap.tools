@@ -4,9 +4,20 @@ PowerShell lint hook scripts for `prek.toml`. They started as a copy of the
 PS1 hooks from an internal-only module and are maintained in this repo from
 here on — no submodule, no sync back. Rule changes happen here via normal PRs.
 
-What runs on `**.ps1`:
-- `psscriptanalyzer/Run.ps1` — native PSScriptAnalyzer (Error + Warning,
-  fails on Error) plus repo rules: `PSOnlyCommentBasedHelp`,
+What runs on PowerShell files:
+- `psscriptanalyzer/Run.ps1` — the shared analyzer entry point
+  (`internal/Invoke-Ps1Analysis.ps1`) runs native PSScriptAnalyzer plus the
+  repository rules below. Parser errors are collected separately and always
+  fail, because PSScriptAnalyzer reports them as `ParseError` rather than
+  `Error`. Module functions fail on errors and warnings; build scripts and
+  other tooling keep the historical error-only gate. `.psm1` and `.psd1` files
+  receive syntax and built-in rule coverage only; public-function conventions
+  do not apply to them. PSScriptAnalyzer rules already owned elsewhere are
+  excluded: `PSAvoidUsingCmdletAliases` (the alias rules below) and
+  `PSAvoidTrailingWhitespace` (the format hook). `PSShouldProcess` is filtered
+  only for module function files, where `PSUseShouldProcessConvention` replaces
+  it; build scripts keep the built-in check.
+  Repository rules: `PSOnlyCommentBasedHelp`,
   `PSHelpSynopsis/Description/Parameter/Notes/Example`,
   `PSAvoidCommandAliases` / `PSAvoidParameterAliases`,
   `PSUseSupportsWildcards`, `PSAvoidRedundantParameterAttribute`,
@@ -35,8 +46,26 @@ What runs on `**.ps1`:
   for the public functions: the `PpacEnvId` pipeline alias is an established
   repo-wide convention, so declaring it is not a violation there.
 - `ps1-format/Run.ps1` — Invoke-Formatter with `internal/Ps1FormatSettings.psd1`
-  plus UTF-8 BOM enforcement. Rewrites files and exits 1 when anything changed.
-- `setup/Run.ps1` — installs PSScriptAnalyzer (CurrentUser) when missing.
+  plus UTF-8 BOM enforcement. Rewrites files and exits 1 when anything changed
+  or a file could not be formatted. A formatting failure no longer disappears
+  as a warning when the file content stays unchanged.
+- `setup/Run.ps1` — installs the pinned PSScriptAnalyzer 1.25.0 (CurrentUser)
+  when that version is missing.
+
+### High-signal built-in warnings
+
+These existing PSScriptAnalyzer rules are fatal for module and build code even
+where ordinary warnings keep the historical error-only gate:
+
+- `PSAvoidAssignmentToAutomaticVariable`
+- `PSAvoidUsingEmptyCatchBlock`
+- `PSPossibleIncorrectComparisonWithNull`
+- `PSAvoidUsingInvokeExpression`
+- `PSUseProcessBlockForPipelineCommand`
+
+Tepp files, tests, and the root installer stay outside this gate until their
+existing debt is addressed. The rules are still reported there; they just do
+not fail the hook.
 
 ## Wildcard parameters
 
@@ -110,10 +139,11 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterArgumentRule.ps1
 
 ## Mandatory parameters
 
-`PSUseValidateNotNullOrEmpty` fails a mandatory `string` or `string[]`
-parameter without a default value unless it also declares
-`[ValidateNotNullOrEmpty()]`. Mandatory parameters still accept an empty
-string, so the validation attribute is what actually rejects it.
+`PSUseValidateNotNullOrEmpty` requires a mandatory `string` or `string[]`
+parameter without a default value to declare `[ValidateNotNullOrEmpty()]`.
+PowerShell already rejects null and empty values when it binds a mandatory
+string parameter; the attribute is a repository convention that states the
+contract in the signature and keeps it visible to reviewers.
 
 ```powershell
 param (
@@ -570,9 +600,12 @@ function Set-Fixture {
 }
 ```
 
-Use a bare `return` to stop execution. `return $null` is reported; a bare
-`return` is clearer. Class methods are exempt because PowerShell classes require
-`return` for method output.
+Use a bare `return` to stop execution. A bare `return` emits nothing, while
+`return $null` emits one null item into the pipeline; replacing one with the
+other can change observable output. The rule rejects every `return <value>`;
+when the null is intended output, emit `$null` explicitly instead of returning
+it. Class methods are exempt because PowerShell classes require `return` for
+method output.
 
 The rule checks module and build scripts; `*Tests.ps1`, `d365bap.tools/tests`,
 and tepp files are exempt. It runs on changed files only.
