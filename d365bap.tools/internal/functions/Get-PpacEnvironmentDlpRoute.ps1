@@ -27,7 +27,7 @@ function Get-PpacEnvironmentDlpRoute {
 		[string] $EnvironmentId
 	)
 
-	$envObj = Get-BapEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+	$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
 	if ($null -ne $envObj) { return "$($envObj.PpacEnvId)" }
 
 	if ($EnvironmentId -match '^Default-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
