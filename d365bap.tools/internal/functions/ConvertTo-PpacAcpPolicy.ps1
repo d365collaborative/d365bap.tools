@@ -35,7 +35,7 @@
 #>
 function ConvertTo-PpacAcpPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacAcpConnector[]')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[AllowEmptyCollection()]

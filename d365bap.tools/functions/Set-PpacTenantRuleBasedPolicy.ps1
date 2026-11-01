@@ -48,7 +48,7 @@
 #>
 function Set-PpacTenantRuleBasedPolicy {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacTenantRuleBasedPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -64,8 +64,6 @@ function Set-PpacTenantRuleBasedPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		if (-not $PSBoundParameters.ContainsKey('Name') -and -not $PSBoundParameters.ContainsKey('RuleSet')) {
 			Stop-PSFFunction -Message "Specify -Name, -RuleSet, or both."
 			return
@@ -97,8 +95,8 @@ function Set-PpacTenantRuleBasedPolicy {
 			ruleSets = $payloadRuleSets
 		} | ConvertTo-Json -Depth 20
 
-		$secureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colCurrent[0].PolicyId)?api-version=$apiVersion"
 		$method = if ($Merge) { 'Patch' } else { 'Put' }

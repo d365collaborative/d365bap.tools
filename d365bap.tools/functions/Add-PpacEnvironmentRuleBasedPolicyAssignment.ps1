@@ -24,7 +24,7 @@
 #>
 function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentRuleBasedPolicy')]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias('PpacEnvId')]
@@ -37,41 +37,9 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
-		if ($null -ne $envObj) {
-			$routeEnvironmentId = $envObj.PpacEnvId
-		}
-		else {
-			$routeEnvironmentId = $null
-			if ($EnvironmentId -match '^Default-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
-				$routeEnvironmentId = $EnvironmentId
-			}
-			else {
-				$environmentGuid = [guid]::Empty
-				if ([guid]::TryParse($EnvironmentId, [ref]$environmentGuid)) {
-					$tenantId = $null
-					try { $tenantId = (Get-BapContext).TenantId } catch { $tenantId = $null }
-					if (-not [string]::IsNullOrWhiteSpace("$tenantId") -and $environmentGuid -eq [guid]$tenantId) {
-						$routeEnvironmentId = "Default-$tenantId"
-					}
-					else {
-						$routeEnvironmentId = "$environmentGuid"
-					}
-				}
-			}
-		}
-
-		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
-			Stop-PSFFunction -Message "No environment matched '$EnvironmentId'."
-			return
-		}
-
-		$environmentLabel = $EnvironmentId
-		if ($null -ne $envObj -and -not [string]::IsNullOrWhiteSpace("$($envObj.PpacEnvName)")) {
-			$environmentLabel = $envObj.PpacEnvName
-		}
+		$routeEnvironmentId = $envObj.PpacEnvId
+		$environmentLabel = $envObj.PpacEnvName
 
 		$colPolicy = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
 		if ($colPolicy.Count -eq 0) {
@@ -91,8 +59,8 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$secureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colPolicy[0].PolicyId)/environments/$routeEnvironmentId/assignments?api-version=$apiVersion"
 

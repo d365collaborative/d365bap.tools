@@ -24,7 +24,7 @@
 #>
 function Remove-PpacTenantRuleBasedPolicyRuleSet {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacTenantRuleBasedPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -36,8 +36,6 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$colCurrent = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
 		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No governance policy matched '$PolicyId'."
@@ -61,8 +59,8 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 			ruleSets = @([ordered]@{ id = $RuleSetId })
 		} | ConvertTo-Json -Depth 20
 
-		$secureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colCurrent[0].PolicyId)/removeRule?api-version=$apiVersion"
 

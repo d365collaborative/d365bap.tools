@@ -53,7 +53,7 @@
 #>
 function Get-PpacEnvironmentGroupAcpPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentGroupAcpPolicy[]', [object[]])]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -69,8 +69,6 @@ function Get-PpacEnvironmentGroupAcpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$hashParams = @{
 			Kind               = 'Acp'
 			EnvironmentGroupId = $EnvironmentGroupId

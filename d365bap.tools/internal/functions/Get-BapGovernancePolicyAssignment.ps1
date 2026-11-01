@@ -29,7 +29,7 @@
 #>
 function Get-BapGovernancePolicyAssignment {
 	[CmdletBinding(DefaultParameterSetName = 'Environment')]
-	[OutputType('System.Object[]')]
+	[OutputType([PSCustomObject], [object[]])]
 	param (
 		[Parameter(ParameterSetName = 'Environment', Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -40,8 +40,8 @@ function Get-BapGovernancePolicyAssignment {
 		[string] $EnvironmentGroupId
 	)
 
-	$secureToken = Get-BapAccessToken -PowerPlatform
-	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+	$objSecureToken = Get-BapAccessToken -PowerPlatform
+	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 		Accept        = 'application/json'

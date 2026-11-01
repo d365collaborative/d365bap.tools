@@ -24,7 +24,7 @@
 #>
 function Add-PpacEnvironmentAcpPolicyAssignment {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentAcpPolicy')]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias('PpacEnvId')]
@@ -37,8 +37,6 @@ function Add-PpacEnvironmentAcpPolicyAssignment {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$colPolicy = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
 		if ($colPolicy.Count -eq 0) {
 			Stop-PSFFunction -Message "No ACP policy matched '$PolicyId'."
@@ -52,16 +50,8 @@ function Add-PpacEnvironmentAcpPolicyAssignment {
 		$policyName = $colPolicy[0].Name
 		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colPolicy[0].PolicyId }
 
-		$environmentLabel = $EnvironmentId
-		try {
-			$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
-			if ($null -ne $envObj -and -not [string]::IsNullOrWhiteSpace("$($envObj.PpacEnvName)")) {
-				$environmentLabel = $envObj.PpacEnvName
-			}
-		}
-		catch {
-			$environmentLabel = $EnvironmentId
-		}
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+		$environmentLabel = $envObj.PpacEnvName
 
 		$shouldAffected = $policyName
 		$shouldLabel = "Assign ACP policy to '$environmentLabel'"

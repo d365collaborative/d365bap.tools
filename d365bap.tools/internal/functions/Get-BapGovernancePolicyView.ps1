@@ -30,7 +30,7 @@
 #>
 function Get-BapGovernancePolicyView {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType([PSCustomObject])]
 	param (
 		[Parameter(Mandatory = $true)]
 		[object[]] $Policy,

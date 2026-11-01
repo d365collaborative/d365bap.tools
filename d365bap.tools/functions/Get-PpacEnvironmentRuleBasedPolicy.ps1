@@ -60,7 +60,7 @@
 #>
 function Get-PpacEnvironmentRuleBasedPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentRuleBasedPolicy[]', [object[]])]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias('PpacEnvId')]
@@ -78,50 +78,12 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$envObj = Get-Environment `
 			-EnvironmentId $EnvironmentId | `
 			Select-Object -First 1
 
-		if ($null -ne $envObj) {
-			$routeEnvironmentId = $envObj.PpacEnvId
-			$routeEnvironmentName = $envObj.PpacEnvName
-		}
-		else {
-			$routeEnvironmentId = $null
-			$routeEnvironmentName = $EnvironmentId
-
-			if ($EnvironmentId -match '^Default-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
-				$routeEnvironmentId = $EnvironmentId
-			}
-			else {
-				$environmentGuid = [guid]::Empty
-				if ([guid]::TryParse($EnvironmentId, [ref]$environmentGuid)) {
-					$tenantId = $null
-					try {
-						$tenantId = (Get-BapContext).TenantId
-					}
-					catch {
-						$tenantId = $null
-					}
-
-					if (-not [string]::IsNullOrWhiteSpace("$tenantId") -and $environmentGuid -eq [guid]$tenantId) {
-						$routeEnvironmentId = "Default-$tenantId"
-					}
-					else {
-						$routeEnvironmentId = "$environmentGuid"
-					}
-				}
-			}
-		}
-
-		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
-			$messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-Environment</c> cmdlet."
-			Write-PSFMessage -Level Important -Message $messageString
-			Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-			return
-		}
+		$routeEnvironmentId = $envObj.PpacEnvId
+		$routeEnvironmentName = $envObj.PpacEnvName
 
 		if (Test-PSFFunctionInterrupt) { return }
 

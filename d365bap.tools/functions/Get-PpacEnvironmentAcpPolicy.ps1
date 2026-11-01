@@ -54,7 +54,7 @@
 #>
 function Get-PpacEnvironmentAcpPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentAcpPolicy[]', [object[]])]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias('PpacEnvId')]
@@ -71,8 +71,6 @@ function Get-PpacEnvironmentAcpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$hashParams = @{
 			Kind          = 'Acp'
 			EnvironmentId = $EnvironmentId

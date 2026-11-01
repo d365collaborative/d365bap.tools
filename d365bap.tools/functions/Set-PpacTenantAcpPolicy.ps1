@@ -36,7 +36,7 @@
 #>
 function Set-PpacTenantAcpPolicy {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacTenantAcpPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -50,8 +50,6 @@ function Set-PpacTenantAcpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		if (-not $PSBoundParameters.ContainsKey('Name') -and -not $PSBoundParameters.ContainsKey('ConnectorId')) {
 			Stop-PSFFunction -Message "Specify -Name, -ConnectorId, or both."
 			return

@@ -16,11 +16,11 @@
 #>
 function Get-BapGovernancePolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType([PSCustomObject])]
 	param ()
 
-	$secureToken = Get-BapAccessToken -PowerPlatform
-	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+	$objSecureToken = Get-BapAccessToken -PowerPlatform
+	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 		Accept        = 'application/json'

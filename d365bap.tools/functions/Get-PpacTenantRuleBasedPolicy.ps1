@@ -60,7 +60,7 @@
 #>
 function Get-PpacTenantRuleBasedPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacTenantRuleBasedPolicy[]', [object[]])]
 	param (
 		[SupportsWildcards()]
 		[ValidateNotNullOrEmpty()]
@@ -73,8 +73,6 @@ function Get-PpacTenantRuleBasedPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		try {
 			$colPolicies = @(Get-BapGovernancePolicyView -Policy @(Get-BapGovernancePolicy) -Assignment @() -Scope Tenant)
 		}

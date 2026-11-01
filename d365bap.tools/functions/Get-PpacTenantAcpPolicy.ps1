@@ -47,7 +47,7 @@
 #>
 function Get-PpacTenantAcpPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacTenantAcpPolicy[]', [object[]])]
 	param (
 		[SupportsWildcards()]
 		[ValidateNotNullOrEmpty()]
@@ -59,8 +59,6 @@ function Get-PpacTenantAcpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$hashParams = @{
 			Kind     = 'Acp'
 			PolicyId = $PolicyId

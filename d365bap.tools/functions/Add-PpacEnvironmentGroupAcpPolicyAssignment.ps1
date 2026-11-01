@@ -24,7 +24,7 @@
 #>
 function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentGroupAcpPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -36,8 +36,6 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$groupLabel = $EnvironmentGroupId
 		try {
 			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1

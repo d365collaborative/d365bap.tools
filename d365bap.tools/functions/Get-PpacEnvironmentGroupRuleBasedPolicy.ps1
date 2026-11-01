@@ -60,7 +60,7 @@
 #>
 function Get-PpacEnvironmentGroupRuleBasedPolicy {
 	[CmdletBinding()]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentGroupRuleBasedPolicy[]', [object[]])]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -77,8 +77,6 @@ function Get-PpacEnvironmentGroupRuleBasedPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		try {
 			$colPolicies = @(Get-BapGovernancePolicy)
 			$colAssignments = @(Get-BapGovernancePolicyAssignment -EnvironmentGroupId $EnvironmentGroupId)

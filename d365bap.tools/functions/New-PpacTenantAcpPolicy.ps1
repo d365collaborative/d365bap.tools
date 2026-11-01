@@ -26,7 +26,7 @@
 #>
 function New-PpacTenantAcpPolicy {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacTenantAcpPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -38,8 +38,6 @@ function New-PpacTenantAcpPolicy {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$colAllowed = foreach ($itemConnector in $ConnectorId) {
 			$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
 			[ordered]@{

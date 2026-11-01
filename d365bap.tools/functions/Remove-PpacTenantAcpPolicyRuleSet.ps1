@@ -20,7 +20,7 @@
 #>
 function Remove-PpacTenantAcpPolicyRuleSet {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacTenantAcpPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -28,8 +28,6 @@ function Remove-PpacTenantAcpPolicyRuleSet {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$colCurrent = @(Get-PpacTenantAcpPolicy -PolicyId $PolicyId)
 		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No ACP policy matched '$PolicyId'."

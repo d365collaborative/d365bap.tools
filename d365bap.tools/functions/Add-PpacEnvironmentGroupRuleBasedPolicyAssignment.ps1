@@ -24,7 +24,7 @@
 #>
 function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-	[OutputType('System.Object')]
+	[OutputType('D365Bap.Tools.PpacEnvironmentGroupRuleBasedPolicy')]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
@@ -36,8 +36,6 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$groupLabel = $EnvironmentGroupId
 		try {
 			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
@@ -67,8 +65,8 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$secureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colPolicy[0].PolicyId)/environmentGroups/$EnvironmentGroupId/assignments?api-version=$apiVersion"
 
