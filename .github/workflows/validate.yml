@@ -29,13 +29,33 @@ jobs:
     - name: Check generated-file ownership
       shell: pwsh
       run: ./build/Test-GeneratedTouch.ps1 -BaseRef $env:BASE_SHA
+    - name: Determine PowerShell scope
+      id: ps1_scope
+      shell: pwsh
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.sha }}
+      run: |
+        $files = @(git diff --name-only --diff-filter=ACMR $env:BASE_SHA $env:HEAD_SHA --)
+        $relevant = @($files | Where-Object {
+          $_ -match '\.(ps1|psm1|psd1)$' -or
+          $_ -eq 'prek.toml' -or
+          $_ -match '^d365bap\.tools/xml/.+\.ps1xml$' -or
+          [IO.Path]::GetFileName($_) -ieq 'ps1-lint.json' -or
+          $_ -match '^build/ps1-lint/'
+        })
+        if ($relevant.Count -gt 0) { 'relevant=true' >> $env:GITHUB_OUTPUT } else { 'relevant=false' >> $env:GITHUB_OUTPUT }
+        Write-Host "PowerShell-relevant files: $($relevant.Count)"
     - name: Install prek
+      if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
       run: pip install "prek==0.5.7"
     - name: Setup PSScriptAnalyzer for hooks
+      if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
       run: prek run setup --stage manual --config prek.toml
     - name: Lint changed files
+      if: steps.ps1_scope.outputs.relevant == 'true'
       shell: pwsh
       run: prek run --config prek.toml --from-ref $env:BASE_SHA --to-ref HEAD
     - name: Report dependency-aware lint scope
