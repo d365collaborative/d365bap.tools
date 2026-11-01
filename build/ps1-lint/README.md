@@ -14,7 +14,7 @@ What runs on `**.ps1`:
   `PSAvoidExplicitParameterPosition`, `PSUseStandardCollectionOutput`,
   `PSAvoidAddMemberInLoop`, `PSUseBapAccessTokenEndpointSwitch`,
   `PSUseCentralEnvironmentLookup`, `PSUseVariableNamingConvention`,
-  `PSUseShouldProcessConvention`,
+  `PSUseShouldProcessConvention`, `PSUseDeclaredOutputType`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -361,6 +361,45 @@ owns that contract.
 The rule runs on module code and build scripts under `build/`. Test files and
 tepp scripts are exempt. It runs on changed files only, so the existing names
 are reshaped as their files are touched.
+
+## Declared output types
+
+`PSUseDeclaredOutputType` requires every public and internal module function to
+declare a non-empty `[OutputType()]`.
+
+| Function outputs | Declaration |
+| --- | --- |
+| A single PSF object | `[OutputType('D365Bap.Tools.X')]` |
+| A PSF collection | `[OutputType('D365Bap.Tools.X[]')]` |
+| An anonymous property bag | `[OutputType([PSCustomObject])]` |
+| A hashtable | `[OutputType([hashtable])]` |
+| A scalar | `[OutputType([string])]`, `[OutputType([bool])]`, etc. |
+| No output | `[OutputType([void])]` |
+
+```powershell
+function Get-Fixture {
+    [OutputType('D365Bap.Tools.Example[]')]
+    param()
+
+    Get-Thing | Select-PSFObject -TypeName 'D365Bap.Tools.Example'
+}
+```
+
+A function that uses `Select-PSFObject -TypeName` or `PSTypeName` must declare
+that exact type. The `[]` suffix is allowed for collections. `System.Object`
+alone is rejected as too broad, and `System.Object[]` alone is rejected because
+it does not name the element type. `PSCustomObject` is allowed only when no
+named PSF type is present. `[void]` cannot be mixed with other types.
+
+The existing `PSUseStandardCollectionOutput` recognizes any OutputType ending in
+`[]`, so `D365Bap.Tools.X[]` keeps the table-view and `AsExcelOutput` checks
+working.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1OutputTypeRule.ps1
+```
 
 ## ShouldProcess
 
