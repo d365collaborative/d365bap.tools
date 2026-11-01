@@ -39,7 +39,10 @@ files = { glob = "**.ps1" }
 # Generated unit tests are owned by the regen workflow; linting them would flag
 # their template comments on every new command.
 exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
-pass_filenames = 16
+# Each PowerShell process pays PSScriptAnalyzer startup and builds the shared
+# repository index once. Batches of 16 made ordinary PRs rebuild that state
+# several times; 64 keeps one process for most PRs without a large memory spike.
+pass_filenames = 64
 stages = ["pre-commit", "manual"]
 
 [[repos.hooks]]
@@ -51,7 +54,8 @@ entry = "pwsh"
 args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/psscriptanalyzer/Run.ps1"]
 files = { glob = "**.ps1" }
 exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
-pass_filenames = 16
+# Same batching tradeoff as ps1-format: fewer processes, shared index.
+pass_filenames = 64
 stages = ["pre-commit", "manual"]
 
 [[repos]]

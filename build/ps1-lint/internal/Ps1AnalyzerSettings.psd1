@@ -1,0 +1,21 @@
+@{
+	# These rules are owned by another hook or by a repository rule:
+	#   PSAvoidUsingCmdletAliases  -> PSAvoidCommandAliases / PSAvoidParameterAliases
+	#   PSAvoidTrailingWhitespace  -> ps1-format hook
+	#   PSShouldProcess            -> PSUseShouldProcessConvention
+	ExcludeRule           = @(
+		'PSAvoidUsingCmdletAliases'
+		'PSAvoidTrailingWhitespace'
+		'PSShouldProcess'
+	)
+	# PSScriptAnalyzer severities to collect. Parser errors are added by
+	# Get-Ps1ParseDiagnostic because PSScriptAnalyzer reports them as
+	# ParseError, which is not part of this list.
+	Severity              = @('Error', 'Warning')
+	# Build scripts and other tooling keep the historical error-only gate.
+	DefaultFatalSeverity   = @('Error')
+	# Module functions match the full Pester scan, which has always failed on
+	# warnings. Parse errors are emitted with Error severity.
+	ModuleFatalSeverity    = @('Error', 'Warning')
+	ModulePathPattern      = '/d365bap\.tools/(functions|internal/functions)/[^/]+\.ps1$'
+}

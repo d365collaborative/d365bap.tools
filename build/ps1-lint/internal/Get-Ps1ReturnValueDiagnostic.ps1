@@ -44,7 +44,7 @@ function Get-Ps1ReturnValueDiagnostic {
 		if (Test-Ps1ReturnValueClassMember -Node $itemReturn) { continue }
 
 		$message = if ($itemReturn.Pipeline.Extent.Text.Trim() -eq '$null') {
-			'Do not use return with a value. Use a bare return to stop execution.'
+			'Do not use return with a value. A bare return stops execution without emitting $null; emit $null explicitly when it is intended output.'
 		}
 		else {
 			'Do not use return with a value. Emit the value as output; use a bare return only to stop execution.'

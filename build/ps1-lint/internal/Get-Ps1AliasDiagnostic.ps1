@@ -20,7 +20,14 @@ function Get-Ps1AliasDiagnostic {
 		New-Ps1AliasDiagnostic $Path 'PSAliasConfiguration' $ast.Extent $_.Exception.Message
 		return
 	}
-	$hashContext = @{ Functions = @{}; Aliases = @{}; RuntimeAliases = $Worker.RuntimeAliases; Cache = $Worker.Cache; CommonParameters = $Worker.CommonParameters }
+	$moduleRoot = Get-Ps1ModuleRoot -Path $Path
+	$repositoryFunctions = if ($null -ne $moduleRoot) {
+		(Get-Ps1RepositoryIndex -ModuleRoot $moduleRoot -Worker $Worker).Functions
+	}
+	else {
+		@{}
+	}
+	$hashContext = @{ Functions = @{}; Aliases = @{}; RuntimeAliases = $Worker.RuntimeAliases; Cache = $Worker.Cache; CommonParameters = $Worker.CommonParameters; RepositoryFunctions = $repositoryFunctions }
 	foreach ($itemFunction in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
 		$scope = Get-Ps1AliasScope $itemFunction.Parent
 		if ($itemFunction.Name -match '^(global|script):') { $scope = $ast }
@@ -50,11 +57,13 @@ function Get-Ps1AliasDiagnostic {
 	$colCommands = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true))
 	$colDeclarations = [Collections.Generic.HashSet[Management.Automation.Language.CommandAst]]::new()
 	$hashDeclarationNames = @{}
+	$hashResolvedCommands = @{}
 	foreach ($itemCommand in $colCommands) {
 		$name = $itemCommand.GetCommandName()
 		if (-not $name) { continue }
 		$scope = Get-Ps1AliasScope $itemCommand
 		$resolved = Resolve-Ps1AliasCommand $name $scope $hashContext
+		$hashResolvedCommands[$itemCommand] = $resolved
 		if ($resolved.Command.Name -notin @('Set-Alias', 'New-Alias', 'Set-Item', 'New-Item')) { continue }
 		$isAliasCommand = $resolved.Command.Name -in @('Set-Alias', 'New-Alias')
 		if ($isAliasCommand) { $null = $colDeclarations.Add($itemCommand) }
@@ -90,7 +99,12 @@ function Get-Ps1AliasDiagnostic {
 	foreach ($itemCommand in $colCommands) {
 		$name = $itemCommand.GetCommandName()
 		if (-not $name) { continue }
-		$resolved = Resolve-Ps1AliasCommand $name (Get-Ps1AliasScope $itemCommand) $hashContext
+		$resolved = if ($colDeclarations.Count -eq 0 -and $hashResolvedCommands.ContainsKey($itemCommand)) {
+			$hashResolvedCommands[$itemCommand]
+		}
+		else {
+			Resolve-Ps1AliasCommand $name (Get-Ps1AliasScope $itemCommand) $hashContext
+		}
 		if ($resolved.IsAlias -and $name -notin @($rules.AllowedCommandAliases)) {
 			New-Ps1AliasDiagnostic $Path 'PSAvoidCommandAliases' $itemCommand.CommandElements[0].Extent "Do not use command alias '$name'. Use the full command name '$($resolved.Command.Name)'."
 		}
