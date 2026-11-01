@@ -14,8 +14,9 @@
 		}
 		function Get-BapContext { [pscustomobject]@{ TenantId = '11111111-1111-1111-1111-111111111111'; TenantName = 'Fixture Tenant' } }
 		function Get-BapAccessToken {
-			param($ResourceUrl)
+			param($ResourceUrl, [switch] $PowerPlatform)
 			$null = $ResourceUrl
+			$null = $PowerPlatform
 			$secure = [Security.SecureString]::new()
 			foreach ($char in @('fixture-token'.ToCharArray())) { $secure.AppendChar($char) }
 			$secure.MakeReadOnly()

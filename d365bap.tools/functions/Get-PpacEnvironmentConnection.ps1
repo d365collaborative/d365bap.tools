@@ -73,7 +73,7 @@ function Get-PpacEnvironmentConnection {
 
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com/'
+		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$requestUri = "https://api.powerplatform.com/connectivity/environments/$($route.RouteId)/connections?api-version=$apiVersion"
