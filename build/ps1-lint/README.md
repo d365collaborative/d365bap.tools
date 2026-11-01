@@ -37,22 +37,32 @@ What runs on `**.ps1`:
 
 ## Wildcard parameters
 
-`PSUseSupportsWildcards` fails a function parameter that declares a string
-default containing `*` without a `[SupportsWildcards()]` attribute. A default
-such as `'*'` means the parameter accepts a search pattern, so the attribute
-must advertise that to help and completion. Only `*` is checked; `?` and `[`
-are not used as wildcards in this codebase.
+`PSUseSupportsWildcards` keeps wildcard parameters consistent:
+
+- A function parameter with a string default containing `*` must declare
+  `[SupportsWildcards()]`. A default such as `'*'` or `'demo*'` means the parameter
+  accepts a search pattern, so the attribute must advertise that to help and
+  completion.
+- A parameter with `[SupportsWildcards()]` must default to `*`. Wildcard
+  parameters are always on, so a cmdlet never needs to test whether one was
+  supplied.
+- A `$PSBoundParameters.ContainsKey('Name')` or `$PSBoundParameters.Contains('Name')`
+  check for a wildcard parameter is reported. Use `-Name` directly.
 
 ```powershell
 param (
     [SupportsWildcards()]
     [string] $Name = "*"
 )
+
+$result | Where-Object Name -like $Name
 ```
 
-The rule reads the AST, so it ignores wildcard text inside strings and
-comments. Non-string parameters, script-level parameters, and non-constant
-defaults are not checked.
+Only `*` is checked; `?` and `[` are not used as wildcards in this codebase. The
+rule reads the AST, so it ignores wildcard text inside strings and comments.
+Non-string parameters, script-level parameters, and non-constant defaults are not
+checked. The bound-parameter checks only apply to a literal parameter name in the
+same function; a variable name or a nested function is not reported.
 
 Run its regression checks under PowerShell 7.6 or later:
 

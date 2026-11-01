@@ -12,12 +12,28 @@
 
 function Test-Ps1WildcardSupport {
 	param($Parameter)
+	$null -ne (Get-Ps1ParameterWildcardAttribute -Parameter $Parameter)
+}
+
+function Get-Ps1ParameterWildcardAttribute {
+	param($Parameter)
 	@($Parameter.Attributes | Where-Object {
 			$_ -is [Management.Automation.Language.AttributeAst] -and (
 				$_.TypeName.GetReflectionAttributeType() -eq [Management.Automation.SupportsWildcardsAttribute] -or
 				$_.TypeName.FullName -in @('SupportsWildcards', 'SupportsWildcardsAttribute', 'System.Management.Automation.SupportsWildcardsAttribute')
 			)
-		}).Count -gt 0
+		})[0]
+}
+
+function Get-Ps1ParameterOwnerFunction {
+	param($Node)
+
+	$parent = $Node.Parent
+	while ($null -ne $parent) {
+		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { return $parent }
+		$parent = $parent.Parent
+	}
+	$null
 }
 
 function Test-Ps1MandatoryParameter {
@@ -90,10 +106,17 @@ function Get-Ps1ParameterContractDiagnostic {
 	$fileName -ne 'Get-PpacFinOpsAsset.ps1'
 
 	$functionParameters = [System.Collections.Generic.HashSet[object]]::new()
+	$parameterFunctions = [System.Collections.Generic.Dictionary[object, object]]::new()
 	foreach ($function in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
-		foreach ($parameter in $function.Parameters) { $null = $functionParameters.Add($parameter) }
+		foreach ($parameter in $function.Parameters) {
+			$null = $functionParameters.Add($parameter)
+			if (-not $parameterFunctions.ContainsKey($parameter)) { $parameterFunctions[$parameter] = $function }
+		}
 		if ($null -eq $function.Body.ParamBlock) { continue }
-		foreach ($parameter in $function.Body.ParamBlock.Parameters) { $null = $functionParameters.Add($parameter) }
+		foreach ($parameter in $function.Body.ParamBlock.Parameters) {
+			$null = $functionParameters.Add($parameter)
+			if (-not $parameterFunctions.ContainsKey($parameter)) { $parameterFunctions[$parameter] = $function }
+		}
 	}
 
 	$defaults = Get-Ps1ParameterAttributeDefault
@@ -154,6 +177,45 @@ function Get-Ps1ParameterContractDiagnostic {
 				}).Count -gt 0
 			if ($isString -and -not (Test-Ps1WildcardSupport $parameter)) {
 				Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name has a wildcard default value. Add [SupportsWildcards()] to the parameter." $parameter.DefaultValue.Extent
+			}
+		}
+
+		if ($functionParameters.Contains($parameter)) {
+			$wildcardAttribute = Get-Ps1ParameterWildcardAttribute $parameter
+
+			if ($null -ne $wildcardAttribute) {
+				$hasStarDefault = $null -ne $parameter.DefaultValue -and
+				$parameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and
+				$parameter.DefaultValue.Value -eq '*'
+
+				if (-not $hasStarDefault) {
+					Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name declares [SupportsWildcards()] but does not default to '*'. Wildcard parameters always have a value; set the default to '*'." $wildcardAttribute.Extent
+				}
+
+				if ($parameterFunctions.ContainsKey($parameter)) {
+					$owner = $parameterFunctions[$parameter]
+					$lookups = @($owner.Body.FindAll({
+								param($node)
+								$node -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
+								$node.Expression -is [Management.Automation.Language.VariableExpressionAst] -and
+								$node.Expression.VariablePath.UserPath -ieq 'PSBoundParameters' -and
+								$node.Member -is [Management.Automation.Language.StringConstantExpressionAst] -and
+								$node.Member.Value -in @('ContainsKey', 'Contains') -and
+								@($node.Arguments).Count -eq 1
+							}, $true))
+
+					foreach ($lookup in $lookups) {
+						if ((Get-Ps1ParameterOwnerFunction -Node $lookup) -ne $owner) { continue }
+
+						$argument = @($lookup.Arguments)[0]
+						$key = $null
+						if ($argument -is [Management.Automation.Language.StringConstantExpressionAst]) { $key = $argument.Value }
+						elseif ($argument -is [Management.Automation.Language.ExpandableStringExpressionAst] -and $argument.NestedExpressions.Count -eq 0) { $key = $argument.Value }
+						if ($null -eq $key -or $key -ine $name) { continue }
+
+						Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name is a wildcard parameter and always has a value, so `$PSBoundParameters.$($lookup.Member.Value)('$name') is unnecessary. Use -$name directly." $lookup.Extent
+					}
+				}
 			}
 		}
 	}
