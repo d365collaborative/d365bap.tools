@@ -15,7 +15,8 @@ What runs on `**.ps1`:
   `PSAvoidAddMemberInLoop`, `PSUseBapAccessTokenEndpointSwitch`,
   `PSAvoidOrphanPSFFunctionInterruptCheck`,
   `PSUseCentralEnvironmentLookup`, `PSUseVariableNamingConvention`,
-  `PSUseShouldProcessConvention`, `PSUseDeclaredOutputType`,
+  `PSUseShouldProcessConvention`, `PSAvoidReturnValue`,
+  `PSUseDeclaredOutputType`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -512,10 +513,46 @@ interrupt source, which avoids false positives when a begin block calls a helper
 that uses `Stop-PSFFunction -StepsUpward`. Test files and tepp scripts are
 exempt.
 
+## Return values
+
+`PSAvoidReturnValue` rejects `return <value>` in PowerShell code. `return`
+exits the current scope; values are emitted by the pipeline. `return $x` is
+shorthand for `$x; return`.
+
+```powershell
+# Fails
+function Set-Fixture {
+    return $value
+}
+
+# Passes: the value is the output, the function ends anyway
+function Set-Fixture {
+    $value
+}
+
+# Passes: emit the value, then use a bare return to exit early
+function Set-Fixture {
+    if ($done) {
+        'finished'
+        return
+    }
+
+    Get-Thing
+}
+```
+
+Use a bare `return` to stop execution. `return $null` is reported; a bare
+`return` is clearer. Class methods are exempt because PowerShell classes require
+`return` for method output.
+
+The rule checks module and build scripts; `*Tests.ps1`, `d365bap.tools/tests`,
+and tepp files are exempt. It runs on changed files only.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1FunctionInterruptRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ReturnValueRule.ps1
 ```
 
 ## Example prose

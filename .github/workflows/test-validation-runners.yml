@@ -25,6 +25,7 @@ on:
       - 'build/Test-Ps1ShouldProcessRule.ps1'
       - 'build/Test-Ps1OutputTypeRule.ps1'
       - 'build/Test-Ps1FunctionInterruptRule.ps1'
+      - 'build/Test-Ps1ReturnValueRule.ps1'
       - 'build/Test-PreloadExitCode.ps1'
       - 'build/Test-ModulePublication.ps1'
       - 'build/Publish-ModuleWithRetry.ps1'
@@ -112,6 +113,9 @@ jobs:
     - name: Test function interrupt lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1FunctionInterruptRule.ps1
+    - name: Test return value lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ReturnValueRule.ps1
     - name: Test module prerequisites
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1
