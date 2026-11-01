@@ -80,7 +80,7 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 
 		if (-not $PSCmdlet.ShouldProcess($EnvironmentId, "Assign governance policy $($policy[0].PolicyId)")) { return }
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com/'
+		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($policy[0].PolicyId)/environments/$routeEnvironmentId/assignments?api-version=$apiVersion"

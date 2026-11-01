@@ -40,7 +40,7 @@ function Get-BapGovernancePolicyAssignment {
 		[string] $EnvironmentGroupId
 	)
 
-	$secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com/'
+	$secureToken = Get-BapAccessToken -PowerPlatform
 	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 	$headers = @{
 		Authorization = "Bearer $tokenValue"

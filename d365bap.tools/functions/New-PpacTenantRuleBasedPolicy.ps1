@@ -47,7 +47,7 @@ function New-PpacTenantRuleBasedPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess($Name, 'Create governance rule-based policy')) { return }
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com/'
+		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies?api-version=$apiVersion"

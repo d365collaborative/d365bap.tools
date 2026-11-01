@@ -41,8 +41,10 @@ function Set-PpacTenantAcpPolicy {
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
+
 		[ValidateNotNullOrEmpty()]
 		[string] $Name,
+
 		[ValidateNotNullOrEmpty()]
 		[string[]] $ConnectorId
 	)

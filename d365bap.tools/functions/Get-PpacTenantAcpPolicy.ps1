@@ -54,6 +54,7 @@ function Get-PpacTenantAcpPolicy {
 		[string] $PolicyId = '*',
 
 		[switch] $ExpandConnectors,
+
 		[switch] $AsExcelOutput
 	)
 

@@ -19,7 +19,7 @@ function Get-BapGovernancePolicy {
 	[OutputType('System.Object[]')]
 	param ()
 
-	$secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com/'
+	$secureToken = Get-BapAccessToken -PowerPlatform
 	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 	$headers = @{
 		Authorization = "Bearer $tokenValue"

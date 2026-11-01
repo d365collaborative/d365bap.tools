@@ -66,6 +66,7 @@ function Get-PpacEnvironmentAcpPolicy {
 		[string] $PolicyId = '*',
 
 		[switch] $ExpandConnectors,
+
 		[switch] $AsExcelOutput
 	)
 

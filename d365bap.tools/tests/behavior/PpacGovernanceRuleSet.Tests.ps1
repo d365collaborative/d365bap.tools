@@ -14,8 +14,9 @@
 			throw $Message
 		}
 		function Get-BapAccessToken {
-			param($ResourceUrl)
+			param($ResourceUrl, [switch] $PowerPlatform)
 			$null = $ResourceUrl
+			$null = $PowerPlatform
 			$secure = [Security.SecureString]::new()
 			foreach ($char in @('fixture-token'.ToCharArray())) { $secure.AppendChar($char) }
 			$secure.MakeReadOnly()

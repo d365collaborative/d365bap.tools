@@ -55,7 +55,7 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 			ruleSets = @([ordered]@{ id = $RuleSetId })
 		} | ConvertTo-Json -Depth 20
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com/'
+		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($current[0].PolicyId)/removeRule?api-version=$apiVersion"

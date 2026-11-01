@@ -53,10 +53,13 @@ function Set-PpacTenantRuleBasedPolicy {
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
+
 		[ValidateNotNullOrEmpty()]
 		[string] $Name,
+
 		[ValidateNotNullOrEmpty()]
 		[object[]] $RuleSet,
+
 		[switch] $Merge
 	)
 
@@ -88,7 +91,7 @@ function Set-PpacTenantRuleBasedPolicy {
 			ruleSets = $payloadRuleSets
 		} | ConvertTo-Json -Depth 20
 
-		$secureToken = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com/'
+		$secureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($current[0].PolicyId)?api-version=$apiVersion"
