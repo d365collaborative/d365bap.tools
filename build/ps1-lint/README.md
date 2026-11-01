@@ -14,6 +14,7 @@ What runs on `**.ps1`:
   `PSAvoidExplicitParameterPosition`, `PSUseStandardCollectionOutput`,
   `PSAvoidAddMemberInLoop`, `PSUseBapAccessTokenEndpointSwitch`,
   `PSUseCentralEnvironmentLookup`, `PSUseVariableNamingConvention`,
+  `PSUseShouldProcessConvention`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -361,10 +362,39 @@ The rule runs on module code and build scripts under `build/`. Test files and
 tepp scripts are exempt. It runs on changed files only, so the existing names
 are reshaped as their files are touched.
 
+## ShouldProcess
+
+`PSUseShouldProcessConvention` keeps a cmdlet's confirmation honest:
+
+- A function that declares `[CmdletBinding(SupportsShouldProcess = $true)]` must call
+  `ShouldProcess`. A call without the declaration is reported too.
+- Only the two-argument form is allowed.
+- The first argument must be the local variable `$shouldAffected`; the second must
+  be the local variable `$shouldLabel`.
+- `$shouldAffected` must describe the target with a name, display name, title, text
+  or description. An id alone is not human friendly.
+- `$shouldLabel` must be a string literal describing the action, not a bare id or a
+  variable.
+- `$shouldAffected` expands to at most 85 characters and `$shouldLabel` to at most
+  125. Every variable or property counts as 36 characters; literal text counts as
+  written.
+- The two assignments sit on consecutive lines, followed by exactly one blank line
+  and then the `if` statement.
+
+```powershell
+$shouldAffected = "$($envObj.EnvName) ($($envObj.EnvId))"
+$shouldLabel = "Assign ACP $($policy[0].PolicyId) - $($policy[0].Name)"
+
+if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+```
+
+The rule runs on module functions and internal scripts, changed files only.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1VariableNamingRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ShouldProcessRule.ps1
 ```
 
 ## Example prose
