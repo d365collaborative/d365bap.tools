@@ -12,7 +12,8 @@ What runs on `**.ps1`:
   `PSUseSupportsWildcards`, `PSAvoidEmptyParameterAttribute`,
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
-  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`.
+  `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`,
+  `PSUseBlankLineBeforeParameter`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -145,6 +146,19 @@ Run their regression checks under PowerShell 7.6 or later:
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1TableFormatRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ExcelOutputRule.ps1
+```
+
+## Parameter spacing
+
+`PSUseBlankLineBeforeParameter` requires a blank line before every parameter
+after the first, including its attributes. The first parameter is exempt
+because the codebase keeps it directly under `param (`. The rule applies to
+public functions only; build and internal scripts use their own layouts.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterSpacingRule.ps1
 ```
 
 ## Note properties

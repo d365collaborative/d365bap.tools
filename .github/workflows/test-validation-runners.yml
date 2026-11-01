@@ -17,6 +17,7 @@ on:
       - 'build/Test-Ps1ParameterPositionRule.ps1'
       - 'build/Test-Ps1TableFormatRule.ps1'
       - 'build/Test-Ps1ExcelOutputRule.ps1'
+      - 'build/Test-Ps1ParameterSpacingRule.ps1'
       - 'build/Test-Ps1AddMemberRule.ps1'
       - 'build/Test-PreloadExitCode.ps1'
       - 'build/Test-ModulePublication.ps1'
@@ -81,6 +82,9 @@ jobs:
     - name: Test Excel output lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ExcelOutputRule.ps1
+    - name: Test parameter spacing lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ParameterSpacingRule.ps1
     - name: Test Add-Member lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1AddMemberRule.ps1
