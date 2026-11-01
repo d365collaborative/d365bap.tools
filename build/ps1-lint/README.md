@@ -13,7 +13,7 @@ What runs on `**.ps1`:
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidRedundantParameterArgument`, `PSAvoidExplicitParameterPosition`,
   `PSUseTableFormatView`, `PSUseAsExcelOutput`, `PSAvoidAddMemberInLoop`,
-  `PSUseBlankLineBeforeParameter`.
+  `PSUseBlankLineBeforeParameter`, `PSUseStandardAttributeStack`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -159,6 +159,23 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterSpacingRule.ps1
+```
+
+## Attribute stacks
+
+`PSUseStandardAttributeStack` requires one order inside a parameter stack:
+
+1. `[Parameter()]` attribute(s) first.
+2. The remaining attributes.
+3. The type constraint and the parameter name on one line.
+
+No blank line is allowed between those items. Multi-line attributes are fine;
+only the gaps between stack items are checked.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1AttributeStackRule.ps1
 ```
 
 ## Note properties
