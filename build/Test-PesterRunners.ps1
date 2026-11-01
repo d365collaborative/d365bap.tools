@@ -30,7 +30,8 @@ function Invoke-Runner([string] $Name, [hashtable] $Parameters) {
 	$inputFile = Join-Path $root 'invocation.xml'
 	@{ Runner = (Join-Path $tests $Name); Parameters = $Parameters } | Export-Clixml -LiteralPath $inputFile
 	$output = @(& $pwsh -NoProfile -NonInteractive -File (Join-Path $root 'driver.ps1') $inputFile 2>&1 | ForEach-Object { "$_" }) -join "`n"
-	return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
+	[pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
+	return
 }
 
 function Add-TestFile([string] $Path, [string] $Name) {
@@ -59,6 +60,8 @@ function Assert-ReportedTests([string[]] $Expected) {
 
 try {
 	$null = New-Item -ItemType Directory -Path $project -Force
+	$null = New-Item -ItemType Directory -Path (Join-Path $root 'build') -Force
+	Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint') -Destination (Join-Path $root 'build') -Recurse
 	Set-Content -LiteralPath (Join-Path $project 'd365bap.tools.psm1') -Value 'function Write-PSFMessage { param($Level, $Message) Write-Host $Message }; Export-ModuleMember -Function Write-PSFMessage' -Encoding utf8
 	New-ModuleManifest -Path (Join-Path $project 'd365bap.tools.psd1') -RootModule 'd365bap.tools.psm1' -ModuleVersion '1.0.0' -FunctionsToExport 'Write-PSFMessage'
 	Set-Content -LiteralPath (Join-Path $root 'driver.ps1') -Encoding utf8 -Value @'
