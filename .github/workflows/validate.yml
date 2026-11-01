@@ -38,6 +38,12 @@ jobs:
     - name: Lint changed files
       shell: pwsh
       run: prek run --config prek.toml --from-ref $env:BASE_SHA --to-ref HEAD
+    - name: Report dependency-aware lint scope
+      shell: pwsh
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.sha }}
+      run: ./build/Invoke-Ps1LintScope.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -RunAnalyzer
 
   changes:
     name: Determine validation scope
@@ -84,7 +90,7 @@ jobs:
     - name: Test change-aware validation infrastructure
       shell: pwsh
       run: |
-        foreach ($test in @('Test-PRValidationPlan', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness')) {
+        foreach ($test in @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness')) {
           & pwsh -NoProfile -NonInteractive -File "./build/$test.ps1"
           if ($LASTEXITCODE -ne 0) { throw "Validation infrastructure regression failed: $test" }
         }
