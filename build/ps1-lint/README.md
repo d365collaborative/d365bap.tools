@@ -27,7 +27,7 @@ What runs on PowerShell files:
   `PSAvoidOrphanPSFFunctionInterruptCheck`,
   `PSUseCentralEnvironmentLookup`, `PSUseVariableNamingConvention`,
   `PSUseShouldProcessConvention`, `PSAvoidReturnValue`,
-  `PSUseDeclaredOutputType`,
+  `PSUseDeclaredOutputType`, `PSAvoidObjectArrayCast`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -615,6 +615,31 @@ Run its regression checks under PowerShell 7.6 or later:
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1FunctionInterruptRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ReturnValueRule.ps1
+```
+
+## Object array casts
+
+`PSAvoidObjectArrayCast` rejects a cast to `[object[]]`. `@()` already returns
+an array; the element type adds nothing and hides the actual value shape:
+
+```powershell
+# Fails
+$colResult = [object[]]@($response.value)
+[object[]] $colResult = @()
+
+# Passes
+$colResult = @($response.value)
+```
+
+`[OutputType([object[]])]` is exempt because it declares the output contract,
+and a parameter type is a type constraint rather than a cast. Scope: module code
+(public and internal); build scripts, test files, and tepp fixtures are out of
+scope.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
 ```
 
 ## Example prose
