@@ -160,6 +160,7 @@ function Get-UnifiedEnvironment {
 				-Property @{Name = "PpacProvApp"; Expression = { $provisioningApp } },
 			@{Name = "PpacProvPlatform"; Expression = { $provisioningPlatform } },
 			@{Name = "PpacProvType"; Expression = { $provisioningType } },
+			@{Name = "PpacRuntimeState"; Expression = { "$($_.Properties.states.runtime.id)" } },
 			@{Name = "EnvType"; Expression = {
 					switch ($provisioningType) {
 						"OnlineDev" { "UDE" }

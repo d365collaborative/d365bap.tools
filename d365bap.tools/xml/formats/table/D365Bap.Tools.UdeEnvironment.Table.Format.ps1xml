@@ -21,7 +21,7 @@
                         <Width>16</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
-                        <Width>10</Width>
+                        <Width>17</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Width>36</Width>
@@ -43,7 +43,7 @@
                                 <PropertyName>PpacProvPlatform</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
-                                <PropertyName>State</PropertyName>
+                                <PropertyName>PpacRuntimeState</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
                                 <PropertyName>EnvId</PropertyName>
