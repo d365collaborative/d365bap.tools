@@ -13,7 +13,7 @@ What runs on `**.ps1`:
   `PSUseValidateNotNullOrEmpty`, `PSAvoidShorthandMandatory`,
   `PSAvoidExplicitParameterPosition`, `PSUseStandardCollectionOutput`,
   `PSAvoidAddMemberInLoop`, `PSUseBapAccessTokenEndpointSwitch`,
-  `PSUseStandardParameterLayout`.
+  `PSUseCentralEnvironmentLookup`, `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
   `{"allowedCommandAliases": [], "allowedParameterAliases": ["PpacEnvId"]}`.
@@ -239,6 +239,78 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1MandatoryRule.ps1
+```
+
+## Internal comments
+
+`PSOnlyCommentBasedHelp` fails every comment that is not comment-based help. It
+covers module functions and internal scripts as well as build scripts, so a
+changed cmdlet replaces inline notes with help or with self-explanatory code.
+Region markers are the only exception because they fold code rather than
+document it:
+
+```powershell
+# Fails
+$cache = 1 # fill the cache
+
+# Passes
+<#
+    .SYNOPSIS
+        Fills the cache.
+
+    .EXAMPLE
+        PS C:\> Get-Fixture
+
+        Fills the cache.
+#>
+```
+
+`#requires` statements and shebangs are ignored. Test files (`*Tests.ps1` and
+everything under `d365bap.tools/tests`) and tepp files (`*.tepp.ps1` and
+`internal/tepp`) are exempt. The rule runs on changed files only, so the
+remaining comments are removed as their files are touched.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1CommentRule.ps1
+```
+
+## Environment lookups
+
+`PSUseCentralEnvironmentLookup` requires module code to look environments up
+through `Get-Environment`, which returns the cheapest shape the caller asks for:
+
+| Shape | Cost on a live tenant | Call |
+| --- | --- | --- |
+| BAP environment | ~0.6 s | `Get-Environment -EnvironmentId $id` |
+| Unified, no provisioning data | ~0.7 s | `Get-Environment -EnvironmentId $id -Unified` |
+| Unified with provisioning data | ~15 s | `Get-Environment -EnvironmentId $id -Unified -VersionDetails` |
+
+```powershell
+# Fails
+$envObj = Get-BapEnvironment -EnvironmentId $id | Select-Object -First 1
+$envObj = Get-UnifiedEnvironment -EnvironmentId $id | Select-Object -First 1
+
+# Passes
+$envObj = Get-Environment -EnvironmentId $id | Select-Object -First 1
+$envObj = Get-Environment -EnvironmentId $id -Unified | Select-Object -First 1
+$envObj = Get-Environment -EnvironmentId $id -Unified -VersionDetails | Select-Object -First 1
+```
+
+The per-environment provisioning lookup is what makes the full shape expensive,
+so only callers that read fields such as `PpacProvApp` should ask for it. The
+rule reports `Get-UnifiedEnvironment -SkipVersionDetails` as `-Unified` and a
+plain `Get-UnifiedEnvironment` as `-Unified -VersionDetails`.
+
+`Get-BapEnvironment.ps1`, `Get-UnifiedEnvironment.ps1`, and `Get-Environment.ps1`
+are exempt because they implement the lookup. The rule runs on changed files
+only, so callers migrate as their files are touched.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1EnvironmentLookupRule.ps1
 ```
 
 ## Example prose

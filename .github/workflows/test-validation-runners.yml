@@ -19,6 +19,8 @@ on:
       - 'build/Test-Ps1ParameterLayoutRule.ps1'
       - 'build/Test-Ps1AddMemberRule.ps1'
       - 'build/Test-Ps1AccessTokenRule.ps1'
+      - 'build/Test-Ps1CommentRule.ps1'
+      - 'build/Test-Ps1EnvironmentLookupRule.ps1'
       - 'build/Test-PreloadExitCode.ps1'
       - 'build/Test-ModulePublication.ps1'
       - 'build/Publish-ModuleWithRetry.ps1'
@@ -88,6 +90,12 @@ jobs:
     - name: Test access token endpoint lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1AccessTokenRule.ps1
+    - name: Test comment-based help lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1CommentRule.ps1
+    - name: Test central environment lookup lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1EnvironmentLookupRule.ps1
     - name: Test module prerequisites
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1
