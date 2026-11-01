@@ -28,23 +28,23 @@ function Get-PpacEnvironmentDlpRoute {
 		[string] $EnvironmentId
 	)
 
-	$route = [pscustomobject]@{
+	$objRoute = [pscustomobject]@{
 		RouteId = $null
 		Name    = $EnvironmentId
 	}
 
 	$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
 	if ($null -ne $envObj) {
-		$route.RouteId = "$($envObj.PpacEnvId)"
+		$objRoute.RouteId = "$($envObj.PpacEnvId)"
 		if (-not [string]::IsNullOrWhiteSpace("$($envObj.PpacEnvName)")) {
-			$route.Name = $envObj.PpacEnvName
+			$objRoute.Name = $envObj.PpacEnvName
 		}
-		return $route
+		return $objRoute
 	}
 
 	if ($EnvironmentId -match '^Default-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
-		$route.RouteId = $EnvironmentId
-		return $route
+		$objRoute.RouteId = $EnvironmentId
+		return $objRoute
 	}
 
 	$environmentGuid = [guid]::Empty
@@ -52,13 +52,13 @@ function Get-PpacEnvironmentDlpRoute {
 		$tenantId = $null
 		try { $tenantId = (Get-BapContext).TenantId } catch { $tenantId = $null }
 		if (-not [string]::IsNullOrWhiteSpace("$tenantId") -and $environmentGuid -eq [guid]$tenantId) {
-			$route.RouteId = "Default-$tenantId"
-			return $route
+			$objRoute.RouteId = "Default-$tenantId"
+			return $objRoute
 		}
-		$route.RouteId = "$environmentGuid"
-		return $route
+		$objRoute.RouteId = "$environmentGuid"
+		return $objRoute
 	}
 
-	$route.RouteId = $null
-	$route
+	$objRoute.RouteId = $null
+	$objRoute
 }

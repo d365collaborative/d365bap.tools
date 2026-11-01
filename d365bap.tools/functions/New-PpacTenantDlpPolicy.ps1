@@ -32,11 +32,14 @@ function New-PpacTenantDlpPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$policyLabel = "$($Policy.displayName)"
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = "$($Policy.name)" }
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = 'DLP policy' }
+		$policyName = "$($Policy.displayName)"
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = "$($Policy.name)" }
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = 'DLP policy' }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, 'Create tenant DLP policy')) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = 'Create tenant DLP policy'
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken

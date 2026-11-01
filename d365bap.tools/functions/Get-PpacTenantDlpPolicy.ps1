@@ -57,7 +57,7 @@ function Get-PpacTenantDlpPolicy {
 		if (Test-PSFFunctionInterrupt) { return }
 
 		try {
-			$policies = @(Get-BapDlpPolicy | Where-Object { $_.environmentType -ne 'SingleEnvironment' })
+			$colPolicies = @(Get-BapDlpPolicy | Where-Object { $_.environmentType -ne 'SingleEnvironment' })
 		}
 		catch {
 			$messageString = "Failed to retrieve tenant DLP policies. $($_.Exception.Message)"
@@ -66,14 +66,14 @@ function Get-PpacTenantDlpPolicy {
 			return
 		}
 
-		$policies = @($policies | Where-Object {
+		$colPolicies = @($colPolicies | Where-Object {
 				$_.name -like $PolicyId -or $_.displayName -like $PolicyId
 			})
 
-		$policies = @($policies | Sort-Object -Property displayName, name)
+		$colPolicies = @($colPolicies | Sort-Object -Property displayName, name)
 
-		$resCol = @(
-			$policies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantDlpPolicy' -Property `
+		$colRes = @(
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantDlpPolicy' -Property `
 				'name as PolicyId',
 			'displayName as Name',
 			@{ Name = 'PolicyScope'; Expression = { if ($_.environmentType -eq 'SingleEnvironment') { 'Environment' } else { 'Tenant' } } },
@@ -93,13 +93,13 @@ function Get-PpacTenantDlpPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacTenantDlpPolicy' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacTenantDlpPolicy' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }

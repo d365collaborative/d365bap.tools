@@ -15,6 +15,8 @@
     .PARAMETER PolicyId
         Policy GUID, display name, or wildcard filter. Includes non-effective policies.
 
+        Default: *
+
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
 
@@ -58,7 +60,7 @@ function Get-PpacEnvironmentDlpPolicy {
 		[string] $EnvironmentId,
 
 		[SupportsWildcards()]
-		[string] $PolicyId,
+		[string] $PolicyId = '*',
 
 		[switch] $AsExcelOutput
 	)
@@ -124,7 +126,7 @@ function Get-PpacEnvironmentDlpPolicy {
 		) | Where-Object { -not [string]::IsNullOrWhiteSpace("$_") } | ForEach-Object { "$_".ToLowerInvariant() } | Select-Object -Unique
 
 		try {
-			$policies = @(Get-BapDlpPolicy)
+			$colPolicies = @(Get-BapDlpPolicy)
 		}
 		catch {
 			$messageString = "Failed to retrieve DLP policies for environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
@@ -133,12 +135,12 @@ function Get-PpacEnvironmentDlpPolicy {
 			return
 		}
 
-		$policies = @(
-			foreach ($policy in $policies) {
-				$policyIds = @($policy.environments.id | ForEach-Object { "$_".ToLowerInvariant() })
-				$matchesEnvironment = @($candidateIds | Where-Object { $_ -in $policyIds }).Count -gt 0
+		$colPolicies = @(
+			foreach ($itemPolicy in $colPolicies) {
+				$tmpPolicyIds = @($itemPolicy.environments.id | ForEach-Object { "$_".ToLowerInvariant() })
+				$matchesEnvironment = @($candidateIds | Where-Object { $_ -in $tmpPolicyIds }).Count -gt 0
 
-				$isEffective = switch ("$($policy.environmentType)") {
+				$isEffective = switch ("$($itemPolicy.environmentType)") {
 					'AllEnvironments' { $true }
 					'OnlyEnvironments' { $matchesEnvironment }
 					'ExceptEnvironments' { -not $matchesEnvironment }
@@ -146,23 +148,23 @@ function Get-PpacEnvironmentDlpPolicy {
 					Default { $false }
 				}
 
-				$policy | Select-Object *, @{ Name = 'IsEffective'; Expression = { $isEffective } }, @{ Name = 'IsInherited'; Expression = { $_.environmentType -ne 'SingleEnvironment' } }
+				$itemPolicy | Select-Object *, @{ Name = 'IsEffective'; Expression = { $isEffective } }, @{ Name = 'IsInherited'; Expression = { $_.environmentType -ne 'SingleEnvironment' } }
 			}
 		)
 
-		if ($PSBoundParameters.ContainsKey('PolicyId')) {
-			$policies = @($policies | Where-Object {
+		if ($PolicyId -ne '*') {
+			$colPolicies = @($colPolicies | Where-Object {
 					$_.name -like $PolicyId -or $_.displayName -like $PolicyId
 				})
 		}
 		else {
-			$policies = @($policies | Where-Object { $_.IsEffective })
+			$colPolicies = @($colPolicies | Where-Object { $_.IsEffective })
 		}
 
-		$policies = @($policies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.displayName } }, @{ Expression = { $_.name } })
+		$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.displayName } }, @{ Expression = { $_.name } })
 
-		$resCol = @(
-			$policies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentDlpPolicy' -Property `
+		$colRes = @(
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentDlpPolicy' -Property `
 				'name as PolicyId',
 			'displayName as Name',
 			@{ Name = 'PolicyScope'; Expression = { if ($_.environmentType -eq 'SingleEnvironment') { 'Environment' } else { 'Tenant' } } },
@@ -186,13 +188,13 @@ function Get-PpacEnvironmentDlpPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($resCol.Count -gt 0) {
-				$resCol | Export-Excel -WorksheetName 'Get-PpacEnvironmentDlpPolicy' `
+			if ($colRes.Count -gt 0) {
+				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentDlpPolicy' `
 					-WarningAction SilentlyContinue
 			}
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 }

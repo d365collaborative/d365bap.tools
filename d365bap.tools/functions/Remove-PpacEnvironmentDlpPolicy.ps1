@@ -39,31 +39,34 @@ function Remove-PpacEnvironmentDlpPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$route = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
-		$routeEnvironmentId = $route.RouteId
+		$objRoute = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
+		$routeEnvironmentId = $objRoute.RouteId
 		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
 			Stop-PSFFunction -Message "No environment matched '$EnvironmentId'."
 			return
 		}
 
-		$current = @(Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId -PolicyId $PolicyId)
-		if ($current.Count -eq 0) {
+		$colCurrent = @(Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId -PolicyId $PolicyId)
+		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No environment DLP policy matched '$PolicyId'."
 			return
 		}
-		if ($current.Count -gt 1) {
+		if ($colCurrent.Count -gt 1) {
 			Stop-PSFFunction -Message "Multiple environment DLP policies matched '$PolicyId'. Use a policy GUID."
 			return
 		}
 
-		$policyLabel = $current[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = $current[0].PolicyId }
+		$policyName = $colCurrent[0].Name
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Delete from '$($route.Name)'")) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = "Delete DLP policy from '$($objRoute.Name)'"
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
-		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/$routeEnvironmentId/apiPolicies/$($current[0].PolicyId)?api-version=2018-10-01"
+		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/$routeEnvironmentId/apiPolicies/$($colCurrent[0].PolicyId)?api-version=2018-10-01"
 
 		try {
 			$null = Invoke-RestMethod -Method Delete -Uri $uri -Headers @{

@@ -41,18 +41,21 @@ function New-PpacEnvironmentDlpPolicy {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$route = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
-		$routeEnvironmentId = $route.RouteId
+		$objRoute = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
+		$routeEnvironmentId = $objRoute.RouteId
 		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
 			Stop-PSFFunction -Message "No environment matched '$EnvironmentId'."
 			return
 		}
 
-		$policyLabel = "$($Policy.displayName)"
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = "$($Policy.name)" }
-		if ([string]::IsNullOrWhiteSpace("$policyLabel")) { $policyLabel = 'DLP policy' }
+		$policyName = "$($Policy.displayName)"
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = "$($Policy.name)" }
+		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = 'DLP policy' }
 
-		if (-not $PSCmdlet.ShouldProcess($policyLabel, "Create in '$($route.Name)'")) { return }
+		$shouldAffected = $policyName
+		$shouldLabel = "Create DLP policy in '$($objRoute.Name)'"
+
+		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$secureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
