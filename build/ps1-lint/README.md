@@ -4,16 +4,18 @@ PowerShell lint hook scripts for `prek.toml`. They started as a copy of the
 PS1 hooks from an internal-only module and are maintained in this repo from
 here on — no submodule, no sync back. Rule changes happen here via normal PRs.
 
-What runs on `**.ps1`:
+What runs on PowerShell files:
 - `psscriptanalyzer/Run.ps1` — the shared analyzer entry point
   (`internal/Invoke-Ps1Analysis.ps1`) runs native PSScriptAnalyzer plus the
   repository rules below. Parser errors are collected separately and always
   fail, because PSScriptAnalyzer reports them as `ParseError` rather than
   `Error`. Module functions fail on errors and warnings; build scripts and
-  other tooling keep the historical error-only gate. PSScriptAnalyzer rules
-  already owned elsewhere are excluded: `PSAvoidUsingCmdletAliases` (the alias
-  rules below), `PSAvoidTrailingWhitespace` (the format hook), and
-  `PSShouldProcess` (`PSUseShouldProcessConvention`).
+  other tooling keep the historical error-only gate. `.psm1` and `.psd1` files
+  receive syntax and built-in rule coverage only; public-function conventions
+  do not apply to them. PSScriptAnalyzer rules already owned elsewhere are
+  excluded: `PSAvoidUsingCmdletAliases` (the alias rules below),
+  `PSAvoidTrailingWhitespace` (the format hook), and `PSShouldProcess`
+  (`PSUseShouldProcessConvention`).
   Repository rules: `PSOnlyCommentBasedHelp`,
   `PSHelpSynopsis/Description/Parameter/Notes/Example`,
   `PSAvoidCommandAliases` / `PSAvoidParameterAliases`,

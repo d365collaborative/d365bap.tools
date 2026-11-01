@@ -22,7 +22,7 @@ $files = @(
 
 		if ($item -match '^-') { continue }
 
-		if ($item -notmatch '\.ps1$') { continue }
+		if ($item -notmatch '\.(ps1|psm1|psd1)$') { continue }
 
 		if (-not (Test-Path -LiteralPath $item)) { continue }
 
@@ -39,7 +39,7 @@ $results = @()
 $failedFiles = @()
 
 foreach ($p in $files) {
-	$fileResult = Invoke-Ps1Analysis -Path $p -Analyzer $analyzer
+	$fileResult = Invoke-Ps1Analysis -Path $p -Analyzer $analyzer -SkipCustomRules:($p -notmatch '\.ps1$')
 	$results += @($fileResult.Diagnostics)
 
 	if ($fileResult.Failed) {

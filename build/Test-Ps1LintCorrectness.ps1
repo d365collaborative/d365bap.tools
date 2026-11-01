@@ -34,6 +34,20 @@ try {
 	$run = Invoke-Hook $hook $clean
 	Assert-True ($run.ExitCode -eq 0) "A clean script must pass the analyzer hook: $($run.Output)"
 
+	# Module and manifest syntax is covered without applying function conventions.
+	foreach ($itemExtension in @('psm1', 'psd1')) {
+		$broken = Join-Path $root "Broken.$itemExtension"
+		Set-Content -LiteralPath $broken -Value 'function Broken {'
+		$run = Invoke-Hook $hook $broken
+		Assert-True ($run.ExitCode -ne 0) "A broken .$itemExtension file must fail the analyzer hook."
+		Assert-True ($run.Output -match 'PSParseError') "A broken .$itemExtension file must report PSParseError."
+	}
+
+	$manifest = Join-Path $root 'Valid.psd1'
+	Set-Content -LiteralPath $manifest -Value "@{ ModuleVersion = '1.0.0' }"
+	$run = Invoke-Hook $hook $manifest
+	Assert-True ($run.ExitCode -eq 0) "A valid manifest must pass the analyzer hook: $($run.Output)"
+
 	# A formatter failure with unchanged content must fail the format hook.
 	$readOnly = Join-Path $root 'ReadOnly.ps1'
 	[System.IO.File]::WriteAllText($readOnly, "Write-Output 'clean'`n", [System.Text.UTF8Encoding]::new($false))

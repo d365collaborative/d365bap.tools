@@ -52,7 +52,7 @@ name = "PSScriptAnalyzer plus repo comment/help/alias rules"
 language = "system"
 entry = "pwsh"
 args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/psscriptanalyzer/Run.ps1"]
-files = { glob = "**.ps1" }
+files = { glob = ["**.ps1", "**.psm1", "**.psd1"] }
 exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
 # Same batching tradeoff as ps1-format: fewer processes, shared index.
 pass_filenames = 64
