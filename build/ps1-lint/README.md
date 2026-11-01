@@ -30,6 +30,7 @@ What runs on PowerShell files:
   `PSUseDeclaredOutputType`, `PSAvoidObjectArrayCast`,
   `PSUseValidationAttributeOnMandatory`,
   `PSUseWildcardParameterAsFilter`,
+  `PSUseOrderedPSCustomObject`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -713,12 +714,37 @@ variable. The rule runs on `functions/` and `internal/functions/`; generated
 SDK wrappers and `build/` are out of scope. `PSUseSupportsWildcards` owns the
 attribute and default contract; this rule only owns the value comparison.
 
+## Ordered PSCustomObject
+
+`PSUseOrderedPSCustomObject` requires a `[pscustomobject]` built from a
+hashtable literal to go through `[ordered]`, so the property order is explicit
+instead of a hashtable implementation detail:
+
+```powershell
+# Fails
+$objResult = [pscustomobject]@{
+    Name = 'fixture'
+}
+
+# Passes
+$objResult = [pscustomobject][ordered]@{
+    Name = 'fixture'
+}
+```
+
+The rule follows parentheses to the literal, so `[pscustomobject](@{ ... })` is
+reported and `[pscustomobject]([ordered]@{ ... })` passes. A variable child
+such as `[pscustomobject]$hashSource` cannot be ordered statically and is
+ignored. It runs on module code (public and internal); build scripts, test
+files, and tepp fixtures are out of scope.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1WildcardParameterAsFilterRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1OrderedPSCustomObjectRule.ps1
 ```
 
 ## Example prose
