@@ -11,13 +11,10 @@
     .PARAMETER EnvironmentId
         Environment name, GUID, or Power Platform environment identifier.
 
-    .PARAMETER Name
-        Policy id or display name filter. Wildcards are accepted.
+    .PARAMETER PolicyId
+        Policy GUID, display name, or wildcard filter. Includes non-effective policies.
 
         Default: *
-
-    .PARAMETER PolicyId
-        Policy GUID or display name. Multiple name matches return all matches.
 
     .PARAMETER ExpandConnectors
         Returns one row per allowed connector instead of one row per policy.
@@ -65,10 +62,9 @@ function Get-PpacEnvironmentAcpPolicy {
 		[string] $EnvironmentId,
 
 		[SupportsWildcards()]
-		[string] $Name = '*',
-
 		[ValidateNotNullOrEmpty()]
-		[string] $PolicyId,
+		[string] $PolicyId = '*',
+
 		[switch] $ExpandConnectors,
 		[switch] $AsExcelOutput
 	)
@@ -80,12 +76,6 @@ function Get-PpacEnvironmentAcpPolicy {
 			Kind          = 'Acp'
 			EnvironmentId = $EnvironmentId
 		}
-		if ($PSBoundParameters.ContainsKey('Name')) { $params.Name = $Name }
-		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
-			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
-			return
-		}
-
 		if ($PSBoundParameters.ContainsKey('PolicyId')) { $params.PolicyId = $PolicyId }
 
 		$policies = @(Get-PpacEnvironmentRuleBasedPolicy @params)

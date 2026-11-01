@@ -8,13 +8,10 @@
 
         An expanded allowlist view is available when requested.
 
-    .PARAMETER Name
-        Policy id or display name filter. Wildcards are accepted.
+    .PARAMETER PolicyId
+        Policy GUID, display name, or wildcard filter.
 
         Default: *
-
-    .PARAMETER PolicyId
-        Policy GUID or display name. Multiple name matches return all matches.
 
     .PARAMETER ExpandConnectors
         Returns one row per allowed connector instead of one row per policy.
@@ -53,10 +50,9 @@ function Get-PpacTenantAcpPolicy {
 	[OutputType('System.Object[]')]
 	param (
 		[SupportsWildcards()]
-		[string] $Name = '*',
-
 		[ValidateNotNullOrEmpty()]
-		[string] $PolicyId,
+		[string] $PolicyId = '*',
+
 		[switch] $ExpandConnectors,
 		[switch] $AsExcelOutput
 	)
@@ -65,12 +61,6 @@ function Get-PpacTenantAcpPolicy {
 		if (Test-PSFFunctionInterrupt) { return }
 
 		$params = @{ Kind = 'Acp' }
-		if ($PSBoundParameters.ContainsKey('Name')) { $params.Name = $Name }
-		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
-			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
-			return
-		}
-
 		if ($PSBoundParameters.ContainsKey('PolicyId')) { $params.PolicyId = $PolicyId }
 
 		$policies = @(Get-PpacTenantRuleBasedPolicy @params)

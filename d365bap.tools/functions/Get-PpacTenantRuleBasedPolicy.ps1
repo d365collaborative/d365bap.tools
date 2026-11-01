@@ -9,8 +9,8 @@
         Only advanced connector policies are returned when the ACP view is
         requested.
 
-    .PARAMETER Name
-        Policy id or display name filter. Wildcards are accepted.
+    .PARAMETER PolicyId
+        Policy GUID, display name, or wildcard filter.
 
         Default: *
 
@@ -18,9 +18,6 @@
         All returns every rule-based policy. Acp returns ACP policies only.
 
         Default: All
-
-    .PARAMETER PolicyId
-        Policy GUID or display name. Multiple name matches return all matches.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -38,10 +35,10 @@
         It uses -Kind to select the policy kind.
 
     .EXAMPLE
-        PS C:\> Get-PpacTenantRuleBasedPolicy -Name "*baseline*"
+        PS C:\> Get-PpacTenantRuleBasedPolicy -PolicyId "*baseline*"
 
         Lists policies that match the name filter.
-        It uses -Name to filter on policy id or display name.
+        It uses -PolicyId to filter on policy id or display name.
         It uses -Kind All by default.
 
     .EXAMPLE
@@ -66,12 +63,12 @@ function Get-PpacTenantRuleBasedPolicy {
 	[OutputType('System.Object[]')]
 	param (
 		[SupportsWildcards()]
-		[string] $Name = '*',
+		[ValidateNotNullOrEmpty()]
+		[string] $PolicyId = '*',
+
 		[ValidateSet('All', 'Acp')]
 		[string] $Kind = 'All',
 
-		[ValidateNotNullOrEmpty()]
-		[string] $PolicyId,
 		[switch] $AsExcelOutput
 	)
 
@@ -90,22 +87,9 @@ function Get-PpacTenantRuleBasedPolicy {
 
 		if ($Kind -eq 'Acp') { $policies = @($policies | Where-Object Kind -eq 'Acp') }
 
-		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
-			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
-			return
-		}
-
-		if ($PSBoundParameters.ContainsKey('PolicyId')) {
-			$policies = @($policies | Where-Object {
-					$_.id -eq $PolicyId -or $_.name -eq $PolicyId
-				})
-		}
-		else {
-			$policies = @($policies | Where-Object {
-					$_.id -like $Name -or $_.id -eq $Name `
-						-or $_.name -like $Name -or $_.name -eq $Name
-				})
-		}
+		$policies = @($policies | Where-Object {
+				$_.id -like $PolicyId -or $_.name -like $PolicyId
+			})
 
 		$policies = @($policies | Sort-Object -Property name, id)
 

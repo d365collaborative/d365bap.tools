@@ -10,13 +10,10 @@
     .PARAMETER EnvironmentGroupId
         The unique identifier of the environment group.
 
-    .PARAMETER Name
-        Policy id or display name filter. Wildcards are accepted.
+    .PARAMETER PolicyId
+        Policy GUID, display name, or wildcard filter. Includes unassigned policies.
 
         Default: *
-
-    .PARAMETER PolicyId
-        Policy GUID or display name. Multiple name matches return all matches.
 
     .PARAMETER ExpandConnectors
         Returns one row per allowed connector instead of one row per policy.
@@ -63,10 +60,9 @@ function Get-PpacEnvironmentGroupAcpPolicy {
 		[string] $EnvironmentGroupId,
 
 		[SupportsWildcards()]
-		[string] $Name = '*',
-
 		[ValidateNotNullOrEmpty()]
-		[string] $PolicyId,
+		[string] $PolicyId = '*',
+
 		[switch] $ExpandConnectors,
 		[switch] $AsExcelOutput
 	)
@@ -78,12 +74,6 @@ function Get-PpacEnvironmentGroupAcpPolicy {
 			Kind               = 'Acp'
 			EnvironmentGroupId = $EnvironmentGroupId
 		}
-		if ($PSBoundParameters.ContainsKey('Name')) { $params.Name = $Name }
-		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
-			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
-			return
-		}
-
 		if ($PSBoundParameters.ContainsKey('PolicyId')) { $params.PolicyId = $PolicyId }
 
 		$policies = @(Get-PpacEnvironmentGroupRuleBasedPolicy @params)

@@ -136,7 +136,7 @@ Describe 'General rule-based policy commands' {
 	It 'filters tenant policies by kind, name, and id' {
 		$acp = @(PpacGovernancePolicyFixture\Get-PpacTenantRuleBasedPolicy -Kind Acp)
 		$acp.Count | Should -Be 2
-		$byName = @(PpacGovernancePolicyFixture\Get-PpacTenantRuleBasedPolicy -Name '*restricted*')
+		$byName = @(PpacGovernancePolicyFixture\Get-PpacTenantRuleBasedPolicy -PolicyId '*restricted*')
 		$byName.Count | Should -Be 1
 		$byId = @(PpacGovernancePolicyFixture\Get-PpacTenantRuleBasedPolicy -PolicyId 'ACP Baseline')
 		$byId.Count | Should -Be 1
