@@ -29,6 +29,7 @@ What runs on PowerShell files:
   `PSUseShouldProcessConvention`, `PSAvoidReturnValue`,
   `PSUseDeclaredOutputType`, `PSAvoidObjectArrayCast`,
   `PSUseValidationAttributeOnMandatory`,
+  `PSAvoidLoopAppend`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -682,11 +683,42 @@ attribute. Script `param()` blocks are not judged; the rule runs on function
 definitions in `functions/` and `internal/functions/`, so build scripts are out
 of scope.
 
+## Loop appends
+
+`PSAvoidLoopAppend` rejects a `foreach` whose only statement adds the loop
+variable to another collection. The loop is a copy; assign the source or use
+`AddRange`:
+
+```powershell
+# Fails
+foreach ($item in $colSource) {
+    $colTarget.Add($item)
+}
+
+# Passes
+$colTarget.AddRange($colSource)
+
+# Passes: the loop body does more than copy
+foreach ($item in $colSource) {
+    $colTarget.Add($item.Projection)
+}
+```
+
+The body must be exactly one statement, and that statement must be
+`<collection>.Add($<loop variable>)` with the canonical `Add` spelling. A
+property argument, a second statement, an `if`, or a different argument name is
+not the shape and is ignored. A set-building loop still reports; `UnionWith` is
+the replacement. `ForEach-Object` and `.ForEach()` are not covered, because the
+set-construction pipelines that use them build a union rather than a copy.
+Scope: module code (public and internal); build scripts, test files, and tepp
+fixtures are out of scope.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1LoopAppendRule.ps1
 ```
 
 ## Example prose
