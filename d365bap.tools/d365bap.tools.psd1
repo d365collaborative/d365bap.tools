@@ -118,6 +118,7 @@
 		, 'Get-PpacD365Properties'
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironmentDlpPolicy'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacFinOpsAsset'
 		, 'Get-PpacFinOpsBuild'
@@ -131,6 +132,7 @@
 		, 'Get-PpacSecurityRoleTable'
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
+		, 'Get-PpacTenantDlpPolicy'
 		, 'Get-PpacUser'
 
 		, 'Get-PpeOdata'
@@ -177,13 +179,17 @@
 
 		, 'Invoke-UdeDbQuery'
 
+		, 'New-PpacEnvironmentDlpPolicy'
 		, 'New-PpacSecurityRole'
+		, 'New-PpacTenantDlpPolicy'
 
 		, 'New-UnifiedEnvironment'
 		, 'New-UnifiedEnvironmentV2'
 
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
+		, 'Remove-PpacEnvironmentDlpPolicy'
+		, 'Remove-PpacTenantDlpPolicy'
 		, 'Remove-PpacUser'
 		, 'Remove-PpeSolution'
 		, 'Remove-UdeEnvironmentModel'
@@ -203,6 +209,7 @@
 		, 'Set-FscmUserAccess'
 
 		, 'Set-PpacAdminMode'
+		, 'Set-PpacEnvironmentDlpPolicy'
 
 		, 'Set-PpacRbacContext'
 		, 'Add-PpacRbacRoleMember'
@@ -210,6 +217,7 @@
 		, 'Set-PpacSecurityGroup'
 		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
+		, 'Set-PpacTenantDlpPolicy'
 
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'
