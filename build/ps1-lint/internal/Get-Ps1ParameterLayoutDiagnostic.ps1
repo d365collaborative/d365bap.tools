@@ -15,7 +15,8 @@ function Get-Ps1ParameterLayoutDiagnostic {
 	$Path = $Analysis.Path
 
 	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/functions/[^/]+\.ps1$') { return }
+	if ($normalized -notmatch '/d365bap\.tools/(functions|internal/functions)/[^/]+\.ps1$') { return }
+	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
 
 	$function = @($Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true) | Where-Object { $_.Name -eq [IO.Path]::GetFileNameWithoutExtension($Path) })[0]
 	if ($null -eq $function -or $null -eq $function.Body.ParamBlock) { return }

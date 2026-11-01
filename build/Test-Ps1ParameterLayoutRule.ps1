@@ -297,4 +297,28 @@ function Get-Fixture {
 }
 '@
 
+Assert-Layout 'Internal function layout is checked' @'
+function Get-Fixture {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $PolicyId,
+        [switch] $AsExcelOutput
+    )
+}
+'@ -Expected 1 @('-AsExcelOutput', 'blank line') -Directory 'd365bap.tools/internal/functions'
+
+Assert-Layout 'Other internal scripts stay exempt' @'
+function Get-Fixture {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $PolicyId,
+        [switch] $AsExcelOutput
+    )
+}
+'@ -Directory 'd365bap.tools/internal/scripts'
+
 Write-Output "Parameter layout rule checks passed: $script:caseCount cases."
