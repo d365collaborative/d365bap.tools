@@ -17,9 +17,6 @@
 
         Default: *
 
-    .PARAMETER IncludeUnavailable
-        Includes connectors not available in the environment but governable by policy.
-
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
 
@@ -35,13 +32,6 @@
         Lists connectors that match the filter.
         It uses -EnvironmentId to select the environment.
         It uses -Name to filter on connector id, name, or display name.
-
-    .EXAMPLE
-        PS C:\> Get-PpacEnvironmentConnector -EnvironmentId "00000000-0000-0000-0000-000000000000" -IncludeUnavailable
-
-        Lists every connector that policy can govern.
-        It uses -EnvironmentId to select the environment.
-        It uses -IncludeUnavailable to include unavailable connectors.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentConnector -EnvironmentId "00000000-0000-0000-0000-000000000000" -AsExcelOutput
@@ -65,8 +55,6 @@ function Get-PpacEnvironmentConnector {
 		[SupportsWildcards()]
 		[string] $Name = '*',
 
-		[switch] $IncludeUnavailable,
-
 		[switch] $AsExcelOutput
 	)
 
@@ -88,8 +76,6 @@ function Get-PpacEnvironmentConnector {
 		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
 		$filter = [uri]::EscapeDataString("environment eq '$($route.RouteId -replace "'", "''")'")
 		$requestUri = "https://api.powerplatform.com/connectivity/environments/$($route.RouteId)/connectors?`$filter=$filter&api-version=$apiVersion"
-
-		if ($IncludeUnavailable) { $requestUri += '&showAllDlpEnforceableApis=true' }
 
 		try {
 			$result = Invoke-BapSdkRequest `

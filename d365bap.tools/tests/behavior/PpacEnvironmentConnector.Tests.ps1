@@ -117,13 +117,6 @@ Describe 'Get-PpacEnvironmentConnector list behavior' {
 		$result[0].ConnectorName | Should -Be 'shared_salesforce'
 	}
 
-	It 'adds showAllDlpEnforceableApis when IncludeUnavailable is set' {
-		& (Get-Module PpacEnvironmentConnectorFixture) { $script:requests = @() }
-		$null = @(PpacEnvironmentConnectorFixture\Get-PpacEnvironmentConnector -EnvironmentId 'es-ude-motz-01' -IncludeUnavailable)
-		$request = & (Get-Module PpacEnvironmentConnectorFixture) { $script:requests[-1] }
-		$request.RequestUrl | Should -Match 'showAllDlpEnforceableApis=true'
-	}
-
 	It 'resolves the default environment from the current tenant id' {
 		& (Get-Module PpacEnvironmentConnectorFixture) { $script:requests = @() }
 		$null = @(PpacEnvironmentConnectorFixture\Get-PpacEnvironmentConnector -EnvironmentId '11111111-1111-1111-1111-111111111111')

@@ -120,7 +120,6 @@
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentConnection'
 		, 'Get-PpacEnvironmentConnector'
-		, 'Get-PpacEnvironmentConnectorById'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacFinOpsAsset'
 		, 'Get-PpacFinOpsBuild'
@@ -134,6 +133,7 @@
 		, 'Get-PpacSecurityRoleTable'
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
+		, 'Get-PpacTenantConnector'
 		, 'Get-PpacUser'
 
 		, 'Get-PpeOdata'

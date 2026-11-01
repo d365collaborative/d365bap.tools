@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpacTenantConnector</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpacTenantConnector</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader><Width>38</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>30</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>24</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>10</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>20</Width></TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem><PropertyName>DisplayName</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>ConnectorName</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>Publisher</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>Tier</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>ReleaseTag</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>ChangedTime</PropertyName></TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>
