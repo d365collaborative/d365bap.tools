@@ -133,6 +133,7 @@ function Invoke-Ps1Analysis {
 							-Worker $Analyzer.Worker))
 				$tmpDiagnostics.AddRange(@(Get-Ps1CentralApiVersionDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1FormattedUrlDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1SingleCatchErrorChannelDiagnostic -Analysis $analysis))
 			}
 
 			$result = [pscustomobject]@{
@@ -176,6 +177,7 @@ function Invoke-Ps1Analysis {
 . "$PSScriptRoot/Get-Ps1ModuleSplattingDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1EmptyLineAfterContinuationDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1DirectParameterCheckDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1SingleCatchErrorChannelDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/Resolve-Ps1AliasCommand.ps1"

@@ -38,6 +38,7 @@ What runs on PowerShell files:
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
+  `PSUseSingleCatchErrorChannel`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -1164,6 +1165,45 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectStringCheckRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyLineAfterContinuationRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectParameterCheckRule.ps1
+```
+
+## Catch error channels
+
+`PSUseSingleCatchErrorChannel` requires one error channel per `catch` block:
+either log with `Write-PSFMessage` and return, or stop with
+`Stop-PSFFunction`. Doing both reports the same failure twice.
+
+```powershell
+# Fails
+catch {
+    Write-PSFMessage -Level Important -Message $_.Exception.Message
+    Stop-PSFFunction -Message 'Failed'
+}
+
+# Passes
+catch {
+    Write-PSFMessage -Level Important -Message $_.Exception.Message
+}
+
+# Passes
+catch {
+    Stop-PSFFunction -Message 'Failed'
+}
+```
+
+Only levels that report an error count: `Critical`, `Important`, `Output`,
+`Host`, `Significant`, and `Warning`. Diagnostic levels (`Verbose`, `Debug`,
+`System`, `InternalComment`) and a call without `-Level` are exempt, so a
+diagnostic line before a stop is fine. Both commands must sit in the same
+statement block, so a log in one branch and a stop in another branch do not
+count. Each command is assigned to its nearest `catch` and function, so a nested
+handler or a nested function keeps its own stop. The rule runs on module code;
+build scripts, test files, and tepp fixtures are out of scope.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1SingleCatchErrorChannelRule.ps1
 ```
 
 ## Example prose
