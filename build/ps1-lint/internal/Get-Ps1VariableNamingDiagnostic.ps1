@@ -80,14 +80,7 @@ function Test-Ps1VariableCollectionValue {
 
 	if ($value -is [Management.Automation.Language.ArrayExpressionAst] -or
 		$value -is [Management.Automation.Language.ArrayLiteralAst] -or
-		$value -is [Management.Automation.Language.HashtableAst] -or
 		$value -is [Management.Automation.Language.ForEachStatementAst]) {
-		return $true
-	}
-
-	if ($value -is [Management.Automation.Language.ConvertExpressionAst] -and
-		$value.Child -is [Management.Automation.Language.HashtableAst] -and
-		$value.Type.TypeName.Name -notmatch 'pscustomobject') {
 		return $true
 	}
 
@@ -99,6 +92,41 @@ function Test-Ps1VariableCollectionValue {
 	}
 
 	$false
+}
+
+function Test-Ps1VariableHashtableValue {
+	param($Right)
+
+	$value = Get-Ps1VariableValue -Right $Right
+
+	if ($value -is [Management.Automation.Language.HashtableAst]) { return $true }
+
+	if ($value -is [Management.Automation.Language.ConvertExpressionAst]) {
+		$typeName = $value.Type.TypeName.Name
+
+		if ($typeName -match 'hashtable|ordered|dictionary') { return $true }
+		if ($value.Child -is [Management.Automation.Language.HashtableAst] -and $typeName -notmatch 'pscustomobject') { return $true }
+	}
+
+	if ($value -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
+		$value.Member -is [Management.Automation.Language.StringConstantExpressionAst] -and
+		$value.Member.Value -ieq 'new' -and
+		$value.Expression.Extent.Text -match 'hashtable|ordered|dictionary') {
+		return $true
+	}
+
+	if ($value -isnot [Management.Automation.Language.PipelineAst]) { return $false }
+
+	$elements = @($value.PipelineElements)
+	if ($elements.Count -eq 0) { return $false }
+
+	$last = $elements[-1]
+	if ($last -isnot [Management.Automation.Language.CommandAst] -or $last.GetCommandName() -ne 'New-Object') { return $false }
+
+	return @($last.CommandElements | Where-Object {
+			$_ -is [Management.Automation.Language.StringConstantExpressionAst] -and
+			$_.Value -match 'hashtable|ordered|dictionary'
+		}).Count -gt 0
 }
 
 function Test-Ps1VariableObjectValue {
@@ -187,10 +215,10 @@ function Get-Ps1VariableNamingDiagnostic {
 
 		$name = $forEach.Variable.VariablePath.UserPath
 		if ($script:Ps1VariableAutomaticNames -contains $name) { continue }
-		if ($name -match '^tmp') { continue }
+		if ($name -match '^item') { continue }
 
 		New-Ps1VariableNamingDiagnostic -Path $Path -Extent $forEach.Variable.Extent `
-			-Message "The foreach item variable $name holds a single object; prefix it with 'tmp'."
+			-Message "The foreach item variable $name should be prefixed with 'item'."
 	}
 
 	foreach ($assignment in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.AssignmentStatementAst] }, $true)) {
@@ -204,26 +232,34 @@ function Get-Ps1VariableNamingDiagnostic {
 		if ($name.Contains(':')) { continue }
 		if ($parameterNames.Contains($name)) { continue }
 
-		$isCollection = Test-Ps1VariableCollectionValue -Right $assignment.Right
-		if (-not $isCollection -and $null -ne $forEachSources[$owner] -and $forEachSources[$owner].Contains($name)) {
-			$isCollection = $true
+		$inLoop = $null -ne (Get-Ps1VariableIterationScope -Node $assignment)
+		$isHashtable = Test-Ps1VariableHashtableValue -Right $assignment.Right
+		$isCollection = $false
+
+		if (-not $isHashtable) {
+			$isCollection = Test-Ps1VariableCollectionValue -Right $assignment.Right
+			if (-not $isCollection -and $null -ne $forEachSources[$owner] -and $forEachSources[$owner].Contains($name)) {
+				$isCollection = $true
+			}
 		}
 
-		if (-not $isCollection) {
+		if (-not $isHashtable -and -not $isCollection) {
 			if (Test-Ps1VariableGetEnvironmentValue -Right $assignment.Right) { continue }
 			if (-not (Test-Ps1VariableObjectValue -Right $assignment.Right)) { continue }
 		}
 
-		$inLoop = $null -ne (Get-Ps1VariableIterationScope -Node $assignment)
-		$prefix = if ($isCollection) { 'col' } elseif ($inLoop) { 'tmp' } else { 'obj' }
+		$prefix = if ($inLoop) { 'tmp' } elseif ($isHashtable) { 'hash' } elseif ($isCollection) { 'col' } else { 'obj' }
 
 		if ($name -match "^$prefix") { continue }
 
-		$scopeMessage = if ($isCollection) {
-			"Variable $name holds a collection; prefix it with 'col'."
+		$scopeMessage = if ($inLoop) {
+			"Variable $name is declared inside a loop; prefix it with 'tmp'."
 		}
-		elseif ($inLoop) {
-			"Variable $name holds a single object inside a loop; prefix it with 'tmp'."
+		elseif ($isHashtable) {
+			"Variable $name holds a hashtable; prefix it with 'hash'."
+		}
+		elseif ($isCollection) {
+			"Variable $name holds a collection; prefix it with 'col'."
 		}
 		else {
 			"Variable $name holds a single object at the function root; prefix it with 'obj'."
