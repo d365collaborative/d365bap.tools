@@ -54,7 +54,7 @@
         Author: d365bap.tools contributors
 #>
 function Get-PpacEnvironmentDlpPolicy {
-	[CmdletBinding(DefaultParameterSetName = 'ByName')]
+	[CmdletBinding()]
 	[OutputType('System.Object[]')]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
@@ -62,11 +62,9 @@ function Get-PpacEnvironmentDlpPolicy {
 		[ValidateNotNullOrEmpty()]
 		[string] $EnvironmentId,
 
-		[Parameter(ParameterSetName = 'ByName')]
 		[SupportsWildcards()]
 		[string] $Name = '*',
 
-		[Parameter(ParameterSetName = 'ByPolicyId', Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 		[switch] $AsExcelOutput
@@ -159,7 +157,12 @@ function Get-PpacEnvironmentDlpPolicy {
 			}
 		)
 
-		if ($PSCmdlet.ParameterSetName -eq 'ByPolicyId') {
+		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
+			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
+			return
+		}
+
+		if ($PSBoundParameters.ContainsKey('PolicyId')) {
 			$policies = @($policies | Where-Object {
 					$_.name -eq $PolicyId -or $_.displayName -eq $PolicyId
 				})
