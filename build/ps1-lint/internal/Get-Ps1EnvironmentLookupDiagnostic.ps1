@@ -39,6 +39,32 @@ function Test-Ps1EnvironmentTryAncestor {
 	$false
 }
 
+function Get-Ps1EnvironmentInterruptCheck {
+	param($Call)
+
+	$statement = $Call
+	while ($null -ne $statement -and
+		$statement.Parent -isnot [Management.Automation.Language.StatementBlockAst] -and
+		$statement.Parent -isnot [Management.Automation.Language.NamedBlockAst]) {
+		$statement = $statement.Parent
+	}
+	if ($null -eq $statement) { return }
+
+	$statements = @($statement.Parent.Statements)
+	$index = [Array]::IndexOf($statements, $statement)
+	if ($index -lt 0 -or ($index + 1) -ge $statements.Count) { return }
+
+	$owner = Get-Ps1EnvironmentOwnerFunction -Node $Call
+	foreach ($node in $statements[$index + 1].FindAll({
+				param($Node)
+				$Node -is [Management.Automation.Language.CommandAst] -and
+				($Node.GetCommandName() -split '\\')[-1] -eq 'Test-PSFFunctionInterrupt'
+			}, $true)) {
+		if ((Get-Ps1EnvironmentOwnerFunction -Node $node) -ne $owner) { continue }
+		$node
+	}
+}
+
 function Get-Ps1EnvironmentNullCheck {
 	param($Owner, [string] $Name)
 
@@ -120,6 +146,11 @@ function Get-Ps1EnvironmentLookupDiagnostic {
 							-Message ('Get-Environment stops when no environment matches, so $' + $variableName + ' is never null. Remove the null check and use it directly.')
 					}
 				}
+			}
+
+			foreach ($interrupt in @(Get-Ps1EnvironmentInterruptCheck -Call $command)) {
+				New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $interrupt.Extent `
+					-Message 'Get-Environment stops execution when no environment matches. Remove the Test-PSFFunctionInterrupt check after the lookup; it cannot resume a stopped lookup.'
 			}
 
 			continue

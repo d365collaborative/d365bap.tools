@@ -205,5 +205,62 @@ function Get-Fixture {
 }
 '@
 
+Assert-EnvironmentLookup 'Interrupt check immediately after the lookup' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    if (Test-PSFFunctionInterrupt) { return }
+}
+'@ 1 @('Remove the Test-PSFFunctionInterrupt check')
+
+Assert-EnvironmentLookup 'Interrupt check after a piped lookup' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+    if (Test-PSFFunctionInterrupt) {
+        return
+    }
+}
+'@ 1 @('cannot resume a stopped lookup')
+
+Assert-EnvironmentLookup 'Interrupt check before the lookup' @'
+function Get-Fixture {
+    if (Test-PSFFunctionInterrupt) { return }
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+}
+'@
+
+Assert-EnvironmentLookup 'Interrupt check with a comment between' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+
+    # Get-Environment stops when no environment matches.
+    if (Test-PSFFunctionInterrupt) { return }
+}
+'@ 1 @('Remove the Test-PSFFunctionInterrupt check')
+
+Assert-EnvironmentLookup 'Interrupt check after real code is allowed' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+    Write-PSFMessage -Message $envObj.PpacEnvName
+    if (Test-PSFFunctionInterrupt) { return }
+}
+'@
+
+Assert-EnvironmentLookup 'Interrupt check in a nested function is allowed' @'
+function Get-Fixture {
+    $envObj = Get-Environment -EnvironmentId $EnvironmentId
+
+    function Test-Inner {
+        if (Test-PSFFunctionInterrupt) { return }
+    }
+}
+'@
+
+Assert-EnvironmentLookup 'Interrupt check after an unassigned lookup' @'
+function Get-Fixture {
+    Get-Environment -EnvironmentId $EnvironmentId
+    if (Test-PSFFunctionInterrupt) { return }
+}
+'@ 2 @('named $envObj', 'Remove the Test-PSFFunctionInterrupt check')
+
 $script:caseCount++
 Write-Output "Environment lookup rule checks passed: $script:caseCount cases."

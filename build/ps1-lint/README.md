@@ -310,6 +310,8 @@ $envObj = Get-UnifiedEnvironment -EnvironmentId $id | Select-Object -First 1
 $environment = Get-Environment -EnvironmentId $id
 try { $envObj = Get-Environment -EnvironmentId $id } catch { }
 if ($null -ne $envObj) { }
+$envObj = Get-Environment -EnvironmentId $id
+if (Test-PSFFunctionInterrupt) { return }
 
 # Passes
 $envObj = Get-Environment -EnvironmentId $id | Select-Object -First 1
@@ -319,8 +321,10 @@ $envObj = Get-Environment -EnvironmentId $id -Unified -VersionDetails | Select-O
 
 `Get-Environment` stops execution with an actionable message when no environment
 matches. Callers assign it to a local variable named `$envObj` (the prefix is what
-later analysis keys on), do not wrap it in `try`/`catch`, and do not test the
-variable for `$null`. The variable is always set.
+later analysis keys on), do not wrap it in `try`/`catch`, do not test the variable
+for `$null`, and do not test `Test-PSFFunctionInterrupt` immediately after the
+lookup. The variable is always set and the lookup never returns to the caller when
+it fails.
 
 The per-environment provisioning lookup is what makes the full shape expensive,
 so only callers that read fields such as `PpacProvApp` should ask for it. The
