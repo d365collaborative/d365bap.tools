@@ -13,6 +13,7 @@
         PS C:\> $ctx = Get-DevToolsAuthContext -EnvironmentId "env-123"
 
         Resolves the auth context for that environment.
+        It uses -EnvironmentId to select the environment.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -28,9 +29,9 @@ function Get-DevToolsAuthContext {
 		$envObj = $null
 
 		if (-not [string]::IsNullOrWhiteSpace($EnvironmentId)) {
-			$envObj = Get-UnifiedEnvironment `
+			$envObj = Get-Environment `
 				-EnvironmentId $EnvironmentId `
-				-SkipVersionDetails | `
+				-Unified | `
 				Select-Object -First 1
 
 			if ($null -eq $envObj) {
@@ -43,7 +44,7 @@ function Get-DevToolsAuthContext {
 			}
 		}
 		else {
-			$candidates = @(Get-UnifiedEnvironment -SkipVersionDetails | Sort-Object PpacEnvName)
+			$candidates = @(Get-Environment -Unified | Sort-Object PpacEnvName)
 
 			if ($candidates.Count -eq 0) {
 				$messageString = "No FinOps environments found. Please verify access with <c='em'>Get-UnifiedEnvironment</c> and try again."
