@@ -111,6 +111,32 @@ function Get-BuildFixture {
 	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSAvoidUsingWriteHost').Count -eq 1) 'A build warning must still be reported.'
 	Assert-True (-not $result.Failed) 'A build warning must not fail the historical error-only gate.'
 
+	# High-signal warnings fail build scripts even though ordinary warnings do not.
+	$emptyCatchPath = Join-Path $root 'build/Get-EmptyCatchFixture.ps1'
+	New-FixtureFile $emptyCatchPath @'
+function Get-EmptyCatchFixture {
+	try {
+		Get-Thing
+	}
+	catch { }
+}
+'@
+	$result = Invoke-Ps1Analysis -Path $emptyCatchPath -Analyzer $analyzer
+	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSAvoidUsingEmptyCatchBlock').Count -eq 1) 'An empty catch must be reported.'
+	Assert-True ($result.Failed) 'An empty catch in build code must fail the high-signal gate.'
+
+	# Tepp files stay outside the high-signal gate.
+	$teppPath = Join-Path $moduleRoot 'internal/tepp/Get-TeppFixture.ps1'
+	New-FixtureFile $teppPath @'
+try {
+	Get-Thing
+}
+catch { }
+'@
+	$result = Invoke-Ps1Analysis -Path $teppPath -Analyzer $analyzer
+	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSAvoidUsingEmptyCatchBlock').Count -eq 1) 'A tepp empty catch must still be reported.'
+	Assert-True (-not $result.Failed) 'A tepp file must stay outside the high-signal gate.'
+
 	# A parse error is fatal and short-circuits the rest of the analysis.
 	$syntaxPath = Join-Path $functionRoot 'Get-SyntaxFixture.ps1'
 	New-FixtureFile $syntaxPath 'function Get-SyntaxFixture {'

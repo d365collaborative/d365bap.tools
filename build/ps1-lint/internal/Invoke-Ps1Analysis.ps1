@@ -44,7 +44,12 @@ function Test-Ps1AnalysisFailure {
 		$Settings.DefaultFatalSeverity
 	}
 
-	@($Result.Diagnostics | Where-Object { $_.Severity -in $fatal }).Count -gt 0
+	$hasFatalSeverity = @($Result.Diagnostics | Where-Object { $_.Severity -in $fatal }).Count -gt 0
+	$hasHighSignal = @($Result.Diagnostics | Where-Object {
+			$_.RuleName -in $Settings.HighSignalRule -and $normalized -match $Settings.HighSignalPathPattern
+		}).Count -gt 0
+
+	$hasFatalSeverity -or $hasHighSignal
 }
 
 function Invoke-Ps1Analysis {

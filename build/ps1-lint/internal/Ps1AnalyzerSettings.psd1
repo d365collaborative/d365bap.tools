@@ -18,4 +18,15 @@
 	# warnings. Parse errors are emitted with Error severity.
 	ModuleFatalSeverity    = @('Error', 'Warning')
 	ModulePathPattern      = '/d365bap\.tools/(functions|internal/functions)/[^/]+\.ps1$'
+	# These built-in warnings are always fatal for module and build code, even
+	# when the path keeps the historical error-only gate. They catch defects
+	# that the older code would have reported but not failed.
+	HighSignalRule         = @(
+		'PSAvoidAssignmentToAutomaticVariable'
+		'PSAvoidUsingEmptyCatchBlock'
+		'PSPossibleIncorrectComparisonWithNull'
+		'PSAvoidUsingInvokeExpression'
+		'PSUseProcessBlockForPipelineCommand'
+	)
+	HighSignalPathPattern  = '/d365bap\.tools/(functions|internal/functions|internal/sdk)/|/build/'
 }

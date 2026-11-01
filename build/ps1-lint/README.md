@@ -51,6 +51,21 @@ What runs on PowerShell files:
 - `setup/Run.ps1` — installs the pinned PSScriptAnalyzer 1.25.0 (CurrentUser)
   when that version is missing.
 
+### High-signal built-in warnings
+
+These existing PSScriptAnalyzer rules are fatal for module and build code even
+where ordinary warnings keep the historical error-only gate:
+
+- `PSAvoidAssignmentToAutomaticVariable`
+- `PSAvoidUsingEmptyCatchBlock`
+- `PSPossibleIncorrectComparisonWithNull`
+- `PSAvoidUsingInvokeExpression`
+- `PSUseProcessBlockForPipelineCommand`
+
+Tepp files, tests, and the root installer stay outside this gate until their
+existing debt is addressed. The rules are still reported there; they just do
+not fail the hook.
+
 ## Wildcard parameters
 
 `PSUseSupportsWildcards` keeps wildcard parameters consistent:
