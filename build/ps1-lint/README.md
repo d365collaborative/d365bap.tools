@@ -265,8 +265,10 @@ $cache = 1 # fill the cache
 #>
 ```
 
-`#requires` statements and shebangs are ignored. The rule runs on changed files
-only, so the remaining comments are removed as their files are touched.
+`#requires` statements and shebangs are ignored. Test files (`*Tests.ps1` and
+everything under `d365bap.tools/tests`) and tepp files (`*.tepp.ps1` and
+`internal/tepp`) are exempt. The rule runs on changed files only, so the
+remaining comments are removed as their files are touched.
 
 Run its regression checks under PowerShell 7.6 or later:
 

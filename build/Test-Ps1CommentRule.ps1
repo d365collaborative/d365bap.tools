@@ -135,5 +135,10 @@ function Get-Fixture {
 }
 '@ 1 @('PSOnlyCommentBasedHelp')
 
+Assert-Comment 'Test files are exempt' $inline -FileName 'Get-Fixture.Tests.ps1'
+Assert-Comment 'Test support files are exempt' $inline -FileName 'Help.Exceptions.ps1' -Directory 'd365bap.tools/tests/general'
+Assert-Comment 'Tepp files are exempt' $inline -FileName 'example.tepp.ps1' -Directory 'd365bap.tools/internal/tepp'
+Assert-Comment 'Tepp support files are exempt' $inline -FileName 'assignment.ps1' -Directory 'd365bap.tools/internal/tepp'
+
 $script:caseCount++
 Write-Output "Comment rule checks passed: $script:caseCount cases."
