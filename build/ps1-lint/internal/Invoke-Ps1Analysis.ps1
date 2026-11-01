@@ -86,7 +86,11 @@ function Invoke-Ps1Analysis {
 			}
 
 			$tmpDiagnostics = [System.Collections.Generic.List[object]]::new()
-			$tmpDiagnostics.AddRange(@(Invoke-ScriptAnalyzer -Path $itemPath -Recurse -Severity $Analyzer.Settings.Severity -ExcludeRule $Analyzer.Settings.ExcludeRule -ErrorAction Stop))
+			$tmpBuiltIn = @(Invoke-ScriptAnalyzer -Path $itemPath -Recurse -Severity $Analyzer.Settings.Severity -ExcludeRule $Analyzer.Settings.ExcludeRule -ErrorAction Stop)
+			if (($itemPath -replace '\\', '/') -match $Analyzer.Settings.ModulePathPattern) {
+				$tmpBuiltIn = @($tmpBuiltIn | Where-Object RuleName -ne 'PSShouldProcess')
+			}
+			$tmpDiagnostics.AddRange($tmpBuiltIn)
 
 			if (-not $SkipCustomRules) {
 				$tmpDiagnostics.AddRange(@(Get-Ps1CommentDiagnostic -Analysis $analysis))

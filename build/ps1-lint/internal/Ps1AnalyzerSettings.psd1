@@ -4,11 +4,14 @@
 	# These rules are owned by another hook or by a repository rule:
 	#   PSAvoidUsingCmdletAliases  -> PSAvoidCommandAliases / PSAvoidParameterAliases
 	#   PSAvoidTrailingWhitespace  -> ps1-format hook
-	#   PSShouldProcess            -> PSUseShouldProcessConvention
+	# PSShouldProcess is filtered only for module function files, where
+	# PSUseShouldProcessConvention replaces it. Other paths keep the built-in
+	# declaration/call check. PSUseShouldProcessForStateChangingFunctions stays
+	# enabled everywhere and covers state-changing functions that never declare
+	# support.
 	ExcludeRule           = @(
 		'PSAvoidUsingCmdletAliases'
 		'PSAvoidTrailingWhitespace'
-		'PSShouldProcess'
 	)
 	# PSScriptAnalyzer severities to collect. Parser errors are added by
 	# Get-Ps1ParseDiagnostic because PSScriptAnalyzer reports them as

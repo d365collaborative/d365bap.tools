@@ -13,9 +13,10 @@ What runs on PowerShell files:
   other tooling keep the historical error-only gate. `.psm1` and `.psd1` files
   receive syntax and built-in rule coverage only; public-function conventions
   do not apply to them. PSScriptAnalyzer rules already owned elsewhere are
-  excluded: `PSAvoidUsingCmdletAliases` (the alias rules below),
-  `PSAvoidTrailingWhitespace` (the format hook), and `PSShouldProcess`
-  (`PSUseShouldProcessConvention`).
+  excluded: `PSAvoidUsingCmdletAliases` (the alias rules below) and
+  `PSAvoidTrailingWhitespace` (the format hook). `PSShouldProcess` is filtered
+  only for module function files, where `PSUseShouldProcessConvention` replaces
+  it; build scripts keep the built-in check.
   Repository rules: `PSOnlyCommentBasedHelp`,
   `PSHelpSynopsis/Description/Parameter/Notes/Example`,
   `PSAvoidCommandAliases` / `PSAvoidParameterAliases`,

@@ -137,6 +137,36 @@ catch { }
 	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSAvoidUsingEmptyCatchBlock').Count -eq 1) 'A tepp empty catch must still be reported.'
 	Assert-True (-not $result.Failed) 'A tepp file must stay outside the high-signal gate.'
 
+	# Module functions use the repository ShouldProcess rule instead of the built-in check.
+	$shouldPath = Join-Path $functionRoot 'Set-ShouldFixture.ps1'
+	New-FixtureFile $shouldPath @'
+function Set-ShouldFixture {
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	param()
+
+	Write-Output 'changed'
+}
+'@
+	$result = Invoke-Ps1Analysis -Path $shouldPath -Analyzer $analyzer
+	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSUseShouldProcessConvention').Count -eq 1) 'The repository ShouldProcess rule must report a declaration without a call.'
+	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSShouldProcess').Count -eq 0) 'The built-in ShouldProcess check must be filtered for module functions.'
+	Assert-True ($result.Failed) 'A ShouldProcess convention violation must fail.'
+
+	# Build scripts keep the built-in ShouldProcess check.
+	$buildShouldPath = Join-Path $root 'build/Set-ShouldFixture.ps1'
+	New-FixtureFile $buildShouldPath @'
+function Set-ShouldFixture {
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	param()
+
+	Write-Output 'changed'
+}
+'@
+	$result = Invoke-Ps1Analysis -Path $buildShouldPath -Analyzer $analyzer
+	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSShouldProcess').Count -eq 1) 'The built-in ShouldProcess check must remain for build scripts.'
+	Assert-True (@($result.Diagnostics | Where-Object RuleName -eq 'PSUseShouldProcessConvention').Count -eq 0) 'The repository ShouldProcess rule must stay out of build scripts.'
+	Assert-True (-not $result.Failed) 'A build ShouldProcess warning must remain non-fatal.'
+
 	# A parse error is fatal and short-circuits the rest of the analysis.
 	$syntaxPath = Join-Path $functionRoot 'Get-SyntaxFixture.ps1'
 	New-FixtureFile $syntaxPath 'function Get-SyntaxFixture {'
