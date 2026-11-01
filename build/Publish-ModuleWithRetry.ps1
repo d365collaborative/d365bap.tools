@@ -17,13 +17,16 @@
 #>
 [CmdletBinding()]
 param(
-	[Parameter(Mandatory)]
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
 	[string] $Path,
 
-	[Parameter(Mandatory)]
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
 	[string] $ApiKey,
 
-	[Parameter(Mandatory)]
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
 	[string] $Repository
 )
 

@@ -15,9 +15,11 @@
 #>
 [CmdletBinding()]
 param(
-	[Parameter(Mandatory)]
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
 	[string] $BaseRef,
-	[Parameter(Mandatory)]
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
 	[string] $HeadRef
 )
 

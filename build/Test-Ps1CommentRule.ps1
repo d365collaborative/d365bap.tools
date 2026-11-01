@@ -4,7 +4,8 @@
 
 .DESCRIPTION
     Parses fixture scripts and checks that only comment-based help and region
-    markers are accepted. The rule covers module fragments and other scripts.
+    markers are accepted. The rule covers module fragments and other scripts,
+    while build scripts are exempt because they carry operational comments.
 #>
 [CmdletBinding()]
 param()
@@ -43,7 +44,9 @@ function Get-Fixture {
 Assert-Comment 'Inline comment in a function' $inline 1 @('PSOnlyCommentBasedHelp', 'Remove this comment')
 
 Assert-Comment 'Inline comment in an internal script' $inline -Directory 'd365bap.tools/internal' -Expected 1
-Assert-Comment 'Inline comment outside the module' $inline -Directory 'build' -Expected 1
+Assert-Comment 'Inline comment outside the module' $inline -Directory 'scripts' -Expected 1
+Assert-Comment 'Build scripts are exempt' $inline -Directory 'build'
+Assert-Comment 'Lint tooling is exempt' $inline -Directory 'build/ps1-lint/internal'
 Assert-Comment 'Comment in a string is not a comment' @'
 function Get-Fixture {
     $text = "# fill the cache"

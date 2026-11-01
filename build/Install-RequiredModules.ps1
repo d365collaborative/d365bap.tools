@@ -10,7 +10,8 @@
 #>
 [CmdletBinding()]
 param(
-	[Parameter(Mandatory)]
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
 	[ValidateSet('base', 'generated')]
 	[string]$Set
 )

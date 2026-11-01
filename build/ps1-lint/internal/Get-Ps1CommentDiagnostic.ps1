@@ -7,6 +7,7 @@
 	if ($fileName -like '*.tepp.ps1') { return }
 
 	$normalized = $Path -replace '\\', '/'
+	if ($normalized -match '/build/') { return }
 	if ($normalized -match '/d365bap\.tools/tests/') { return }
 	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
 
