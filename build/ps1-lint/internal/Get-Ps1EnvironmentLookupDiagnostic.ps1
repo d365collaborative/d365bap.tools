@@ -9,7 +9,7 @@ function Get-Ps1EnvironmentOwnerFunction {
 
 	$parent = $Node.Parent
 	while ($null -ne $parent) {
-		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { return $parent }
+		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { $parent; return }
 		$parent = $parent.Parent
 	}
 	$null
@@ -20,8 +20,8 @@ function Get-Ps1EnvironmentAssignment {
 
 	$node = $Call.Parent
 	while ($null -ne $node) {
-		if ($node -is [Management.Automation.Language.AssignmentStatementAst]) { return $node }
-		if ($node -is [Management.Automation.Language.FunctionDefinitionAst]) { return $null }
+		if ($node -is [Management.Automation.Language.AssignmentStatementAst]) { $node; return }
+		if ($node -is [Management.Automation.Language.FunctionDefinitionAst]) { return }
 		$node = $node.Parent
 	}
 	$null
@@ -32,8 +32,8 @@ function Test-Ps1EnvironmentTryAncestor {
 
 	$node = $Call.Parent
 	while ($null -ne $node) {
-		if ($node -is [Management.Automation.Language.TryStatementAst]) { return $true }
-		if ($node -is [Management.Automation.Language.FunctionDefinitionAst]) { return $false }
+		if ($node -is [Management.Automation.Language.TryStatementAst]) { $true; return }
+		if ($node -is [Management.Automation.Language.FunctionDefinitionAst]) { $false; return }
 		$node = $node.Parent
 	}
 	$false
@@ -50,35 +50,35 @@ function Get-Ps1EnvironmentInterruptCheck {
 	}
 	if ($null -eq $statement) { return }
 
-	$statements = @($statement.Parent.Statements)
-	$index = [Array]::IndexOf($statements, $statement)
-	if ($index -lt 0 -or ($index + 1) -ge $statements.Count) { return }
+	$colStatements = @($statement.Parent.Statements)
+	$index = [Array]::IndexOf($colStatements, $statement)
+	if ($index -lt 0 -or ($index + 1) -ge $colStatements.Count) { return }
 
 	$owner = Get-Ps1EnvironmentOwnerFunction -Node $Call
-	foreach ($node in $statements[$index + 1].FindAll({
+	foreach ($itemNode in $colStatements[$index + 1].FindAll({
 				param($Node)
 				$Node -is [Management.Automation.Language.CommandAst] -and
 				($Node.GetCommandName() -split '\\')[-1] -eq 'Test-PSFFunctionInterrupt'
 			}, $true)) {
-		if ((Get-Ps1EnvironmentOwnerFunction -Node $node) -ne $owner) { continue }
-		$node
+		if ((Get-Ps1EnvironmentOwnerFunction -Node $itemNode) -ne $owner) { continue }
+		$itemNode
 	}
 }
 
 function Get-Ps1EnvironmentNullCheck {
 	param($Owner, [string] $Name)
 
-	foreach ($node in $Owner.Body.FindAll({ param($n) $n -is [Management.Automation.Language.BinaryExpressionAst] -and "$($n.Operator)" -in @('Ieq', 'Ine') }, $true)) {
-		if ((Get-Ps1EnvironmentOwnerFunction -Node $node) -ne $Owner) { continue }
+	foreach ($itemNode in $Owner.Body.FindAll({ param($n) $n -is [Management.Automation.Language.BinaryExpressionAst] -and "$($n.Operator)" -in @('Ieq', 'Ine') }, $true)) {
+		if ((Get-Ps1EnvironmentOwnerFunction -Node $itemNode) -ne $Owner) { continue }
 
-		$left = $node.Left
-		$right = $node.Right
+		$left = $itemNode.Left
+		$right = $itemNode.Right
 		$isNullLeft = $left -is [Management.Automation.Language.VariableExpressionAst] -and $left.VariablePath.UserPath -ieq 'null'
 		$isNullRight = $right -is [Management.Automation.Language.VariableExpressionAst] -and $right.VariablePath.UserPath -ieq 'null'
 		$isNameLeft = $left -is [Management.Automation.Language.VariableExpressionAst] -and $left.VariablePath.UserPath -ieq $Name
 		$isNameRight = $right -is [Management.Automation.Language.VariableExpressionAst] -and $right.VariablePath.UserPath -ieq $Name
 
-		if (($isNullLeft -and $isNameRight) -or ($isNullRight -and $isNameLeft)) { $node }
+		if (($isNullLeft -and $isNameRight) -or ($isNullRight -and $isNameLeft)) { $itemNode }
 	}
 }
 
@@ -141,15 +141,15 @@ function Get-Ps1EnvironmentLookupDiagnostic {
 			if ($null -ne $variableName) {
 				$owner = Get-Ps1EnvironmentOwnerFunction -Node $itemCommand
 				if ($null -ne $owner) {
-					foreach ($check in @(Get-Ps1EnvironmentNullCheck -Owner $owner -Name $variableName)) {
-						New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $check.Extent `
+					foreach ($itemCheck in @(Get-Ps1EnvironmentNullCheck -Owner $owner -Name $variableName)) {
+						New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $itemCheck.Extent `
 							-Message ('Get-Environment stops when no environment matches, so $' + $variableName + ' is never null. Remove the null check and use it directly.')
 					}
 				}
 			}
 
-			foreach ($interrupt in @(Get-Ps1EnvironmentInterruptCheck -Call $command)) {
-				New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $interrupt.Extent `
+			foreach ($itemInterrupt in @(Get-Ps1EnvironmentInterruptCheck -Call $itemCommand)) {
+				New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $itemInterrupt.Extent `
 					-Message 'Get-Environment stops execution when no environment matches. Remove the Test-PSFFunctionInterrupt check after the lookup; it cannot resume a stopped lookup.'
 			}
 

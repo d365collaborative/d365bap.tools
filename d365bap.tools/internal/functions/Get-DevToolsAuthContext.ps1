@@ -40,10 +40,10 @@ function Get-DevToolsAuthContext {
 
 		$baseUri = $envObj.PpacEnvUri + "/"
 
-		$secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
 
-		return @{
+		@{
 			Env   = $envObj
 			Token = $tokenValue
 		}

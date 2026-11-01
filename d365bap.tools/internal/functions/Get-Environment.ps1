@@ -45,7 +45,7 @@
 #>
 function Get-Environment {
 	[CmdletBinding(DefaultParameterSetName = 'Bap')]
-	[OutputType('System.Object[]')]
+	[OutputType([PSCustomObject])]
 	param (
 		[SupportsWildcards()]
 		[string] $EnvironmentId = '*',
@@ -75,5 +75,5 @@ function Get-Environment {
 		Stop-PSFFunction -Message "Stopping because no environment matched the supplied id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -EnableException $true
 	}
 
-	return $result
+	$result
 }
