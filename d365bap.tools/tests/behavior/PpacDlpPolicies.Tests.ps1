@@ -99,7 +99,7 @@ Describe 'Get-PpacTenantDlpPolicy' {
 	}
 
 	It 'summarizes connector groups and environments' {
-		$result = @(PpacDlpPolicyFixture\Get-PpacTenantDlpPolicy -Name 'Tenant All')
+		$result = @(PpacDlpPolicyFixture\Get-PpacTenantDlpPolicy -PolicyId 'Tenant All')
 		$result.Count | Should -Be 1
 		$result[0].PolicyId | Should -Be '11111111-1111-1111-1111-111111111111'
 		$result[0].ConnectorGroupCount | Should -Be 1
@@ -109,7 +109,7 @@ Describe 'Get-PpacTenantDlpPolicy' {
 	}
 
 	It 'filters by wildcard and returns all name matches for PolicyId' {
-		$filtered = @(PpacDlpPolicyFixture\Get-PpacTenantDlpPolicy -Name '*except*')
+		$filtered = @(PpacDlpPolicyFixture\Get-PpacTenantDlpPolicy -PolicyId '*except*')
 		$filtered.Count | Should -Be 2
 		$byName = @(PpacDlpPolicyFixture\Get-PpacTenantDlpPolicy -PolicyId 'Shared Name')
 		$byName.Count | Should -Be 2

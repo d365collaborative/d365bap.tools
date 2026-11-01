@@ -12,13 +12,8 @@
     .PARAMETER EnvironmentId
         Environment name, GUID, or Power Platform environment identifier.
 
-    .PARAMETER Name
-        Policy id or display name filter. Wildcards are accepted.
-
-        Default: *
-
     .PARAMETER PolicyId
-        Policy GUID or display name. Multiple name matches return all matches.
+        Policy GUID, display name, or wildcard filter. Includes non-effective policies.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -30,11 +25,11 @@
         It uses -EnvironmentId to select the environment.
 
     .EXAMPLE
-        PS C:\> Get-PpacEnvironmentDlpPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000" -Name "*restrict*"
+        PS C:\> Get-PpacEnvironmentDlpPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000" -PolicyId "*restrict*"
 
-        Lists effective policies that match the filter.
+        Lists policies that match the filter, effective or not.
         It uses -EnvironmentId to select the environment.
-        It uses -Name to filter on policy id or display name.
+        It uses -PolicyId to filter on policy id or display name.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentDlpPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000" -PolicyId "11111111-1111-1111-1111-111111111111"
@@ -63,9 +58,6 @@ function Get-PpacEnvironmentDlpPolicy {
 		[string] $EnvironmentId,
 
 		[SupportsWildcards()]
-		[string] $Name = '*',
-
-		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 		[switch] $AsExcelOutput
 	)
@@ -157,22 +149,13 @@ function Get-PpacEnvironmentDlpPolicy {
 			}
 		)
 
-		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
-			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
-			return
-		}
-
 		if ($PSBoundParameters.ContainsKey('PolicyId')) {
 			$policies = @($policies | Where-Object {
-					$_.name -eq $PolicyId -or $_.displayName -eq $PolicyId
+					$_.name -like $PolicyId -or $_.displayName -like $PolicyId
 				})
 		}
 		else {
-			$policies = @($policies | Where-Object {
-					$_.IsEffective `
-						-and ($_.name -like $Name -or $_.name -eq $Name `
-							-or $_.displayName -like $Name -or $_.displayName -eq $Name)
-				})
+			$policies = @($policies | Where-Object { $_.IsEffective })
 		}
 
 		$policies = @($policies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.displayName } }, @{ Expression = { $_.name } })

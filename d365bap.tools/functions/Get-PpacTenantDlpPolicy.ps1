@@ -8,13 +8,10 @@
 
         Environment-scoped policies are returned by Get-PpacEnvironmentDlpPolicy.
 
-    .PARAMETER Name
-        Policy id or display name filter. Wildcards are accepted.
+    .PARAMETER PolicyId
+        Policy GUID, display name, or wildcard name filter.
 
         Default: *
-
-    .PARAMETER PolicyId
-        Policy GUID or display name. Multiple name matches return all matches.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -25,10 +22,10 @@
         Lists every tenant-scoped DLP policy.
 
     .EXAMPLE
-        PS C:\> Get-PpacTenantDlpPolicy -Name "*restrict*"
+        PS C:\> Get-PpacTenantDlpPolicy -PolicyId "*restrict*"
 
         Lists tenant policies that match the display name filter.
-        It uses -Name to filter on policy id or display name.
+        It uses -PolicyId to filter on policy id or display name.
 
     .EXAMPLE
         PS C:\> Get-PpacTenantDlpPolicy -PolicyId "11111111-1111-1111-1111-111111111111"
@@ -50,10 +47,9 @@ function Get-PpacTenantDlpPolicy {
 	[OutputType('System.Object[]')]
 	param (
 		[SupportsWildcards()]
-		[string] $Name = '*',
-
 		[ValidateNotNullOrEmpty()]
-		[string] $PolicyId,
+		[string] $PolicyId = '*',
+
 		[switch] $AsExcelOutput
 	)
 
@@ -70,22 +66,9 @@ function Get-PpacTenantDlpPolicy {
 			return
 		}
 
-		if ($PSBoundParameters.ContainsKey('PolicyId') -and $PSBoundParameters.ContainsKey('Name')) {
-			Stop-PSFFunction -Message "Specify -Name or -PolicyId, not both."
-			return
-		}
-
-		if ($PSBoundParameters.ContainsKey('PolicyId')) {
-			$policies = @($policies | Where-Object {
-					$_.name -eq $PolicyId -or $_.displayName -eq $PolicyId
-				})
-		}
-		else {
-			$policies = @($policies | Where-Object {
-					$_.name -like $Name -or $_.name -eq $Name `
-						-or $_.displayName -like $Name -or $_.displayName -eq $Name
-				})
-		}
+		$policies = @($policies | Where-Object {
+				$_.name -like $PolicyId -or $_.displayName -like $PolicyId
+			})
 
 		$policies = @($policies | Sort-Object -Property displayName, name)
 
