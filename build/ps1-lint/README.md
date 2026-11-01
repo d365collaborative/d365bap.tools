@@ -38,6 +38,7 @@ What runs on PowerShell files:
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
+  `PSAvoidRedundantIdentityProjection`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -653,8 +654,51 @@ $colResult = @($response.value)
 
 `[OutputType([object[]])]` is exempt because it declares the output contract,
 and a parameter type is a type constraint rather than a cast. Scope: module code
-(public and internal); build scripts, test files, and tepp fixtures are out of
-scope.
+
+## Redundant identity projections
+
+`PSAvoidRedundantIdentityProjection` rejects a `Select-PSFObject -Property`
+mapping that projects every property of an inline `[pscustomobject]` under the
+same name. It changes nothing and repeats the literal that already carries the
+properties:
+
+```powershell
+# Fails
+$objResult = [pscustomobject]@{
+    Id   = 1
+    Name = 'fixture'
+} | Select-PSFObject -TypeName 'D365Bap.Tools.Fixture' -Property 'Id as Id', 'Name as Name'
+
+# Passes
+$objResult = [pscustomobject]@{
+    Id   = 1
+    Name = 'fixture'
+} | Select-PSFObject -TypeName 'D365Bap.Tools.Fixture'
+```
+
+Every element must be a case-sensitive identity mapping (`'Id as Id'`,
+`'app_id_1 as app_id_1'`) and the names must be the same multiset as the
+hashtable keys. `'appId as AppId'` normalises casing and is not an identity
+mapping; a subset, a rename, or a calculated property is legitimate selection
+and is ignored. The input must be the literal immediately before the command;
+a variable or an API object cannot be compared statically.
+
+The rule also reports a second `Select-PSFObject` on a variable that already
+came from `Select-PSFObject`, including a self-projection such as
+`$resCol = @($resCol | Select-PSFObject -TypeName 'T')`. Combine both
+projections into one call:
+
+```powershell
+# Fails
+$resColRaw = $colSource | Select-PSFObject -Property 'id as appId'
+$resCol = $resColRaw | Select-PSFObject -TypeName 'D365Bap.Tools.Fixture'
+
+# Passes
+$resCol = $colSource | Select-PSFObject -TypeName 'D365Bap.Tools.Fixture' -Property 'id as appId'
+```
+
+Scope: module code (public and internal); build scripts, test files, and tepp
+fixtures are out of scope.
 
 ## Validation attribute on mandatory parameters
 
@@ -1074,6 +1118,7 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1NullComparisonRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1RedundantIdentityProjectionRule.ps1
 ```
 
 ## Direct value in string checks
