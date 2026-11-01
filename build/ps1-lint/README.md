@@ -29,6 +29,7 @@ What runs on PowerShell files:
   `PSUseShouldProcessConvention`, `PSAvoidReturnValue`,
   `PSUseDeclaredOutputType`, `PSAvoidObjectArrayCast`,
   `PSUseValidationAttributeOnMandatory`,
+  `PSUseStandardExcelExport`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -682,11 +683,38 @@ attribute. Script `param()` blocks are not judged; the rule runs on function
 definitions in `functions/` and `internal/functions/`, so build scripts are out
 of scope.
 
+## Excel export blocks
+
+`PSUseStandardExcelExport` requires every public cmdlet that declares
+`[switch] $AsExcelOutput` to end with the canonical export block. The switch
+must do something, name its worksheet after the cmdlet, and return:
+
+```powershell
+if ($AsExcelOutput) {
+    $resCol | Export-Excel -WorksheetName 'Get-Fixture'
+    return
+}
+```
+
+Reported shapes: no `if ($AsExcelOutput)` block at all, an `elseif`/`else`
+branch on that block, a result-count guard inside it (`if ($resCol) { ... }`),
+a worksheet name that is not the cmdlet name, and a block that does not end
+with a bare `return`. Additional `Export-Excel` parameters after
+`-WorksheetName` are allowed.
+
+`Get-UdeConnection` is exempt from the name check because its worksheet is
+`UdeConnection`; the rest of the shape still applies to it. A non-literal
+worksheet name such as `-WorksheetName $name` cannot be verified and is
+ignored. A wrapper that only forwards `-AsExcelOutput` to another command has
+no local block and is exempt. The rule runs on public cmdlets under
+`d365bap.tools/functions`; internal helpers are out of scope.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1StandardExcelExportRule.ps1
 ```
 
 ## Example prose
