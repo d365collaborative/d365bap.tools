@@ -27,6 +27,7 @@ on:
       - 'build/Test-Ps1FunctionInterruptRule.ps1'
       - 'build/Test-Ps1ReturnValueRule.ps1'
       - 'build/Test-Ps1ObjectArrayCastRule.ps1'
+      - 'build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1'
       - 'build/Test-PreloadExitCode.ps1'
       - 'build/Test-ModulePublication.ps1'
       - 'build/Publish-ModuleWithRetry.ps1'
@@ -120,6 +121,9 @@ jobs:
     - name: Test object array cast lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ObjectArrayCastRule.ps1
+    - name: Test validation attribute on mandatory lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
     - name: Test module prerequisites
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1

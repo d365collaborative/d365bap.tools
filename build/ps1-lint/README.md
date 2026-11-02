@@ -28,6 +28,7 @@ What runs on PowerShell files:
   `PSUseCentralEnvironmentLookup`, `PSUseVariableNamingConvention`,
   `PSUseShouldProcessConvention`, `PSAvoidReturnValue`,
   `PSUseDeclaredOutputType`, `PSAvoidObjectArrayCast`,
+  `PSUseValidationAttributeOnMandatory`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -646,10 +647,46 @@ and a parameter type is a type constraint rather than a cast. Scope: module code
 (public and internal); build scripts, test files, and tepp fixtures are out of
 scope.
 
+## Validation attribute on mandatory parameters
+
+`PSUseValidationAttributeOnMandatory` is the converse of
+`PSUseValidateNotNullOrEmpty`: `[ValidateNotNullOrEmpty()]` is legal only on a
+mandatory parameter or one with a default.
+
+```powershell
+# Fails: optional and no default, so the attribute can never reject anything
+param (
+    [ValidateNotNullOrEmpty()]
+    [string] $Name
+)
+
+# Passes
+param (
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string] $Name
+)
+
+# Passes: the default supplies the value
+param (
+    [ValidateNotNullOrEmpty()]
+    [string] $Name = 'fixture'
+)
+```
+
+Mandatory in any parameter set counts, because every `[Parameter()]` attribute
+on the parameter is inspected. Any default assignment, including `= ''` and
+`= $null`, is exempt. A parameter that needs an "optional but not empty"
+contract uses `[ValidateScript()]` instead; this rule does not touch that
+attribute. Script `param()` blocks are not judged; the rule runs on function
+definitions in `functions/` and `internal/functions/`, so build scripts are out
+of scope.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
 ```
 
 ## Example prose
