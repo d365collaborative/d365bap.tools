@@ -11,8 +11,11 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1EmptyLineAfterContinuationDiagnostic')) {
-	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
+. "$PSScriptRoot/ps1-lint/internal/Invoke-Ps1Analysis.ps1"
+$analyzer = New-Ps1Analyzer
+$ruleId = 'Get-Ps1EmptyLineAfterContinuationDiagnostic'
+if (@(Get-Ps1DiagnosticRule | Where-Object { $_.Id -eq $ruleId }).Count -ne 1) {
+	throw "$ruleId is not registered in Get-Ps1DiagnosticRule."
 }
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('empty-line-continuation-rule-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $fixtureRoot -Force
@@ -24,8 +27,8 @@ function Assert-EmptyLineAfterContinuation {
 	$null = New-Item -ItemType Directory -Path $folder -Force
 	$path = Join-Path $folder $FileName
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
-	$analysis = Get-Ps1Analysis -Path $path
-	$colDiagnostics = @(Get-Ps1EmptyLineAfterContinuationDiagnostic -Analysis $analysis)
+	$result = Invoke-Ps1Analysis -Path $path -Analyzer $analyzer
+	$colDiagnostics = @($result.Diagnostics | Where-Object RuleName -eq 'PSUseEmptyLineAfterContinuation')
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
@@ -33,6 +36,10 @@ function Assert-EmptyLineAfterContinuation {
 	foreach ($itemFragment in $ExpectedText) {
 		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 	}
+	foreach ($itemDiagnostic in $colDiagnostics) {
+		if ($itemDiagnostic.Severity -ne 'Error') { throw "${Label}: expected Error severity, got $($itemDiagnostic.Severity)." }
+	}
+	if ($Expected -gt 0 -and -not $result.Failed) { throw "${Label}: the shared analyzer did not fail the bad fixture." }
 	$script:caseCount++
 }
 

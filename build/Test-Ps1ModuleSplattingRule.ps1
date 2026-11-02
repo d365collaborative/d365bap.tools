@@ -10,8 +10,11 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ModuleSplattingDiagnostic')) {
-	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
+. "$PSScriptRoot/ps1-lint/internal/Invoke-Ps1Analysis.ps1"
+$analyzer = New-Ps1Analyzer
+$ruleId = 'Get-Ps1ModuleSplattingDiagnostic'
+if (@(Get-Ps1DiagnosticRule | Where-Object { $_.Id -eq $ruleId }).Count -ne 1) {
+	throw "$ruleId is not registered in Get-Ps1DiagnosticRule."
 }
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('module-splatting-rule-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $fixtureRoot -Force
@@ -39,8 +42,8 @@ function Assert-ModuleSplatting {
 		[IO.File]::WriteAllText($extraPath, $ExtraFiles[$itemKey].Replace("`r`n", "`n"))
 	}
 
-	$analysis = Get-Ps1Analysis -Path $path
-	$colDiagnostics = @(Get-Ps1ModuleSplattingDiagnostic -Analysis $analysis)
+	$result = Invoke-Ps1Analysis -Path $path -Analyzer $analyzer
+	$colDiagnostics = @($result.Diagnostics | Where-Object RuleName -eq 'PSAvoidSplattingForModuleCommands')
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
@@ -48,6 +51,10 @@ function Assert-ModuleSplatting {
 	foreach ($itemFragment in $ExpectedText) {
 		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
 	}
+	foreach ($itemDiagnostic in $colDiagnostics) {
+		if ($itemDiagnostic.Severity -ne 'Error') { throw "${Label}: expected Error severity, got $($itemDiagnostic.Severity)." }
+	}
+	if ($Expected -gt 0 -and -not $result.Failed) { throw "${Label}: the shared analyzer did not fail the bad fixture." }
 }
 
 Assert-ModuleSplatting 'Splat into a public function' @'

@@ -61,6 +61,57 @@ function Test-Ps1AnalysisFailure {
 	$hasFatalSeverity -or $hasHighSignal
 }
 
+function Get-Ps1DiagnosticRule {
+	[CmdletBinding()]
+	[OutputType([pscustomobject])]
+	param()
+
+	# One entry per repository diagnostic. Id names the rule function, Script
+	# names the file that defines it, and NeedsWorker requests the shared
+	# analysis worker. Loading and dispatch both read this list, so a new rule
+	# is registered in one place.
+	@(
+		[pscustomobject]@{ Id = 'Get-Ps1CommentDiagnostic'; Script = 'Get-Ps1CommentDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1HelpDiagnostic'; Script = 'Get-Ps1HelpDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ParameterContractDiagnostic'; Script = 'Get-Ps1ParameterContractDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ParameterLayoutDiagnostic'; Script = 'Get-Ps1ParameterLayoutDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1StandardOutputDiagnostic'; Script = 'Get-Ps1StandardOutputDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1AddMemberDiagnostic'; Script = 'Get-Ps1AddMemberDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1AccessTokenDiagnostic'; Script = 'Get-Ps1AccessTokenDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1EnvironmentLookupDiagnostic'; Script = 'Get-Ps1EnvironmentLookupDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1VariableNamingDiagnostic'; Script = 'Get-Ps1VariableNamingDiagnostic.ps1'; NeedsWorker = $true }
+		[pscustomobject]@{ Id = 'Get-Ps1ShouldProcessDiagnostic'; Script = 'Get-Ps1ShouldProcessDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1OutputTypeDiagnostic'; Script = 'Get-Ps1OutputTypeDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1FunctionInterruptDiagnostic'; Script = 'Get-Ps1FunctionInterruptDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ReturnValueDiagnostic'; Script = 'Get-Ps1ReturnValueDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ObjectArrayCastDiagnostic'; Script = 'Get-Ps1ObjectArrayCastDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ValidationAttributeOnMandatoryDiagnostic'; Script = 'Get-Ps1ValidationAttributeOnMandatoryDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1WildcardParameterAsFilterDiagnostic'; Script = 'Get-Ps1WildcardParameterAsFilterDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1OrderedPSCustomObjectDiagnostic'; Script = 'Get-Ps1OrderedPSCustomObjectDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1OutNullDiagnostic'; Script = 'Get-Ps1OutNullDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1StandardExcelExportDiagnostic'; Script = 'Get-Ps1StandardExcelExportDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1LoopAppendDiagnostic'; Script = 'Get-Ps1LoopAppendDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1OneParameterPerLineDiagnostic'; Script = 'Get-Ps1OneParameterPerLineDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1NotEqualNullDiagnostic'; Script = 'Get-Ps1NotEqualNullDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1DirectParameterCheckDiagnostic'; Script = 'Get-Ps1DirectParameterCheckDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ReturnAfterStopDiagnostic'; Script = 'Get-Ps1ReturnAfterStopDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1PipelineContinuationDiagnostic'; Script = 'Get-Ps1PipelineContinuationDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ComplexArrayElementDiagnostic'; Script = 'Get-Ps1ComplexArrayElementDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1SelectObjectPropertyDiagnostic'; Script = 'Get-Ps1SelectObjectPropertyDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1MultilineSelectObjectPropertyDiagnostic'; Script = 'Get-Ps1MultilineSelectObjectPropertyDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1AliasDiagnostic'; Script = 'Get-Ps1AliasDiagnostic.ps1'; NeedsWorker = $true }
+		[pscustomobject]@{ Id = 'Get-Ps1CentralApiVersionDiagnostic'; Script = 'Get-Ps1CentralApiVersionDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1FormattedUrlDiagnostic'; Script = 'Get-Ps1FormattedUrlDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1MultilineIfExpressionDiagnostic'; Script = 'Get-Ps1MultilineIfExpressionDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1MultilineIfConditionDiagnostic'; Script = 'Get-Ps1MultilineIfConditionDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1TernaryInObjectInitializationDiagnostic'; Script = 'Get-Ps1TernaryInObjectInitializationDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1DirectStringCheckDiagnostic'; Script = 'Get-Ps1DirectStringCheckDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1HeadersVariableDiagnostic'; Script = 'Get-Ps1HeadersVariableDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ModuleSplattingDiagnostic'; Script = 'Get-Ps1ModuleSplattingDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1EmptyLineAfterContinuationDiagnostic'; Script = 'Get-Ps1EmptyLineAfterContinuationDiagnostic.ps1'; NeedsWorker = $false }
+	)
+}
+
 function Invoke-Ps1Analysis {
 	[CmdletBinding()]
 	param(
@@ -101,42 +152,13 @@ function Invoke-Ps1Analysis {
 			$tmpDiagnostics.AddRange($tmpBuiltIn)
 
 			if (-not $SkipCustomRules) {
-				$tmpDiagnostics.AddRange(@(Get-Ps1CommentDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1HelpDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ParameterContractDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ParameterLayoutDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1StandardOutputDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1AddMemberDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1AccessTokenDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1EnvironmentLookupDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1VariableNamingDiagnostic -Analysis $analysis `
-							-Worker $Analyzer.Worker))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ShouldProcessDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1OutputTypeDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1FunctionInterruptDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ReturnValueDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ObjectArrayCastDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ValidationAttributeOnMandatoryDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1WildcardParameterAsFilterDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1OrderedPSCustomObjectDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1OutNullDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1StandardExcelExportDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1LoopAppendDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1OneParameterPerLineDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1NotEqualNullDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1DirectParameterCheckDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ReturnAfterStopDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1PipelineContinuationDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ComplexArrayElementDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1SelectObjectPropertyDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineSelectObjectPropertyDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1AliasDiagnostic -Analysis $analysis `
-							-Worker $Analyzer.Worker))
-				$tmpDiagnostics.AddRange(@(Get-Ps1CentralApiVersionDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1FormattedUrlDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineIfExpressionDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineIfConditionDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1TernaryInObjectInitializationDiagnostic -Analysis $analysis))
+				foreach ($itemRule in Get-Ps1DiagnosticRule) {
+					$tmpRule = @{ Analysis = $analysis }
+					if ($itemRule.NeedsWorker) {
+						$tmpRule.Worker = $Analyzer.Worker
+					}
+					$tmpDiagnostics.AddRange(@(& $itemRule.Id @tmpRule))
+				}
 			}
 
 			$result = [pscustomobject]@{
@@ -151,44 +173,10 @@ function Invoke-Ps1Analysis {
 	}
 }
 
-. "$PSScriptRoot/Get-Ps1CommentDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1HelpDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ParameterContractDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ParameterLayoutDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1StandardOutputDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1AddMemberDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1AccessTokenDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1EnvironmentLookupDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1VariableNamingDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ShouldProcessDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1OutputTypeDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1FunctionInterruptDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ReturnValueDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ObjectArrayCastDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ValidationAttributeOnMandatoryDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1WildcardParameterAsFilterDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1OrderedPSCustomObjectDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1OutNullDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1StandardExcelExportDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1LoopAppendDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1OneParameterPerLineDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1CentralApiVersionDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1FormattedUrlDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1NotEqualNullDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1DirectStringCheckDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1HeadersVariableDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ModuleSplattingDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1EmptyLineAfterContinuationDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1DirectParameterCheckDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ReturnAfterStopDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1PipelineContinuationDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1ComplexArrayElementDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1SelectObjectPropertyDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1MultilineSelectObjectPropertyDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1MultilineIfExpressionDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1MultilineIfConditionDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1TernaryInObjectInitializationDiagnostic.ps1"
-. "$PSScriptRoot/Get-Ps1AliasDiagnostic.ps1"
+foreach ($itemRule in Get-Ps1DiagnosticRule) {
+	. (Join-Path $PSScriptRoot $itemRule.Script)
+}
+
 . "$PSScriptRoot/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/Resolve-Ps1AliasCommand.ps1"
 . "$PSScriptRoot/Get-Ps1CommentGroup.ps1"
