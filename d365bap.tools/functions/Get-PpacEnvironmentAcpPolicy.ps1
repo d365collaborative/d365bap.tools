@@ -1,18 +1,19 @@
 ﻿<#
     .SYNOPSIS
-        List effective ACP policies for an environment.
+        List ACP policies for an environment.
 
     .DESCRIPTION
-        Returns the advanced connector policy that applies to an environment,
-        including a policy inherited from its environment group.
+        Returns advanced connector policies visible to an environment,
+        including policies inherited from its environment group.
 
-        An expanded allowlist view is available when requested.
+        IsEffective shows whether a policy applies to the environment. An
+        expanded allowlist view is available when requested.
 
     .PARAMETER EnvironmentId
         Environment name, GUID, or Power Platform environment identifier.
 
     .PARAMETER PolicyId
-        Policy GUID, display name, or wildcard filter. Includes non-effective policies.
+        Policy GUID, display name, or wildcard filter.
 
         Default: *
 
@@ -25,13 +26,13 @@
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentAcpPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000"
 
-        Lists the advanced connector policy for the environment.
+        Lists the advanced connector policies for the environment.
         It uses -EnvironmentId to select the environment.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentAcpPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000" -PolicyId "11111111-1111-1111-1111-111111111111"
 
-        Returns a policy by GUID or display name, effective or not.
+        Returns a policy by GUID or display name.
         It uses -EnvironmentId to select the environment.
         It uses -PolicyId to select the policy.
 

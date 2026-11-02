@@ -1,19 +1,17 @@
 ﻿<#
     .SYNOPSIS
-        List effective governance policies for an environment.
+        List governance policies for an environment.
 
     .DESCRIPTION
-        Retrieves the governance rule-based policies assigned to an environment,
-        including policies inherited from its environment group.
-
-        Only advanced connector policies are returned when the ACP view is
-        requested.
+        Retrieves governance rule-based policies visible to an environment,
+        including inherited policies. IsEffective shows whether a policy
+        applies. Advanced connector policies can be requested separately.
 
     .PARAMETER EnvironmentId
         Environment name, GUID, or Power Platform environment identifier.
 
     .PARAMETER PolicyId
-        Policy GUID, display name, or wildcard filter. Includes non-effective policies.
+        Policy GUID, display name, or wildcard filter.
 
         Default: *
 
@@ -28,21 +26,21 @@
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentRuleBasedPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000"
 
-        Lists the policies that apply to the environment.
+        Lists the policies for the environment.
         It uses -EnvironmentId to select the environment.
         It uses -Kind All by default.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentRuleBasedPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000" -Kind Acp
 
-        Lists only effective advanced connector policies.
+        Lists only advanced connector policies.
         It uses -EnvironmentId to select the environment.
         It uses -Kind to select the policy kind.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentRuleBasedPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000" -PolicyId "11111111-1111-1111-1111-111111111111"
 
-        Returns a policy by GUID or display name, effective or not.
+        Returns a policy by GUID or display name.
         It uses -EnvironmentId to select the environment.
         It uses -PolicyId to select the policy.
         It uses -Kind All by default.

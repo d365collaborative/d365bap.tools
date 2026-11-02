@@ -1,19 +1,19 @@
 ﻿<#
     .SYNOPSIS
-        List governance policies assigned to an environment group.
+        List governance policies for an environment group.
 
     .DESCRIPTION
-        Retrieves the governance rule-based policy assigned to an environment
+        Retrieves governance rule-based policies visible to an environment
         group through the Power Platform API.
 
-        Only advanced connector policies are returned when the ACP view is
-        requested.
+        IsEffective shows whether a policy is assigned to the group. Only
+        advanced connector policies are returned when the ACP view is requested.
 
     .PARAMETER EnvironmentGroupId
         The unique identifier of the environment group.
 
     .PARAMETER PolicyId
-        Policy GUID, display name, or wildcard filter. Includes unassigned policies.
+        Policy GUID, display name, or wildcard filter.
 
         Default: *
 
@@ -28,21 +28,21 @@
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroupRuleBasedPolicy -EnvironmentGroupId "00000000-0000-0000-0000-000000000000"
 
-        Lists the policy assigned to the group.
+        Lists the policies for the group.
         It uses -EnvironmentGroupId to select the group.
         It uses -Kind All by default.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroupRuleBasedPolicy -EnvironmentGroupId "00000000-0000-0000-0000-000000000000" -Kind Acp
 
-        Lists the advanced connector policy assigned to the group.
+        Lists the advanced connector policies for the group.
         It uses -EnvironmentGroupId to select the group.
         It uses -Kind to select the policy kind.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroupRuleBasedPolicy -EnvironmentGroupId "00000000-0000-0000-0000-000000000000" -PolicyId "11111111-1111-1111-1111-111111111111"
 
-        Returns a policy by GUID or display name, assigned or not.
+        Returns a policy by GUID or display name.
         It uses -EnvironmentGroupId to select the group.
         It uses -PolicyId to select the policy.
         It uses -Kind All by default.

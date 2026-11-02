@@ -1,17 +1,18 @@
 ﻿<#
     .SYNOPSIS
-        List the ACP policy assigned to an environment group.
+        List ACP policies for an environment group.
 
     .DESCRIPTION
-        Returns the advanced connector policy assigned to an environment group.
+        Returns advanced connector policies visible to an environment group.
 
-        An expanded allowlist view is available when requested.
+        IsEffective shows whether a policy is assigned to the group. An expanded
+        allowlist view is available when requested.
 
     .PARAMETER EnvironmentGroupId
         The unique identifier of the environment group.
 
     .PARAMETER PolicyId
-        Policy GUID, display name, or wildcard filter. Includes unassigned policies.
+        Policy GUID, display name, or wildcard filter.
 
         Default: *
 
@@ -24,13 +25,13 @@
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId "00000000-0000-0000-0000-000000000000"
 
-        Lists the ACP policy assigned to the group.
+        Lists the ACP policies for the group.
         It uses -EnvironmentGroupId to select the group.
 
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId "00000000-0000-0000-0000-000000000000" -PolicyId "11111111-1111-1111-1111-111111111111"
 
-        Returns a policy by GUID or display name, assigned or not.
+        Returns a policy by GUID or display name.
         It uses -EnvironmentGroupId to select the group.
         It uses -PolicyId to select the policy.
 
