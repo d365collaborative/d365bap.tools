@@ -21,21 +21,25 @@ function Get-BapDlpPolicy {
 	param ()
 
 	$objSecureToken = Get-BapAccessToken -Bap
-	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
+	$tokenValue = ConvertFrom-SecureString -AsPlainText `
+		-SecureString $objSecureToken
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 	}
 
-	$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2018-10-01'
+	$apiVersion = $script:BapApiVersions.ClassicBap
+	$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version={0}' `
+		-f $apiVersion
 	$colPolicies = [Collections.Generic.List[object]]::new()
 	$colVisited = [Collections.Generic.HashSet[string]]::new()
 
 	do {
-		$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $hashHeaders -ErrorAction Stop
+		$response = Invoke-RestMethod -Method Get `
+			-Uri $uri `
+			-Headers $hashHeaders `
+			-ErrorAction Stop
 
-		foreach ($itemPolicy in @($response.value)) {
-			$colPolicies.Add($itemPolicy)
-		}
+		$colPolicies.AddRange(@($response.value))
 
 		$nextLink = "$($response.nextLink)"
 		if ([string]::IsNullOrWhiteSpace($nextLink)) {

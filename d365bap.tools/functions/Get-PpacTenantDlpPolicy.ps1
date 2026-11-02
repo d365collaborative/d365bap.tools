@@ -59,8 +59,11 @@ function Get-PpacTenantDlpPolicy {
 		}
 		catch {
 			$messageString = "Failed to retrieve tenant DLP policies. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the DLP policy request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the DLP policy request failed." `
+				-Exception $_.Exception
 			return
 		}
 
@@ -71,7 +74,8 @@ function Get-PpacTenantDlpPolicy {
 		$colPolicies = @($colPolicies | Sort-Object -Property displayName, name)
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantDlpPolicy' -Property `
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantDlpPolicy' `
+				-Property `
 				'name as PolicyId',
 			'displayName as Name',
 			@{ Name = 'PolicyScope'; Expression = { if ($_.environmentType -eq 'SingleEnvironment') { 'Environment' } else { 'Tenant' } } },
@@ -91,10 +95,8 @@ function Get-PpacTenantDlpPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacTenantDlpPolicy' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacTenantDlpPolicy' `
+				-WarningAction SilentlyContinue
 			return
 		}
 

@@ -10,6 +10,7 @@ $script:BapApiVersions = [ordered]@{
 	EnvironmentScopes    = '2023-06-01'
 	LifecycleOperations  = '2024-05-01'
 	PowerPlatform        = '2024-10-01'
+	ClassicBap           = '2018-10-01'
 }
 $script:BapSdkEnvironmentCompletionCache = @{}
 

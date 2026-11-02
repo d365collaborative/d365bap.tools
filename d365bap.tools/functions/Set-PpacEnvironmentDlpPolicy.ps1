@@ -54,7 +54,8 @@ function Set-PpacEnvironmentDlpPolicy {
 			return
 		}
 
-		$colCurrent = @(Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId -PolicyId $PolicyId)
+		$colCurrent = @(Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId `
+				-PolicyId $PolicyId)
 		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No environment DLP policy matched '$PolicyId'."
 			return
@@ -73,21 +74,35 @@ function Set-PpacEnvironmentDlpPolicy {
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$objSecureToken = Get-BapAccessToken -Bap
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/$routeEnvironmentId/apiPolicies/$($colCurrent[0].PolicyId)?api-version=2018-10-01"
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.ClassicBap
+		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/{0}/apiPolicies/{1}?api-version={2}' `
+			-f $routeEnvironmentId,
+		$colCurrent[0].PolicyId,
+		$apiVersion
 
 		try {
-			$null = Invoke-RestMethod -Method Patch -Uri $uri -Headers @{
+			$null = Invoke-RestMethod -Method Patch `
+				-Uri $uri `
+				-Headers @{
 				Authorization = "Bearer $tokenValue"
-			} -Body ($Policy | ConvertTo-Json -Depth 20) -ContentType 'application/json' -ErrorAction Stop
+			} `
+				-Body ($Policy | ConvertTo-Json -Depth 20) `
+				-ContentType 'application/json' `
+				-ErrorAction Stop
 		}
 		catch {
 			$messageString = "Failed to update the environment DLP policy. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the environment DLP update request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the environment DLP update request failed." `
+				-Exception $_.Exception
 			return
 		}
 
-		Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId -PolicyId $colCurrent[0].PolicyId
+		Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId `
+			-PolicyId $colCurrent[0].PolicyId
 	}
 }

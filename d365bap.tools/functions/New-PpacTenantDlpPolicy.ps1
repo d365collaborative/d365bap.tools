@@ -40,18 +40,29 @@ function New-PpacTenantDlpPolicy {
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$objSecureToken = Get-BapAccessToken -Bap
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2018-10-01'
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.ClassicBap
+		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version={0}' `
+			-f $apiVersion
 
 		try {
-			$created = Invoke-RestMethod -Method Post -Uri $uri -Headers @{
+			$created = Invoke-RestMethod -Method Post `
+				-Uri $uri `
+				-Headers @{
 				Authorization = "Bearer $tokenValue"
-			} -Body ($Policy | ConvertTo-Json -Depth 20) -ContentType 'application/json' -ErrorAction Stop
+			} `
+				-Body ($Policy | ConvertTo-Json -Depth 20) `
+				-ContentType 'application/json' `
+				-ErrorAction Stop
 		}
 		catch {
 			$messageString = "Failed to create the tenant DLP policy. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the tenant DLP create request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the tenant DLP create request failed." `
+				-Exception $_.Exception
 			return
 		}
 

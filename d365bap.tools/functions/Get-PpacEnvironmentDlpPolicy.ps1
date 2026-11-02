@@ -88,8 +88,11 @@ function Get-PpacEnvironmentDlpPolicy {
 		}
 		catch {
 			$messageString = "Failed to retrieve DLP policies for environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the DLP policy request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the DLP policy request failed." `
+				-Exception $_.Exception
 			return
 		}
 
@@ -110,19 +113,15 @@ function Get-PpacEnvironmentDlpPolicy {
 			}
 		)
 
-		if ($PolicyId -ne '*') {
-			$colPolicies = @($colPolicies | Where-Object {
-					$_.name -like $PolicyId -or $_.displayName -like $PolicyId
-				})
-		}
-		else {
-			$colPolicies = @($colPolicies | Where-Object { $_.IsEffective })
-		}
+		$colPolicies = @($colPolicies | Where-Object {
+				$_.name -like $PolicyId -or $_.displayName -like $PolicyId
+			})
 
 		$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.displayName } }, @{ Expression = { $_.name } })
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentDlpPolicy' -Property `
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentDlpPolicy' `
+				-Property `
 				'name as PolicyId',
 			'displayName as Name',
 			@{ Name = 'PolicyScope'; Expression = { if ($_.environmentType -eq 'SingleEnvironment') { 'Environment' } else { 'Tenant' } } },
@@ -146,10 +145,8 @@ function Get-PpacEnvironmentDlpPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentDlpPolicy' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentDlpPolicy' `
+				-WarningAction SilentlyContinue
 			return
 		}
 

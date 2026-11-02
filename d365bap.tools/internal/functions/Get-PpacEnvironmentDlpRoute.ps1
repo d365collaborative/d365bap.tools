@@ -30,7 +30,7 @@ function Get-PpacEnvironmentDlpRoute {
 
 	$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
 
-	$objRoute = [pscustomobject]@{
+	$objRoute = [pscustomobject][ordered]@{
 		RouteId = $envObj.PpacEnvId
 		Name    = $envObj.PpacEnvName
 	}

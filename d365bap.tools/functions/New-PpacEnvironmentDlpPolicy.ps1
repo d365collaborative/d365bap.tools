@@ -56,26 +56,40 @@ function New-PpacEnvironmentDlpPolicy {
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$objSecureToken = Get-BapAccessToken -Bap
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$uri = "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/$routeEnvironmentId/apiPolicies?api-version=2018-10-01"
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.ClassicBap
+		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/{0}/apiPolicies?api-version={1}' `
+			-f $routeEnvironmentId,
+		$apiVersion
 
 		try {
-			$created = Invoke-RestMethod -Method Post -Uri $uri -Headers @{
+			$created = Invoke-RestMethod -Method Post `
+				-Uri $uri `
+				-Headers @{
 				Authorization = "Bearer $tokenValue"
-			} -Body ($Policy | ConvertTo-Json -Depth 20) -ContentType 'application/json' -ErrorAction Stop
+			} `
+				-Body ($Policy | ConvertTo-Json -Depth 20) `
+				-ContentType 'application/json' `
+				-ErrorAction Stop
 		}
 		catch {
 			$messageString = "Failed to create the environment DLP policy. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the environment DLP create request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the environment DLP create request failed." `
+				-Exception $_.Exception
 			return
 		}
 
 		if (-not [string]::IsNullOrWhiteSpace("$($created.name)")) {
-			Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId -PolicyId $created.name
+			Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId `
+				-PolicyId $created.name
 		}
 		elseif (-not [string]::IsNullOrWhiteSpace("$($created.displayName)")) {
-			Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId -PolicyId $created.displayName
+			Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId `
+				-PolicyId $created.displayName
 		}
 	}
 }
