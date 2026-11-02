@@ -34,11 +34,8 @@ on:
       - 'build/Test-Ps1StandardExcelExportRule.ps1'
       - 'build/Test-Ps1LoopAppendRule.ps1'
       - 'build/Test-Ps1NullComparisonRule.ps1'
-      - 'build/Test-Ps1DirectStringCheckRule.ps1'
-      - 'build/Test-Ps1HeadersVariableRule.ps1'
-      - 'build/Test-Ps1ModuleSplattingRule.ps1'
-      - 'build/Test-Ps1EmptyLineAfterContinuationRule.ps1'
       - 'build/Test-Ps1DirectParameterCheckRule.ps1'
+      - 'build/Test-Ps1MultilineIfExpressionRule.ps1'
       - 'build/Test-Ps1OneParameterPerLineRule.ps1'
       - 'build/Test-Ps1CentralApiVersionRule.ps1'
       - 'build/Test-Ps1FormattedUrlRule.ps1'
@@ -156,21 +153,12 @@ jobs:
     - name: Test null comparison lint rules
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1NullComparisonRule.ps1
-    - name: Test direct value string check lint rule
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1DirectStringCheckRule.ps1
-    - name: Test headers variable lint rule
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1HeadersVariableRule.ps1
-    - name: Test module splatting lint rule
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ModuleSplattingRule.ps1
-    - name: Test empty line after continuation lint rule
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1EmptyLineAfterContinuationRule.ps1
     - name: Test direct parameter check lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1DirectParameterCheckRule.ps1
+    - name: Test multiline if expression lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1MultilineIfExpressionRule.ps1
     - name: Test one-parameter-per-line lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1OneParameterPerLineRule.ps1

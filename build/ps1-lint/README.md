@@ -37,6 +37,7 @@ What runs on PowerShell files:
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
+  `PSUseMultilineIfExpression`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -952,6 +953,49 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1HeadersVariableRule.ps1
+```
+
+## Multiline if expressions
+
+`PSUseMultilineIfExpression` requires an `if`/`else` used as an assignment value
+to put each branch on its own lines. The rule covers variable and property
+assignments:
+
+```powershell
+# Fails
+$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
+
+# Passes: multiline if expression
+$fullId = if ($itemConnector -like '/providers/*') {
+    $itemConnector
+}
+else {
+    "/providers/Microsoft.PowerApps/apis/$itemConnector"
+}
+
+# Passes: declared variable
+$fullId = $null
+if ($itemConnector -like '/providers/*') {
+    $fullId = $itemConnector
+}
+else {
+    $fullId = "/providers/Microsoft.PowerApps/apis/$itemConnector"
+}
+
+# Passes: ternary
+$fullId = $itemConnector -like '/providers/*' ? $itemConnector : "/providers/Microsoft.PowerApps/apis/$itemConnector"
+```
+
+The `{` and `}` of each branch and the `else` keyword each start on their own
+line. An `if` expression without an `else` is not reported. A plain `if`
+statement is not an assignment and is not reported. Test files, tepp fixtures,
+and `build/` scripts are exempt. The rule runs on module code (public and
+internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineIfExpressionRule.ps1
 ```
 
 ## Central API version
