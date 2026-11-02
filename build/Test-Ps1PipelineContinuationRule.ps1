@@ -99,7 +99,7 @@ function Get-Fixture {
         ConvertTo-Json -Depth 20
     $body
 }
-'@ -Expected 1 @('closing line')
+'@ -Expected 1 @('closing brace')
 
 Assert-PipelineContinuation 'Hashtable with a leading pipe' @'
 function Get-Fixture {
@@ -142,6 +142,15 @@ Assert-PipelineContinuation 'Parenthesized multiline element on the closing line
 function Get-Fixture {
     $objRoute = (Get-Route `
         -Name 'fixture') | Select-Object -First 1
+    $objRoute
+}
+'@ -Expected 1 @('Break the pipeline')
+
+Assert-PipelineContinuation 'Parenthesized multiline element on a new line' @'
+function Get-Fixture {
+    $objRoute = (Get-Route `
+        -Name 'fixture') |
+        Select-Object -First 1
     $objRoute
 }
 '@

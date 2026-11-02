@@ -39,18 +39,16 @@ function Get-Ps1PipelineContinuationDiagnostic {
 			if ($null -eq $pipe) { continue }
 
 			$tmpClosingText = "$($previous.Extent.Text)".TrimEnd()
-			$hasClosingDelimiter = $tmpClosingText.EndsWith('}') -or
-			$tmpClosingText.EndsWith(')') -or
-			$tmpClosingText.EndsWith(']')
+			$hasClosingBrace = $tmpClosingText.EndsWith('}')
 
-			if ($previous.Extent.StartLineNumber -ne $previous.Extent.EndLineNumber -and $hasClosingDelimiter) {
+			if ($previous.Extent.StartLineNumber -ne $previous.Extent.EndLineNumber -and $hasClosingBrace) {
 				$isClosingLine = $pipe.Extent.StartLineNumber -eq $previous.Extent.EndLineNumber -and
 				$next.Extent.StartLineNumber -eq $pipe.Extent.EndLineNumber
 				if ($isClosingLine) { continue }
 
 				New-Ps1PipelineContinuationDiagnostic -Path $Path `
 					-Extent $pipe.Extent `
-					-Message 'Keep `|` and the next command on the closing line of a multiline pipeline element: } | ConvertTo-Json.'
+					-Message 'Keep `|` and the next command on the closing brace line of a multiline hashtable element: } | ConvertTo-Json.'
 				break
 			}
 
