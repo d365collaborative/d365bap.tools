@@ -124,15 +124,19 @@ function Invoke-Ps1Analysis {
 				$tmpDiagnostics.AddRange(@(Get-Ps1LoopAppendDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1OneParameterPerLineDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1NotEqualNullDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1DirectStringCheckDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1HeadersVariableDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1ModuleSplattingDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1EmptyLineAfterContinuationDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1DirectParameterCheckDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1ReturnAfterStopDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1PipelineContinuationDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1ComplexArrayElementDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1SelectObjectPropertyDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineSelectObjectPropertyDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1AliasDiagnostic -Analysis $analysis `
 							-Worker $Analyzer.Worker))
 				$tmpDiagnostics.AddRange(@(Get-Ps1CentralApiVersionDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1FormattedUrlDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineIfExpressionDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineIfConditionDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1TernaryInObjectInitializationDiagnostic -Analysis $analysis))
 			}
 
 			$result = [pscustomobject]@{
@@ -176,6 +180,14 @@ function Invoke-Ps1Analysis {
 . "$PSScriptRoot/Get-Ps1ModuleSplattingDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1EmptyLineAfterContinuationDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1DirectParameterCheckDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1ReturnAfterStopDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1PipelineContinuationDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1ComplexArrayElementDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1SelectObjectPropertyDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1MultilineSelectObjectPropertyDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1MultilineIfExpressionDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1MultilineIfConditionDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1TernaryInObjectInitializationDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/Resolve-Ps1AliasCommand.ps1"

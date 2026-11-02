@@ -1,11 +1,11 @@
 ﻿<#
 .SYNOPSIS
-    Tests the Out-Null discard lint rule.
+    Tests the output discard lint rule.
 
 .DESCRIPTION
-    Parses fixture scripts and checks that output is discarded with a $null
-    assignment instead of Out-Null. Command strings, comments, here-strings,
-    and files that shadow the command stay clean.
+    Parses fixture scripts and checks that output is discarded with a > $null
+    redirect instead of Out-Null or a $null assignment. Command strings,
+    comments, here-strings, and files that shadow Out-Null stay clean.
 #>
 [CmdletBinding()]
 param()
@@ -73,6 +73,119 @@ function Get-Fixture {
     [int]::TryParse('1', [ref]$parsed) > $null
 }
 '@
+
+Assert-OutNull 'Command assigned to null' @'
+function Get-Fixture {
+    $null = Invoke-RestMethod -Method Post -Uri $uri
+}
+'@ -Expected 1 @('PSAvoidOutNull', 'assignment', 'Invoke-RestMethod')
+
+Assert-OutNull 'Multi-line command assigned to null' @'
+function Get-Fixture {
+    $null = Invoke-RestMethod -Method Post `
+        -Uri $uri `
+        -Headers @{
+        Authorization = "Bearer $tokenValue"
+        Accept        = 'application/json'
+    }
+}
+'@ -Expected 1 @('assignment', 'Invoke-RestMethod')
+
+Assert-OutNull 'Parenthesized command assigned to null' @'
+function Get-Fixture {
+    $null = (Invoke-RestMethod -Method Post -Uri $uri)
+}
+'@ -Expected 1 @('Invoke-RestMethod')
+
+Assert-OutNull 'Command assigned to null in a loop' @'
+function Get-Fixture {
+    foreach ($path in $paths) {
+        $null = New-Item -ItemType Directory -Path $path -Force
+    }
+}
+'@ -Expected 1 @('New-Item')
+
+Assert-OutNull 'Method call assigned to null' @'
+function Get-Fixture {
+    $null = $list.Add($item)
+}
+'@ -Expected 1 @('expression')
+
+Assert-OutNull 'Static method call assigned to null' @'
+function Get-Fixture {
+    $null = [Reflection.Assembly]::LoadFrom($path)
+}
+'@ -Expected 1
+
+Assert-OutNull 'Property assigned to null' @'
+function Get-Fixture {
+    $null = $_.Exception.Message
+}
+'@ -Expected 1 @('<expression>')
+
+Assert-OutNull 'Constant assigned to null' @'
+function Get-Fixture {
+    $null = 5
+}
+'@ -Expected 1
+
+Assert-OutNull 'Array of variables assigned to null' @'
+function Get-Fixture {
+    $null = $commandName, $parameterName
+}
+'@ -Expected 1
+
+Assert-OutNull 'Keyword statement assigned to null' @'
+function Get-Fixture {
+    $null = if ($true) { Get-Thing }
+}
+'@ -Expected 1 @('subexpression')
+
+Assert-OutNull 'Keyword statement redirect' @'
+function Get-Fixture {
+    $(if ($true) { Get-Thing }) > $null
+}
+'@
+
+Assert-OutNull 'Constant redirect' @'
+function Get-Fixture {
+    5 > $null
+}
+'@
+
+Assert-OutNull 'Property redirect' @'
+function Get-Fixture {
+    $_.Exception.Message > $null
+}
+'@
+
+Assert-OutNull 'Null assignment in a file that shadows Out-Null' @'
+function Out-Null {
+    param($InputObject)
+}
+
+function Get-Fixture {
+    $null = Get-Thing
+}
+'@ -Expected 1
+
+Assert-OutNull 'Null assignment with the case-insensitive name' @'
+function Get-Fixture {
+    $NULL = Get-Thing
+}
+'@ -Expected 1
+
+Assert-OutNull 'Internal null assignment is checked' @'
+function Get-Fixture {
+    $null = Get-Thing
+}
+'@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
+
+Assert-OutNull 'Build null assignment is exempt' @'
+function Get-Fixture {
+    $null = Get-Thing
+}
+'@ -Directory 'build/scripts'
 
 Assert-OutNull 'Command name in a string' @'
 function Get-Fixture {

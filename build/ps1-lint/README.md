@@ -33,10 +33,16 @@ What runs on PowerShell files:
   `PSUseOrderedPSCustomObject`,
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
-  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
+  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`, `PSUsePipelineContinuationBreak`,
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
+  `PSUseReturnAfterStopPSFFunction`,
+  `PSUseOneComplexArrayElementPerLine`,
+  `PSUseExplicitSelectObjectProperty`,
+  `PSUseMultilineSelectObjectProperty`,
+  `PSUseMultilineIfExpression`,
+  `PSUseMultilineIfCondition`, `PSUseTernaryInObjectInitialization`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -747,25 +753,44 @@ files, and tepp fixtures are out of scope.
 
 ## Output discards
 
-`PSAvoidOutNull` rejects `Out-Null` in module code and the lint tooling. A
-discard redirects to `$null`, which is the faster, allocation-free form and
-keeps the discarded value visible in review:
+`PSAvoidOutNull` rejects, in module code and the lint tooling, the two discard
+forms that do not redirect output to `$null`: `Out-Null` and assigning a command
+or expression to `$null`. A discard redirects to `$null`, which is the faster,
+allocation-free form and keeps the discarded value visible in review:
 
 ```powershell
 # Fails
 [int]::TryParse($Value, [ref]$IsInt) | Out-Null
 Out-Null -InputObject (Get-Thing)
+$null = Invoke-RestMethod -Method Post -Uri $uri
+$null = $list.Add($item)
+$null = $_.Exception.Message
+$null = 5
+$null = $commandName, $parameterName
+$null = if ($true) { Get-Thing }
 
 # Passes
 [int]::TryParse($Value, [ref]$IsInt) > $null
 Get-Thing > $null
+Invoke-RestMethod -Method Post -Uri $uri > $null
+$list.Add($item) > $null
+$_.Exception.Message > $null
+5 > $null
+$(if ($true) { Get-Thing }) > $null
 ```
 
-The rule matches the command name, so `Microsoft.PowerShell.Core\Out-Null` and
-`out-null` are reported too. A file that defines `function Out-Null` or
-`Set-Alias Out-Null` is skipped because the local name may have different
-behavior. Test files and tepp fixtures are exempt. Existing call sites in the
-lint tooling migrate as those files are touched.
+The `Out-Null` check matches the command name, so
+`Microsoft.PowerShell.Core\Out-Null` and `out-null` are reported too. A file
+that defines `function Out-Null` or `Set-Alias Out-Null` skips that check
+because the local name may have different behavior; the `$null` assignment check
+still runs.
+
+The `$null` assignment check reports every assignment to `$null`. The message
+names the command when the right side contains one; a keyword statement is
+reported with the `$(...)` redirect form. A variable named `$null` with a scope
+qualifier is not the automatic variable and is not checked. Test files and tepp
+fixtures are exempt. Existing call sites in the lint tooling migrate as those
+files are touched.
 
 ## Splatting module commands
 
@@ -952,6 +977,288 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1HeadersVariableRule.ps1
+```
+
+## One complex array element per line
+
+`PSUseOneComplexArrayElementPerLine` requires an array with more than one
+hashtable or scriptblock element to start each complex element on its own line.
+Simple strings and numbers may share a line. The rule accepts any split that
+keeps the complex elements apart:
+
+```powershell
+# Fails
+$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
+
+# Passes: trailing comma
+$colPolicies = @($colPolicies |
+    Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
+    @{ Expression = { $_.name } },
+    @{ Expression = { $_.id } })
+
+# Passes: array variable
+$colSort = @(
+    @{ Expression = { -not $_.IsEffective } }
+    @{ Expression = { $_.name } }
+    @{ Expression = { $_.id } }
+)
+$colPolicies = @($colPolicies | Sort-Object -Property $colSort)
+
+# Passes: simple property names after the one expression
+$colPolicies = @($colPolicies |
+    Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, 'name', 'id')
+```
+
+A one-line `@( ... )` subexpression that contains a hashtable or scriptblock is
+reported too, so the element moves onto its own line inside the array:
+
+```powershell
+# Fails
+$tmpConnectorManagement = @($item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
+
+# Passes
+$tmpConnectorManagement = @(
+    $item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }
+) | Select-Object -First 1
+
+# Passes: no complex element
+$objItem = @($items | Select-Object -First 1)
+```
+
+A `[pscustomobject]@{ ... }` element counts as complex. A single complex element
+may stay on the command line. Test files, tepp fixtures, and `build/` scripts are
+exempt. The rule runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ComplexArrayElementRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1SelectObjectPropertyRule.ps1
+```
+
+## Select-Object projections
+
+`PSUseExplicitSelectObjectProperty` requires `Select-Object` to name `-Property`
+when its positional property list contains a calculated property:
+
+```powershell
+# Fails
+$item | Select-Object *, @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }
+```
+
+Simple property names, `-First`, `-ExpandProperty`, and a splat stay clean.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
+
+## Multiline Select-Object properties
+
+`PSUseMultilineSelectObjectProperty` requires a calculated property on a
+`Select-Object` property list to start on its own line. A list with one
+calculated property and another element on the same line is reported:
+
+```powershell
+# Fails: simple name and calculated property on one line
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }
+
+# Fails: two calculated properties on one line
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'Source'; Expression = { $source } }
+
+# Fails: the second calculated property shares the first line
+$item | Select-Object -Property *,
+    @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'Source'; Expression = { $source } }
+
+# Passes
+$item | Select-Object -Property *,
+    @{ Name = 'Kind'; Expression = { $kind } },
+    @{ Name = 'Source'; Expression = { $source } }
+
+# Passes: the calculated property starts on the next line
+$item | Select-Object -Property *
+, @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes: one calculated property
+$item | Select-Object -Property @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes: one calculated property on a continuation line
+$item | Select-Object `
+    -Property @{ Name = 'Kind'; Expression = { $kind } }
+```
+
+A single calculated property may share the line with `-Property`. Simple
+property names, a splat, and a parameter argument such as `-ExpandProperty Name`
+are not checked. Test files, tepp fixtures, and `build/` scripts are exempt. The
+rule runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineSelectObjectPropertyRule.ps1
+```
+
+## Multiline if expressions
+
+`PSUseMultilineIfExpression` requires an `if`/`else` used as an assignment value
+to put each branch on its own lines. The rule covers variable and property
+assignments:
+
+```powershell
+# Fails
+$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
+
+# Passes: multiline if expression
+$fullId = if ($itemConnector -like '/providers/*') {
+    $itemConnector
+}
+else {
+    "/providers/Microsoft.PowerApps/apis/$itemConnector"
+}
+
+# Passes: declared variable
+$fullId = $null
+if ($itemConnector -like '/providers/*') {
+    $fullId = $itemConnector
+}
+else {
+    $fullId = "/providers/Microsoft.PowerApps/apis/$itemConnector"
+}
+
+# Passes: ternary
+$fullId = $itemConnector -like '/providers/*' ? $itemConnector : "/providers/Microsoft.PowerApps/apis/$itemConnector"
+```
+
+The `{` and `}` of each branch and the `else` keyword each start on their own
+line. An `if` expression without an `else` is not reported. A plain `if`
+statement is not an assignment and is not reported. An `if` expression used as
+an object initializer value belongs to `PSUseTernaryInObjectInitialization`.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineIfExpressionRule.ps1
+```
+
+## Ternary in object initializers
+
+`PSUseTernaryInObjectInitialization` requires an `if`/`else` used as a hashtable
+value to be a ternary operator instead. A multiline `if` block inside a
+hashtable breaks the property layout; the ternary keeps one value on one line:
+
+```powershell
+# Fails
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) { '1.0' } else { $objRuleSet.version }
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Fails: a multiline branch does not fix the object layout
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) {
+        '1.0'
+    }
+    else {
+        $objRuleSet.version
+    }
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Passes
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = [string]::IsNullOrWhiteSpace("$($objRuleSet.version")) ? '1.0' : $objRuleSet.version
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Passes: an if without an else has no ternary equivalent
+$hashRuleSet = @{
+    version = if ($Version) { $Version.ToString() }
+}
+```
+
+The rule covers every hashtable literal, including `[ordered]@{}` and
+`[pscustomobject]@{}` values and nested hashtables. Only an `if` with an `else`
+is reported. Property assignments are not object initializers and stay with
+`PSUseMultilineIfExpression`. Test files, tepp fixtures, and `build/` scripts
+are exempt.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1TernaryInObjectInitializationRule.ps1
+```
+
+## Multiline if conditions
+
+`PSUseMultilineIfCondition` requires every test in a compound `if` or `elseif`
+condition to sit in parentheses on its own line, with `-and` or `-or` leftmost
+on the continuation line:
+
+```powershell
+# Fails: two tests on one line
+if (-Not ($null -eq $objGroup) -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Fails: the operator ends the line instead of starting it
+if ((-Not ($null -eq $objGroup)) -and
+    (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Fails: the tests are not parenthesized
+if (-Not ($null -eq $objGroup) `
+        -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Passes: two tests
+if ((-Not ($null -eq $objGroup)) `
+        -and (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Passes: three tests
+if (($null -eq $objValue) `
+        -and ($objValue.Count -gt 0) `
+        -and ($objValue[0])) {
+    $objValue[0]
+}
+
+# Passes: nested -or
+if (($colValue.Count -gt 0) `
+        -and (($colValue[0] -eq 'a') `
+            -or ($colValue[0] -eq 'b'))) {
+    $colValue[0]
+}
+
+# Passes: a condition inside the if parentheses
+if (
+    ($null -eq $objValue) `
+        -and ($objValue.Count -gt 0)
+) {
+    $objValue[0]
+}
+```
+
+Every operand of an `-and` or `-or` chain must be a parenthesized expression and
+start on its own line. The operator starts the continuation line, so the logic
+split stays visible at the left edge. A chain of the same operator is read left
+to right, so three or more tests produce one operator line per test. A nested
+`-and` or `-or` is checked recursively. A single test, an `if` expression, and a
+`Where-Object` script block are not compound conditions and are not reported.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineIfConditionRule.ps1
 ```
 
 ## Central API version
@@ -1164,6 +1471,109 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectStringCheckRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyLineAfterContinuationRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectParameterCheckRule.ps1
+```
+
+## Return after Stop-PSFFunction
+
+`PSUseReturnAfterStopPSFFunction` requires a plain `Stop-PSFFunction` to be
+followed by `return`, `throw`, or `exit` before any later statement runs. The
+rule walks out through enclosing blocks, so a stop at the end of an inner block
+is reported when the function continues after that block:
+
+```powershell
+# Fails: the function continues after the if block
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+}
+Get-Thing
+
+# Fails: continue does not return from the function
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+    continue
+}
+
+# Passes
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+    return
+}
+
+# Passes: the function ends at the stop
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+}
+
+# Passes: explicit continuation
+Stop-PSFFunction -Message 'Try the next one' -Continue
+```
+
+`-StepsUpward`, `-EnableException $true`, and `-Continue` are exempt because
+they do not fall through to the next statement in the same way. Test files and
+tepp fixtures are exempt. The rule runs on module code (public and internal).
+
+## Pipeline continuation
+
+`PSUsePipelineContinuationBreak` requires a pipeline with more than one command
+to break after each pipe. A multiline hashtable that closes with `}` keeps the
+pipe and the next command on the closing brace line. Any other element breaks
+after the pipe:
+
+```powershell
+# Fails
+$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+
+# Fails: a backtick continuation keeps the next command on the same line
+$objRoute = Get-Route `
+    -Name 'fixture' | Select-Object -First 1
+
+# Fails: a closing parenthesis keeps the next command on the same line
+$objRoute = (Get-Route `
+    -Name 'fixture') | Select-Object -First 1
+
+# Fails: leading pipe
+$envObj = Get-Environment -EnvironmentId $EnvironmentId
+    | Select-Object -First 1
+
+# Passes
+$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+    Select-Object -First 1
+
+# Passes: a backtick continuation breaks after the pipe
+$objRoute = Get-Route `
+    -Name 'fixture' |
+    Select-Object -First 1
+
+# Passes: a closing parenthesis breaks after the pipe
+$objRoute = (Get-Route `
+    -Name 'fixture') |
+    Select-Object -First 1
+
+# Passes: the closing brace, the pipe, and the next command share a line
+$body = [ordered]@{
+    name     = $Name
+    ruleSets = @($RuleSet)
+} | ConvertTo-Json -Depth 20
+
+# Fails: the pipe and the next command leave the closing brace line
+$body = [ordered]@{
+    name     = $Name
+    ruleSets = @($RuleSet)
+} |
+    ConvertTo-Json -Depth 20
+```
+
+A multiline element ending with `}` keeps `|` plus the next command on that
+line. Any other element, including a backtick continuation or a closing
+parenthesis, starts the next command on a new line. A single-command pipeline is
+not checked. A pipe inside a string is not a pipeline. Test files and tepp
+fixtures are exempt. The rule runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ReturnAfterStopRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1PipelineContinuationRule.ps1
 ```
 
 ## Example prose
