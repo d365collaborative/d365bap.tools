@@ -34,7 +34,7 @@ What runs on PowerShell files:
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
   `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
-  `PSUseOneParameterPerLine`,
+  `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -988,6 +988,35 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1NullComparisonRule.ps1
+```
+
+## Direct value in string checks
+
+`PSUseDirectValueInStringCheck` rejects an interpolated string that wraps a
+single value for `[string]::IsNullOrWhiteSpace` or `[string]::IsNullOrEmpty`.
+The method already converts the value to a string, so the wrapper adds nothing
+and hides the value being tested:
+
+```powershell
+# Fails
+if (-not [string]::IsNullOrWhiteSpace("$($created.id)")) { ... }
+if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+
+# Passes
+if (-not [string]::IsNullOrWhiteSpace($created.id)) { ... }
+if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
+```
+
+A string with literal text (`"prefix $name"`), a string with more than one
+expression (`"$first$last"`), and a single-quoted literal are real string
+compositions and stay clean. An instance method with the same name is not
+checked. Test files, tepp fixtures, and `build/` scripts are exempt. The rule
+runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectStringCheckRule.ps1
 ```
 
 ## Example prose
