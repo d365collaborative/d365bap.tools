@@ -43,7 +43,7 @@ function Get-Fixture {
         $objGroup.DisplayName
     }
 }
-'@ -Expected 1 @('PSUseMultilineIfCondition', 'parentheses')
+'@ -Expected 1 @('PSUseMultilineIfCondition', 'operator')
 
 Assert-MultilineIfCondition 'Split condition without parentheses' @'
 function Get-Fixture {
@@ -64,11 +64,22 @@ function Get-Fixture {
 }
 '@ -Expected 1
 
+Assert-MultilineIfCondition 'Operator at the end of the line' @'
+function Get-Fixture {
+    $colValue = @()
+    if (($colValue.Count -gt 0) -and
+        (($colValue[0] -eq 'a') -or
+            ($colValue[0] -eq 'b'))) {
+        $colValue[0]
+    }
+}
+'@ -Expected 1
+
 Assert-MultilineIfCondition 'Split and parenthesized condition' @'
 function Get-Fixture {
     $objGroup = Get-Group
-    if ((-Not ($null -eq $objGroup)) -and
-        (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    if ((-Not ($null -eq $objGroup)) `
+    -and (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
         $objGroup.DisplayName
     }
 }
@@ -78,8 +89,8 @@ Assert-MultilineIfCondition 'Condition inside the if parentheses' @'
 function Get-Fixture {
     $colValue = @()
     if (
-        ($colValue.Count -gt 0) -and
-        ($colValue[0])
+        ($colValue.Count -gt 0) `
+    -and ($colValue[0])
     ) {
         $colValue[0]
     }
@@ -98,9 +109,9 @@ function Get-Fixture {
 Assert-MultilineIfCondition 'Three split tests' @'
 function Get-Fixture {
     $colValue = @()
-    if (($null -eq $colValue) -and
-        ($colValue.Count -gt 0) -and
-        ($colValue[0])) {
+    if (($null -eq $colValue) `
+    -and ($colValue.Count -gt 0) `
+    -and ($colValue[0])) {
         $colValue[0]
     }
 }
@@ -118,8 +129,8 @@ function Get-Fixture {
 Assert-MultilineIfCondition 'Split or condition' @'
 function Get-Fixture {
     $objGroup = Get-Group
-    if (($null -eq $objGroup) -or
-        ($null -eq $objGroup.DisplayName)) {
+    if (($null -eq $objGroup) `
+    -or ($null -eq $objGroup.DisplayName)) {
         $objGroup
     }
 }
@@ -138,9 +149,9 @@ function Get-Fixture {
 Assert-MultilineIfCondition 'Nested or split' @'
 function Get-Fixture {
     $colValue = @()
-    if (($colValue.Count -gt 0) -and
-        (($colValue[0] -eq 'a') -or
-            ($colValue[0] -eq 'b'))) {
+    if (($colValue.Count -gt 0) `
+    -and (($colValue[0] -eq 'a') `
+    -or ($colValue[0] -eq 'b'))) {
         $colValue[0]
     }
 }
@@ -164,8 +175,8 @@ function Get-Fixture {
     if ($Kind -eq 'A') {
         'a'
     }
-    elseif (($Kind -eq 'B') -and
-        ($Kind -eq 'C')) {
+    elseif (($Kind -eq 'B') `
+    -and ($Kind -eq 'C')) {
         'b'
     }
 }
@@ -191,8 +202,8 @@ function Get-Fixture {
         [switch] $Enabled
     )
 
-    if (($Force) -and
-        ($Enabled)) {
+    if (($Force) `
+    -and ($Enabled)) {
         'forced'
     }
 }

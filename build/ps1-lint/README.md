@@ -1054,8 +1054,8 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1TernaryInObjectInitializatio
 ## Multiline if conditions
 
 `PSUseMultilineIfCondition` requires every test in a compound `if` or `elseif`
-condition to sit in parentheses on its own line. The parentheses and the line
-break show which tests belong together:
+condition to sit in parentheses on its own line, with `-and` or `-or` leftmost
+on the continuation line:
 
 ```powershell
 # Fails: two tests on one line
@@ -1063,53 +1063,55 @@ if (-Not ($null -eq $objGroup) -and -not [string]::IsNullOrWhiteSpace("$($objGro
     $groupLabel = $objGroup.DisplayName
 }
 
-# Fails: split, but the tests are not parenthesized
-if (-Not ($null -eq $objGroup) -and
-    -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
-    $groupLabel = $objGroup.DisplayName
-}
-
-# Fails: parenthesized, but both tests share a line
-if ((-Not ($null -eq $objGroup)) -and (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
-    $groupLabel = $objGroup.DisplayName
-}
-
-# Passes
+# Fails: the operator ends the line instead of starting it
 if ((-Not ($null -eq $objGroup)) -and
     (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
     $groupLabel = $objGroup.DisplayName
 }
 
+# Fails: the tests are not parenthesized
+if (-Not ($null -eq $objGroup) `
+        -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Passes: two tests
+if ((-Not ($null -eq $objGroup)) `
+        -and (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    $groupLabel = $objGroup.DisplayName
+}
+
 # Passes: three tests
-if (($null -eq $objValue) -and
-    ($objValue.Count -gt 0) -and
-    ($objValue[0])) {
+if (($null -eq $objValue) `
+        -and ($objValue.Count -gt 0) `
+        -and ($objValue[0])) {
     $objValue[0]
+}
+
+# Passes: nested -or
+if (($colValue.Count -gt 0) `
+        -and (($colValue[0] -eq 'a') `
+            -or ($colValue[0] -eq 'b'))) {
+    $colValue[0]
 }
 
 # Passes: a condition inside the if parentheses
 if (
-    ($objValue.Count -gt 0) -and
-    ($objValue[0])
+    ($null -eq $objValue) `
+        -and ($objValue.Count -gt 0)
 ) {
     $objValue[0]
 }
-
-# Passes: nested -or tests are split and parenthesized too
-if (($colValue.Count -gt 0) -and
-    (($colValue[0] -eq 'a') -or
-        ($colValue[0] -eq 'b'))) {
-    $colValue[0]
-}
 ```
 
-Every operand of an `-and` or `-or` chain must start on its own line and be a
-parenthesized expression. A chain of the same operator is read left to right, so
-three or more tests produce one line per test. A nested `-and` or `-or` is
-checked recursively. A single test, an `if` expression, and a `Where-Object`
-script block are not compound conditions and are not reported. Test files, tepp
-fixtures, and `build/` scripts are exempt. The rule runs on module code (public
-and internal).
+Every operand of an `-and` or `-or` chain must be a parenthesized expression and
+start on its own line. The operator starts the continuation line, so the logic
+split stays visible at the left edge. A chain of the same operator is read left
+to right, so three or more tests produce one operator line per test. A nested
+`-and` or `-or` is checked recursively. A single test, an `if` expression, and a
+`Where-Object` script block are not compound conditions and are not reported.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
 
 Run its regression checks under PowerShell 7.6 or later:
 
