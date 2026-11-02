@@ -33,7 +33,7 @@ What runs on PowerShell files:
   `PSUseOrderedPSCustomObject`,
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
-  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
+  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`, `PSUsePipelineContinuationBreak`,
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
@@ -1164,6 +1164,35 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectStringCheckRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyLineAfterContinuationRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectParameterCheckRule.ps1
+```
+
+## Pipeline continuation
+
+`PSUsePipelineContinuationBreak` requires a pipeline with more than one command
+to break after each pipe. The pipe stays at the end of the line; the next
+command starts a new line:
+
+```powershell
+# Fails
+$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+
+# Fails: leading pipe
+$envObj = Get-Environment -EnvironmentId $EnvironmentId
+    | Select-Object -First 1
+
+# Passes
+$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+    Select-Object -First 1
+```
+
+A single-command pipeline is not checked. A pipe inside a string is not a
+pipeline. Test files and tepp fixtures are exempt. The rule runs on module code
+(public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1PipelineContinuationRule.ps1
 ```
 
 ## Example prose
