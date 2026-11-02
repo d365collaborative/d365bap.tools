@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     Parses fixture scripts and checks that a plain Stop-PSFFunction is followed
-    by return, throw, or exit. Tail stops and stops that explicitly continue are
-    exempt.
+    by return, throw, or exit before any later statement in the function runs.
+    A function tail stop and a stop that explicitly continues are exempt.
 #>
 [CmdletBinding()]
 param()
@@ -178,6 +178,56 @@ function Get-Fixture {
     }
 }
 '@
+
+Assert-ReturnAfterStop 'Inner block followed by code' @'
+function Get-Fixture {
+    if (-not $Value) {
+        Stop-PSFFunction -Message 'Missing'
+    }
+    Get-Thing
+}
+'@ -Expected 1 @('PSUseReturnAfterStopPSFFunction', 'return, throw, or exit')
+
+Assert-ReturnAfterStop 'Inner block followed by return' @'
+function Get-Fixture {
+    if (-not $Value) {
+        Stop-PSFFunction -Message 'Missing'
+    }
+    return
+}
+'@
+
+Assert-ReturnAfterStop 'Nested inner block followed by code' @'
+function Get-Fixture {
+    if (-not $Value) {
+        if ($Value -eq 'Empty') {
+            Stop-PSFFunction -Message 'Missing'
+        }
+    }
+    Get-Thing
+}
+'@ -Expected 1
+
+Assert-ReturnAfterStop 'Loop tail followed by code' @'
+function Get-Fixture {
+    foreach ($item in $colSource) {
+        Stop-PSFFunction -Message 'Missing'
+    }
+    Get-Thing
+}
+'@ -Expected 1
+
+Assert-ReturnAfterStop 'Try tail followed by code' @'
+function Get-Fixture {
+    try {
+        Get-Thing
+    }
+    catch {
+        Stop-PSFFunction -Message 'Failed'
+    }
+    Get-Other
+}
+'@ -Expected 1
 
 Assert-ReturnAfterStop 'Internal module code is checked' @'
 function Get-Fixture {

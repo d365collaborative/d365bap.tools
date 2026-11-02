@@ -43,6 +43,46 @@ function Test-Ps1PlainStop {
 	$true
 }
 
+function Test-Ps1ExitStatement {
+	param($Statement)
+
+	$Statement -is [Management.Automation.Language.ReturnStatementAst] -or
+	$Statement -is [Management.Automation.Language.ThrowStatementAst] -or
+	$Statement -is [Management.Automation.Language.ExitStatementAst]
+}
+
+function Test-Ps1StopFollowedByExit {
+	param($Command)
+
+	$statement = $Command
+	while ($null -ne $statement.Parent -and
+		$statement.Parent -isnot [Management.Automation.Language.StatementBlockAst] -and
+		$statement.Parent -isnot [Management.Automation.Language.NamedBlockAst]) {
+		$statement = $statement.Parent
+	}
+
+	while ($null -ne $statement.Parent) {
+		$parent = $statement.Parent
+		if ($parent -is [Management.Automation.Language.StatementBlockAst] -or
+			$parent -is [Management.Automation.Language.NamedBlockAst]) {
+			$tmpStatements = @($parent.Statements)
+			$index = [Array]::IndexOf($tmpStatements, $statement)
+			if ($index -ge 0 -and ($index + 1) -lt $tmpStatements.Count) {
+				Test-Ps1ExitStatement -Statement $tmpStatements[$index + 1]
+				return
+			}
+			if ($parent -is [Management.Automation.Language.NamedBlockAst]) { $true; return }
+
+			$statement = $parent.Parent
+			continue
+		}
+
+		$statement = $parent
+	}
+
+	$true
+}
+
 function New-Ps1ReturnAfterStopDiagnostic {
 	param([string] $Path, [string] $Message, $Extent)
 
@@ -70,24 +110,7 @@ function Get-Ps1ReturnAfterStopDiagnostic {
 		if ($null -eq $commandName) { continue }
 		if (($commandName -split '\\')[-1] -ine 'Stop-PSFFunction') { continue }
 		if (-not (Test-Ps1PlainStop -Command $itemCommand)) { continue }
-
-		$statement = $itemCommand
-		while ($null -ne $statement -and
-			$statement.Parent -isnot [Management.Automation.Language.StatementBlockAst] -and
-			$statement.Parent -isnot [Management.Automation.Language.NamedBlockAst]) {
-			$statement = $statement.Parent
-		}
-		if ($null -eq $statement) { continue }
-
-		$tmpStatements = @($statement.Parent.Statements)
-		$index = [Array]::IndexOf($tmpStatements, $statement)
-		if ($index -lt 0 -or ($index + 1) -ge $tmpStatements.Count) { continue }
-
-		$next = $tmpStatements[$index + 1]
-		$isFollowed = $next -is [Management.Automation.Language.ReturnStatementAst] -or
-		$next -is [Management.Automation.Language.ThrowStatementAst] -or
-		$next -is [Management.Automation.Language.ExitStatementAst]
-		if ($isFollowed) { continue }
+		if (Test-Ps1StopFollowedByExit -Command $itemCommand) { continue }
 
 		New-Ps1ReturnAfterStopDiagnostic -Path $Path `
 			-Extent $itemCommand.Extent `
