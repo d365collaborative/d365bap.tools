@@ -37,6 +37,7 @@ What runs on PowerShell files:
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
+  `PSUseOneComplexArrayElementPerLine`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -952,6 +953,46 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1HeadersVariableRule.ps1
+```
+
+## One complex array element per line
+
+`PSUseOneComplexArrayElementPerLine` requires an array with more than one
+hashtable or scriptblock element to start each complex element on its own line.
+Simple strings and numbers may share a line. The rule accepts any split that
+keeps the complex elements apart:
+
+```powershell
+# Fails
+$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
+
+# Passes: trailing comma
+$colPolicies = @($colPolicies |
+    Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
+    @{ Expression = { $_.name } },
+    @{ Expression = { $_.id } })
+
+# Passes: array variable
+$colSort = @(
+    @{ Expression = { -not $_.IsEffective } }
+    @{ Expression = { $_.name } }
+    @{ Expression = { $_.id } }
+)
+$colPolicies = @($colPolicies | Sort-Object -Property $colSort)
+
+# Passes: simple property names after the one expression
+$colPolicies = @($colPolicies |
+    Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, 'name', 'id')
+```
+
+A `[pscustomobject]@{ ... }` element counts as complex. A single complex element
+may stay on the command line. Test files, tepp fixtures, and `build/` scripts are
+exempt. The rule runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ComplexArrayElementRule.ps1
 ```
 
 ## Central API version
