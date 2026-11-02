@@ -33,7 +33,7 @@ What runs on PowerShell files:
   `PSUseOrderedPSCustomObject`,
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
-  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
+  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`, `PSAvoidSplattingForModuleCommands`,
   `PSUseOneParameterPerLine`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
@@ -764,6 +764,47 @@ The rule matches the command name, so `Microsoft.PowerShell.Core\Out-Null` and
 `Set-Alias Out-Null` is skipped because the local name may have different
 behavior. Test files and tepp fixtures are exempt. Existing call sites in the
 lint tooling migrate as those files are touched.
+
+## Splatting module commands
+
+`PSAvoidSplattingForModuleCommands` rejects a splat when the called command is a
+function defined in the module, public or internal. The call site must name each
+parameter so a reviewer can see what is passed:
+
+```powershell
+# Fails
+$params = @{
+    EnvironmentId = $EnvironmentId
+    Asset         = $Asset
+}
+$colAssets = Get-PpacFinOpsAsset @params
+
+# Passes
+$colAssets = Get-PpacFinOpsAsset -EnvironmentId $EnvironmentId -Asset $Asset
+```
+
+Splatting a system command stays allowed, because its parameters are not part
+of this module's contract:
+
+```powershell
+$request = @{
+    Method = 'Post'
+    Uri    = $uri
+}
+Invoke-RestMethod @request
+```
+
+The rule resolves the called command against every function defined in the
+module, including nested helpers and functions under `internal/`. A dynamic
+command name, a command qualified with another module, and
+`Microsoft.PowerShell.*` commands are not checked. Test files and tepp fixtures
+are exempt.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ModuleSplattingRule.ps1
+```
 
 ## Excel export blocks
 
