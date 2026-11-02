@@ -34,6 +34,7 @@ What runs on PowerShell files:
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
   `PSAvoidLoopAppend`,
+  `PSUseOneParameterPerLine`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -819,6 +820,53 @@ set-construction pipelines that use them build a union rather than a copy.
 Scope: module code (public and internal); build scripts, test files, and tepp
 fixtures are out of scope.
 
+## One parameter per line
+
+`PSUseOneParameterPerLine` requires a command with more than one parameter to
+put each parameter on its own line. The first parameter may stay on the command
+line or move to the first continuation line.
+
+```powershell
+# Fails: two parameters on one line
+Get-Thing -First 1 -Second 2
+
+# Fails: two parameters on the first line
+Get-Thing -First 1 -Second 2 `
+    -Third 3
+
+# Fails: two parameters on a continuation line
+Get-Thing -First 1 `
+    -Second 2 -Third 3
+
+# Fails: all parameters on the first continuation line
+Get-Thing `
+    -First 1 -Second 2
+
+# Passes: first parameter on the command line
+Get-Thing -First 1 `
+    -Second 2 `
+    -Third 3
+
+# Passes: first parameter on the first continuation line
+Get-Thing `
+    -First 1 `
+    -Second 2
+```
+
+A command with zero or one parameter is not reported. Backticks are allowed;
+the rule checks parameter placement, not the continuation itself. A format
+expression can put the operator on a new line:
+
+```powershell
+$uri = 'https://api.powerplatform.com/authorization/roleAssignments?api-version={0}' `
+    -f $script:BapApiVersions.PowerPlatform
+```
+
+A backtick inside a string, here-string, or comment is not a continuation and
+stays clean. Test files, tepp fixtures, and the rest of `build/` are out of
+scope. The rule runs on changed files only, so the existing multi-parameter
+lines migrate as their files are touched.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
@@ -829,6 +877,7 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1OrderedPSCustomObjectRule.ps
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1OutNullRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1StandardExcelExportRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1LoopAppendRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1OneParameterPerLineRule.ps1
 ```
 
 ## Example prose

@@ -17,14 +17,18 @@ function New-Ps1Analyzer {
 
 	$hashSettings = Get-Ps1AnalyzerSettings -Path $SettingsPath
 	$targetVersion = [version] $hashSettings.PSScriptAnalyzerVersion
-	$colAvailable = @(Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue |
+	$colAvailable = @(Get-Module -Name PSScriptAnalyzer `
+			-ListAvailable `
+			-ErrorAction SilentlyContinue |
 		Where-Object { $_.Version -eq $targetVersion })
 
 	if ($colAvailable.Count -eq 0) {
 		throw "PSScriptAnalyzer $($hashSettings.PSScriptAnalyzerVersion) is not installed. Run build/ps1-lint/setup/Run.ps1."
 	}
 
-	Import-Module PSScriptAnalyzer -RequiredVersion $hashSettings.PSScriptAnalyzerVersion -ErrorAction Stop
+	Import-Module PSScriptAnalyzer `
+		-RequiredVersion $hashSettings.PSScriptAnalyzerVersion `
+		-ErrorAction Stop
 
 	[pscustomobject]@{
 		Settings = $hashSettings
@@ -86,7 +90,11 @@ function Invoke-Ps1Analysis {
 			}
 
 			$tmpDiagnostics = [System.Collections.Generic.List[object]]::new()
-			$tmpBuiltIn = @(Invoke-ScriptAnalyzer -Path $itemPath -Recurse -Severity $Analyzer.Settings.Severity -ExcludeRule $Analyzer.Settings.ExcludeRule -ErrorAction Stop)
+			$tmpBuiltIn = @(Invoke-ScriptAnalyzer -Path $itemPath `
+					-Recurse `
+					-Severity $Analyzer.Settings.Severity `
+					-ExcludeRule $Analyzer.Settings.ExcludeRule `
+					-ErrorAction Stop)
 			if (($itemPath -replace '\\', '/') -match $Analyzer.Settings.ModulePathPattern) {
 				$tmpBuiltIn = @($tmpBuiltIn | Where-Object RuleName -ne 'PSShouldProcess')
 			}
@@ -101,7 +109,8 @@ function Invoke-Ps1Analysis {
 				$tmpDiagnostics.AddRange(@(Get-Ps1AddMemberDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1AccessTokenDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1EnvironmentLookupDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1VariableNamingDiagnostic -Analysis $analysis -Worker $Analyzer.Worker))
+				$tmpDiagnostics.AddRange(@(Get-Ps1VariableNamingDiagnostic -Analysis $analysis `
+							-Worker $Analyzer.Worker))
 				$tmpDiagnostics.AddRange(@(Get-Ps1ShouldProcessDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1OutputTypeDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1FunctionInterruptDiagnostic -Analysis $analysis))
@@ -113,7 +122,9 @@ function Invoke-Ps1Analysis {
 				$tmpDiagnostics.AddRange(@(Get-Ps1OutNullDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1StandardExcelExportDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1LoopAppendDiagnostic -Analysis $analysis))
-				$tmpDiagnostics.AddRange(@(Get-Ps1AliasDiagnostic -Analysis $analysis -Worker $Analyzer.Worker))
+				$tmpDiagnostics.AddRange(@(Get-Ps1OneParameterPerLineDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1AliasDiagnostic -Analysis $analysis `
+							-Worker $Analyzer.Worker))
 			}
 
 			$result = [pscustomobject]@{
@@ -121,7 +132,8 @@ function Invoke-Ps1Analysis {
 				Diagnostics = @($tmpDiagnostics)
 				Failed      = $false
 			}
-			$result.Failed = Test-Ps1AnalysisFailure -Result $result -Settings $Analyzer.Settings
+			$result.Failed = Test-Ps1AnalysisFailure -Result $result `
+				-Settings $Analyzer.Settings
 			$result
 		}
 	}
@@ -147,6 +159,7 @@ function Invoke-Ps1Analysis {
 . "$PSScriptRoot/Get-Ps1OutNullDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1StandardExcelExportDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1LoopAppendDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1OneParameterPerLineDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/Resolve-Ps1AliasCommand.ps1"
