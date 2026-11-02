@@ -33,7 +33,7 @@ What runs on PowerShell files:
   `PSUseOrderedPSCustomObject`,
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
-  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
+  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`, `PSUseDirectParameterCheck`,
   `PSUseOneParameterPerLine`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
@@ -988,6 +988,41 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1NullComparisonRule.ps1
+```
+
+## Direct parameter checks
+
+`PSUseDirectParameterCheck` requires module code to test the parameter itself
+instead of `$PSCmdlet.ParameterSetName` or `$PSBoundParameters.ContainsKey`:
+
+```powershell
+# Fails
+if ($PSCmdlet.ParameterSetName -eq 'EnvironmentGroup') { ... }
+$isByEnvironment = $PSCmdlet.ParameterSetName -eq 'ByEnvironment'
+$buildGiven = $PSBoundParameters.ContainsKey('Build') -and -not [string]::IsNullOrWhiteSpace($Build)
+if ($PSBoundParameters.ContainsKey('Description')) { $payload.description = $Description }
+
+# Passes
+if ($EnvironmentGroupId) { ... }
+$isByEnvironment = [bool] $EnvironmentId
+$buildGiven = -not [string]::IsNullOrWhiteSpace($Build)
+if (-not ($null -eq $Description)) { $payload.description = $Description }
+```
+
+A parameter whose default is also a valid explicit value is exempt, because the
+value cannot tell omitted from explicit. `$Asset = '*'` is the example:
+`$PSBoundParameters.ContainsKey('Asset')` is allowed. A mandatory parameter is
+reported as always bound. `$PSBoundParameters` passed as a value
+(`-BoundParameters $PSBoundParameters`) and a dynamic key (`ContainsKey($name)`)
+are not checked.
+
+The message for an optional parameter says to trust its null value and test
+`-not ($null -eq $Parameter)` directly; it does not ask for a `= $null` default.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectParameterCheckRule.ps1
 ```
 
 ## Example prose
