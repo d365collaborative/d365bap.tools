@@ -134,10 +134,25 @@ prek run
 pwsh -NoProfile -File ./build/Test-Behavior.ps1
 ```
 
-`prek run --all-files --stage manual` lints the whole tree. Do not edit generated
-files (`d365bap.tools/tests/functions/*.Tests.ps1`, `docs/*.md`, consolidated
-format XML, or `wiki/Namespaces.md`) in a pull request. CI builds current runtime
-formats for validation and generates documentation and test snapshots after merge.
+Pull request lint uses the same shared change scope as local runs
+(`build/Get-Ps1LintScope.ps1`). It offers every changed file to the cheap hooks
+(`check-merge-conflict`, `trailing-whitespace`, `end-of-file-fixer`,
+`check-json`, `check-yaml`), runs `ps1-format` and `psscriptanalyzer` only on
+changed `.ps1`, `.psm1`, and `.psd1` files, and runs `actionlint` only on touched
+workflow files. Untouched files never fail a pull request.
+
+Full-tree and dependency-aware lint are not pull request gates. Run them locally
+before a broad change:
+
+```powershell
+prek run --all-files --stage manual
+pwsh -NoProfile -File ./build/Invoke-Ps1LintScope.ps1 -BaseSha <base> -HeadSha <head> -RunAnalyzer
+```
+
+Do not edit generated files (`d365bap.tools/tests/functions/*.Tests.ps1`,
+`docs/*.md`, consolidated format XML, or `wiki/Namespaces.md`) in a pull request.
+CI builds current runtime formats for validation and generates documentation and
+test snapshots after merge.
 
 ### Accepting public signature changes
 
