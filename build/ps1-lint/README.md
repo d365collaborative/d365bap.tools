@@ -119,6 +119,30 @@ registering it in `Get-Ps1DiagnosticRule`, and adding a
 `build/Test-Ps1*Rule.ps1` suite (registered in
 `build/Test-Ps1RuleSuites.ps1`).
 
+### Repository metadata index
+
+Rules that need repository facts share one index per module root and analysis
+worker (`Get-Ps1RepositoryIndex` in `internal/Get-Ps1Analysis.ps1`). The module
+files are read once, and the index records:
+
+- `Commands` - every function name defined by the module, including nested
+  helpers and the files under `internal/sdk`. `PSAvoidSplattingForModuleCommands`
+  uses it to tell a module command from a system command.
+- `Functions` - parameter and alias metadata for the function files under
+  `functions/`, `internal/functions/`, and `internal/scripts/`. The alias rules
+  resolve calls against it.
+- `OutputTypes` - the declared `[OutputType()]` shape of those functions.
+  Variable naming uses it to choose `hash`, `col`, or `obj`.
+
+The index is built the first time a rule asks for it and reused by every later
+rule and file in that process. `prek.toml` batches the analyzer with
+`pass_filenames=64`, so a full repository scan pays the build once per batch
+instead of once per file and per rule. Each process starts a new worker, so the
+next run always sees edits. A running worker does not rebuild the index;
+repository facts must not be cached at script scope, because that would keep
+stale results for the rest of the process. `Test-Ps1LintCorrectness.ps1` checks
+both halves of that contract with the worker's `RepositoryIndexBuilds` counter.
+
 ### High-signal built-in warnings
 
 These existing PSScriptAnalyzer rules are fatal for module and build code even
@@ -873,8 +897,9 @@ Invoke-RestMethod @request
 ```
 
 The rule resolves the called command against every function defined in the
-module, including nested helpers and functions under `internal/`. A dynamic
-command name, a command qualified with another module, and
+module, including nested helpers and functions under `internal/`. It reads the
+shared repository index, so the module is scanned once per run rather than once
+per file. A dynamic command name, a command qualified with another module, and
 `Microsoft.PowerShell.*` commands are not checked. Test files and tepp fixtures
 are exempt.
 

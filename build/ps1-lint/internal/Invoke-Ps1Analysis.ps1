@@ -96,7 +96,7 @@ function Get-Ps1DiagnosticRule {
 		[pscustomobject]@{ Id = 'Get-Ps1TernaryInObjectInitializationDiagnostic'; Script = 'Get-Ps1TernaryInObjectInitializationDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1DirectStringCheckDiagnostic'; Script = 'Get-Ps1DirectStringCheckDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1HeadersVariableDiagnostic'; Script = 'Get-Ps1HeadersVariableDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1ModuleSplattingDiagnostic'; Script = 'Get-Ps1ModuleSplattingDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ModuleSplattingDiagnostic'; Script = 'Get-Ps1ModuleSplattingDiagnostic.ps1'; NeedsWorker = $true }
 		[pscustomobject]@{ Id = 'Get-Ps1EmptyLineAfterContinuationDiagnostic'; Script = 'Get-Ps1EmptyLineAfterContinuationDiagnostic.ps1'; NeedsWorker = $false }
 	)
 }

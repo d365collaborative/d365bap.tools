@@ -211,6 +211,58 @@ Write-Output 'pin'
 	$unpositioned = New-Ps1Diagnostic -Path $moduleFunction -Rule 'PSTestRule' -Message 'message'
 	Assert-True ($null -eq $unpositioned.Line -and $null -eq $unpositioned.Column) 'A diagnostic without a position must keep null line and column.'
 
+	# Repository metadata is one index per worker, shared by every rule. The
+	# build counter proves the scan runs once, and a fresh worker proves a
+	# later run sees files edited after the first run.
+	. (Join-Path $PSScriptRoot 'ps1-lint/internal/Invoke-Ps1Analysis.ps1')
+	$indexRoot = Join-Path $root 'repository-index'
+	$indexModule = Join-Path $indexRoot 'd365bap.tools'
+	$indexCaller = Join-Path $indexModule 'functions/Get-IndexCaller.ps1'
+	$null = New-Item -ItemType Directory -Path (Split-Path $indexCaller -Parent) -Force
+	[IO.File]::WriteAllText($indexCaller, @'
+function Get-IndexCaller {
+	param()
+
+	Get-IndexTarget @PSBoundParameters
+}
+'@)
+
+	$indexKey = ($indexModule -replace '\\', '/').ToLowerInvariant()
+	$indexAnalyzer = New-Ps1Analyzer
+	$beforeTarget = Invoke-Ps1Analysis -Path $indexCaller -Analyzer $indexAnalyzer
+	Assert-True (@($beforeTarget.Diagnostics | Where-Object RuleName -eq 'PSAvoidSplattingForModuleCommands').Count -eq 0) 'The splatting rule must not report a command that the module does not define.'
+	Assert-True ($indexAnalyzer.Worker.RepositoryIndexBuilds[$indexKey] -eq 1) 'A worker must build the repository index once for the first module file.'
+
+	$indexTarget = Join-Path $indexModule 'internal/functions/Get-IndexTarget.ps1'
+	$null = New-Item -ItemType Directory -Path (Split-Path $indexTarget -Parent) -Force
+	[IO.File]::WriteAllText($indexTarget, @'
+function Get-IndexTarget {
+	param([string] $Name)
+
+	$Name
+}
+'@)
+
+	$null = Invoke-Ps1Analysis -Path $indexCaller -Analyzer $indexAnalyzer
+	$null = Invoke-Ps1Analysis -Path $indexTarget -Analyzer $indexAnalyzer
+	Assert-True ($indexAnalyzer.Worker.RepositoryIndexBuilds[$indexKey] -eq 1) 'A worker must reuse its repository index for later files and rules.'
+
+	$freshAnalyzer = New-Ps1Analyzer
+	$afterTarget = Invoke-Ps1Analysis -Path $indexCaller -Analyzer $freshAnalyzer
+	$colSplat = @($afterTarget.Diagnostics | Where-Object RuleName -eq 'PSAvoidSplattingForModuleCommands')
+	Assert-True ($colSplat.Count -eq 1) "A fresh worker must see the edited module and report one splat, got $($colSplat.Count)."
+	Assert-True ($colSplat[0].Message.Contains('Get-IndexTarget')) 'The splat diagnostic must name the command added after the first run.'
+	Assert-True ($freshAnalyzer.Worker.RepositoryIndexBuilds[$indexKey] -eq 1) 'A fresh worker must build the repository index exactly once.'
+
+	# A checkout folder named d365bap.tools above the module is not a module
+	# root, so a build script must not scan it as repository metadata.
+	$enclosingScript = Join-Path $root 'enclosing/d365bap.tools/build/Run-Thing.ps1'
+	$null = New-Item -ItemType Directory -Path (Split-Path $enclosingScript -Parent) -Force
+	[IO.File]::WriteAllText($enclosingScript, "Write-Output 'fixture'`n")
+	$scopeAnalyzer = New-Ps1Analyzer
+	$null = Invoke-Ps1Analysis -Path $enclosingScript -Analyzer $scopeAnalyzer
+	Assert-True ($scopeAnalyzer.Worker.RepositoryIndexBuilds.Count -eq 0) 'A build script must not build an index for an enclosing checkout folder.'
+
 	# The documented semantics must match the rule messages.
 	$readmeText = Get-Content -LiteralPath $readme -Raw
 	Assert-True ($readmeText -match 'already rejects null and empty values') 'README must describe mandatory string binding accurately.'
