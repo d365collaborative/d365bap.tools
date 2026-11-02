@@ -66,8 +66,10 @@ function Get-Ps1CatchCommand {
 function Get-Ps1CatchLogCommand {
 	param($Catch)
 
-	foreach ($itemCommand in @(Get-Ps1CatchCommand -Catch $Catch -Name 'Write-PSFMessage')) {
-		$level = Get-Ps1CatchCommandArgument -Command $itemCommand -Name 'Level'
+	foreach ($itemCommand in @(Get-Ps1CatchCommand -Catch $Catch `
+				-Name 'Write-PSFMessage')) {
+		$level = Get-Ps1CatchCommandArgument -Command $itemCommand `
+			-Name 'Level'
 		if ($level -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
 		if ($level.Value -notin $script:Ps1CatchErrorLevels) { continue }
 		$itemCommand
@@ -100,9 +102,12 @@ function Get-Ps1SingleCatchErrorChannelDiagnostic {
 		$tmpLog = @(Get-Ps1CatchLogCommand -Catch $itemCatch)
 		if ($tmpLog.Count -eq 0) { continue }
 
-		$tmpStop = @(Get-Ps1CatchCommand -Catch $itemCatch -Name 'Stop-PSFFunction')
+		$tmpStop = @(Get-Ps1CatchCommand -Catch $itemCatch `
+				-Name 'Stop-PSFFunction')
 		if ($tmpStop.Count -eq 0) { continue }
 
-		New-Ps1SingleCatchErrorChannelDiagnostic -Path $Path -Extent $itemCatch.Extent -Message 'The catch block logs with Write-PSFMessage and stops with Stop-PSFFunction. Keep one error channel: log and return, or stop without a separate log.'
+		New-Ps1SingleCatchErrorChannelDiagnostic -Path $Path `
+			-Extent $itemCatch.Extent `
+			-Message 'The catch block logs with Write-PSFMessage and stops with Stop-PSFFunction. Keep one error channel: log and return, or stop without a separate log.'
 	}
 }
