@@ -188,6 +188,10 @@ to meet two contracts:
 Arrays of scalar values (strings, numbers, booleans, dates, GUIDs) are exempt
 from both. A list view is optional and not checked.
 
+The rule is public-only by contract. `-AsExcelOutput` is how a public cmdlet
+offers a spreadsheet export; an internal helper never declares that switch, so
+requiring it there would create false positives rather than coverage.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
@@ -247,8 +251,9 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1AccessTokenRule.ps1
   between the closing `]` and `$`.
 
 The space check applies to every parameter in the file, including scriptblock
-parameters. The other checks apply to public functions only; build and internal
-scripts use their own layouts.
+parameters. The other checks apply to public functions and one-function files
+under `internal/functions`; other internal scripts and build scripts use their
+own layouts.
 
 Run its regression checks under PowerShell 7.6 or later:
 
@@ -465,6 +470,11 @@ named PSF type is present. `[void]` cannot be mixed with other types.
 The existing `PSUseStandardCollectionOutput` recognizes any OutputType ending in
 `[]`, so `D365Bap.Tools.X[]` keeps the table-view and `AsExcelOutput` checks
 working.
+
+The rule matches one function per file by filename. The multi-function files
+under `internal/sdk` (`runtime`, `provisioning`, and the two preloads, 21
+functions together) are therefore not checked; widening the guard would need a
+different function lookup, so the gap is recorded rather than papered over.
 
 Run its regression checks under PowerShell 7.6 or later:
 
