@@ -37,6 +37,7 @@ on:
       - 'build/Test-Ps1DirectStringCheckRule.ps1'
       - 'build/Test-Ps1HeadersVariableRule.ps1'
       - 'build/Test-Ps1ModuleSplattingRule.ps1'
+      - 'build/Test-Ps1EmptyLineAfterContinuationRule.ps1'
       - 'build/Test-Ps1OneParameterPerLineRule.ps1'
       - 'build/Test-Ps1CentralApiVersionRule.ps1'
       - 'build/Test-Ps1FormattedUrlRule.ps1'
@@ -163,6 +164,9 @@ jobs:
     - name: Test module splatting lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ModuleSplattingRule.ps1
+    - name: Test empty line after continuation lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1EmptyLineAfterContinuationRule.ps1
     - name: Test one-parameter-per-line lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1OneParameterPerLineRule.ps1

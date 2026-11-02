@@ -37,6 +37,7 @@ What runs on PowerShell files:
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseOneParameterPerLine`, `PSUseVariableForHeaders`,
   `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`, `PSAvoidSplattingForModuleCommands`,
+  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`, `PSUseEmptyLineAfterContinuation`,
   `PSUseOneParameterPerLine`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
@@ -1099,11 +1100,38 @@ expression (`"$first$last"`), and a single-quoted literal are real string
 compositions and stay clean. An instance method with the same name is not
 checked. Test files, tepp fixtures, and `build/` scripts are exempt. The rule
 runs on module code (public and internal).
+## Empty line after continuation
+
+`PSUseEmptyLineAfterContinuation` requires an empty line after a statement that
+ends through a backtick line continuation, before the next statement in the same
+block:
+
+```powershell
+# Fails
+$tokenValue = ConvertFrom-SecureString -AsPlainText `
+    -SecureString $objSecureToken
+$apiVersion = $script:BapApiVersions.PowerPlatform
+
+# Passes
+$tokenValue = ConvertFrom-SecureString -AsPlainText `
+    -SecureString $objSecureToken
+
+$apiVersion = $script:BapApiVersions.PowerPlatform
+```
+
+The empty line makes it clear that the continuation has ended and that the next
+line is a new statement, not a continuation line with different indentation. A
+comment line directly after the continuation also separates the statements. A
+closing brace, a comment, or the end of the block needs no empty line. A
+multi-line expression that ends with a visible delimiter, such as `)` or `}`, is
+not reported. Test files and tepp fixtures are exempt. The rule runs on module
+code (public and internal).
 
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectStringCheckRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyLineAfterContinuationRule.ps1
 ```
 
 ## Example prose

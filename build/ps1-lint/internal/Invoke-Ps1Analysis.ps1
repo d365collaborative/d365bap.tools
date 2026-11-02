@@ -127,6 +127,7 @@ function Invoke-Ps1Analysis {
 				$tmpDiagnostics.AddRange(@(Get-Ps1DirectStringCheckDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1HeadersVariableDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1ModuleSplattingDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1EmptyLineAfterContinuationDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1AliasDiagnostic -Analysis $analysis `
 							-Worker $Analyzer.Worker))
 				$tmpDiagnostics.AddRange(@(Get-Ps1CentralApiVersionDiagnostic -Analysis $analysis))
@@ -172,6 +173,7 @@ function Invoke-Ps1Analysis {
 . "$PSScriptRoot/Get-Ps1DirectStringCheckDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1HeadersVariableDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1ModuleSplattingDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1EmptyLineAfterContinuationDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/Resolve-Ps1AliasCommand.ps1"
