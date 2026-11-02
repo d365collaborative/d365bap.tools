@@ -6,14 +6,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/test-validation-runners.yml'
-      - 'build/Test-PesterRunners.ps1'
-      - 'build/Test-PSScriptAnalyzerConsolidation.ps1'
-      - 'build/Test-RequiredModules.ps1'
-      - 'build/Test-Ps1ExampleHelp.ps1'
-      - 'build/Test-Ps1RuleSuites.ps1'
-      - 'build/Test-Ps1*Rule.ps1'
-      - 'build/Test-PreloadExitCode.ps1'
-      - 'build/Test-ModulePublication.ps1'
+      - 'build/Test-*.ps1'
       - 'build/Publish-ModuleWithRetry.ps1'
       - 'build/vsts-build.ps1'
       - 'build/build-notifications.cjs'
@@ -43,17 +36,8 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
-    - name: Test optional import probes
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-PreloadExitCode.ps1
     - name: Test build notifications
       run: node --test build/build-notifications.test.cjs
-    - name: Test module publication
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-ModulePublication.ps1
-    - name: Test example help lint
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ExampleHelp.ps1
     - name: Restore PowerShell modules
       uses: actions/cache/restore@v5
       with:
@@ -64,15 +48,6 @@ jobs:
     - name: Ensure prerequisites
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
-    - name: Test PowerShell lint rule suites
+    - name: Run validation suites
       shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1RuleSuites.ps1
-    - name: Test module prerequisites
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-RequiredModules.ps1
-    - name: Test analyzer consolidation
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-PSScriptAnalyzerConsolidation.ps1
-    - name: Test Pester runners
-      shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-PesterRunners.ps1
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-ValidationSuites.ps1
