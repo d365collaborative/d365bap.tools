@@ -747,25 +747,37 @@ files, and tepp fixtures are out of scope.
 
 ## Output discards
 
-`PSAvoidOutNull` rejects `Out-Null` in module code and the lint tooling. A
-discard redirects to `$null`, which is the faster, allocation-free form and
-keeps the discarded value visible in review:
+`PSAvoidOutNull` rejects, in module code and the lint tooling, the two discard
+forms that do not redirect output to `$null`: `Out-Null` and assigning a command
+or expression to `$null`. A discard redirects to `$null`, which is the faster,
+allocation-free form and keeps the discarded value visible in review:
 
 ```powershell
 # Fails
 [int]::TryParse($Value, [ref]$IsInt) | Out-Null
 Out-Null -InputObject (Get-Thing)
+$null = Invoke-RestMethod -Method Post -Uri $uri
+$null = $list.Add($item)
 
 # Passes
 [int]::TryParse($Value, [ref]$IsInt) > $null
 Get-Thing > $null
+Invoke-RestMethod -Method Post -Uri $uri > $null
+$list.Add($item) > $null
 ```
 
-The rule matches the command name, so `Microsoft.PowerShell.Core\Out-Null` and
-`out-null` are reported too. A file that defines `function Out-Null` or
-`Set-Alias Out-Null` is skipped because the local name may have different
-behavior. Test files and tepp fixtures are exempt. Existing call sites in the
-lint tooling migrate as those files are touched.
+The `Out-Null` check matches the command name, so
+`Microsoft.PowerShell.Core\Out-Null` and `out-null` are reported too. A file
+that defines `function Out-Null` or `Set-Alias Out-Null` skips that check
+because the local name may have different behavior; the `$null` assignment check
+still runs.
+
+The `$null` assignment check reports a command or a method call on the right
+side. A constant, a property, or an array of variables assigned to `$null` is
+not output and stays clean. A keyword statement such as `$null = if (...) { ... }`
+is also clean because it has no valid redirect form. Test files and tepp
+fixtures are exempt. Existing call sites in the lint tooling migrate as those
+files are touched.
 
 ## Splatting module commands
 
