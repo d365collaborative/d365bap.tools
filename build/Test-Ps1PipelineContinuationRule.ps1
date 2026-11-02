@@ -118,7 +118,7 @@ function Get-Fixture {
         -Name 'fixture' | Select-Object -First 1
     $objRoute
 }
-'@
+'@ -Expected 1 @('Break the pipeline')
 
 Assert-PipelineContinuation 'Multiline command to a command on a new line' @'
 function Get-Fixture {
@@ -127,7 +127,24 @@ function Get-Fixture {
         Select-Object -First 1
     $objRoute
 }
+'@
+
+Assert-PipelineContinuation 'Multiline command with a leading pipe' @'
+function Get-Fixture {
+    $objRoute = Get-Route `
+        -Name 'fixture'
+        | Select-Object -First 1
+    $objRoute
+}
 '@ -Expected 1
+
+Assert-PipelineContinuation 'Parenthesized multiline element on the closing line' @'
+function Get-Fixture {
+    $objRoute = (Get-Route `
+        -Name 'fixture') | Select-Object -First 1
+    $objRoute
+}
+'@
 
 Assert-PipelineContinuation 'Single command' @'
 function Get-Fixture {

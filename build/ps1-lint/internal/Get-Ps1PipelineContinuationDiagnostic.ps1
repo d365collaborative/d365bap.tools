@@ -38,7 +38,12 @@ function Get-Ps1PipelineContinuationDiagnostic {
 			}
 			if ($null -eq $pipe) { continue }
 
-			if ($previous.Extent.StartLineNumber -ne $previous.Extent.EndLineNumber) {
+			$tmpClosingText = "$($previous.Extent.Text)".TrimEnd()
+			$hasClosingDelimiter = $tmpClosingText.EndsWith('}') -or
+			$tmpClosingText.EndsWith(')') -or
+			$tmpClosingText.EndsWith(']')
+
+			if ($previous.Extent.StartLineNumber -ne $previous.Extent.EndLineNumber -and $hasClosingDelimiter) {
 				$isClosingLine = $pipe.Extent.StartLineNumber -eq $previous.Extent.EndLineNumber -and
 				$next.Extent.StartLineNumber -eq $pipe.Extent.EndLineNumber
 				if ($isClosingLine) { continue }
