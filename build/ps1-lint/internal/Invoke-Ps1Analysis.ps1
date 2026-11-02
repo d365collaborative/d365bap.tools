@@ -101,6 +101,29 @@ function Get-Ps1DiagnosticRule {
 	)
 }
 
+# PSScriptAnalyzer leaves ScriptName empty when it analyzes text instead of a
+# path. Report the file name so output keeps one row per file.
+function New-Ps1AnalyzerDiagnostic {
+	param(
+		[string] $Path,
+		$Diagnostic
+	)
+
+	if (-not [string]::IsNullOrEmpty($Diagnostic.ScriptName)) {
+		$Diagnostic
+		return
+	}
+
+	[pscustomobject]@{
+		RuleName   = $Diagnostic.RuleName
+		Severity   = $Diagnostic.Severity
+		ScriptName = [IO.Path]::GetFileName($Path)
+		Line       = $Diagnostic.Line
+		Column     = $Diagnostic.Column
+		Message    = $Diagnostic.Message
+	}
+}
+
 function Invoke-Ps1Analysis {
 	[CmdletBinding()]
 	param(
@@ -109,6 +132,9 @@ function Invoke-Ps1Analysis {
 		[string[]] $Path,
 		[Parameter(Mandatory = $true)]
 		$Analyzer,
+		# Formatted text keyed by absolute path. A key makes the analyzer read
+		# the formatted content instead of the file on disk.
+		[hashtable] $ContentByPath = @{},
 		# Full scans keep the historical built-in-only coverage. Custom rules
 		# are adopted as files change, so their existing debt must not fail a
 		# module-wide run.
@@ -117,7 +143,14 @@ function Invoke-Ps1Analysis {
 
 	process {
 		foreach ($itemPath in @($Path)) {
-			$analysis = Get-Ps1Analysis -Path $itemPath
+			$hasContent = $ContentByPath.ContainsKey($itemPath)
+			$analysis = if ($hasContent) {
+				Get-Ps1Analysis -Path $itemPath `
+					-Content $ContentByPath[$itemPath]
+			}
+			else {
+				Get-Ps1Analysis -Path $itemPath
+			}
 			$tmpParseDiagnostics = @(Get-Ps1ParseDiagnostic -Analysis $analysis)
 
 			if ($tmpParseDiagnostics.Count -gt 0) {
@@ -130,11 +163,23 @@ function Invoke-Ps1Analysis {
 			}
 
 			$tmpDiagnostics = [System.Collections.Generic.List[object]]::new()
-			$tmpBuiltIn = @(Invoke-ScriptAnalyzer -Path $itemPath `
-					-Recurse `
-					-Severity $Analyzer.Settings.Severity `
-					-ExcludeRule $Analyzer.Settings.ExcludeRule `
-					-ErrorAction Stop)
+			if ($hasContent) {
+				$tmpBuiltIn = @(Invoke-ScriptAnalyzer -ScriptDefinition $ContentByPath[$itemPath] `
+						-Severity $Analyzer.Settings.Severity `
+						-ExcludeRule $Analyzer.Settings.ExcludeRule `
+						-ErrorAction Stop |
+					ForEach-Object {
+						New-Ps1AnalyzerDiagnostic -Path $itemPath `
+							-Diagnostic $_
+					})
+			}
+			else {
+				$tmpBuiltIn = @(Invoke-ScriptAnalyzer -Path $itemPath `
+						-Recurse `
+						-Severity $Analyzer.Settings.Severity `
+						-ExcludeRule $Analyzer.Settings.ExcludeRule `
+						-ErrorAction Stop)
+			}
 			if (($itemPath -replace '\\', '/') -match $Analyzer.Settings.ModulePathPattern) {
 				$tmpBuiltIn = @($tmpBuiltIn | Where-Object RuleName -ne 'PSShouldProcess')
 			}
