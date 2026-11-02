@@ -29,6 +29,7 @@ What runs on PowerShell files:
   `PSUseShouldProcessConvention`, `PSAvoidReturnValue`,
   `PSUseDeclaredOutputType`, `PSAvoidObjectArrayCast`,
   `PSUseValidationAttributeOnMandatory`,
+  `PSUseWildcardParameterAsFilter`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -682,11 +683,42 @@ attribute. Script `param()` blocks are not judged; the rule runs on function
 definitions in `functions/` and `internal/functions/`, so build scripts are out
 of scope.
 
+## Wildcard filters
+
+`PSUseWildcardParameterAsFilter` treats a wildcard parameter's value as a
+filter, never as a mode switch. Comparing it with the literal `'*'` is
+reported:
+
+```powershell
+# Fails
+param (
+    [SupportsWildcards()]
+    [string] $Name = '*'
+)
+
+if ($Name -ne '*') {
+    'filtered'
+}
+
+# Passes: the filter is passed to the comparison
+$result | Where-Object Name -like $Name
+```
+
+A parameter is wildcard-shaped when it declares `[SupportsWildcards()]` or has
+a string default containing `*`. Only `-eq`, `-ne`, `-ceq`, and `-cne` against
+the exact literal `'*'` are reported; `-like`, other literals, and member
+expressions such as `$_.Name -eq '*'` are left alone. A local assignment to
+the same name shadows the parameter and is skipped, as is a scope-qualified
+variable. The rule runs on `functions/` and `internal/functions/`; generated
+SDK wrappers and `build/` are out of scope. `PSUseSupportsWildcards` owns the
+attribute and default contract; this rule only owns the value comparison.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1WildcardParameterAsFilterRule.ps1
 ```
 
 ## Example prose
