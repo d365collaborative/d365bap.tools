@@ -29,7 +29,9 @@ $infrastructurePattern = @(
 	'^build/Invoke-[^/]+\.ps1$'
 	'^build/Test-[^/]+\.ps1$'
 	'^build/Install-RequiredModules\.ps1$'
+	'^build/Install-Prek\.ps1$'
 	'^build/ModuleCacheRequirements\.json$'
+	'^build/ToolCacheRequirements\.json$'
 	'^prek\.toml$'
 	'^\.github/workflows/validate\.yml$'
 )

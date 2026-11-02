@@ -54,10 +54,20 @@ jobs:
       if: steps.lint_scope.outputs.powershell == 'true'
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set lint
-    - name: Install prek
+    # cache-warm.yml is the only producer; pull_request caches are read-only.
+    # No restore-keys: a prefix match must never supply a different prek pin.
+    - name: Restore pinned prek
+      if: steps.lint_scope.outputs.hooks == 'true'
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ runner.temp }}\prek
+        key: prek-${{ runner.os }}-${{ hashFiles('build/ToolCacheRequirements.json') }}
+    - name: Ensure pinned prek
       if: steps.lint_scope.outputs.hooks == 'true'
       shell: pwsh
-      run: pip install "prek==0.5.7"
+      run: |
+        ./build/Install-Prek.ps1 -TargetPath (Join-Path $env:RUNNER_TEMP 'prek')
+        Join-Path (Join-Path $env:RUNNER_TEMP 'prek') 'bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
     - name: Lint changed files with cheap hooks
       if: steps.lint_scope.outputs.cheap == 'true'
       shell: pwsh

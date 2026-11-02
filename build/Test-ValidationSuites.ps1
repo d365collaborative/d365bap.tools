@@ -36,6 +36,7 @@ $notSuite = [ordered]@{
 	'Test-CompiledImportFormats.ps1'   = 'Runs in build-v2.yml.'
 	'Test-GeneratedTouch.ps1'          = 'Runs in validate.yml.'
 	'Test-PowerPlatformSdk.ps1'        = 'Run manually; not part of CI.'
+	'Test-PrekInstall.ps1'             = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-PRValidationPlan.ps1'        = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-Ps1FormatXml.ps1'            = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-Ps1LintBatch.ps1'            = 'Runs in the validate.yml infrastructure-tests job.'

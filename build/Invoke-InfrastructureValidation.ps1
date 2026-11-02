@@ -20,6 +20,7 @@ $infrastructureSuite = @(
 	'Test-PRValidationPlan'
 	'Test-Ps1LintScope'
 	'Test-CiLintPlan'
+	'Test-PrekInstall'
 	'Test-Ps1FormatXml'
 	'Test-SelectiveValidation'
 	'Test-SelectedStringsHandling'
