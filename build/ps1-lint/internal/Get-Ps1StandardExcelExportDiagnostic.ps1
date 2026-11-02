@@ -64,27 +64,13 @@ function Get-Ps1ExcelExportCommand {
 	$last
 }
 
-function New-Ps1StandardExcelExportDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseStandardExcelExport'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1StandardExcelExportDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/functions/[^/]+\.ps1$') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'PublicFunction')) { return }
 
-	foreach ($itemFunction in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+	foreach ($itemFunction in @(Get-Ps1AstNode $Analysis FunctionDefinitionAst)) {
 		if ($null -eq $itemFunction.Body.ParamBlock) { continue }
 		if (-not (Test-Ps1ExcelSwitchParameter -Function $itemFunction)) { continue }
 
@@ -105,7 +91,7 @@ function Get-Ps1StandardExcelExportDiagnostic {
 					}, $true)).Count -gt 0
 			if ($forwards) { continue }
 
-			New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemFunction.Name.Extent -Message "Add the export block to $($itemFunction.Name): when -AsExcelOutput is set, export the result with -WorksheetName and return."
+			New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Add the export block to $($itemFunction.Name): when -AsExcelOutput is set, export the result with -WorksheetName and return." $itemFunction.Name.Extent
 			continue
 		}
 
@@ -118,13 +104,13 @@ function Get-Ps1StandardExcelExportDiagnostic {
 
 		foreach ($itemIf in $tmpBlocks) {
 			if (@($itemIf.Clauses).Count -gt 1 -or $null -ne $itemIf.ElseClause) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "Remove the elseif/else branches from the AsExcelOutput block in $($itemFunction.Name). The export path ends with a bare return."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Remove the elseif/else branches from the AsExcelOutput block in $($itemFunction.Name). The export path ends with a bare return." $itemIf.Extent
 				continue
 			}
 
 			$tmpStatements = @($itemIf.Clauses[0].Item2.Statements)
 			if ($tmpStatements.Count -eq 0) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "Add the export and a bare return to the AsExcelOutput block in $($itemFunction.Name)."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Add the export and a bare return to the AsExcelOutput block in $($itemFunction.Name)." $itemIf.Extent
 				continue
 			}
 
@@ -136,37 +122,37 @@ function Get-Ps1StandardExcelExportDiagnostic {
 							($Node.GetCommandName() -split '\\')[-1] -ieq 'Export-Excel'
 						}, $true)).Count -gt 0
 				if ($guarded) {
-					New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "Remove the result-count guard from the AsExcelOutput block in $($itemFunction.Name). Export the collection directly and return."
+					New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Remove the result-count guard from the AsExcelOutput block in $($itemFunction.Name). Export the collection directly and return." $itemIf.Extent
 					continue
 				}
 			}
 
 			$exportCommand = Get-Ps1ExcelExportCommand -Statement $tmpStatements[0]
 			if ($null -eq $exportCommand) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "Start the AsExcelOutput block in $($itemFunction.Name) with Export-Excel."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Start the AsExcelOutput block in $($itemFunction.Name) with Export-Excel." $itemIf.Extent
 				continue
 			}
 
 			$worksheet = Get-Ps1ExcelWorksheetParameter -Command $exportCommand
 			if (-not $worksheet.Found) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "Pass -WorksheetName '$expectedWorksheet' to Export-Excel in $($itemFunction.Name)."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Pass -WorksheetName '$expectedWorksheet' to Export-Excel in $($itemFunction.Name)." $itemIf.Extent
 				continue
 			}
 			if ($worksheet.Literal -and $worksheet.Value -cne $expectedWorksheet) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "Use -WorksheetName '$expectedWorksheet' in the AsExcelOutput block of $($itemFunction.Name)."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Use -WorksheetName '$expectedWorksheet' in the AsExcelOutput block of $($itemFunction.Name)." $itemIf.Extent
 				continue
 			}
 
 			if ($tmpStatements.Count -gt 2) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "Keep the AsExcelOutput block in $($itemFunction.Name) to Export-Excel and a bare return."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "Keep the AsExcelOutput block in $($itemFunction.Name) to Export-Excel and a bare return." $itemIf.Extent
 				continue
 			}
 			if ($tmpStatements.Count -eq 1) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "End the AsExcelOutput block in $($itemFunction.Name) with a bare return after Export-Excel."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "End the AsExcelOutput block in $($itemFunction.Name) with a bare return after Export-Excel." $itemIf.Extent
 				continue
 			}
 			if ($tmpStatements[1] -isnot [Management.Automation.Language.ReturnStatementAst] -or $null -ne $tmpStatements[1].Pipeline) {
-				New-Ps1StandardExcelExportDiagnostic -Path $Path -Extent $itemIf.Extent -Message "End the AsExcelOutput block in $($itemFunction.Name) with a bare return after Export-Excel."
+				New-Ps1Diagnostic $Path 'PSUseStandardExcelExport' "End the AsExcelOutput block in $($itemFunction.Name) with a bare return after Export-Excel." $itemIf.Extent
 			}
 		}
 	}

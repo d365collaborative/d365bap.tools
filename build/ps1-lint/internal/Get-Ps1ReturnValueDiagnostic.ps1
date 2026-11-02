@@ -14,32 +14,13 @@
 	$false
 }
 
-function New-Ps1ReturnValueDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSAvoidReturnValue'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1ReturnValueDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	$isModuleFile = $normalized -match '/d365bap\.tools/'
-	$isBuildFile = $normalized -match '/build/'
-	if (-not $isModuleFile -and -not $isBuildFile) { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/tests/') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'RepositoryScript')) { return }
 
-	foreach ($itemReturn in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ReturnStatementAst] }, $true)) {
+	foreach ($itemReturn in @(Get-Ps1AstNode $Analysis ReturnStatementAst)) {
 		if ($null -eq $itemReturn.Pipeline) { continue }
 		if (Test-Ps1ReturnValueClassMember -Node $itemReturn) { continue }
 
@@ -50,6 +31,6 @@ function Get-Ps1ReturnValueDiagnostic {
 			'Do not use return with a value. Emit the value as output; use a bare return only to stop execution.'
 		}
 
-		New-Ps1ReturnValueDiagnostic -Path $Path -Message $message -Extent $itemReturn.Extent
+		New-Ps1Diagnostic $Path 'PSAvoidReturnValue' $message $itemReturn.Extent
 	}
 }

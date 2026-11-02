@@ -1,6 +1,6 @@
 ﻿function Get-Ps1NormalizedHelpText {
 	param([string] $Text)
-	if ([string]::IsNullOrWhiteSpace($Text)) { return '' }
+	if ([string]::IsNullOrWhiteSpace($Text)) { ''; return }
 	$normalized = $Text.ToLowerInvariant()
 	$normalized = [regex]::Replace($normalized, '\s+', ' ')
 	$normalized.Trim().TrimEnd('.').Trim()
@@ -12,7 +12,7 @@ function Get-Ps1ParameterDefaultRecord {
 		if ($null -eq $itemRecord) { continue }
 		$tmpCandidates = @($itemRecord.Name) + @($itemRecord.Aliases)
 		foreach ($itemCandidate in $tmpCandidates) {
-			if ($null -ne $itemCandidate -and $itemCandidate -ieq $Argument) { return $itemRecord }
+			if ($null -ne $itemCandidate -and $itemCandidate -ieq $Argument) { $itemRecord; return }
 		}
 	}
 	$null
@@ -218,18 +218,12 @@ function Get-Ps1HelpDiagnostic {
 				}
 			}
 			'EXAMPLE' {
-				Get-Ps1ExampleMessage -Section $itemSection -Sections $Analysis.HelpSections
+				Get-Ps1ExampleMessage -Section $itemSection `
+					-Sections $Analysis.HelpSections
 			}
 		}
 		if ($message) {
-			[pscustomobject]@{
-				RuleName   = 'PSHelp' + [Globalization.CultureInfo]::InvariantCulture.TextInfo.ToTitleCase($itemSection.Name.ToLowerInvariant())
-				Severity   = 'Error'
-				ScriptName = [IO.Path]::GetFileName($Path)
-				Line       = $itemSection.Line
-				Column     = $itemSection.Column
-				Message    = $message -join ' '
-			}
+			New-Ps1Diagnostic $Path ('PSHelp' + [Globalization.CultureInfo]::InvariantCulture.TextInfo.ToTitleCase($itemSection.Name.ToLowerInvariant())) ($message -join ' ') $null $itemSection.Line $itemSection.Column
 		}
 	}
 
@@ -252,14 +246,7 @@ function Get-Ps1HelpDiagnostic {
 			$tmpAnchor = @($Analysis.HelpSections | Where-Object { $_.GroupId -eq $groupId }) | Sort-Object Line | Select-Object -First 1
 			$anchorLine = if ($null -ne $tmpAnchor) { $tmpAnchor.Line } else { $group.Line }
 			$anchorColumn = if ($null -ne $tmpAnchor) { $tmpAnchor.Column } else { $group.Column }
-			[pscustomobject]@{
-				RuleName   = 'PSHelpParameter'
-				Severity   = 'Error'
-				ScriptName = [IO.Path]::GetFileName($Path)
-				Line       = $anchorLine
-				Column     = $anchorColumn
-				Message    = "PARAMETER $($itemRecord.Name) must document its default value with a trailing Default: ... line."
-			}
+			New-Ps1Diagnostic $Path 'PSHelpParameter' "PARAMETER $($itemRecord.Name) must document its default value with a trailing Default: ... line." $null $anchorLine $anchorColumn
 		}
 	}
 }

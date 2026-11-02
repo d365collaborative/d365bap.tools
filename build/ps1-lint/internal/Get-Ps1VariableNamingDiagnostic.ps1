@@ -101,7 +101,8 @@ function Get-Ps1OutputTypeMap {
 	$moduleRoot = Get-Ps1ModuleRoot -Path $Path
 	if ($null -eq $moduleRoot) { @{}; return }
 
-	(Get-Ps1RepositoryIndex -ModuleRoot $moduleRoot -Worker $Worker).OutputTypes
+	(Get-Ps1RepositoryIndex -ModuleRoot $moduleRoot `
+		-Worker $Worker).OutputTypes
 }
 
 function Get-Ps1VariableOutputTypeKind {
@@ -279,38 +280,22 @@ function Test-Ps1VariableGetEnvironmentValue {
 	@($Right.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] -and ($Node.GetCommandName() -split '\\')[-1] -eq 'Get-Environment' }, $true)).Count -gt 0
 }
 
-function New-Ps1VariableNamingDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseVariableNamingConvention'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1VariableNamingDiagnostic {
 	param([hashtable] $Analysis, [hashtable] $Worker)
 	$Path = $Analysis.Path
 	if ($null -eq $Worker) { $Worker = Get-Ps1AnalysisWorker }
 
-	$normalized = $Path -replace '\\', '/'
-	$isModuleFile = $normalized -match '/d365bap\.tools/(functions|internal)/'
-	$isBuildScript = $normalized -match '/build/'
-	if (-not $isModuleFile -and -not $isBuildScript) { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	$scope = $Analysis.Scope
+	$isModuleFile = $scope.IsModuleSource
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleOrBuild')) { return }
 
 	$colParameterNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-	foreach ($itemParameter in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ParameterAst] }, $true)) {
-		$null = $colParameterNames.Add($itemParameter.Name.VariablePath.UserPath)
+	foreach ($itemParameter in @(Get-Ps1AstNode $Analysis ParameterAst)) {
+		$colParameterNames.Add($itemParameter.Name.VariablePath.UserPath) > $null
 	}
 
 	$hashForEachSources = @{}
-	foreach ($itemForEach in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ForEachStatementAst] }, $true)) {
+	foreach ($itemForEach in @(Get-Ps1AstNode $Analysis ForEachStatementAst)) {
 		$owner = Get-Ps1VariableOwnerFunction -Node $itemForEach
 		if ($null -eq $owner) { continue }
 		$condition = Get-Ps1VariableValue -Right $itemForEach.Condition
@@ -318,10 +303,10 @@ function Get-Ps1VariableNamingDiagnostic {
 		if (-not $hashForEachSources.ContainsKey($owner)) {
 			$hashForEachSources[$owner] = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 		}
-		$null = $hashForEachSources[$owner].Add($condition.VariablePath.UserPath)
+		$hashForEachSources[$owner].Add($condition.VariablePath.UserPath) > $null
 	}
 
-	foreach ($itemForEach in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ForEachStatementAst] }, $true)) {
+	foreach ($itemForEach in @(Get-Ps1AstNode $Analysis ForEachStatementAst)) {
 		$owner = Get-Ps1VariableOwnerFunction -Node $itemForEach
 		if ($null -eq $owner) { continue }
 
@@ -329,13 +314,16 @@ function Get-Ps1VariableNamingDiagnostic {
 		if ($script:Ps1VariableAutomaticNames -contains $name) { continue }
 		if ($name -match '^item') { continue }
 
-		New-Ps1VariableNamingDiagnostic -Path $Path -Extent $itemForEach.Variable.Extent `
-			-Message "The foreach item variable $name should be prefixed with 'item'."
+		New-Ps1Diagnostic $Path 'PSUseVariableNamingConvention' "The foreach item variable $name should be prefixed with 'item'." $itemForEach.Variable.Extent
 	}
 
-	$hashOutputTypes = if ($isModuleFile) { Get-Ps1OutputTypeMap -Path $Path -Worker $Worker } else { @{} }
+	$hashOutputTypes = if ($isModuleFile) {
+		Get-Ps1OutputTypeMap -Path $Path `
+			-Worker $Worker
+	}
+	else { @{} }
 
-	foreach ($itemAssignment in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.AssignmentStatementAst] }, $true)) {
+	foreach ($itemAssignment in @(Get-Ps1AstNode $Analysis AssignmentStatementAst)) {
 		if ($itemAssignment.Left -isnot [Management.Automation.Language.VariableExpressionAst]) { continue }
 
 		$owner = Get-Ps1VariableOwnerFunction -Node $itemAssignment
@@ -363,7 +351,8 @@ function Get-Ps1VariableNamingDiagnostic {
 
 			$isObject = Test-Ps1VariableObjectValue -Right $itemAssignment.Right
 			if (-not $isObject) {
-				$outputKind = Get-Ps1VariableOutputTypeKind -Right $itemAssignment.Right -OutputTypes $hashOutputTypes
+				$outputKind = Get-Ps1VariableOutputTypeKind -Right $itemAssignment.Right `
+					-OutputTypes $hashOutputTypes
 				if ($outputKind -eq 'hash') { $isHashtable = $true }
 				elseif ($outputKind -eq 'col') { $isCollection = $true }
 				elseif ($outputKind -eq 'obj') { $isObject = $true }
@@ -388,6 +377,6 @@ function Get-Ps1VariableNamingDiagnostic {
 			"Variable $name holds a single object at the function root; prefix it with 'obj'."
 		}
 
-		New-Ps1VariableNamingDiagnostic -Path $Path -Extent $itemAssignment.Left.Extent -Message $scopeMessage
+		New-Ps1Diagnostic $Path 'PSUseVariableNamingConvention' $scopeMessage $itemAssignment.Left.Extent
 	}
 }

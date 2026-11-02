@@ -4,10 +4,10 @@ param()
 $ErrorActionPreference = 'Stop'
 
 Import-Module Pester -MinimumVersion 5.0 -ErrorAction Stop
-Import-Module PSScriptAnalyzer -ErrorAction Stop
 
 $entry = Join-Path $PSScriptRoot 'ps1-lint/internal/Invoke-Ps1Analysis.ps1'
 . $entry
+Import-Ps1Analyzer > $null
 
 $root = Join-Path ([IO.Path]::GetTempPath()) ('ps1-analyzer-' + [guid]::NewGuid().ToString('N'))
 $moduleRoot = Join-Path $root 'd365bap.tools'
@@ -17,6 +17,15 @@ $testFile = Join-Path $moduleRoot 'tests/general/PSScriptAnalyzer.Tests.ps1'
 function Assert-True([bool] $Condition, [string] $Message) {
 	if (-not $Condition) { throw $Message }
 }
+
+# The registry is the single source for rule loading and dispatch.
+$diagnosticFile = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal') -Filter 'Get-Ps1*Diagnostic.ps1' -File |
+	ForEach-Object Name |
+	Sort-Object)
+$diagnosticRule = @(Get-Ps1DiagnosticRule)
+Assert-True (($diagnosticFile -join ',') -ceq ((@($diagnosticRule.Script) | Sort-Object) -join ',')) 'Every diagnostic file must be registered exactly once.'
+Assert-True (@($diagnosticRule | Where-Object { $null -eq (Get-Command -Name $_.Id -ErrorAction Ignore) }).Count -eq 0) 'Every registered rule must define its function.'
+Write-Host "PASS: $($diagnosticRule.Count) diagnostic rules registered once."
 
 function New-FixtureFile([string] $Path, [string] $Content) {
 	$parent = Split-Path -Parent $Path

@@ -2,7 +2,7 @@
 	param($Command)
 
 	$name = $Command.GetCommandName()
-	if ($null -eq $name) { return $null }
+	if ($null -eq $name) { $null; return }
 	($name -split '\\')[-1]
 }
 
@@ -11,7 +11,7 @@ function Get-Ps1OutputTypeDeclared {
 
 	$paramBlock = $Function.Body.ParamBlock
 	if ($null -eq $paramBlock) {
-		return [pscustomobject]@{ HasAttribute = $false; Types = @(); Attributes = @() }
+		[pscustomobject]@{ HasAttribute = $false; Types = @(); Attributes = @() }; return
 	}
 
 	$colAttributes = @($paramBlock.Attributes | Where-Object {
@@ -58,7 +58,7 @@ function Get-Ps1OutputTypePSFName {
 			elseif ($index + 1 -lt $tmpElements.Count) { $tmpArgument = $tmpElements[$index + 1] }
 
 			if ($tmpArgument -is [Management.Automation.Language.StringConstantExpressionAst]) {
-				$null = $colNames.Add($tmpArgument.Value)
+				$colNames.Add($tmpArgument.Value) > $null
 			}
 		}
 	}
@@ -71,39 +71,21 @@ function Get-Ps1OutputTypePSFName {
 			$tmpValue = $itemPair.Item2
 			if ($tmpValue -is [Management.Automation.Language.PipelineAst] -and $tmpValue.PipelineElements.Count -eq 1) { $tmpValue = $tmpValue.PipelineElements[0] }
 			if ($tmpValue -is [Management.Automation.Language.CommandExpressionAst]) { $tmpValue = $tmpValue.Expression }
-			if ($tmpValue -is [Management.Automation.Language.StringConstantExpressionAst]) { $null = $colNames.Add($tmpValue.Value) }
+			if ($tmpValue -is [Management.Automation.Language.StringConstantExpressionAst]) { $colNames.Add($tmpValue.Value) > $null }
 		}
 	}
 
 	$colNames
 }
 
-function New-Ps1OutputTypeDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseDeclaredOutputType'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1OutputTypeDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	$isPublic = $normalized -match '/d365bap\.tools/functions/[^/]+\.ps1$'
-	$isInternal = $normalized -match '/d365bap\.tools/internal/functions/[^/]+\.ps1$'
-	if (-not $isPublic -and -not $isInternal) { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	$scope = $Analysis.Scope
+	if (-not (Test-Ps1RuleScope $Analysis 'OutputTypeFile')) { return }
 
-	$fileName = [IO.Path]::GetFileNameWithoutExtension($Path)
-	$itemFunction = @($Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true) | Where-Object { $_.Name -eq $fileName })[0]
+	$itemFunction = @(Get-Ps1AstNode $Analysis FunctionDefinitionAst | Where-Object { $_.Name -eq $scope.FileNameWithoutExtension })[0]
 	if ($null -eq $itemFunction) { return }
 
 	$declaration = Get-Ps1OutputTypeDeclared -Function $itemFunction
@@ -111,21 +93,18 @@ function Get-Ps1OutputTypeDiagnostic {
 	$colTypes = @($declaration.Types)
 
 	if (-not $declaration.HasAttribute) {
-		New-Ps1OutputTypeDiagnostic -Path $Path -Extent $itemFunction.Name.Extent `
-			-Message "Function $($itemFunction.Name) must declare [OutputType()]. Use [OutputType([void])] when it emits no output."
+		New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "Function $($itemFunction.Name) must declare [OutputType()]. Use [OutputType([void])] when it emits no output." $itemFunction.Name.Extent
 		return
 	}
 
 	if ($colTypes.Count -eq 0) {
-		New-Ps1OutputTypeDiagnostic -Path $Path -Extent $declaration.Attributes[0].Extent `
-			-Message "OutputType on $($itemFunction.Name) must declare at least one type. Use [OutputType([void])] when it emits no output."
+		New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "OutputType on $($itemFunction.Name) must declare at least one type. Use [OutputType([void])] when it emits no output." $declaration.Attributes[0].Extent
 		return
 	}
 
 	$hasVoid = @($colTypes | Where-Object { $_ -match '^(system\.)?void$' }).Count -gt 0
 	if ($hasVoid -and $colTypes.Count -gt 1) {
-		New-Ps1OutputTypeDiagnostic -Path $Path -Extent $declaration.Attributes[0].Extent `
-			-Message "OutputType on $($itemFunction.Name) mixes [void] with other types. Declare either [void] or the emitted types."
+		New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "OutputType on $($itemFunction.Name) mixes [void] with other types. Declare either [void] or the emitted types." $declaration.Attributes[0].Extent
 		return
 	}
 
@@ -136,8 +115,7 @@ function Get-Ps1OutputTypeDiagnostic {
 				}).Count -gt 0
 
 			if (-not $matching) {
-				New-Ps1OutputTypeDiagnostic -Path $Path -Extent $itemFunction.Name.Extent `
-					-Message "Function $($itemFunction.Name) emits '$itemPSFName' but OutputType does not declare '$itemPSFName' or '$itemPSFName[]'."
+				New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "Function $($itemFunction.Name) emits '$itemPSFName' but OutputType does not declare '$itemPSFName' or '$itemPSFName[]'." $itemFunction.Name.Extent
 			}
 		}
 
@@ -146,7 +124,6 @@ function Get-Ps1OutputTypeDiagnostic {
 
 	$hasSpecificType = @($colTypes | Where-Object { $_ -notmatch '^(system\.)?(object|psobject)(\[\])?$' }).Count -gt 0
 	if (-not $hasSpecificType) {
-		New-Ps1OutputTypeDiagnostic -Path $Path -Extent $declaration.Attributes[0].Extent `
-			-Message "OutputType on $($itemFunction.Name) only declares System.Object. Use the actual type, [PSCustomObject] for anonymous objects, or [void] when it emits no output."
+		New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "OutputType on $($itemFunction.Name) only declares System.Object. Use the actual type, [PSCustomObject] for anonymous objects, or [void] when it emits no output." $declaration.Attributes[0].Extent
 	}
 }

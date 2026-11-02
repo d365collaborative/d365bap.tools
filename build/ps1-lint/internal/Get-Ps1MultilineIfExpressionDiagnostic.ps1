@@ -37,37 +37,19 @@ function Test-Ps1MultilineIfStatement {
 	$false
 }
 
-function New-Ps1MultilineIfExpressionDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseMultilineIfExpression'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1MultilineIfExpressionDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
 	$message = 'Break the if/else branches onto separate lines. A declared variable assigned in an if statement or a ternary operator is also allowed.'
 
-	foreach ($itemAssignment in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.AssignmentStatementAst] }, $true)) {
+	foreach ($itemAssignment in @(Get-Ps1AstNode $Analysis AssignmentStatementAst)) {
 		if ($itemAssignment.Right -isnot [Management.Automation.Language.IfStatementAst]) { continue }
 		if ($null -eq $itemAssignment.Right.ElseClause) { continue }
 		if (Test-Ps1MultilineIfStatement -If $itemAssignment.Right) { continue }
 
-		New-Ps1MultilineIfExpressionDiagnostic -Path $Path `
-			-Extent $itemAssignment.Right.Extent `
-			-Message $message
+		New-Ps1Diagnostic $Path 'PSUseMultilineIfExpression' $message $itemAssignment.Right.Extent
 	}
 }

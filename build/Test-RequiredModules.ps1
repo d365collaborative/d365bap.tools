@@ -109,6 +109,24 @@ foreach ($set in @('base', 'generated')) {
 	}
 }
 
+# The lint set restores and installs only what the PowerShell lint hooks import.
+$lintModules = @($requirements.lint)
+$analyzerSettings = Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal/Ps1AnalyzerSettings.psd1')
+Assert-True ($lintModules.Count -eq 1) 'The lint module set must hold exactly the module a lint run imports.'
+Assert-True ($lintModules[0].Name -eq 'PSScriptAnalyzer') 'The lint module set must only contain PSScriptAnalyzer.'
+Assert-True ("$($lintModules[0].Version)" -eq "$($analyzerSettings.PSScriptAnalyzerVersion)") 'The lint cache pin must match the analyzer import pin.'
+
+Initialize-Scenario $lintModules
+& $installer -Set lint
+Assert-Installed @()
+Write-Output 'PASS: lint complete cache hit'
+
+Initialize-Scenario $lintModules
+$state.present.Remove('PSScriptAnalyzer')
+& $installer -Set lint
+Assert-Installed @('PSScriptAnalyzer')
+Write-Output 'PASS: lint cache miss installs only PSScriptAnalyzer'
+
 $modules = @($requirements.base)
 foreach ($failure in @('GetModule', 'GetRepository', 'RegisterRepository', 'SetRepository', 'Install')) {
 	Initialize-Scenario $modules

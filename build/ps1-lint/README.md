@@ -5,9 +5,17 @@ PS1 hooks from an internal-only module and are maintained in this repo from
 here on — no submodule, no sync back. Rule changes happen here via normal PRs.
 
 What runs on PowerShell files:
-- `psscriptanalyzer/Run.ps1` — the shared analyzer entry point
+- `lint/Run.ps1` — the hook entry point used by `prek.toml` and CI. It formats
+  and analyzes each bounded batch in one `pwsh` process
+  (`internal/Invoke-Ps1LintBatch.ps1`), so a lint run pays one process start and
+  one PSScriptAnalyzer import instead of one per hook. `-CheckOnly` (or
+  `PS1_LINT_CHECK_ONLY=1`) never writes a file and still reports formatting
+  drift. See [One batch process](#one-batch-process).
+- `psscriptanalyzer/Run.ps1` — the single-phase analyzer entry point
   (`internal/Invoke-Ps1Analysis.ps1`) runs native PSScriptAnalyzer plus the
-  repository rules below. Parser errors are collected separately and always
+  repository rules below. It stays available for targeted analysis (the
+  dependency report in `build/Invoke-Ps1LintScope.ps1`) and for the regression
+  tests. Parser errors are collected separately and always
   fail, because PSScriptAnalyzer reports them as `ParseError` rather than
   `Error`. Module functions fail on errors and warnings; build scripts and
   other tooling keep the historical error-only gate. `.psm1` and `.psd1` files
@@ -58,15 +66,126 @@ What runs on PowerShell files:
   Current help-quality extensions: DESCRIPTION must not repeat SYNOPSIS, and
   parameters with code defaults must document them with a trailing
   `Default: ...` line as the last paragraph of the `.PARAMETER` section.
-  `d365bap.tools/functions/ps1-lint.json` disables `PSAvoidParameterAliases`
-  for the public functions: the `PpacEnvId` pipeline alias is an established
-  repo-wide convention, so declaring it is not a violation there.
-- `ps1-format/Run.ps1` — Invoke-Formatter with `internal/Ps1FormatSettings.psd1`
-  plus UTF-8 BOM enforcement. Rewrites files and exits 1 when anything changed
-  or a file could not be formatted. A formatting failure no longer disappears
-  as a warning when the file content stays unchanged.
+  `d365bap.tools/functions/ps1-lint.json` lists `PpacEnvId` in
+  `allowedParameterAliases`: the pipeline alias is an established repo-wide
+  convention, so declaring and using it is not a violation there.
+- `ps1-format/Run.ps1` — the single-phase formatter entry point:
+  Invoke-Formatter with `internal/Ps1FormatSettings.psd1` plus UTF-8 BOM
+  enforcement. Rewrites files and exits 1 when anything changed or a file could
+  not be formatted. It stays available for formatting one file or a directory
+  directly. A formatting failure does not disappear as a warning when the file
+  content stays unchanged.
 - `setup/Run.ps1` — installs the pinned PSScriptAnalyzer 1.25.0 (CurrentUser)
   when that version is missing.
+
+### One batch process
+
+`lint/Run.ps1` calls `internal/Invoke-Ps1LintBatch.ps1`, which does both phases
+in the same process:
+
+1. Format each `.ps1` file in the current chunk and write it unless
+   `-CheckOnly` is set. `.psm1` and `.psd1` files are not formatted, as before.
+2. Analyze every file in that chunk. `.ps1` files are analyzed from the
+   formatted text, not from the bytes that were on disk before formatting, so
+   write mode and check-only mode report the same diagnostics. `.psm1` and
+   `.psd1` files are analyzed from their path because the formatter never
+   touches them.
+
+`pass_filenames=64` in `prek.toml` bounds the process. Inside it, files are
+processed in chunks of 32 (`-BatchSize`) so formatted text for a large tree is
+not held in memory at once. Each file has its own `try/catch`: a read-only file,
+a formatter failure, or a rule exception is reported and the rest of the batch
+continues.
+
+Exit codes keep the old two-hook contract: the hook exits 1 when formatting
+changed a file, would change a file in check-only mode, or failed; it also exits
+1 when analysis has a fatal diagnostic. Otherwise it exits 0. Running the hook
+twice leaves the tree unchanged after the first run, and `-CheckOnly` leaves it
+unchanged on every run.
+
+On the #334 baseline a 64-file batch started two fresh `pwsh` processes and
+imported PSScriptAnalyzer twice. The combined hook starts and imports once. The
+repository index is still built once per process, and PSScriptAnalyzer's
+helper processes are unchanged because the analyzed file count is unchanged.
+
+CI sets `PS1_LINT_CHECK_ONLY=1` for the `ps1-lint` step, so the same hook and
+glob filtering apply but nothing is written to the runner checkout.
+
+### One pinned analyzer runtime
+
+`internal/Ps1AnalyzerSettings.psd1` owns the single `PSScriptAnalyzerVersion`
+pin (1.25.0). `internal/Import-Ps1Analyzer.ps1` is the only import path:
+
+- `lint`, `ps1-format`, and `psscriptanalyzer` all import through it, so
+  formatting and analysis always run on the same module build.
+- It removes any other loaded version, imports the pinned one with
+  `-RequiredVersion`, and throws unless the pinned version is the only one
+  loaded. A newer version that happens to be installed cannot win.
+- `setup/Run.ps1` and the CI lint job install that same pin
+  (`build/ModuleCacheRequirements.json`, `lint` set). A regression check asserts
+  the settings pin and the cache pins match.
+
+`build/Test-Ps1LintCorrectness.ps1` proves the pin: it installs a decoy
+PSScriptAnalyzer 99.0.0 that throws on import, runs both hooks with the decoy
+first on `PSModulePath`, and requires byte-identical formatting and identical
+analysis to a run without it. Because CI and local runs execute the same hook
+scripts, that check covers both.
+
+### Rule plumbing
+
+Each rule function receives the analysis hashtable from `Get-Ps1Analysis`
+(`internal/Get-Ps1Analysis.ps1`). The hashtable carries the parsed `Ast`,
+`Tokens`, and `ParseErrors`, plus `CommentGroups`, `HelpSections`, and the
+values the shared helpers use. Rules keep their own checks; the repeated
+plumbing lives in four helpers:
+
+- `Test-Ps1RuleScope -Analysis $Analysis -Scope <name>` decides whether a
+  rule applies to the file. The scope table names the supported scopes:
+  `ModuleSource` (module code, no tests or tepp), `ModuleSourceWithTepp`,
+  `ModuleOrBuild`, `ModuleOrLintTooling`, `PublicFunction`, `FunctionFile`,
+  `OutputTypeFile`, `RepositoryScript`, and `Documentation`. A rule calls it
+  once and returns when it is false; no rule normalizes a path on its own.
+- `Get-Ps1AstNode -Analysis $Analysis -Type <name>[,<name>] [-Root <node>]`
+  returns the nodes of one or more AST types in document order. The result is
+  collected once per analysis, search root, and type set, so every rule that
+  asks the same question reuses the same collection. Pass a root node to
+  search inside a function body. Do not mutate a returned collection.
+- `Get-Ps1TokenNode -Analysis $Analysis -Kind <TokenKind>` does the same for
+  a token kind such as `Pipe`, `LineContinuation`, or `Format`.
+- `New-Ps1Diagnostic $Path $RuleName $Message $Extent` is the only
+  diagnostic shape. It always reports `Error` severity and takes the line and
+  column from the extent. Pass `$null` for the extent and then the line and
+  column when the position is not an extent.
+
+Rule logic stays in the rule file. Adding a rule means writing its checks,
+registering it in `Get-Ps1DiagnosticRule`, and adding a
+`build/Test-Ps1*Rule.ps1` suite (registered in
+`build/Test-Ps1RuleSuites.ps1`).
+
+### Repository metadata index
+
+Rules that need repository facts share one index per module root and analysis
+worker (`Get-Ps1RepositoryIndex` in `internal/Get-Ps1Analysis.ps1`). The module
+files are read once, and the index records:
+
+- `Commands` - every function name defined by the module, including nested
+  helpers and the files under `internal/sdk`. `PSAvoidSplattingForModuleCommands`
+  uses it to tell a module command from a system command.
+- `Functions` - parameter and alias metadata for the function files under
+  `functions/`, `internal/functions/`, and `internal/scripts/`. The alias rules
+  resolve calls against it.
+- `OutputTypes` - the declared `[OutputType()]` shape of those functions.
+  Variable naming uses it to choose `hash`, `col`, or `obj`.
+
+The index is built the first time a rule asks for it and reused by every later
+rule and file in that process. `prek.toml` batches the combined hook with
+`pass_filenames=64`, so a full repository scan pays the build once per batch
+instead of once per file, and formatting no longer starts a second process that
+would never use the index. Each process starts a new worker, so the next run
+always sees edits. A running worker does not rebuild the index;
+repository facts must not be cached at script scope, because that would keep
+stale results for the rest of the process. `Test-Ps1LintCorrectness.ps1` checks
+both halves of that contract with the worker's `RepositoryIndexBuilds` counter.
 
 ### High-signal built-in warnings
 
@@ -822,8 +941,9 @@ Invoke-RestMethod @request
 ```
 
 The rule resolves the called command against every function defined in the
-module, including nested helpers and functions under `internal/`. A dynamic
-command name, a command qualified with another module, and
+module, including nested helpers and functions under `internal/`. It reads the
+shared repository index, so the module is scanned once per run rather than once
+per file. A dynamic command name, a command qualified with another module, and
 `Microsoft.PowerShell.*` commands are not checked. Test files and tepp fixtures
 are exempt.
 
@@ -1193,11 +1313,11 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1TernaryInObjectInitializationRule.ps1
 ```
 
-## Multiline if conditions
+## Multiline if conditions and Where-Object predicates
 
-`PSUseMultilineIfCondition` requires every test in a compound `if` or `elseif`
-condition to sit in parentheses on its own line, with `-and` or `-or` leftmost
-on the continuation line:
+`PSUseMultilineIfCondition` requires every test in a compound `if`, `elseif`,
+or `Where-Object` predicate to sit in parentheses on its own line, with `-and`
+or `-or` leftmost on the continuation line:
 
 ```powershell
 # Fails: two tests on one line
@@ -1244,14 +1364,29 @@ if (
 ) {
     $objValue[0]
 }
+
+# Fails: the Where-Object predicate tests are on one line
+$objPipeline | Where-Object { $_.Count -gt 0 -and $_.Name }
+
+# Passes: the Where-Object predicate tests are split
+$objPipeline | Where-Object {
+    ($_.Count -gt 0) `
+    -and ($_.Name)
+}
 ```
 
 Every operand of an `-and` or `-or` chain must be a parenthesized expression and
 start on its own line. The operator starts the continuation line, so the logic
 split stays visible at the left edge. A chain of the same operator is read left
 to right, so three or more tests produce one operator line per test. A nested
-`-and` or `-or` is checked recursively. A single test, an `if` expression, and a
-`Where-Object` script block are not compound conditions and are not reported.
+`-and` or `-or` is checked recursively, and a leading `-not` is traversed so the
+enclosed chain is still checked. PowerShell operator precedence is preserved:
+mixed `-and` and `-or` levels are checked separately, and a grouped test must
+be parenthesized. A single test and an `if` expression are not compound
+conditions and are not reported. `Where-Object` predicates are found through
+the cmdlet name, its `?` and `where` aliases, and a module-qualified name, with
+either a positional script block or `-FilterScript`. Simplified syntax such as
+`Where-Object Name -eq 'abc'` and a filter passed by variable are not checked.
 Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
 module code (public and internal).
 

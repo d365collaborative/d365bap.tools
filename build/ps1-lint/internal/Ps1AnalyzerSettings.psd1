@@ -1,9 +1,10 @@
 @{
-	# The analyzer always imports this exact version. The setup hook installs it.
+	# The formatter and the analyzer both import this exact version. The setup
+	# hook installs it. No lint path may import whatever version is newest.
 	PSScriptAnalyzerVersion = '1.25.0'
 	# These rules are owned by another hook or by a repository rule:
 	#   PSAvoidUsingCmdletAliases  -> PSAvoidCommandAliases / PSAvoidParameterAliases
-	#   PSAvoidTrailingWhitespace  -> ps1-format hook
+	#   PSAvoidTrailingWhitespace  -> ps1-lint format phase
 	# PSShouldProcess is filtered only for module function files, where
 	# PSUseShouldProcessConvention replaces it. Other paths keep the built-in
 	# declaration/call check. PSUseShouldProcessForStateChangingFunctions stays

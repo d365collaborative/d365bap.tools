@@ -74,11 +74,194 @@ try {
 
 	# The hook dependency is pinned, not whatever happens to be installed.
 	$hashSettings = Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal/Ps1AnalyzerSettings.psd1')
-	Assert-True ($hashSettings.PSScriptAnalyzerVersion -eq '1.25.0') 'The analyzer settings must pin PSScriptAnalyzer 1.25.0.'
+	$objPin = [version] $hashSettings.PSScriptAnalyzerVersion
+	Assert-True ("$objPin" -eq '1.25.0') 'The analyzer settings must pin PSScriptAnalyzer 1.25.0.'
+
+	# CI and setup pins must match the import pin, or CI can install one version
+	# while the hooks import another.
+	$hashRequirements = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ModuleCacheRequirements.json') -Raw | ConvertFrom-Json
+	foreach ($itemSet in @('lint', 'base')) {
+		$colAnalyzer = @($hashRequirements.$itemSet | Where-Object Name -EQ 'PSScriptAnalyzer')
+		Assert-True ($colAnalyzer.Count -eq 1 -and "$($colAnalyzer[0].Version)" -eq "$objPin") "The $itemSet module cache must pin PSScriptAnalyzer $objPin."
+	}
+
+	# Only the shared import may load the module. A direct Import-Module without
+	# a version would pick the newest installed version again.
+	foreach ($itemScript in @('Invoke-Ps1Format.ps1', 'Invoke-Ps1Analysis.ps1')) {
+		$text = Get-Content -LiteralPath (Join-Path $PSScriptRoot "ps1-lint/internal/$itemScript") -Raw
+		Assert-True ($text -match 'Import-Ps1Analyzer') "$itemScript must import PSScriptAnalyzer through the shared pin."
+		Assert-True ($text -notmatch 'Import-Module\s+PSScriptAnalyzer') "$itemScript must not import PSScriptAnalyzer directly."
+	}
+
+	Import-Ps1Analyzer > $null
+	Assert-True ("$((Get-Module -Name PSScriptAnalyzer).Version)" -eq "$objPin") 'Import-Ps1Analyzer must load the pinned version.'
+
 	. (Join-Path $PSScriptRoot 'ps1-lint/internal/Ensure-PsScriptAnalyzer.ps1')
 	Assert-True (Ensure-PsScriptAnalyzer) 'The setup hook default must make the pinned analyzer available.'
-	$colInstalled = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ ([version] '1.25.0'))
+	$colInstalled = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ $objPin)
 	Assert-True ($colInstalled.Count -gt 0) 'The pinned PSScriptAnalyzer version must be installed.'
+
+	# A newer installed version must never win. The decoy fails when imported,
+	# so formatting and analysis still passing proves the pin held.
+	$decoyRoot = Join-Path $root 'decoy-modules/PSScriptAnalyzer/99.0.0'
+	$null = New-Item -ItemType Directory -Path $decoyRoot -Force
+	Set-Content -LiteralPath (Join-Path $decoyRoot 'PSScriptAnalyzer.psd1') -Value "@{ ModuleVersion = '99.0.0'; RootModule = 'PSScriptAnalyzer.psm1'; FunctionsToExport = @('Invoke-Formatter', 'Invoke-ScriptAnalyzer') }"
+	Set-Content -LiteralPath (Join-Path $decoyRoot 'PSScriptAnalyzer.psm1') -Value "throw 'The decoy PSScriptAnalyzer 99.0.0 must never be imported.'"
+
+	$formatSource = @'
+$objValue=1
+if ($null -eq $objValue) {
+Write-Output 'pin'
+}
+'@
+	$plain = Join-Path $root 'pin/Plain.ps1'
+	$decoy = Join-Path $root 'pin/Decoy.ps1'
+	foreach ($itemTarget in @($plain, $decoy)) {
+		$null = New-Item -ItemType Directory -Path (Split-Path $itemTarget) -Force
+		Set-Content -LiteralPath $itemTarget -Value $formatSource -Encoding utf8
+	}
+
+	$decoyModules = Join-Path $root 'decoy-modules'
+	$runPlain = Invoke-Hook $formatHook $plain
+	$analyzerPlain = Invoke-Hook $hook $clean
+	$previousModulePath = $env:PSModulePath
+	try {
+		$env:PSModulePath = "$decoyModules$([IO.Path]::PathSeparator)$previousModulePath"
+		$colDecoy = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ ([version] '99.0.0'))
+		Assert-True ($colDecoy.Count -eq 1) 'The decoy analyzer version must be discoverable.'
+		$runDecoy = Invoke-Hook $formatHook $decoy
+		$analyzerDecoy = Invoke-Hook $hook $clean
+	}
+	finally {
+		$env:PSModulePath = $previousModulePath
+	}
+
+	Assert-True ($runPlain.ExitCode -eq 1 -and $runDecoy.ExitCode -eq 1) 'The format hook must report the same unformatted fixture with a newer version installed.'
+	$plainHash = (Get-FileHash -LiteralPath $plain -Algorithm SHA256).Hash
+	$decoyHash = (Get-FileHash -LiteralPath $decoy -Algorithm SHA256).Hash
+	Assert-True ($plainHash -ceq $decoyHash) 'Formatting must be byte-identical with a newer analyzer version installed.'
+	Assert-True ($analyzerPlain.ExitCode -eq $analyzerDecoy.ExitCode -and $analyzerPlain.Output -ceq $analyzerDecoy.Output) 'Analysis must be identical with a newer analyzer version installed.'
+
+	# The shared analysis helpers keep one scope table, cached node
+	# collections, and one diagnostic shape. Their behavior is part of the
+	# contract every rule relies on.
+	foreach ($itemHelper in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis')) {
+		. (Join-Path $PSScriptRoot "ps1-lint/internal/$itemHelper.ps1")
+	}
+	$helperRoot = Join-Path $root 'helpers'
+	function New-HelperFixture {
+		param([string] $RelativePath, [string] $Content)
+		$path = Join-Path $helperRoot $RelativePath
+		$null = New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force
+		[IO.File]::WriteAllText($path, $Content.Replace("`r`n", "`n"))
+		$path
+	}
+
+	$moduleFunction = New-HelperFixture 'd365bap.tools/functions/Get-Thing.ps1' "function Get-Thing {`n`tGet-Date | Select-Object -First 1`n}`n"
+	$moduleAnalysis = Get-Ps1Analysis -Path $moduleFunction
+	Assert-True (Test-Ps1RuleScope -Analysis $moduleAnalysis -Scope 'ModuleSource') 'A public function file must be module source.'
+	Assert-True (Test-Ps1RuleScope -Analysis $moduleAnalysis -Scope 'PublicFunction') 'A public function file must match the public-function scope.'
+	Assert-True (Test-Ps1RuleScope -Analysis $moduleAnalysis -Scope 'Documentation') 'Comment linting covers module function files.'
+
+	foreach ($itemCase in @(
+			@{ Relative = 'd365bap.tools/functions/Get-Thing.Tests.ps1'; Scope = 'ModuleSource' }
+			@{ Relative = 'd365bap.tools/internal/tepp/example.tepp.ps1'; Scope = 'ModuleSource' }
+			@{ Relative = 'd365bap.tools/internal/tepp/assignment.ps1'; Scope = 'ModuleSource' }
+			@{ Relative = 'd365bap.tools/tests/general/Help.ps1'; Scope = 'Documentation' }
+			@{ Relative = 'build/Run-Thing.ps1'; Scope = 'ModuleOrLintTooling' }
+		)) {
+		$fixturePath = New-HelperFixture $itemCase.Relative "Write-Output 'fixture'`n"
+		$fixtureAnalysis = Get-Ps1Analysis -Path $fixturePath
+		Assert-True (-not (Test-Ps1RuleScope -Analysis $fixtureAnalysis -Scope $itemCase.Scope)) "$($itemCase.Relative) must not match the $($itemCase.Scope) scope."
+	}
+
+	$buildScript = New-HelperFixture 'build/Run-Thing.ps1' "Write-Output 'fixture'`n"
+	$buildAnalysis = Get-Ps1Analysis -Path $buildScript
+	Assert-True (Test-Ps1RuleScope -Analysis $buildAnalysis -Scope 'ModuleOrBuild') 'A build script must match the module-or-build scope.'
+	Assert-True (-not (Test-Ps1RuleScope -Analysis $buildAnalysis -Scope 'ModuleSource')) 'A build script is not module source.'
+
+	$lintTooling = New-HelperFixture 'build/ps1-lint/internal/Test-Thing.ps1' "Write-Output 'fixture'`n"
+	$lintAnalysis = Get-Ps1Analysis -Path $lintTooling
+	Assert-True (Test-Ps1RuleScope -Analysis $lintAnalysis -Scope 'ModuleOrLintTooling') 'Lint tooling must match the lint-tooling scope.'
+
+	$outsideScript = New-HelperFixture 'scripts/Run-Thing.ps1' "Write-Output 'fixture'`n"
+	$outsideAnalysis = Get-Ps1Analysis -Path $outsideScript
+	Assert-True (Test-Ps1RuleScope -Analysis $outsideAnalysis -Scope 'Documentation') 'A script outside the module may use ordinary comments.'
+	Assert-True (-not (Test-Ps1RuleScope -Analysis $outsideAnalysis -Scope 'ModuleSource')) 'A script outside the module is not module source.'
+
+	# Node collections are cached once per type and search root.
+	$colCommands = @(Get-Ps1AstNode -Analysis $moduleAnalysis -Type CommandAst)
+	Assert-True ($colCommands.Count -eq 2) "The module fixture must contain two commands, found $($colCommands.Count)."
+	$cacheKey = $moduleAnalysis.Ast
+	Assert-True ($moduleAnalysis.Nodes[$cacheKey].ContainsKey('CommandAst')) 'The first node collection must be cached.'
+	$cachedBefore = $moduleAnalysis.Nodes[$cacheKey].Count
+	$null = @(Get-Ps1AstNode -Analysis $moduleAnalysis -Type CommandAst)
+	Assert-True ($moduleAnalysis.Nodes[$cacheKey].Count -eq $cachedBefore) 'A repeated node collection must reuse the cached nodes.'
+
+	$colPipes = @(Get-Ps1TokenNode -Analysis $moduleAnalysis -Kind Pipe)
+	Assert-True ($colPipes.Count -eq 1) "The module fixture must contain one pipe token, found $($colPipes.Count)."
+	Assert-True ($moduleAnalysis.TokenCache.ContainsKey('Pipe')) 'The first token collection must be cached.'
+
+	$diagnostic = New-Ps1Diagnostic -Path $moduleFunction -Rule 'PSTestRule' -Message 'message' -Extent $moduleAnalysis.Ast.Extent
+	Assert-True ($diagnostic.RuleName -eq 'PSTestRule' -and $diagnostic.Severity -eq 'Error') 'A diagnostic must keep its rule name and Error severity.'
+	Assert-True ($diagnostic.ScriptName -eq 'Get-Thing.ps1') 'A diagnostic must report the file name without its directory.'
+	Assert-True ($diagnostic.Line -eq 1 -and $diagnostic.Column -eq 1) 'A diagnostic must take its position from the extent.'
+	$positional = New-Ps1Diagnostic -Path $moduleFunction -Rule 'PSTestRule' -Message 'message' -Line 4 -Column 2
+	Assert-True ($positional.Line -eq 4 -and $positional.Column -eq 2) 'A diagnostic must take an explicit line and column.'
+	$unpositioned = New-Ps1Diagnostic -Path $moduleFunction -Rule 'PSTestRule' -Message 'message'
+	Assert-True ($null -eq $unpositioned.Line -and $null -eq $unpositioned.Column) 'A diagnostic without a position must keep null line and column.'
+
+	# Repository metadata is one index per worker, shared by every rule. The
+	# build counter proves the scan runs once, and a fresh worker proves a
+	# later run sees files edited after the first run.
+	. (Join-Path $PSScriptRoot 'ps1-lint/internal/Invoke-Ps1Analysis.ps1')
+	$indexRoot = Join-Path $root 'repository-index'
+	$indexModule = Join-Path $indexRoot 'd365bap.tools'
+	$indexCaller = Join-Path $indexModule 'functions/Get-IndexCaller.ps1'
+	$null = New-Item -ItemType Directory -Path (Split-Path $indexCaller -Parent) -Force
+	[IO.File]::WriteAllText($indexCaller, @'
+function Get-IndexCaller {
+	param()
+
+	Get-IndexTarget @PSBoundParameters
+}
+'@)
+
+	$indexKey = ($indexModule -replace '\\', '/').ToLowerInvariant()
+	$indexAnalyzer = New-Ps1Analyzer
+	$beforeTarget = Invoke-Ps1Analysis -Path $indexCaller -Analyzer $indexAnalyzer
+	Assert-True (@($beforeTarget.Diagnostics | Where-Object RuleName -eq 'PSAvoidSplattingForModuleCommands').Count -eq 0) 'The splatting rule must not report a command that the module does not define.'
+	Assert-True ($indexAnalyzer.Worker.RepositoryIndexBuilds[$indexKey] -eq 1) 'A worker must build the repository index once for the first module file.'
+
+	$indexTarget = Join-Path $indexModule 'internal/functions/Get-IndexTarget.ps1'
+	$null = New-Item -ItemType Directory -Path (Split-Path $indexTarget -Parent) -Force
+	[IO.File]::WriteAllText($indexTarget, @'
+function Get-IndexTarget {
+	param([string] $Name)
+
+	$Name
+}
+'@)
+
+	$null = Invoke-Ps1Analysis -Path $indexCaller -Analyzer $indexAnalyzer
+	$null = Invoke-Ps1Analysis -Path $indexTarget -Analyzer $indexAnalyzer
+	Assert-True ($indexAnalyzer.Worker.RepositoryIndexBuilds[$indexKey] -eq 1) 'A worker must reuse its repository index for later files and rules.'
+
+	$freshAnalyzer = New-Ps1Analyzer
+	$afterTarget = Invoke-Ps1Analysis -Path $indexCaller -Analyzer $freshAnalyzer
+	$colSplat = @($afterTarget.Diagnostics | Where-Object RuleName -eq 'PSAvoidSplattingForModuleCommands')
+	Assert-True ($colSplat.Count -eq 1) "A fresh worker must see the edited module and report one splat, got $($colSplat.Count)."
+	Assert-True ($colSplat[0].Message.Contains('Get-IndexTarget')) 'The splat diagnostic must name the command added after the first run.'
+	Assert-True ($freshAnalyzer.Worker.RepositoryIndexBuilds[$indexKey] -eq 1) 'A fresh worker must build the repository index exactly once.'
+
+	# A checkout folder named d365bap.tools above the module is not a module
+	# root, so a build script must not scan it as repository metadata.
+	$enclosingScript = Join-Path $root 'enclosing/d365bap.tools/build/Run-Thing.ps1'
+	$null = New-Item -ItemType Directory -Path (Split-Path $enclosingScript -Parent) -Force
+	[IO.File]::WriteAllText($enclosingScript, "Write-Output 'fixture'`n")
+	$scopeAnalyzer = New-Ps1Analyzer
+	$null = Invoke-Ps1Analysis -Path $enclosingScript -Analyzer $scopeAnalyzer
+	Assert-True ($scopeAnalyzer.Worker.RepositoryIndexBuilds.Count -eq 0) 'A build script must not build an index for an enclosing checkout folder.'
 
 	# The documented semantics must match the rule messages.
 	$readmeText = Get-Content -LiteralPath $readme -Raw

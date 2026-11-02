@@ -9,10 +9,16 @@ default_install_hook_types = ["pre-commit"]
 # Local (optional, opt-in):
 #   pip install prek
 #   prek install
-#   prek run setup --stage manual   # one-time: installs PSScriptAnalyzer
+#   prek run setup --stage manual   # one-time: installs the pinned PSScriptAnalyzer
 #   prek run                         # changed/staged files
 #   prek run --all-files --stage manual   # whole tree
-# PRs on GitHub run the same hooks on changed files (see .github/workflows/ps1-lint.yml).
+# The formatter and the analyzer import one pinned PSScriptAnalyzer version
+# (build/ps1-lint/internal/Ps1AnalyzerSettings.psd1); a newer installed version
+# is never used. PRs on GitHub run the same hooks on changed files (see
+# .github/workflows/validate.yml) and install only the tools those hooks need.
+# CI offers every changed file to the cheap builtin hooks, but installs and runs
+# the PowerShell hooks only when a changed script can match them. Full-tree and
+# dependency-aware scans stay opt-in; they are not required PR checks.
 
 [[repos]]
 repo = "local"
@@ -29,32 +35,20 @@ always_run = true
 pass_filenames = false
 
 [[repos.hooks]]
-id = "ps1-format"
+id = "ps1-lint"
 priority = 10
-name = "PowerShell format and UTF-8 BOM"
+name = "PowerShell format, UTF-8 BOM, analyzer, and repo rules"
 language = "system"
 entry = "pwsh"
-args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/ps1-format/Run.ps1"]
-files = { glob = "**.ps1" }
+args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/lint/Run.ps1"]
+files = { glob = ["**.ps1", "**.psm1", "**.psd1"] }
 # Generated unit tests are owned by the regen workflow; linting them would flag
 # their template comments on every new command.
 exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
-# Each PowerShell process pays PSScriptAnalyzer startup and builds the shared
-# repository index once. Batches of 16 made ordinary PRs rebuild that state
-# several times; 64 keeps one process for most PRs without a large memory spike.
-pass_filenames = 64
-stages = ["pre-commit", "manual"]
-
-[[repos.hooks]]
-id = "psscriptanalyzer"
-priority = 30
-name = "PSScriptAnalyzer plus repo comment/help/alias rules"
-language = "system"
-entry = "pwsh"
-args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "build/ps1-lint/psscriptanalyzer/Run.ps1"]
-files = { glob = ["**.ps1", "**.psm1", "**.psd1"] }
-exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
-# Same batching tradeoff as ps1-format: fewer processes, shared index.
+# One process formats and analyzes each batch, so a run pays one process start
+# and one PSScriptAnalyzer import instead of one per hook. The hook reads files
+# in smaller chunks internally to keep memory flat; 64 keeps the process count
+# low without a command line large enough to hit the platform limit.
 pass_filenames = 64
 stages = ["pre-commit", "manual"]
 

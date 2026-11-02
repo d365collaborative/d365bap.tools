@@ -15,6 +15,8 @@ jobs:
     runs-on: windows-latest
     env:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      # Pinned once: the cache key and go install below must resolve the same tag.
+      ACTIONLINT_VERSION: v1.7.7
     steps:
     - uses: actions/checkout@v5
       with:
@@ -22,59 +24,84 @@ jobs:
     - name: Check generated-file ownership
       shell: pwsh
       run: ./build/Test-GeneratedTouch.ps1 -BaseRef $env:BASE_SHA
-    - name: Determine PowerShell scope
-      id: ps1_scope
+    - name: Determine lint scope
+      id: lint_scope
       shell: pwsh
       env:
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
         HEAD_SHA: ${{ github.sha }}
       run: |
-        $files = @(git diff --name-only --diff-filter=ACMR $env:BASE_SHA $env:HEAD_SHA --)
-        $relevant = @($files | Where-Object {
-          $_ -match '\.(ps1|psm1|psd1)$' -or
-          $_ -eq 'prek.toml' -or
-          $_ -match '^d365bap\.tools/xml/.+\.ps1xml$' -or
-          [IO.Path]::GetFileName($_) -ieq 'ps1-lint.json' -or
-          $_ -match '^build/ps1-lint/'
-        })
-        if ($relevant.Count -gt 0) { 'relevant=true' >> $env:GITHUB_OUTPUT } else { 'relevant=false' >> $env:GITHUB_OUTPUT }
-        $workflows = @($files | Where-Object { $_ -match '^\.github/workflows/' })
-        if ($workflows.Count -gt 0) { 'workflows=true' >> $env:GITHUB_OUTPUT } else { 'workflows=false' >> $env:GITHUB_OUTPUT }
-        Write-Host "PowerShell-relevant files: $($relevant.Count)"
-        Write-Host "Workflow files: $($workflows.Count)"
-    - name: Restore PowerShell modules
-      if: steps.ps1_scope.outputs.relevant == 'true'
+        ./build/Get-CiLintPlan.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -OutputPath lint-plan.json
+        $plan = Get-Content -Raw lint-plan.json | ConvertFrom-Json
+        $cheap = @($plan.CheapFiles).Count -gt 0
+        $powershell = @($plan.PowerShellFiles).Count -gt 0
+        $workflows = @($plan.WorkflowFiles).Count -gt 0
+        # One setup step for prek: it runs both the cheap and the PowerShell hooks.
+        $hooks = $cheap -or $powershell
+        "cheap=$($cheap.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+        "powershell=$($powershell.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+        "workflows=$($workflows.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+        "hooks=$($hooks.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+    - name: Restore pinned PSScriptAnalyzer
+      if: steps.lint_scope.outputs.powershell == 'true'
       uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        key: pwsh-modules-${{ runner.os }}-lint-v1-${{ hashFiles('build/ModuleCacheRequirements.json') }}
         restore-keys: |
-          pwsh-modules-${{ runner.os }}-base-v2-
+          pwsh-modules-${{ runner.os }}-lint-v1-
+    - name: Ensure pinned PSScriptAnalyzer
+      if: steps.lint_scope.outputs.powershell == 'true'
+      shell: pwsh
+      run: ./build/Install-RequiredModules.ps1 -Set lint
     - name: Install prek
-      if: steps.ps1_scope.outputs.relevant == 'true'
+      if: steps.lint_scope.outputs.hooks == 'true'
       shell: pwsh
       run: pip install "prek==0.5.7"
-    - name: Setup PSScriptAnalyzer for hooks
-      if: steps.ps1_scope.outputs.relevant == 'true'
-      shell: pwsh
-      run: prek run setup --stage manual --config prek.toml
-    - name: Lint changed files
-      if: steps.ps1_scope.outputs.relevant == 'true'
-      shell: pwsh
-      run: prek run --config prek.toml --from-ref $env:BASE_SHA --to-ref HEAD
-    - name: Lint workflow changes
-      if: steps.ps1_scope.outputs.workflows == 'true'
+    - name: Lint changed files with cheap hooks
+      if: steps.lint_scope.outputs.cheap == 'true'
       shell: pwsh
       run: |
-        $files = @(Get-ChildItem .github/workflows -Filter *.yml | ForEach-Object { $_.FullName })
-        & go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 @files
+        $plan = Get-Content -Raw lint-plan.json | ConvertFrom-Json
+        $files = @($plan.CheapFiles)
+        & prek run check-merge-conflict trailing-whitespace end-of-file-fixer check-json check-yaml --config prek.toml --files @files
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    - name: Report dependency-aware lint scope
+    - name: Lint changed PowerShell files
+      if: steps.lint_scope.outputs.powershell == 'true'
       shell: pwsh
       env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.sha }}
-      run: ./build/Invoke-Ps1LintScope.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -RunAnalyzer
+        # CI must never rewrite the checkout. The combined ps1-lint hook reports
+        # formatting drift as a failure and analyzes the formatted text from
+        # memory, so the result matches a local write-mode run.
+        PS1_LINT_CHECK_ONLY: '1'
+      run: |
+        $plan = Get-Content -Raw lint-plan.json | ConvertFrom-Json
+        $files = @($plan.PowerShellFiles)
+        & prek run ps1-lint --config prek.toml --files @files
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - name: Restore pinned actionlint
+      if: steps.lint_scope.outputs.workflows == 'true'
+      id: actionlint_cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ runner.temp }}\actionlint
+        key: actionlint-${{ runner.os }}-${{ env.ACTIONLINT_VERSION }}
+    - name: Install pinned actionlint
+      if: steps.lint_scope.outputs.workflows == 'true' && steps.actionlint_cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      env:
+        GOBIN: ${{ runner.temp }}\actionlint
+      run: go install "github.com/rhysd/actionlint/cmd/actionlint@$env:ACTIONLINT_VERSION"
+    - name: Lint touched workflow files
+      if: steps.lint_scope.outputs.workflows == 'true'
+      shell: pwsh
+      run: |
+        $plan = Get-Content -Raw lint-plan.json | ConvertFrom-Json
+        $files = @($plan.WorkflowFiles | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
+        $actionlint = Join-Path $env:RUNNER_TEMP 'actionlint/actionlint.exe'
+        if (-not (Test-Path -LiteralPath $actionlint)) { throw 'The pinned actionlint binary was not restored or installed.' }
+        & $actionlint @files
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   changes:
     name: Determine validation scope
@@ -121,7 +148,7 @@ jobs:
     - name: Test change-aware validation infrastructure
       shell: pwsh
       run: |
-        foreach ($test in @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness')) {
+        foreach ($test in @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-CiLintPlan', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness', 'Test-Ps1LintBatch')) {
           & pwsh -NoProfile -NonInteractive -File "./build/$test.ps1"
           if ($LASTEXITCODE -ne 0) { throw "Validation infrastructure regression failed: $test" }
         }

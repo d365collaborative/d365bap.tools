@@ -38,14 +38,16 @@ function Get-Ps1FunctionInterruptParameter {
 function Test-Ps1FunctionInterruptStopTargetsCaller {
 	param($Stop)
 
-	$stepsArgument = Get-Ps1FunctionInterruptParameter -Command $Stop -Name 'StepsUpward'
+	$stepsArgument = Get-Ps1FunctionInterruptParameter -Command $Stop `
+		-Name 'StepsUpward'
 	if ($stepsArgument -is [Management.Automation.Language.ConstantExpressionAst] -and
 		"$($stepsArgument.Value)" -match '^[1-9][0-9]*$') {
 		$true
 		return
 	}
 
-	$enableArgument = Get-Ps1FunctionInterruptParameter -Command $Stop -Name 'EnableException'
+	$enableArgument = Get-Ps1FunctionInterruptParameter -Command $Stop `
+		-Name 'EnableException'
 	if ($enableArgument -is [Management.Automation.Language.VariableExpressionAst] -and
 		$enableArgument.VariablePath.UserPath -ieq 'true') {
 		$true
@@ -117,7 +119,8 @@ function Test-Ps1FunctionInterruptStopGuard {
 				return
 			}
 
-			$itemBlock = Get-Ps1FunctionInterruptGuardBlock -Stop $itemStop -Owner $Owner
+			$itemBlock = Get-Ps1FunctionInterruptGuardBlock -Stop $itemStop `
+				-Owner $Owner
 			if ($null -eq $itemBlock) { continue }
 
 			foreach ($itemReturn in @($itemBlock.Statements | Where-Object {
@@ -134,29 +137,13 @@ function Test-Ps1FunctionInterruptStopGuard {
 	$false
 }
 
-function New-Ps1FunctionInterruptDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSAvoidOrphanPSFFunctionInterruptCheck'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1FunctionInterruptDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	foreach ($itemFunction in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+	foreach ($itemFunction in @(Get-Ps1AstNode $Analysis FunctionDefinitionAst)) {
 		$objProcess = $itemFunction.Body.ProcessBlock
 		if ($null -eq $objProcess) { continue }
 
@@ -196,9 +183,10 @@ function Get-Ps1FunctionInterruptDiagnostic {
 								}, $true)).Count -gt 0
 
 						if (($isGuard -or $hasDirectStop) -and
-							(Test-Ps1FunctionInterruptStopGuard -Statements @($tmpPrevious) -Check $itemCommand -Owner $itemFunction)) {
-							New-Ps1FunctionInterruptDiagnostic -Path $Path -Extent $itemCommand.Extent `
-								-Message 'The preceding Stop-PSFFunction guard returns or targets the caller before this check, so the check cannot observe that interrupt. Remove the Test-PSFFunctionInterrupt check.'
+							(Test-Ps1FunctionInterruptStopGuard -Statements @($tmpPrevious) `
+								-Check $itemCommand `
+								-Owner $itemFunction)) {
+							New-Ps1Diagnostic $Path 'PSAvoidOrphanPSFFunctionInterruptCheck' 'The preceding Stop-PSFFunction guard returns or targets the caller before this check, so the check cannot observe that interrupt. Remove the Test-PSFFunctionInterrupt check.' $itemCommand.Extent
 							continue
 						}
 					}
@@ -212,8 +200,7 @@ function Get-Ps1FunctionInterruptDiagnostic {
 					})
 				if ($tmpPriorInStatement.Count -gt 0) { continue }
 
-				New-Ps1FunctionInterruptDiagnostic -Path $Path -Extent $itemCommand.Extent `
-					-Message 'Test-PSFFunctionInterrupt in a process block has no preceding command that can interrupt the function. Move the check after the command that can stop, or remove it.'
+				New-Ps1Diagnostic $Path 'PSAvoidOrphanPSFFunctionInterruptCheck' 'Test-PSFFunctionInterrupt in a process block has no preceding command that can interrupt the function. Move the check after the command that can stop, or remove it.' $itemCommand.Extent
 			}
 
 			$tmpPreceding.Add($itemStatement)

@@ -3,9 +3,9 @@
     Tests the multiline if condition lint rule.
 
 .DESCRIPTION
-    Parses fixture scripts and checks that a compound if or elseif condition
-    puts every test in parentheses on its own line. A single test and a
-    condition inside a Where-Object script block stay clean.
+    Parses fixture scripts and checks that a compound if or elseif condition,
+    or a compound Where-Object predicate, puts every test in parentheses on
+    its own line. A single test stays clean.
 #>
 [CmdletBinding()]
 param()
@@ -228,12 +228,218 @@ function Get-Fixture {
 }
 '@ -Expected 1
 
-Assert-MultilineIfCondition 'Where-Object script block' @'
+Assert-MultilineIfCondition 'Where-Object predicate on one line' @'
 function Get-Fixture {
     $colValue = @(1, 2, 3)
     $colValue | Where-Object { $_.Count -gt 0 -and $_.Count -lt 10 }
 }
+'@ -Expected 1 @('PSUseMultilineIfCondition', 'operator')
+
+Assert-MultilineIfCondition 'Where-Object predicate split' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object {
+        ($_.Count -gt 0) `
+        -and ($_.Count -lt 10)
+    }
+}
 '@
+
+Assert-MultilineIfCondition 'Where-Object alias question mark' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | ? { $_.Count -gt 0 -and $_.Count -lt 10 }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object where alias' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | where { $_.Count -gt 0 -and $_.Count -lt 10 }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object qualified name' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Microsoft.PowerShell.Core\Where-Object { $_.Count -gt 0 -and $_.Count -lt 10 }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object FilterScript parameter' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object -FilterScript { $_.Count -gt 0 -and $_.Count -lt 10 }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object FilterScript split' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object -FilterScript {
+        ($_.Count -gt 0) `
+        -and ($_.Count -lt 10)
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object FilterScript variable' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $sb = { $_.Count -gt 0 -and $_.Count -lt 10 }
+    $colValue | Where-Object -FilterScript $sb
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object FilterScript colon argument' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object -FilterScript:{ $_.Count -gt 0 -and $_.Count -lt 10 }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object simplified syntax' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object Name -eq 'abc'
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object single test' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object { $_.Count -gt 0 }
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object negated compound split' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object {
+        -not (($_.Count -gt 0) `
+            -and ($_.Count -lt 10))
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object negated compound on one line' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object { -not (($_.Count -gt 0) -and ($_.Count -lt 10)) }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object mixed operators split' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object {
+        (($_.Count -gt 0) `
+            -and ($_.Count -lt 10)) `
+        -or ($_.Name)
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object nested operator not split' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object {
+        (($_.Count -gt 0) -and ($_.Count -lt 10)) `
+        -or ($_.Name)
+    }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object operator at the end of the line' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object {
+        ($_.Count -gt 0) -and
+        ($_.Count -lt 10)
+    }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Where-Object three tests split' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object {
+        ($_.Count -gt 0) `
+        -and ($_.Count -lt 10) `
+        -and ($_.Name)
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object multi-statement predicate' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $colValue | Where-Object {
+        $tmp = $_
+        ($tmp.Count -gt 0) `
+        -and ($tmp.Name)
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Where-Object inside an array subexpression' @'
+function Get-Fixture {
+    $colValue = @(1, 2, 3)
+    $tmp = @($colValue | Where-Object { $_.Count -gt 0 -and $_.Count -lt 10 })
+    $tmp
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Negated compound condition on one line' @'
+function Get-Fixture {
+    $colValue = @()
+    if (-not (($colValue.Count -gt 0) -and ($colValue[0]))) {
+        $colValue[0]
+    }
+}
+'@ -Expected 1
+
+Assert-MultilineIfCondition 'Negated compound condition split' @'
+function Get-Fixture {
+    $colValue = @()
+    if (-not (($colValue.Count -gt 0) `
+        -and ($colValue[0]))) {
+        $colValue[0]
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Double negation split' @'
+function Get-Fixture {
+    $colValue = @()
+    if (-not (-not (($colValue.Count -gt 0) `
+        -and ($colValue[0])))) {
+        $colValue[0]
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Mixed operators preserve precedence split' @'
+function Get-Fixture {
+    $colValue = @()
+    if ((($colValue.Count -gt 0) `
+            -and ($colValue[0])) `
+        -or ($colValue.Name)) {
+        $colValue[0]
+    }
+}
+'@
+
+Assert-MultilineIfCondition 'Mixed operators need operand parentheses' @'
+function Get-Fixture {
+    $colValue = @()
+    if (($colValue.Count -gt 0) `
+        -and ($colValue[0]) `
+        -or ($colValue.Name)) {
+        $colValue[0]
+    }
+}
+'@ -Expected 1
 
 Assert-MultilineIfCondition 'Condition in a string' @'
 function Get-Fixture {
