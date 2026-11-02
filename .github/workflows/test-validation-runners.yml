@@ -37,6 +37,9 @@ on:
       - 'build/Test-Ps1DirectParameterCheckRule.ps1'
       - 'build/Test-Ps1ReturnAfterStopRule.ps1'
       - 'build/Test-Ps1PipelineContinuationRule.ps1'
+      - 'build/Test-Ps1ComplexArrayElementRule.ps1'
+      - 'build/Test-Ps1SelectObjectPropertyRule.ps1'
+      - 'build/Test-Ps1MultilineSelectObjectPropertyRule.ps1'
       - 'build/Test-Ps1OneParameterPerLineRule.ps1'
       - 'build/Test-Ps1CentralApiVersionRule.ps1'
       - 'build/Test-Ps1FormattedUrlRule.ps1'
@@ -163,6 +166,15 @@ jobs:
     - name: Test pipeline continuation lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1PipelineContinuationRule.ps1
+    - name: Test complex array element lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ComplexArrayElementRule.ps1
+    - name: Test Select-Object property lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1SelectObjectPropertyRule.ps1
+    - name: Test multiline Select-Object property lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1MultilineSelectObjectPropertyRule.ps1
     - name: Test one-parameter-per-line lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1OneParameterPerLineRule.ps1

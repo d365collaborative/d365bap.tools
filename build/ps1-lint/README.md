@@ -38,6 +38,9 @@ What runs on PowerShell files:
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
   `PSUseReturnAfterStopPSFFunction`,
+  `PSUseOneComplexArrayElementPerLine`,
+  `PSUseExplicitSelectObjectProperty`,
+  `PSUseMultilineSelectObjectProperty`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -972,6 +975,125 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1HeadersVariableRule.ps1
+```
+
+## One complex array element per line
+
+`PSUseOneComplexArrayElementPerLine` requires an array with more than one
+hashtable or scriptblock element to start each complex element on its own line.
+Simple strings and numbers may share a line. The rule accepts any split that
+keeps the complex elements apart:
+
+```powershell
+# Fails
+$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
+
+# Passes: trailing comma
+$colPolicies = @($colPolicies |
+    Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
+    @{ Expression = { $_.name } },
+    @{ Expression = { $_.id } })
+
+# Passes: array variable
+$colSort = @(
+    @{ Expression = { -not $_.IsEffective } }
+    @{ Expression = { $_.name } }
+    @{ Expression = { $_.id } }
+)
+$colPolicies = @($colPolicies | Sort-Object -Property $colSort)
+
+# Passes: simple property names after the one expression
+$colPolicies = @($colPolicies |
+    Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, 'name', 'id')
+```
+
+A one-line `@( ... )` subexpression that contains a hashtable or scriptblock is
+reported too, so the element moves onto its own line inside the array:
+
+```powershell
+# Fails
+$tmpConnectorManagement = @($item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
+
+# Passes
+$tmpConnectorManagement = @(
+    $item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }
+) | Select-Object -First 1
+
+# Passes: no complex element
+$objItem = @($items | Select-Object -First 1)
+```
+
+A `[pscustomobject]@{ ... }` element counts as complex. A single complex element
+may stay on the command line. Test files, tepp fixtures, and `build/` scripts are
+exempt. The rule runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ComplexArrayElementRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1SelectObjectPropertyRule.ps1
+```
+
+## Select-Object projections
+
+`PSUseExplicitSelectObjectProperty` requires `Select-Object` to name `-Property`
+when its positional property list contains a calculated property:
+
+```powershell
+# Fails
+$item | Select-Object *, @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }
+```
+
+Simple property names, `-First`, `-ExpandProperty`, and a splat stay clean.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
+
+## Multiline Select-Object properties
+
+`PSUseMultilineSelectObjectProperty` requires a calculated property on a
+`Select-Object` property list to start on its own line. A list with one
+calculated property and another element on the same line is reported:
+
+```powershell
+# Fails: simple name and calculated property on one line
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }
+
+# Fails: two calculated properties on one line
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'Source'; Expression = { $source } }
+
+# Fails: the second calculated property shares the first line
+$item | Select-Object -Property *,
+    @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'Source'; Expression = { $source } }
+
+# Passes
+$item | Select-Object -Property *,
+    @{ Name = 'Kind'; Expression = { $kind } },
+    @{ Name = 'Source'; Expression = { $source } }
+
+# Passes: the calculated property starts on the next line
+$item | Select-Object -Property *
+, @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes: one calculated property
+$item | Select-Object -Property @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes: one calculated property on a continuation line
+$item | Select-Object `
+    -Property @{ Name = 'Kind'; Expression = { $kind } }
+```
+
+A single calculated property may share the line with `-Property`. Simple
+property names, a splat, and a parameter argument such as `-ExpandProperty Name`
+are not checked. Test files, tepp fixtures, and `build/` scripts are exempt. The
+rule runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineSelectObjectPropertyRule.ps1
 ```
 
 ## Central API version
