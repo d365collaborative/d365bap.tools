@@ -1169,18 +1169,13 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectParameterCheckRule.ps1
 ## Pipeline continuation
 
 `PSUsePipelineContinuationBreak` requires a pipeline with more than one command
-to break after each pipe. The pipe stays at the end of the line; the next
-command starts a new line:
+to break after each pipe. A single-line pipeline keeps the pipe at the end of
+the line and starts the next command on a new line. A multiline pipeline
+element keeps the pipe and the next command on the closing line:
 
 ```powershell
 # Fails
 $envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
-
-# Fails: the closing brace and the next command share a line
-$body = [ordered]@{
-    name     = $Name
-    ruleSets = @($RuleSet)
-} | ConvertTo-Json -Depth 20
 
 # Fails: leading pipe
 $envObj = Get-Environment -EnvironmentId $EnvironmentId
@@ -1190,7 +1185,13 @@ $envObj = Get-Environment -EnvironmentId $EnvironmentId
 $envObj = Get-Environment -EnvironmentId $EnvironmentId |
     Select-Object -First 1
 
-# Passes: the closing brace stays on its own line
+# Passes: the closing brace, the pipe, and the next command share a line
+$body = [ordered]@{
+    name     = $Name
+    ruleSets = @($RuleSet)
+} | ConvertTo-Json -Depth 20
+
+# Fails: the pipe and the next command leave the closing line
 $body = [ordered]@{
     name     = $Name
     ruleSets = @($RuleSet)
@@ -1198,9 +1199,10 @@ $body = [ordered]@{
     ConvertTo-Json -Depth 20
 ```
 
-A single-command pipeline is not checked. A pipe inside a string is not a
-pipeline. Test files and tepp fixtures are exempt. The rule runs on module code
-(public and internal).
+A multiline element ends with `}`, `)`, or a backtick continuation and keeps
+`|` plus the next command on that line. A single-command pipeline is not
+checked. A pipe inside a string is not a pipeline. Test files and tepp fixtures
+are exempt. The rule runs on module code (public and internal).
 
 Run its regression checks under PowerShell 7.6 or later:
 

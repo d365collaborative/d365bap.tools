@@ -38,6 +38,17 @@ function Get-Ps1PipelineContinuationDiagnostic {
 			}
 			if ($null -eq $pipe) { continue }
 
+			if ($previous.Extent.StartLineNumber -ne $previous.Extent.EndLineNumber) {
+				$isClosingLine = $pipe.Extent.StartLineNumber -eq $previous.Extent.EndLineNumber -and
+				$next.Extent.StartLineNumber -eq $pipe.Extent.EndLineNumber
+				if ($isClosingLine) { continue }
+
+				New-Ps1PipelineContinuationDiagnostic -Path $Path `
+					-Extent $pipe.Extent `
+					-Message 'Keep `|` and the next command on the closing line of a multiline pipeline element: } | ConvertTo-Json.'
+				break
+			}
+
 			if ($previous.Extent.EndLineNumber -eq $next.Extent.StartLineNumber) {
 				New-Ps1PipelineContinuationDiagnostic -Path $Path `
 					-Extent $pipe.Extent `
