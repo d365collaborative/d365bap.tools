@@ -38,6 +38,7 @@ What runs on PowerShell files:
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
   `PSUseMultilineIfExpression`,
+  `PSUseMultilineIfCondition`, `PSUseTernaryInObjectInitialization`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -988,14 +989,132 @@ $fullId = $itemConnector -like '/providers/*' ? $itemConnector : "/providers/Mic
 
 The `{` and `}` of each branch and the `else` keyword each start on their own
 line. An `if` expression without an `else` is not reported. A plain `if`
-statement is not an assignment and is not reported. Test files, tepp fixtures,
-and `build/` scripts are exempt. The rule runs on module code (public and
-internal).
+statement is not an assignment and is not reported. An `if` expression used as
+an object initializer value belongs to `PSUseTernaryInObjectInitialization`.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
 
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineIfExpressionRule.ps1
+```
+
+## Ternary in object initializers
+
+`PSUseTernaryInObjectInitialization` requires an `if`/`else` used as a hashtable
+value to be a ternary operator instead. A multiline `if` block inside a
+hashtable breaks the property layout; the ternary keeps one value on one line:
+
+```powershell
+# Fails
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) { '1.0' } else { $objRuleSet.version }
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Fails: a multiline branch does not fix the object layout
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) {
+        '1.0'
+    }
+    else {
+        $objRuleSet.version
+    }
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Passes
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = [string]::IsNullOrWhiteSpace("$($objRuleSet.version")) ? '1.0' : $objRuleSet.version
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Passes: an if without an else has no ternary equivalent
+$hashRuleSet = @{
+    version = if ($Version) { $Version.ToString() }
+}
+```
+
+The rule covers every hashtable literal, including `[ordered]@{}` and
+`[pscustomobject]@{}` values and nested hashtables. Only an `if` with an `else`
+is reported. Property assignments are not object initializers and stay with
+`PSUseMultilineIfExpression`. Test files, tepp fixtures, and `build/` scripts
+are exempt.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1TernaryInObjectInitializationRule.ps1
+```
+
+## Multiline if conditions
+
+`PSUseMultilineIfCondition` requires every test in a compound `if` or `elseif`
+condition to sit in parentheses on its own line. The parentheses and the line
+break show which tests belong together:
+
+```powershell
+# Fails: two tests on one line
+if (-Not ($null -eq $objGroup) -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Fails: split, but the tests are not parenthesized
+if (-Not ($null -eq $objGroup) -and
+    -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Fails: parenthesized, but both tests share a line
+if ((-Not ($null -eq $objGroup)) -and (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Passes
+if ((-Not ($null -eq $objGroup)) -and
+    (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Passes: three tests
+if (($null -eq $objValue) -and
+    ($objValue.Count -gt 0) -and
+    ($objValue[0])) {
+    $objValue[0]
+}
+
+# Passes: a condition inside the if parentheses
+if (
+    ($objValue.Count -gt 0) -and
+    ($objValue[0])
+) {
+    $objValue[0]
+}
+
+# Passes: nested -or tests are split and parenthesized too
+if (($colValue.Count -gt 0) -and
+    (($colValue[0] -eq 'a') -or
+        ($colValue[0] -eq 'b'))) {
+    $colValue[0]
+}
+```
+
+Every operand of an `-and` or `-or` chain must start on its own line and be a
+parenthesized expression. A chain of the same operator is read left to right, so
+three or more tests produce one line per test. A nested `-and` or `-or` is
+checked recursively. A single test, an `if` expression, and a `Where-Object`
+script block are not compound conditions and are not reported. Test files, tepp
+fixtures, and `build/` scripts are exempt. The rule runs on module code (public
+and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineIfConditionRule.ps1
 ```
 
 ## Central API version

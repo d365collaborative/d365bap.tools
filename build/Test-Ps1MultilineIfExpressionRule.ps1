@@ -5,7 +5,8 @@
 .DESCRIPTION
     Parses fixture scripts and checks that an if/else used as an assignment
     value puts each branch on its own lines. A declared variable with an if
-    statement and a ternary stay clean.
+    statement and a ternary stay clean. Object initializer values are covered
+    by the ternary rule instead.
 #>
 [CmdletBinding()]
 param()
@@ -72,15 +73,6 @@ function Get-Fixture {
 }
 '@ -Expected 1
 
-Assert-MultilineIfExpression 'Hashtable value' @'
-function Get-Fixture {
-    $params = @{
-        Version = if ($Version) { $Version.ToString() } else { $null }
-    }
-    $params
-}
-'@ -Expected 1
-
 Assert-MultilineIfExpression 'Property assignment' @'
 function Get-Fixture {
     $tmp = [pscustomobject]@{ DestinationVersion = $null }
@@ -88,6 +80,12 @@ function Get-Fixture {
     $tmp
 }
 '@ -Expected 1
+
+Assert-MultilineIfExpression 'Command parameter value' @'
+function Get-Fixture {
+    Get-Thing -Value (if ($value -eq 'N/A') { '0.0.0.0' } else { $value })
+}
+'@
 
 Assert-MultilineIfExpression 'Multiline if expression' @'
 function Get-Fixture {
@@ -98,20 +96,6 @@ function Get-Fixture {
         "/providers/Microsoft.PowerApps/apis/$itemConnector"
     }
     $fullId
-}
-'@
-
-Assert-MultilineIfExpression 'Multiline hashtable value' @'
-function Get-Fixture {
-    $params = @{
-        Version = if ($Version) {
-            $Version.ToString()
-        }
-        else {
-            $null
-        }
-    }
-    $params
 }
 '@
 
@@ -160,6 +144,20 @@ Assert-MultilineIfExpression 'Single line if without else' @'
 function Get-Fixture {
     $value = if ($Kind) { 'a' }
     $value
+}
+'@
+
+Assert-MultilineIfExpression 'Hashtable value is the ternary rule' @'
+function Get-Fixture {
+    $params = @{
+        Version = if ($Version) {
+            $Version.ToString()
+        }
+        else {
+            $null
+        }
+    }
+    $params
 }
 '@
 

@@ -70,16 +70,4 @@ function Get-Ps1MultilineIfExpressionDiagnostic {
 			-Extent $itemAssignment.Right.Extent `
 			-Message $message
 	}
-
-	foreach ($itemHashtable in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.HashtableAst] }, $true)) {
-		foreach ($itemPair in $itemHashtable.KeyValuePairs) {
-			if ($itemPair.Item2 -isnot [Management.Automation.Language.IfStatementAst]) { continue }
-			if ($null -eq $itemPair.Item2.ElseClause) { continue }
-			if (Test-Ps1MultilineIfStatement -If $itemPair.Item2) { continue }
-
-			New-Ps1MultilineIfExpressionDiagnostic -Path $Path `
-				-Extent $itemPair.Item2.Extent `
-				-Message $message
-		}
-	}
 }
