@@ -162,6 +162,17 @@ registering it in `Get-Ps1DiagnosticRule`, and adding a
 `build/Test-Ps1*Rule.ps1` suite (registered in
 `build/Test-Ps1RuleSuites.ps1`).
 
+`Invoke-Ps1Analysis -SkipCustomRules` is the built-in-only mode the full-module
+scans use. It passes the same flag to `Get-Ps1Analysis`, which then builds only
+what the built-in analyzer and the failure policy read: the parse result,
+tokens, parse errors, the scope flags, and the node and token caches. Comment
+groups and help sections serve repository rules only, and each comment group
+parses the whole file again, so built-in-only scans do not build them and the
+analysis carries no `CommentGroups` or `HelpSections` key.
+`Test-Ps1LintCorrectness.ps1` pins both halves: the entry point asks for the
+mode, and the keys are absent. Diagnostics, parse errors, and the severity and
+high-signal failure rules do not change.
+
 ### Repository metadata index
 
 Rules that need repository facts share one index per module root and analysis
