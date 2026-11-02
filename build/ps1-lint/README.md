@@ -1,4 +1,4 @@
-﻿# ps1-lint (vendored)
+# ps1-lint (vendored)
 
 PowerShell lint hook scripts for `prek.toml`. They started as a copy of the
 PS1 hooks from an internal-only module and are maintained in this repo from
@@ -35,6 +35,7 @@ What runs on PowerShell files:
   `PSUseStandardExcelExport`,
   `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
+  `PSUseOneParameterPerLine`, `PSUseVariableForHeaders`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -867,6 +868,49 @@ A backtick inside a string, here-string, or comment is not a continuation and
 stays clean. Test files, tepp fixtures, and the rest of `build/` are out of
 scope. The rule runs on changed files only, so the existing multi-parameter
 lines migrate as their files are touched.
+
+## Headers variables
+
+`PSUseVariableForHeaders` requires the `-Headers` argument to be a variable or
+another expression, never an inline hashtable. The inline form puts the
+hashtable body next to the command parameters, so the end of the hashtable is
+hard to see in a multi-line call:
+
+```powershell
+# Fails
+$created = Invoke-RestMethod -Method Post `
+    -Uri $uri `
+    -Headers @{
+    Authorization = "Bearer $tokenValue"
+    Accept        = 'application/json'
+} `
+    -Body $body `
+    -ErrorAction Stop
+
+# Passes
+$hashHeaders = @{
+    Authorization = "Bearer $tokenValue"
+    Accept        = 'application/json'
+}
+
+$created = Invoke-RestMethod -Method Post `
+    -Uri $uri `
+    -Headers $hashHeaders `
+    -Body $body `
+    -ErrorAction Stop
+```
+
+A parenthesized hashtable and an `[ordered]` cast are reported too. A variable,
+a member expression, and a command that returns headers pass. The rule matches
+the `-Headers` parameter name on any command. A splat is not resolved. Test
+files, tepp fixtures, and `build/` scripts are exempt. The rule runs on module
+code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1HeadersVariableRule.ps1
+```
 
 ## Central API version
 

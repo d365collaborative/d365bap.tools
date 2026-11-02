@@ -35,6 +35,7 @@ on:
       - 'build/Test-Ps1LoopAppendRule.ps1'
       - 'build/Test-Ps1NullComparisonRule.ps1'
       - 'build/Test-Ps1DirectStringCheckRule.ps1'
+      - 'build/Test-Ps1HeadersVariableRule.ps1'
       - 'build/Test-Ps1OneParameterPerLineRule.ps1'
       - 'build/Test-Ps1CentralApiVersionRule.ps1'
       - 'build/Test-Ps1FormattedUrlRule.ps1'
@@ -155,6 +156,9 @@ jobs:
     - name: Test direct value string check lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1DirectStringCheckRule.ps1
+    - name: Test headers variable lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1HeadersVariableRule.ps1
     - name: Test one-parameter-per-line lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1OneParameterPerLineRule.ps1
