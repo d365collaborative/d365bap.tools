@@ -66,6 +66,7 @@ function Get-PpacEnvironmentConnection {
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$requestUri = 'https://api.powerplatform.com/connectivity/environments/{0}/connections?api-version={1}' `
 			-f $objRoute.RouteId,
@@ -84,48 +85,66 @@ function Get-PpacEnvironmentConnection {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the connection request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
 		$colItems = @($result.value)
-		$colItems = @($colItems | Where-Object {
-				$connectorName = if ([string]::IsNullOrWhiteSpace("$($_.properties.apiId)")) { $null } else { ($_.properties.apiId -split '/')[-1] }
-				($_.id -like $Name -or $_.id -eq $Name) `
-					-or ($_.name -like $Name -or $_.name -eq $Name) `
-					-or ($_.properties.displayName -like $Name -or $_.properties.displayName -eq $Name) `
-					-or ($_.properties.apiId -like $Name -or $_.properties.apiId -eq $Name) `
-					-or ($connectorName -like $Name -or $connectorName -eq $Name)
+		$colItems = @($colItems |
+			Where-Object {
+				$connectorName = [string]::IsNullOrWhiteSpace($_.properties.apiId) ? $null : ($_.properties.apiId -split '/')[-1]
+				(($_.id -like $Name) `
+					-or ($_.id -eq $Name)) `
+					-or (($_.name -like $Name) `
+						-or ($_.name -eq $Name)) `
+					-or (($_.properties.displayName -like $Name) `
+						-or ($_.properties.displayName -eq $Name)) `
+					-or (($_.properties.apiId -like $Name) `
+						-or ($_.properties.apiId -eq $Name)) `
+					-or (($connectorName -like $Name) `
+						-or ($connectorName -eq $Name))
 			})
-		$colItems = @($colItems | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
+		$colItems = @($colItems |
+			Sort-Object -Property @{ Expression = { $_.properties.displayName } },
+			@{ Expression = { $_.name } })
 
 		$colRes = @(
-			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnection' `
-				-Property `
-				'id as ConnectionId',
-			'name as ConnectionName',
-			'properties.displayName as DisplayName',
-			'properties.apiId as ConnectorId',
-			@{ Name = 'ConnectorName'; Expression = { if (-not [string]::IsNullOrWhiteSpace("$($_.properties.apiId)")) { ($_.properties.apiId -split '/')[-1] } } },
-			'properties.accountName as AccountName',
-			@{ Name = 'Status'; Expression = { ($_.properties.statuses.status | Where-Object { $_ } | Sort-Object -Unique) -join ', ' } },
-			'properties.statuses as Statuses',
-			@{ Name = 'CreatedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace("$($_.properties.createdBy.userPrincipalName)")) { $_.properties.createdBy.userPrincipalName } else { $_.properties.createdBy.displayName } } },
-			'properties.createdTime as CreatedTime',
-			'properties.lastModifiedTime as LastModifiedTime',
-			'properties.expirationTime as ExpirationTime',
-			'properties.allowSharing as AllowSharing',
-			'properties.isSsoConnection as IsSsoConnection',
-			'properties.environment.id as EnvironmentId',
-			'properties.environment.name as EnvironmentName',
-			@{ Name = 'PpacEnvId'; Expression = { $objRoute.RouteId } },
-			@{ Name = 'PpacEnvName'; Expression = { $objRoute.RouteName } }
+			foreach ($itemRow in $colItems) {
+				$tmpStatus = @($itemRow.properties.statuses.status).Where({ $_ }) |
+				Sort-Object -Unique
+
+				$itemRow |
+				Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnection' `
+					-Property `
+					'id as ConnectionId',
+				'name as ConnectionName',
+				'properties.displayName as DisplayName',
+				'properties.apiId as ConnectorId',
+				@{ Name = 'ConnectorName'; Expression = { if (-not [string]::IsNullOrWhiteSpace($_.properties.apiId)) { ($_.properties.apiId -split '/')[-1] } } },
+				'properties.accountName as AccountName',
+				@{ Name = 'Status'; Expression = { $tmpStatus -join ', ' } },
+				'properties.statuses as Statuses',
+				@{ Name = 'CreatedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace($_.properties.createdBy.userPrincipalName)) { $_.properties.createdBy.userPrincipalName } else { $_.properties.createdBy.displayName } } },
+				'properties.createdTime as CreatedTime',
+				'properties.lastModifiedTime as LastModifiedTime',
+				'properties.expirationTime as ExpirationTime',
+				'properties.allowSharing as AllowSharing',
+				'properties.isSsoConnection as IsSsoConnection',
+				'properties.environment.id as EnvironmentId',
+				'properties.environment.name as EnvironmentName',
+				@{ Name = 'PpacEnvId'; Expression = { $objRoute.RouteId } },
+				@{ Name = 'PpacEnvName'; Expression = { $objRoute.RouteName } }
+			}
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnection' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentConnection' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

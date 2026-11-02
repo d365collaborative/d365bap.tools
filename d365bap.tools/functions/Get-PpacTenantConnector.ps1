@@ -61,7 +61,7 @@ function Get-PpacTenantConnector {
 	process {
 		$tenantId = $null
 		try { $tenantId = (Get-BapContext).TenantId } catch { $tenantId = $null }
-		if ([string]::IsNullOrWhiteSpace("$tenantId")) {
+		if ([string]::IsNullOrWhiteSpace($tenantId)) {
 			Stop-PSFFunction -Message "Could not resolve the current tenant id."
 			return
 		}
@@ -70,9 +70,10 @@ function Get-PpacTenantConnector {
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$filter = [uri]::EscapeDataString("environment eq '$routeId'")
-		$isItemLookup = $PSBoundParameters.ContainsKey('ConnectorId')
+		$isItemLookup = -not [string]::IsNullOrWhiteSpace($ConnectorId)
 
 		if ($isItemLookup) {
 			$connectorKey = ($ConnectorId -split '/')[-1]
@@ -104,8 +105,10 @@ function Get-PpacTenantConnector {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the connector request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
@@ -114,17 +117,24 @@ function Get-PpacTenantConnector {
 		}
 		else {
 			$colItems = @($result.value)
-			$colItems = @($colItems | Where-Object {
-					($_.id -like $Name -or $_.id -eq $Name) `
-						-or ($_.name -like $Name -or $_.name -eq $Name) `
-						-or ($_.properties.displayName -like $Name -or $_.properties.displayName -eq $Name)
+			$colItems = @($colItems |
+				Where-Object {
+					(($_.id -like $Name) `
+						-or ($_.id -eq $Name)) `
+						-or (($_.name -like $Name) `
+							-or ($_.name -eq $Name)) `
+						-or (($_.properties.displayName -like $Name) `
+							-or ($_.properties.displayName -eq $Name))
 				})
 		}
 
-		$colItems = @($colItems | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
+		$colItems = @($colItems |
+			Sort-Object -Property @{ Expression = { $_.properties.displayName } },
+			@{ Expression = { $_.name } })
 
 		$colRes = @(
-			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantConnector' `
+			$colItems |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantConnector' `
 				-Property `
 				'id as ConnectorId',
 			'name as ConnectorName',
@@ -142,8 +152,10 @@ function Get-PpacTenantConnector {
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacTenantConnector' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacTenantConnector' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

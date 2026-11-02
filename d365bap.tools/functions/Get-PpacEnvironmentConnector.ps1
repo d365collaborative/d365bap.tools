@@ -64,6 +64,7 @@ function Get-PpacEnvironmentConnector {
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$filter = [uri]::EscapeDataString("environment eq '$($objRoute.RouteId -replace "'", "''")'")
 		$requestUri = 'https://api.powerplatform.com/connectivity/environments/{0}/connectors?$filter={1}&api-version={2}' `
@@ -84,21 +85,30 @@ function Get-PpacEnvironmentConnector {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the connector request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
 		$colItems = @($result.value)
-		$colItems = @($colItems | Where-Object {
-				($_.id -like $Name -or $_.id -eq $Name) `
-					-or ($_.name -like $Name -or $_.name -eq $Name) `
-					-or ($_.properties.displayName -like $Name -or $_.properties.displayName -eq $Name)
+		$colItems = @($colItems |
+			Where-Object {
+				(($_.id -like $Name) `
+					-or ($_.id -eq $Name)) `
+					-or (($_.name -like $Name) `
+						-or ($_.name -eq $Name)) `
+					-or (($_.properties.displayName -like $Name) `
+						-or ($_.properties.displayName -eq $Name))
 			})
-		$colItems = @($colItems | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
+		$colItems = @($colItems |
+			Sort-Object -Property @{ Expression = { $_.properties.displayName } },
+			@{ Expression = { $_.name } })
 
 		$colRes = @(
-			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnector' `
+			$colItems |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnector' `
 				-Property `
 				'id as ConnectorId',
 			'name as ConnectorName',
@@ -117,8 +127,10 @@ function Get-PpacEnvironmentConnector {
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnector' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentConnector' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 
