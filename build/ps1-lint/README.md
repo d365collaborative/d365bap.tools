@@ -88,6 +88,37 @@ first on `PSModulePath`, and requires byte-identical formatting and identical
 analysis to a run without it. Because CI and local runs execute the same hook
 scripts, that check covers both.
 
+### Rule plumbing
+
+Each rule function receives the analysis hashtable from `Get-Ps1Analysis`
+(`internal/Get-Ps1Analysis.ps1`). The hashtable carries the parsed `Ast`,
+`Tokens`, and `ParseErrors`, plus `CommentGroups`, `HelpSections`, and the
+values the shared helpers use. Rules keep their own checks; the repeated
+plumbing lives in four helpers:
+
+- `Test-Ps1RuleScope -Analysis $Analysis -Scope <name>` decides whether a
+  rule applies to the file. The scope table names the supported scopes:
+  `ModuleSource` (module code, no tests or tepp), `ModuleSourceWithTepp`,
+  `ModuleOrBuild`, `ModuleOrLintTooling`, `PublicFunction`, `FunctionFile`,
+  `OutputTypeFile`, `RepositoryScript`, and `Documentation`. A rule calls it
+  once and returns when it is false; no rule normalizes a path on its own.
+- `Get-Ps1AstNode -Analysis $Analysis -Type <name>[,<name>] [-Root <node>]`
+  returns the nodes of one or more AST types in document order. The result is
+  collected once per analysis, search root, and type set, so every rule that
+  asks the same question reuses the same collection. Pass a root node to
+  search inside a function body. Do not mutate a returned collection.
+- `Get-Ps1TokenNode -Analysis $Analysis -Kind <TokenKind>` does the same for
+  a token kind such as `Pipe`, `LineContinuation`, or `Format`.
+- `New-Ps1Diagnostic $Path $RuleName $Message $Extent` is the only
+  diagnostic shape. It always reports `Error` severity and takes the line and
+  column from the extent. Pass `$null` for the extent and then the line and
+  column when the position is not an extent.
+
+Rule logic stays in the rule file. Adding a rule means writing its checks,
+registering it in `Get-Ps1DiagnosticRule`, and adding a
+`build/Test-Ps1*Rule.ps1` suite (registered in
+`build/Test-Ps1RuleSuites.ps1`).
+
 ### High-signal built-in warnings
 
 These existing PSScriptAnalyzer rules are fatal for module and build code even

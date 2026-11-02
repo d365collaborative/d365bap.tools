@@ -1,26 +1,10 @@
-﻿function New-Ps1LoopAppendDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSAvoidLoopAppend'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
-function Get-Ps1LoopAppendDiagnostic {
+﻿function Get-Ps1LoopAppendDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	foreach ($itemLoop in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ForEachStatementAst] }, $true)) {
+	foreach ($itemLoop in @(Get-Ps1AstNode $Analysis ForEachStatementAst)) {
 		$tmpStatements = @($itemLoop.Body.Statements)
 		if ($tmpStatements.Count -ne 1) { continue }
 
@@ -44,6 +28,6 @@ function Get-Ps1LoopAppendDiagnostic {
 		if ($tmpArguments[0] -isnot [Management.Automation.Language.VariableExpressionAst]) { continue }
 		if ($tmpArguments[0].VariablePath.UserPath -ne $itemLoop.Variable.VariablePath.UserPath) { continue }
 
-		New-Ps1LoopAppendDiagnostic -Path $Path -Extent $itemLoop.Extent -Message 'This foreach only copies the loop variable into another collection. Use AddRange, assign the source directly when the loop is not paginating, or UnionWith for a set.'
+		New-Ps1Diagnostic $Path 'PSAvoidLoopAppend' 'This foreach only copies the loop variable into another collection. Use AddRange, assign the source directly when the loop is not paginating, or UnionWith for a set.' $itemLoop.Extent
 	}
 }

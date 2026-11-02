@@ -18,29 +18,13 @@
 	$itemValue.Extent.Text
 }
 
-function New-Ps1DirectStringCheckDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseDirectValueInStringCheck'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1DirectStringCheckDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	foreach ($itemInvoke in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.InvokeMemberExpressionAst] }, $true)) {
+	foreach ($itemInvoke in @(Get-Ps1AstNode $Analysis InvokeMemberExpressionAst)) {
 		if (-not $itemInvoke.Static) { continue }
 		if ($itemInvoke.Expression -isnot [Management.Automation.Language.TypeExpressionAst]) { continue }
 		if ($itemInvoke.Expression.TypeName.FullName -notmatch '^(?i)(System\.)?String$') { continue }
@@ -51,9 +35,7 @@ function Get-Ps1DirectStringCheckDiagnostic {
 			$valueText = Get-Ps1DirectStringCheckValue -Argument $itemArgument
 			if ($null -eq $valueText) { continue }
 
-			New-Ps1DirectStringCheckDiagnostic -Path $Path `
-				-Extent $itemArgument.Extent `
-				-Message "[string]::$($itemInvoke.Member.Value) already converts the value to a string. Pass the value directly: [string]::$($itemInvoke.Member.Value)($valueText)."
+			New-Ps1Diagnostic $Path 'PSUseDirectValueInStringCheck' "[string]::$($itemInvoke.Member.Value) already converts the value to a string. Pass the value directly: [string]::$($itemInvoke.Member.Value)($valueText)." $itemArgument.Extent
 		}
 	}
 }

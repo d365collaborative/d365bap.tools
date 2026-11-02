@@ -31,34 +31,18 @@
 	$hashFunctions
 }
 
-function New-Ps1ModuleSplattingDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSAvoidSplattingForModuleCommands'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1ModuleSplattingDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
 	$moduleRoot = Get-Ps1ModuleRoot -Path $Path
 	if ([string]::IsNullOrEmpty($moduleRoot)) { return }
 
 	$hashFunctions = Get-Ps1ModuleFunctionIndex -ModuleRoot $moduleRoot
 
-	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$commandName = $itemCommand.GetCommandName()
 		if ($null -eq $commandName) { continue }
 
@@ -72,9 +56,7 @@ function Get-Ps1ModuleSplattingDiagnostic {
 			if (-not $itemElement.Splatted) { continue }
 
 			$splatName = '@' + $itemElement.VariablePath.UserPath
-			New-Ps1ModuleSplattingDiagnostic -Path $Path `
-				-Extent $itemElement.Extent `
-				-Message "Do not splat $splatName into the module command $shortName. Pass its parameters explicitly."
+			New-Ps1Diagnostic $Path 'PSAvoidSplattingForModuleCommands' "Do not splat $splatName into the module command $shortName. Pass its parameters explicitly." $itemElement.Extent
 		}
 	}
 }

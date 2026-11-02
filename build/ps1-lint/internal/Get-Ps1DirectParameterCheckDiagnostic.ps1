@@ -150,29 +150,13 @@ function Test-Ps1DirectValueTest {
 	$false
 }
 
-function New-Ps1DirectParameterCheckDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseDirectParameterCheck'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1DirectParameterCheckDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	foreach ($itemMember in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.MemberExpressionAst] }, $true)) {
+	foreach ($itemMember in @(Get-Ps1AstNode $Analysis MemberExpressionAst)) {
 		if ($itemMember.Expression -isnot [Management.Automation.Language.VariableExpressionAst]) { continue }
 		if ($itemMember.Expression.VariablePath.UserPath -ine 'PSCmdlet') { continue }
 		if ($itemMember.Member -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
@@ -194,14 +178,10 @@ function Get-Ps1DirectParameterCheckDiagnostic {
 					-SetName $tmpNonDefault[0]
 			}
 			if ($null -eq $parameterName) {
-				New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-					-Extent $itemMember.Extent `
-					-Message 'Do not switch on $PSCmdlet.ParameterSetName. Test the parameter directly instead.'
+				New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' 'Do not switch on $PSCmdlet.ParameterSetName. Test the parameter directly instead.' $itemMember.Extent
 				continue
 			}
-			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-				-Extent $itemMember.Extent `
-				-Message "Do not switch on `$PSCmdlet.ParameterSetName. Test the parameter directly: if (-not `$$parameterName) { ... }."
+			New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Do not switch on `$PSCmdlet.ParameterSetName. Test the parameter directly: if (-not `$$parameterName) { ... }." $itemMember.Extent
 			continue
 		}
 
@@ -224,9 +204,7 @@ function Get-Ps1DirectParameterCheckDiagnostic {
 		}
 
 		if ($null -eq $parameterName) {
-			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-				-Extent $itemMember.Extent `
-				-Message 'Do not test $PSCmdlet.ParameterSetName. Test the parameter directly instead.'
+			New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' 'Do not test $PSCmdlet.ParameterSetName. Test the parameter directly instead.' $itemMember.Extent
 			continue
 		}
 
@@ -236,18 +214,14 @@ function Get-Ps1DirectParameterCheckDiagnostic {
 		}
 		if ($assignment -is [Management.Automation.Language.AssignmentStatementAst] -and $assignment.Left -is [Management.Automation.Language.VariableExpressionAst]) {
 			$variableName = $assignment.Left.VariablePath.UserPath
-			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-				-Extent $itemMember.Extent `
-				-Message "Do not store `$PSCmdlet.ParameterSetName. Test the parameter directly: `$$variableName = [bool] `$$parameterName."
+			New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Do not store `$PSCmdlet.ParameterSetName. Test the parameter directly: `$$variableName = [bool] `$$parameterName." $itemMember.Extent
 			continue
 		}
 
-		New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-			-Extent $itemMember.Extent `
-			-Message "Do not test `$PSCmdlet.ParameterSetName. The set is selected by -$parameterName; test the parameter directly: if (`$$parameterName) { ... } else { ... }."
+		New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Do not test `$PSCmdlet.ParameterSetName. The set is selected by -$parameterName; test the parameter directly: if (`$$parameterName) { ... } else { ... }." $itemMember.Extent
 	}
 
-	foreach ($itemInvoke in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.InvokeMemberExpressionAst] }, $true)) {
+	foreach ($itemInvoke in @(Get-Ps1AstNode $Analysis InvokeMemberExpressionAst)) {
 		if ($itemInvoke.Expression -isnot [Management.Automation.Language.VariableExpressionAst]) { continue }
 		if ($itemInvoke.Expression.VariablePath.UserPath -ine 'PSBoundParameters') { continue }
 		if ($itemInvoke.Member -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
@@ -269,36 +243,26 @@ function Get-Ps1DirectParameterCheckDiagnostic {
 		$parameterName = $parameter.Name.VariablePath.UserPath
 
 		if (Test-Ps1DirectMandatory -Parameter $parameter) {
-			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-				-Extent $itemInvoke.Extent `
-				-Message "Parameter -$parameterName is mandatory and always bound. Remove the `$PSBoundParameters.$($itemInvoke.Member.Value)('$key') check."
+			New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Parameter -$parameterName is mandatory and always bound. Remove the `$PSBoundParameters.$($itemInvoke.Member.Value)('$key') check." $itemInvoke.Extent
 			continue
 		}
 
 		if (Test-Ps1DirectValueTest -Node $itemInvoke `
 				-Name $parameterName) {
-			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-				-Extent $itemInvoke.Extent `
-				-Message "Remove the redundant `$PSBoundParameters.$($itemInvoke.Member.Value)('$key') check; the value test for `$$parameterName already decides."
+			New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Remove the redundant `$PSBoundParameters.$($itemInvoke.Member.Value)('$key') check; the value test for `$$parameterName already decides." $itemInvoke.Extent
 			continue
 		}
 
 		if ($parameterName -match '(?i)Version$') {
-			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-				-Extent $itemInvoke.Extent `
-				-Message "Do not gate the default on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). Use if ([string]::IsNullOrWhiteSpace(`$$parameterName)) { <default> } else { `$$parameterName }, or give -$parameterName a default value."
+			New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Do not gate the default on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). Use if ([string]::IsNullOrWhiteSpace(`$$parameterName)) { <default> } else { `$$parameterName }, or give -$parameterName a default value." $itemInvoke.Extent
 			continue
 		}
 
 		if ($parameter.StaticType -eq [string]) {
-			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-				-Extent $itemInvoke.Extent `
-				-Message "Do not gate on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). An omitted string parameter is empty; test the value directly with [string]::IsNullOrEmpty(`$$parameterName) or if (`$$parameterName). Do not add a default value."
+			New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Do not gate on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). An omitted string parameter is empty; test the value directly with [string]::IsNullOrEmpty(`$$parameterName) or if (`$$parameterName). Do not add a default value." $itemInvoke.Extent
 			continue
 		}
 
-		New-Ps1DirectParameterCheckDiagnostic -Path $Path `
-			-Extent $itemInvoke.Extent `
-			-Message "Do not gate on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). Trust the parameter's null value and test -not (`$null -eq `$$parameterName) directly. Do not add a default value."
+		New-Ps1Diagnostic $Path 'PSUseDirectParameterCheck' "Do not gate on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). Trust the parameter's null value and test -not (`$null -eq `$$parameterName) directly. Do not add a default value." $itemInvoke.Extent
 	}
 }

@@ -83,37 +83,19 @@ function Test-Ps1StopFollowedByExit {
 	$true
 }
 
-function New-Ps1ReturnAfterStopDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseReturnAfterStopPSFFunction'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1ReturnAfterStopDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$commandName = $itemCommand.GetCommandName()
 		if ($null -eq $commandName) { continue }
 		if (($commandName -split '\\')[-1] -ine 'Stop-PSFFunction') { continue }
 		if (-not (Test-Ps1PlainStop -Command $itemCommand)) { continue }
 		if (Test-Ps1StopFollowedByExit -Command $itemCommand) { continue }
 
-		New-Ps1ReturnAfterStopDiagnostic -Path $Path `
-			-Extent $itemCommand.Extent `
-			-Message 'A plain Stop-PSFFunction must be followed by return, throw, or exit. Add a return, or pass -StepsUpward, -EnableException, or -Continue when continuing is intended.'
+		New-Ps1Diagnostic $Path 'PSUseReturnAfterStopPSFFunction' 'A plain Stop-PSFFunction must be followed by return, throw, or exit. Add a return, or pass -StepsUpward, -EnableException, or -Continue when continuing is intended.' $itemCommand.Extent
 	}
 }

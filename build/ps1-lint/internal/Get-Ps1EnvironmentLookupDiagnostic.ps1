@@ -82,32 +82,15 @@ function Get-Ps1EnvironmentNullCheck {
 	}
 }
 
-function New-Ps1EnvironmentLookupDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseCentralEnvironmentLookup'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1EnvironmentLookupDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
+	$scope = $Analysis.Scope
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
+	if ($scope.FileName -in $script:Ps1EnvironmentLookupExemptions) { return }
 
-	$fileName = [IO.Path]::GetFileName($Path)
-	if ($fileName -like '*Tests.ps1') { return }
-	if ($fileName -in $script:Ps1EnvironmentLookupExemptions) { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
-
-	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$commandName = $itemCommand.GetCommandName()
 		if ($null -eq $commandName) { continue }
 
@@ -115,42 +98,37 @@ function Get-Ps1EnvironmentLookupDiagnostic {
 
 		if ($commandName -eq 'Get-Environment') {
 			if (Test-Ps1EnvironmentTryAncestor -Call $itemCommand) {
-				New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $itemCommand.Extent `
-					-Message 'Do not wrap Get-Environment in try/catch. It stops execution when no environment matches; let that surface.'
+				New-Ps1Diagnostic $Path 'PSUseCentralEnvironmentLookup' 'Do not wrap Get-Environment in try/catch. It stops execution when no environment matches; let that surface.' $itemCommand.Extent
 			}
 
 			$assignment = Get-Ps1EnvironmentAssignment -Call $itemCommand
 			$variableName = $null
 
 			if ($null -eq $assignment) {
-				New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $itemCommand.Extent `
-					-Message 'Assign Get-Environment to a local variable named $envObj so later code can use the environment directly.'
+				New-Ps1Diagnostic $Path 'PSUseCentralEnvironmentLookup' 'Assign Get-Environment to a local variable named $envObj so later code can use the environment directly.' $itemCommand.Extent
 			}
 			elseif ($assignment.Left -isnot [Management.Automation.Language.VariableExpressionAst]) {
-				New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $assignment.Extent `
-					-Message 'Assign Get-Environment to a local variable named $envObj so later code can use the environment directly.'
+				New-Ps1Diagnostic $Path 'PSUseCentralEnvironmentLookup' 'Assign Get-Environment to a local variable named $envObj so later code can use the environment directly.' $assignment.Extent
 			}
 			else {
 				$variableName = $assignment.Left.VariablePath.UserPath
 				if ($variableName -notmatch '^envObj') {
-					New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $assignment.Left.Extent `
-						-Message ('Assign Get-Environment to a local variable named $envObj (found $' + $variableName + ').')
+					New-Ps1Diagnostic $Path 'PSUseCentralEnvironmentLookup' ('Assign Get-Environment to a local variable named $envObj (found $' + $variableName + ').') $assignment.Left.Extent
 				}
 			}
 
 			if ($null -ne $variableName) {
 				$owner = Get-Ps1EnvironmentOwnerFunction -Node $itemCommand
 				if ($null -ne $owner) {
-					foreach ($itemCheck in @(Get-Ps1EnvironmentNullCheck -Owner $owner -Name $variableName)) {
-						New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $itemCheck.Extent `
-							-Message ('Get-Environment stops when no environment matches, so $' + $variableName + ' is never null. Remove the null check and use it directly.')
+					foreach ($itemCheck in @(Get-Ps1EnvironmentNullCheck -Owner $owner `
+								-Name $variableName)) {
+						New-Ps1Diagnostic $Path 'PSUseCentralEnvironmentLookup' ('Get-Environment stops when no environment matches, so $' + $variableName + ' is never null. Remove the null check and use it directly.') $itemCheck.Extent
 					}
 				}
 			}
 
 			foreach ($itemInterrupt in @(Get-Ps1EnvironmentInterruptCheck -Call $itemCommand)) {
-				New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $itemInterrupt.Extent `
-					-Message 'Get-Environment stops execution when no environment matches. Remove the Test-PSFFunctionInterrupt check after the lookup; it cannot resume a stopped lookup.'
+				New-Ps1Diagnostic $Path 'PSUseCentralEnvironmentLookup' 'Get-Environment stops execution when no environment matches. Remove the Test-PSFFunctionInterrupt check after the lookup; it cannot resume a stopped lookup.' $itemInterrupt.Extent
 			}
 
 			continue
@@ -178,6 +156,6 @@ function Get-Ps1EnvironmentLookupDiagnostic {
 
 		if ($null -eq $message) { continue }
 
-		New-Ps1EnvironmentLookupDiagnostic -Path $Path -Extent $itemCommand.Extent -Message $message
+		New-Ps1Diagnostic $Path 'PSUseCentralEnvironmentLookup' $message $itemCommand.Extent
 	}
 }

@@ -18,34 +18,18 @@
 	$value
 }
 
-function New-Ps1OrderedPSCustomObjectDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseOrderedPSCustomObject'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1OrderedPSCustomObjectDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	foreach ($itemConvert in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ConvertExpressionAst] }, $true)) {
+	foreach ($itemConvert in @(Get-Ps1AstNode $Analysis ConvertExpressionAst)) {
 		if ($itemConvert.Type.TypeName.FullName -notmatch '(?i)^(system\.management\.automation\.)?pscustomobject$') { continue }
 
 		$child = Get-Ps1OrderedChild -Node $itemConvert.Child
 		if ($child -isnot [Management.Automation.Language.HashtableAst]) { continue }
 
-		New-Ps1OrderedPSCustomObjectDiagnostic -Path $Path -Extent $itemConvert.Extent -Message 'Build the object through [ordered] so property order is explicit: [pscustomobject][ordered]@{ ... }.'
+		New-Ps1Diagnostic $Path 'PSUseOrderedPSCustomObject' 'Build the object through [ordered] so property order is explicit: [pscustomobject][ordered]@{ ... }.' $itemConvert.Extent
 	}
 }

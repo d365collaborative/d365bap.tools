@@ -143,49 +143,29 @@ function Test-Ps1WhereObjectFilter {
 	$hasViolation
 }
 
-function New-Ps1MultilineIfConditionDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseMultilineIfCondition'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1MultilineIfConditionDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
 	$message = 'Start each -and / -or line with the operator: (<test>) ` then a new line with -and (<test>). The operator is leftmost to show the logic split.'
 
-	foreach ($itemIf in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.IfStatementAst] }, $true)) {
+	foreach ($itemIf in @(Get-Ps1AstNode $Analysis IfStatementAst)) {
 		foreach ($itemClause in $itemIf.Clauses) {
 			if (Test-Ps1BooleanLayout -Expression $itemClause.Item1 `
 					-Tokens $Analysis.Tokens) { continue }
 
-			New-Ps1MultilineIfConditionDiagnostic -Path $Path `
-				-Extent $itemClause.Item1.Extent `
-				-Message $message
+			New-Ps1Diagnostic $Path 'PSUseMultilineIfCondition' $message $itemClause.Item1.Extent
 		}
 	}
 
-	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$itemFilter = Get-Ps1WhereObjectFilter -Command $itemCommand
 		if ($null -eq $itemFilter) { continue }
 		if (-not (Test-Ps1WhereObjectFilter -Filter $itemFilter `
 					-Tokens $Analysis.Tokens)) { continue }
 
-		New-Ps1MultilineIfConditionDiagnostic -Path $Path `
-			-Extent $itemFilter.Extent `
-			-Message $message
+		New-Ps1Diagnostic $Path 'PSUseMultilineIfCondition' $message $itemFilter.Extent
 	}
 }

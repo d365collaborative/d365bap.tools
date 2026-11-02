@@ -8,7 +8,7 @@
 function ConvertTo-Ps1BapAccessTokenResourceKey {
 	param([string] $Value)
 
-	return "$Value".Trim().TrimEnd('/').ToLowerInvariant()
+	"$Value".Trim().TrimEnd('/').ToLowerInvariant(); return
 }
 
 function Get-Ps1BapAccessTokenEndpoint {
@@ -16,28 +16,26 @@ function Get-Ps1BapAccessTokenEndpoint {
 
 	$key = ConvertTo-Ps1BapAccessTokenResourceKey $Value
 	if ($script:Ps1BapAccessTokenEndpoints.Contains($key)) {
-		return $script:Ps1BapAccessTokenEndpoints[$key]
+		$script:Ps1BapAccessTokenEndpoints[$key]; return
 	}
-	return $null
+	$null; return
 }
 
 function Get-Ps1BapAccessTokenLiteral {
 	param($Argument)
 
-	if ($Argument -is [Management.Automation.Language.StringConstantExpressionAst]) { return $Argument.Value }
-	if ($Argument -is [Management.Automation.Language.ExpandableStringExpressionAst] -and $Argument.NestedExpressions.Count -eq 0) { return $Argument.Value }
-	return $null
+	if ($Argument -is [Management.Automation.Language.StringConstantExpressionAst]) { $Argument.Value; return }
+	if ($Argument -is [Management.Automation.Language.ExpandableStringExpressionAst] -and $Argument.NestedExpressions.Count -eq 0) { $Argument.Value; return }
+	$null; return
 }
 
 function Get-Ps1AccessTokenDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSourceWithTepp')) { return }
 
-	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$commandName = $itemCommand.GetCommandName()
 		if ($null -eq $commandName -or ($commandName -split '\\')[-1] -ine 'Get-BapAccessToken') { continue }
 
@@ -77,13 +75,6 @@ function Get-Ps1AccessTokenDiagnostic {
 		$endpoint = Get-Ps1BapAccessTokenEndpoint $value
 		if ($null -eq $endpoint) { continue }
 
-		[pscustomobject]@{
-			RuleName   = 'PSUseBapAccessTokenEndpointSwitch'
-			Severity   = 'Error'
-			ScriptName = [IO.Path]::GetFileName($Path)
-			Line       = $extent.StartLineNumber
-			Column     = $extent.StartColumnNumber
-			Message    = "Replace -ResourceUrl '$value' with -$($endpoint.Switch) for the $($endpoint.Name) audience. The audience stays defined once in Get-BapAccessToken."
-		}
+		New-Ps1Diagnostic $Path 'PSUseBapAccessTokenEndpointSwitch' "Replace -ResourceUrl '$value' with -$($endpoint.Switch) for the $($endpoint.Name) audience. The audience stays defined once in Get-BapAccessToken." $extent
 	}
 }

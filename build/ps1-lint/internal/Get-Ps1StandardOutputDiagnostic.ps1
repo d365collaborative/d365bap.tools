@@ -1,12 +1,18 @@
 ﻿function Get-Ps1TableFormatType {
 	param([string] $TableDirectory)
 	if ($null -ne $script:Ps1TableFormatTypes -and $script:Ps1TableFormatTypes.Directory -eq $TableDirectory) {
-		return $script:Ps1TableFormatTypes.Types
+		$script:Ps1TableFormatTypes.Types; return
 	}
 	$hashTypes = @{}
-	if (Test-Path -LiteralPath $TableDirectory -PathType Container) {
-		foreach ($itemFile in Get-ChildItem -LiteralPath $TableDirectory -Filter '*.ps1xml' -File) {
-			try { [xml] $document = Get-Content -LiteralPath $itemFile.FullName -Raw }
+	if (Test-Path -LiteralPath $TableDirectory `
+			-PathType Container) {
+		foreach ($itemFile in Get-ChildItem -LiteralPath $TableDirectory `
+				-Filter '*.ps1xml' `
+				-File) {
+			try {
+				[xml] $document = Get-Content -LiteralPath $itemFile.FullName `
+					-Raw
+			}
 			catch { continue }
 			foreach ($itemTypeName in @($document.Configuration.ViewDefinitions.View.ViewSelectedBy.TypeName)) {
 				if ($null -ne $itemTypeName -and $itemTypeName -ne '') { $hashTypes[[string]$itemTypeName] = $true }
@@ -19,7 +25,7 @@
 
 function Test-Ps1ScalarArray {
 	param([string] $Name)
-	if ($Name -notmatch '^(?<Element>.+)\[\]$') { return $false }
+	if ($Name -notmatch '^(?<Element>.+)\[\]$') { $false; return }
 	$element = $Matches['Element']
 	$hashAccelerator = @{
 		string         = [string]
@@ -43,7 +49,7 @@ function Test-Ps1ScalarArray {
 	}
 	$type = [type]::GetType($element)
 	if ($null -eq $type) { $type = $hashAccelerator[$element.ToLowerInvariant()] }
-	if ($null -eq $type) { return $false }
+	if ($null -eq $type) { $false; return }
 	$type.IsValueType -or $type -eq [string]
 }
 
@@ -58,7 +64,7 @@ function Test-Ps1CollectionOutput {
 		}
 		else { '' }
 		if (Test-Ps1ScalarArray $name) { continue }
-		if ($name -match '\[\]$|^System\.Collections\.') { return $true }
+		if ($name -match '\[\]$|^System\.Collections\.') { $true; return }
 	}
 	$false
 }
@@ -68,34 +74,22 @@ function Get-Ps1PipelineStringValue {
 	$expression = $Value
 	if ($expression -is [Management.Automation.Language.PipelineAst]) {
 		$colElements = @($expression.PipelineElements)
-		if ($colElements.Count -ne 1) { return $null }
+		if ($colElements.Count -ne 1) { $null; return }
 		$expression = $colElements[0]
 	}
 	if ($expression -is [Management.Automation.Language.CommandExpressionAst]) { $expression = $expression.Expression }
-	if ($expression -is [Management.Automation.Language.StringConstantExpressionAst]) { return $expression }
+	if ($expression -is [Management.Automation.Language.StringConstantExpressionAst]) { $expression; return }
 	$null
-}
-
-function Write-Ps1CollectionOutputDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-	[pscustomobject]@{
-		RuleName   = 'PSUseStandardCollectionOutput'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
 }
 
 function Get-Ps1StandardOutputDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/functions/[^/]+\.ps1$') { return }
+	$scope = $Analysis.Scope
+	if (-not (Test-Ps1RuleScope $Analysis 'PublicFunction')) { return }
 
-	$function = @($Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true) | Where-Object { $_.Name -eq [IO.Path]::GetFileNameWithoutExtension($Path) })[0]
+	$function = @(Get-Ps1AstNode $Analysis FunctionDefinitionAst | Where-Object { $_.Name -eq $scope.FileNameWithoutExtension })[0]
 	if ($null -eq $function -or $null -eq $function.Body.ParamBlock) { return }
 
 	$outputType = @($function.Body.ParamBlock.Attributes | Where-Object {
@@ -109,7 +103,7 @@ function Get-Ps1StandardOutputDiagnostic {
 	$types = Get-Ps1TableFormatType (Join-Path $moduleRoot 'xml/formats/table')
 
 	$hashSeen = @{}
-	foreach ($itemCommand in $function.Body.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst $function.Body)) {
 		if ($itemCommand.GetCommandName() -notmatch '(?:^|\\)Select-PSFObject$') { continue }
 		$tmpElements = @($itemCommand.CommandElements)
 		for ($index = 0; $index -lt $tmpElements.Count; $index++) {
@@ -123,11 +117,11 @@ function Get-Ps1StandardOutputDiagnostic {
 			if ($hashSeen.ContainsKey($typeName)) { continue }
 			$hashSeen[$typeName] = $true
 			if ($types.ContainsKey($typeName)) { continue }
-			Write-Ps1CollectionOutputDiagnostic $Path "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $argument.Extent
+			New-Ps1Diagnostic $Path 'PSUseStandardCollectionOutput' "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $argument.Extent
 		}
 	}
 
-	foreach ($itemHashtable in $function.Body.FindAll({ param($node) $node -is [Management.Automation.Language.HashtableAst] }, $true)) {
+	foreach ($itemHashtable in @(Get-Ps1AstNode $Analysis HashtableAst $function.Body)) {
 		foreach ($itemPair in $itemHashtable.KeyValuePairs) {
 			if ($itemPair.Item1 -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
 			if ($itemPair.Item1.Value -ne 'PSTypeName') { continue }
@@ -137,12 +131,12 @@ function Get-Ps1StandardOutputDiagnostic {
 			if ($hashSeen.ContainsKey($typeName)) { continue }
 			$hashSeen[$typeName] = $true
 			if ($types.ContainsKey($typeName)) { continue }
-			Write-Ps1CollectionOutputDiagnostic $Path "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $value.Extent
+			New-Ps1Diagnostic $Path 'PSUseStandardCollectionOutput' "Add a table format view for '$typeName'. Array output requires a table view; a list view is optional." $value.Extent
 		}
 	}
 
 	$hasSwitch = @($function.Body.ParamBlock.Parameters | Where-Object {
-			if ($_.Name.VariablePath.UserPath -ne 'AsExcelOutput') { return $false }
+			if ($_.Name.VariablePath.UserPath -ne 'AsExcelOutput') { $false; return }
 			@($_.Attributes | Where-Object {
 					$_ -is [Management.Automation.Language.TypeConstraintAst] -and
 					$_.TypeName.FullName -in @('switch', 'System.Management.Automation.SwitchParameter')
@@ -150,5 +144,5 @@ function Get-Ps1StandardOutputDiagnostic {
 		}).Count -gt 0
 	if ($hasSwitch) { return }
 
-	Write-Ps1CollectionOutputDiagnostic $Path "Add [switch] `$AsExcelOutput to $($function.Name). Array output must support Excel export." $outputType.Extent
+	New-Ps1Diagnostic $Path 'PSUseStandardCollectionOutput' "Add [switch] `$AsExcelOutput to $($function.Name). Array output must support Excel export." $outputType.Extent
 }

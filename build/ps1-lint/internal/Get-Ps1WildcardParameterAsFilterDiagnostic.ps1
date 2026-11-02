@@ -35,28 +35,13 @@ function Get-Ps1WildcardFilterOwnerFunction {
 	$null
 }
 
-function New-Ps1WildcardFilterDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseWildcardParameterAsFilter'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1WildcardParameterAsFilterDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal/functions)/[^/]+\.ps1$') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'FunctionFile')) { return }
 
-	foreach ($itemFunction in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+	foreach ($itemFunction in @(Get-Ps1AstNode $Analysis FunctionDefinitionAst)) {
 		if ($null -eq $itemFunction.Body.ParamBlock) { continue }
 
 		$tmpWildcard = @{}
@@ -90,7 +75,7 @@ function Get-Ps1WildcardParameterAsFilterDiagnostic {
 
 			if ($null -eq $name) { continue }
 
-			New-Ps1WildcardFilterDiagnostic -Path $Path -Extent $itemBinary.Extent -Message "Parameter -$name is a wildcard filter. Do not compare it with the literal '*'; pass the value to the filter."
+			New-Ps1Diagnostic $Path 'PSUseWildcardParameterAsFilter' "Parameter -$name is a wildcard filter. Do not compare it with the literal '*'; pass the value to the filter." $itemBinary.Extent
 		}
 	}
 }
