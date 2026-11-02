@@ -17,7 +17,8 @@ foreach ($resource in $sdkMapping.Resources) {
 	foreach ($verb in ($resource.Methods.Keys | Sort-Object)) {
 		$commandName = "$verb-$($resource.Noun)"
 		$method = $resource.Methods[$verb]
-		$parameters = @(Get-BapSdkParameter -Resource $resource -Method $method)
+		$parameters = @(Get-BapSdkParameter -Resource $resource `
+				-Method $method)
 		$script:BapSdkCommands[$commandName] = @{
 			Resource   = $resource
 			Method     = $method
