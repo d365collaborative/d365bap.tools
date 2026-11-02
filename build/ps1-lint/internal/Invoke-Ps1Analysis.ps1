@@ -137,7 +137,9 @@ function Invoke-Ps1Analysis {
 		[hashtable] $ContentByPath = @{},
 		# Full scans keep the historical built-in-only coverage. Custom rules
 		# are adopted as files change, so their existing debt must not fail a
-		# module-wide run.
+		# module-wide run. The analysis is built in the same built-in-only
+		# mode, so the comment groups and help sections that only custom rules
+		# read are never built.
 		[switch] $SkipCustomRules
 	)
 
@@ -146,10 +148,12 @@ function Invoke-Ps1Analysis {
 			$hasContent = $ContentByPath.ContainsKey($itemPath)
 			$analysis = if ($hasContent) {
 				Get-Ps1Analysis -Path $itemPath `
-					-Content $ContentByPath[$itemPath]
+					-Content $ContentByPath[$itemPath] `
+					-SkipCustomRules:$SkipCustomRules
 			}
 			else {
-				Get-Ps1Analysis -Path $itemPath
+				Get-Ps1Analysis -Path $itemPath `
+					-SkipCustomRules:$SkipCustomRules
 			}
 			$tmpParseDiagnostics = @(Get-Ps1ParseDiagnostic -Analysis $analysis)
 
