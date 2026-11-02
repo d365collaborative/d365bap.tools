@@ -108,6 +108,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       mode: ${{ steps.scope.outputs.mode }}
+      infrastructure: ${{ steps.scope.outputs.infrastructure }}
       plan_hash: ${{ steps.scope.outputs.plan_hash }}
     steps:
     - uses: actions/checkout@v5
@@ -123,7 +124,9 @@ jobs:
         ./build/Get-PRValidationPlan.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -OutputPath validation-plan.json
         $plan = Get-Content -Raw validation-plan.json | ConvertFrom-Json
         if ($plan.Mode -notin @('docs', 'selective', 'full')) { throw 'Invalid validation mode' }
+        if ($plan.InfrastructureChange -isnot [bool]) { throw 'Invalid infrastructure-change flag' }
         "mode=$($plan.Mode)" >> $env:GITHUB_OUTPUT
+        "infrastructure=$($plan.InfrastructureChange.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
         "plan_hash=$((Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash)" >> $env:GITHUB_OUTPUT
   general-unit-tests:
     name: Validate General Unit Tests
@@ -145,13 +148,29 @@ jobs:
     - name: Validate
       shell: pwsh
       run: build/vsts-validate-v2.ps1 -TestGeneral $true -TestFunctions $false -Exclude "PSScriptAnalyzer.Tests.ps1"
-    - name: Test change-aware validation infrastructure
+
+  infrastructure-tests:
+    name: Validate Infrastructure Regression Tests
+    needs: changes
+    # The plan sets this flag whenever a pull request changes the tooling these
+    # suites exercise; the result gate fails a skipped job while it is true.
+    if: needs.changes.outputs.infrastructure == 'true'
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: Restore PowerShell modules
+      uses: actions/cache/restore@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        restore-keys: |
+          pwsh-modules-${{ runner.os }}-base-v2-
+    - name: Ensure prerequisites
       shell: pwsh
-      run: |
-        foreach ($test in @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-CiLintPlan', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness', 'Test-Ps1LintBatch')) {
-          & pwsh -NoProfile -NonInteractive -File "./build/$test.ps1"
-          if ($LASTEXITCODE -ne 0) { throw "Validation infrastructure regression failed: $test" }
-        }
+      run: ./build/Install-RequiredModules.ps1 -Set base
+    - name: Run infrastructure regression suites
+      shell: pwsh
+      run: ./build/Invoke-InfrastructureValidation.ps1
 
   public-functions-unit-tests:
     name: Validate Public Functions using PSScriptAnalyzer Unit Tests
@@ -281,15 +300,17 @@ jobs:
     # Existing required status; keep this name until branch protection can be updated.
     name: Validate Individual Unit Tests
     if: always()
-    needs: [lint, changes, general-unit-tests, public-functions-unit-tests, internal-functions-unit-tests, selective-tests, compiled-import]
+    needs: [lint, changes, general-unit-tests, public-functions-unit-tests, internal-functions-unit-tests, infrastructure-tests, selective-tests, compiled-import]
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v5
     - name: Verify all required jobs ran and passed
       shell: pwsh
       env:
         LINT: ${{ needs.lint.result }}
         CHANGE_RESULT: ${{ needs.changes.result }}
         MODE: ${{ needs.changes.outputs.mode }}
+        INFRASTRUCTURE: ${{ needs.changes.outputs.infrastructure }}
         PLAN_HASH: ${{ needs.changes.outputs.plan_hash }}
         SELECTIVE_HASH: ${{ needs.selective-tests.outputs.plan_hash }}
         COMPILED_HASH: ${{ needs.compiled-import.outputs.plan_hash }}
@@ -298,25 +319,23 @@ jobs:
         GENERAL: ${{ needs.general-unit-tests.result }}
         PUBLIC: ${{ needs.public-functions-unit-tests.result }}
         INTERNAL: ${{ needs.internal-functions-unit-tests.result }}
+        INFRASTRUCTURE_RESULT: ${{ needs.infrastructure-tests.result }}
         SELECTIVE: ${{ needs.selective-tests.result }}
         COMPILED: ${{ needs.compiled-import.result }}
       run: |
-        if ($env:LINT -ne 'success') { throw 'Lint or source-ownership checks failed.' }
-        if ($env:CHANGE_RESULT -ne 'success' -or $env:MODE -notin @('docs', 'selective', 'full')) { throw 'Change detection failed or returned an invalid mode.' }
-        if ($env:PLAN_HASH -notmatch '^[0-9A-F]{64}$') { throw 'Missing or invalid central validation plan hash.' }
-        foreach ($reportedHash in @($env:SELECTIVE_HASH, $env:COMPILED_HASH)) {
-          if ($reportedHash -cne $env:PLAN_HASH) { throw 'Validation jobs produced different change plans.' }
-        }
-        foreach ($reportedMode in @($env:SELECTIVE_MODE, $env:COMPILED_MODE)) {
-          if ($reportedMode -ne $env:MODE) { throw "Validation jobs disagreed on change scope: expected $env:MODE, got $reportedMode." }
-        }
-        $expected = switch ($env:MODE) {
-          'docs'      { @('skipped', 'skipped', 'skipped', 'success', 'success') }
-          'selective' { @('skipped', 'skipped', 'skipped', 'success', 'success') }
-          'full'      { @('success', 'success', 'success', 'success', 'success') }
-        }
-        $actual = @($env:GENERAL, $env:PUBLIC, $env:INTERNAL, $env:SELECTIVE, $env:COMPILED)
-        for ($i = 0; $i -lt $expected.Count; $i++) {
-          if ($actual[$i] -ne $expected[$i]) { throw "Unexpected validation job result at position ${i}: expected $($expected[$i]), got $($actual[$i])." }
-        }
-        Write-Host "Validation passed ($env:MODE)."
+        ./build/Invoke-ValidationResultGate.ps1 `
+          -Lint $env:LINT `
+          -ChangeResult $env:CHANGE_RESULT `
+          -Mode $env:MODE `
+          -InfrastructureChange $env:INFRASTRUCTURE `
+          -PlanHash $env:PLAN_HASH `
+          -SelectiveHash $env:SELECTIVE_HASH `
+          -CompiledHash $env:COMPILED_HASH `
+          -SelectiveMode $env:SELECTIVE_MODE `
+          -CompiledMode $env:COMPILED_MODE `
+          -General $env:GENERAL `
+          -Public $env:PUBLIC `
+          -Internal $env:INTERNAL `
+          -Selective $env:SELECTIVE `
+          -Compiled $env:COMPILED `
+          -InfrastructureResult $env:INFRASTRUCTURE_RESULT
