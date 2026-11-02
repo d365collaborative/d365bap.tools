@@ -1,4 +1,4 @@
-﻿# ps1-lint (vendored)
+# ps1-lint (vendored)
 
 PowerShell lint hook scripts for `prek.toml`. They started as a copy of the
 PS1 hooks from an internal-only module and are maintained in this repo from
@@ -34,7 +34,9 @@ What runs on PowerShell files:
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
   `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
-  `PSUseOneParameterPerLine`,
+  `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
+  `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
+  `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -765,6 +767,47 @@ The rule matches the command name, so `Microsoft.PowerShell.Core\Out-Null` and
 behavior. Test files and tepp fixtures are exempt. Existing call sites in the
 lint tooling migrate as those files are touched.
 
+## Splatting module commands
+
+`PSAvoidSplattingForModuleCommands` rejects a splat when the called command is a
+function defined in the module, public or internal. The call site must name each
+parameter so a reviewer can see what is passed:
+
+```powershell
+# Fails
+$params = @{
+    EnvironmentId = $EnvironmentId
+    Asset         = $Asset
+}
+$colAssets = Get-PpacFinOpsAsset @params
+
+# Passes
+$colAssets = Get-PpacFinOpsAsset -EnvironmentId $EnvironmentId -Asset $Asset
+```
+
+Splatting a system command stays allowed, because its parameters are not part
+of this module's contract:
+
+```powershell
+$request = @{
+    Method = 'Post'
+    Uri    = $uri
+}
+Invoke-RestMethod @request
+```
+
+The rule resolves the called command against every function defined in the
+module, including nested helpers and functions under `internal/`. A dynamic
+command name, a command qualified with another module, and
+`Microsoft.PowerShell.*` commands are not checked. Test files and tepp fixtures
+are exempt.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ModuleSplattingRule.ps1
+```
+
 ## Excel export blocks
 
 `PSUseStandardExcelExport` requires every public cmdlet that declares
@@ -867,6 +910,49 @@ A backtick inside a string, here-string, or comment is not a continuation and
 stays clean. Test files, tepp fixtures, and the rest of `build/` are out of
 scope. The rule runs on changed files only, so the existing multi-parameter
 lines migrate as their files are touched.
+
+## Headers variables
+
+`PSUseVariableForHeaders` requires the `-Headers` argument to be a variable or
+another expression, never an inline hashtable. The inline form puts the
+hashtable body next to the command parameters, so the end of the hashtable is
+hard to see in a multi-line call:
+
+```powershell
+# Fails
+$created = Invoke-RestMethod -Method Post `
+    -Uri $uri `
+    -Headers @{
+    Authorization = "Bearer $tokenValue"
+    Accept        = 'application/json'
+} `
+    -Body $body `
+    -ErrorAction Stop
+
+# Passes
+$hashHeaders = @{
+    Authorization = "Bearer $tokenValue"
+    Accept        = 'application/json'
+}
+
+$created = Invoke-RestMethod -Method Post `
+    -Uri $uri `
+    -Headers $hashHeaders `
+    -Body $body `
+    -ErrorAction Stop
+```
+
+A parenthesized hashtable and an `[ordered]` cast are reported too. A variable,
+a member expression, and a command that returns headers pass. The rule matches
+the `-Headers` parameter name on any command. A splat is not resolved. Test
+files, tepp fixtures, and `build/` scripts are exempt. The rule runs on module
+code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1HeadersVariableRule.ps1
+```
 
 ## Central API version
 
@@ -988,6 +1074,96 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1NullComparisonRule.ps1
+```
+
+## Direct value in string checks
+
+`PSUseDirectValueInStringCheck` rejects an interpolated string that wraps a
+single value for `[string]::IsNullOrWhiteSpace` or `[string]::IsNullOrEmpty`.
+The method already converts the value to a string, so the wrapper adds nothing
+and hides the value being tested:
+
+```powershell
+# Fails
+if (-not [string]::IsNullOrWhiteSpace("$($created.id)")) { ... }
+if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+
+# Passes
+if (-not [string]::IsNullOrWhiteSpace($created.id)) { ... }
+if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
+```
+
+A string with literal text (`"prefix $name"`), a string with more than one
+expression (`"$first$last"`), and a single-quoted literal are real string
+compositions and stay clean. An instance method with the same name is not
+checked. Test files, tepp fixtures, and `build/` scripts are exempt. The rule
+runs on module code (public and internal).
+
+## Empty line after continuation
+
+`PSUseEmptyLineAfterContinuation` requires an empty line after a statement that
+ends through a backtick line continuation, before the next statement in the same
+block:
+
+```powershell
+# Fails
+$tokenValue = ConvertFrom-SecureString -AsPlainText `
+    -SecureString $objSecureToken
+$apiVersion = $script:BapApiVersions.PowerPlatform
+
+# Passes
+$tokenValue = ConvertFrom-SecureString -AsPlainText `
+    -SecureString $objSecureToken
+
+$apiVersion = $script:BapApiVersions.PowerPlatform
+```
+
+The empty line makes it clear that the continuation has ended and that the next
+line is a new statement, not a continuation line with different indentation. A
+comment line directly after the continuation also separates the statements. A
+closing brace, a comment, or the end of the block needs no empty line. A
+multi-line expression that ends with a visible delimiter, such as `)` or `}`, is
+not reported. Test files and tepp fixtures are exempt. The rule runs on module
+code (public and internal).
+
+## Direct parameter checks
+
+`PSUseDirectParameterCheck` requires module code to test the parameter itself
+instead of `$PSCmdlet.ParameterSetName` or `$PSBoundParameters.ContainsKey`:
+
+```powershell
+# Fails
+if ($PSCmdlet.ParameterSetName -eq 'EnvironmentGroup') { ... }
+$isByEnvironment = $PSCmdlet.ParameterSetName -eq 'ByEnvironment'
+$buildGiven = $PSBoundParameters.ContainsKey('Build') -and -not [string]::IsNullOrWhiteSpace($Build)
+if ($PSBoundParameters.ContainsKey('Description')) { $payload.description = $Description }
+
+# Passes
+if ($EnvironmentGroupId) { ... }
+$isByEnvironment = [bool] $EnvironmentId
+$buildGiven = -not [string]::IsNullOrWhiteSpace($Build)
+if (-not [string]::IsNullOrEmpty($Description)) { $payload.description = $Description }
+```
+
+A parameter whose default is also a valid explicit value is exempt, because the
+value cannot tell omitted from explicit. `$Asset = '*'` is the example:
+`$PSBoundParameters.ContainsKey('Asset')` is allowed. A mandatory parameter is
+reported as always bound. `$PSBoundParameters` passed as a value
+(`-BoundParameters $PSBoundParameters`) and a dynamic key (`ContainsKey($name)`)
+are not checked.
+
+The message for an optional non-string parameter says to trust its null value
+and test `-not ($null -eq $Parameter)` directly; it does not ask for a
+`= $null` default. An omitted `[string]` parameter is empty, not `$null`, so
+the message for a string points to `[string]::IsNullOrEmpty($Parameter)` or
+`if ($Parameter)` instead.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectStringCheckRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyLineAfterContinuationRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectParameterCheckRule.ps1
 ```
 
 ## Example prose
