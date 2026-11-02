@@ -7,14 +7,15 @@ param(
 	[ValidateNotNullOrEmpty()]
 	[string] $HeadSha,
 	[string] $RepositoryPath = (Join-Path $PSScriptRoot '..'),
-	[string] $OutputPath
+	[string] $OutputPath,
+	[switch] $ChangesOnly
 )
 
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'ps1-lint/internal/Get-Ps1OutputTypeDiagnostic.ps1')
 
-function Invoke-ScopeGitBytes {
+function Invoke-ScopeGitBinary {
 	param([string] $Repository, [string[]] $Arguments)
 
 	$start = [System.Diagnostics.ProcessStartInfo]::new()
@@ -43,11 +44,11 @@ function Invoke-ScopeGitBytes {
 function Invoke-ScopeGitText {
 	param([string] $Repository, [string[]] $Arguments)
 
-	$raw = Invoke-ScopeGitBytes -Repository $Repository -Arguments $Arguments
+	$raw = Invoke-ScopeGitBinary -Repository $Repository -Arguments $Arguments
 	[Text.Encoding]::UTF8.GetString($raw)
 }
 
-function Get-ScopeChangedFile {
+function Get-ScopeChangeSet {
 	param([string] $Repository, [string] $Base, [string] $Head)
 
 	foreach ($itemSha in @($Base, $Head)) {
@@ -56,10 +57,11 @@ function Get-ScopeChangedFile {
 	$mergeBase = (Invoke-ScopeGitText -Repository $Repository -Arguments @('merge-base', $Base, $Head)).Trim()
 	if ($mergeBase -notmatch '^[0-9a-fA-F]{40}([0-9a-fA-F]{24})?$') { throw 'Could not determine a unique merge base.' }
 
-	$raw = Invoke-ScopeGitBytes -Repository $Repository -Arguments @('diff', '--name-status', '-z', '--find-renames', $mergeBase, $Head, '--')
+	$raw = Invoke-ScopeGitBinary -Repository $Repository -Arguments @('diff', '--name-status', '-z', '--find-renames', $mergeBase, $Head, '--')
 	$records = [Text.Encoding]::UTF8.GetString($raw).Split([char]0)
 	if ($records[-1] -ne '') { throw 'Git returned an unterminated diff record.' }
 
+	$colChanges = [Collections.Generic.List[object]]::new()
 	for ($index = 0; $index -lt $records.Length - 1; ) {
 		$status = $records[$index++]
 		if ($status -notmatch '^[A-Z][0-9]*$' -or $index -ge $records.Length - 1) { throw 'Malformed git diff output.' }
@@ -70,7 +72,12 @@ function Get-ScopeChangedFile {
 			$oldPath = $path
 			$path = $records[$index++]
 		}
-		[pscustomobject]@{ Status = $status; Path = $path; OldPath = $oldPath; MergeBase = $mergeBase }
+		$colChanges.Add([pscustomobject]@{ Status = $status; Path = $path; OldPath = $oldPath })
+	}
+
+	[pscustomobject]@{
+		MergeBase = $mergeBase
+		Changes   = @($colChanges.ToArray())
 	}
 }
 
@@ -83,6 +90,19 @@ function Get-ScopeTextAtRevision {
 	catch {
 		$null
 	}
+}
+
+function Get-ScopeHeadText {
+	param([string] $Repository, [string] $Path)
+
+	if (-not (Test-ScopeExistingFile -Repository $Repository -Path $Path)) { return }
+	Get-Content -LiteralPath (Join-Path $Repository $Path) -Raw
+}
+
+function Test-ScopeExistingFile {
+	param([string] $Repository, [string] $Path)
+
+	Test-Path -LiteralPath (Join-Path $Repository $Path) -PathType Leaf
 }
 
 function Get-ScopeAst {
@@ -114,9 +134,16 @@ function Get-ScopeDeclaredType {
 	@($declaration.Types)
 }
 
+function Test-ScopeFormatXmlPath {
+	param([string] $Path)
+
+	$Path -match '^d365bap\.tools/xml/.+\.ps1xml$'
+}
+
 function Get-ScopeFormatTypeName {
 	param([string] $Path, [string] $Text)
 
+	if ([string]::IsNullOrEmpty($Text)) { return }
 	try {
 		[xml] $document = $Text
 	}
@@ -126,6 +153,48 @@ function Get-ScopeFormatTypeName {
 
 	foreach ($itemType in @($document.Configuration.ViewDefinitions.View.ViewSelectedBy.TypeName)) {
 		if ($null -ne $itemType -and "$itemType" -ne '') { "$itemType" }
+	}
+}
+
+function Get-ScopeFormatView {
+	param([string] $Repository, [string] $MergeBase, $Change)
+
+	$path = $Change.Path -replace '\\', '/'
+	$oldPath = if ([string]::IsNullOrEmpty($Change.OldPath)) { $null } else { $Change.OldPath -replace '\\', '/' }
+	$colHeadTypes = [Collections.Generic.List[string]]::new()
+	$colBaseTypes = [Collections.Generic.List[string]]::new()
+	$headError = $null
+	$baseError = $null
+
+	if ($Change.Status -notmatch '^D' -and (Test-ScopeFormatXmlPath $path)) {
+		try {
+			$headText = Get-ScopeHeadText -Repository $Repository -Path $path
+			foreach ($itemType in @(Get-ScopeFormatTypeName -Path $path -Text $headText)) { $colHeadTypes.Add($itemType) }
+		}
+		catch {
+			$headError = $_.Exception.Message
+		}
+	}
+
+	$basePath = if ($null -ne $oldPath) { $oldPath } else { $path }
+	if ($Change.Status -notmatch '^A' -and (Test-ScopeFormatXmlPath $basePath)) {
+		try {
+			$baseText = Get-ScopeTextAtRevision -Repository $Repository -Revision $MergeBase -Path $basePath
+			foreach ($itemType in @(Get-ScopeFormatTypeName -Path $basePath -Text $baseText)) { $colBaseTypes.Add($itemType) }
+		}
+		catch {
+			$baseError = $_.Exception.Message
+		}
+	}
+
+	[pscustomobject]@{
+		Path      = $path
+		OldPath   = $oldPath
+		BaseTypes = @($colBaseTypes | Sort-Object -Unique)
+		HeadTypes = @($colHeadTypes | Sort-Object -Unique)
+		Types     = @(@($colBaseTypes) + @($colHeadTypes) | Sort-Object -Unique)
+		HeadError = $headError
+		BaseError = $baseError
 	}
 }
 
@@ -201,35 +270,58 @@ function Add-ScopeFile {
 		[string] $Path,
 		[string] $Kind,
 		[string] $Reason,
-		[bool] $Dependency = $true
+		[ValidateSet('Target', 'Dependency')]
+		[string] $Scope = 'Dependency'
 	)
 
 	if ([string]::IsNullOrWhiteSpace($Path)) { return }
 	$normalized = $Path -replace '\\', '/'
 	if (Test-ScopeGeneratedTestFile $normalized) { return }
-	$null = $Files.Add($normalized)
-	if ($Dependency) { $null = $Dependencies.Add($normalized) }
+	if ($Scope -eq 'Target') {
+		$null = $Files.Add($normalized)
+	}
+	else {
+		$null = $Dependencies.Add($normalized)
+	}
 	$Reasons.Add([pscustomobject]@{ Path = $normalized; Kind = $Kind; Reason = $Reason })
 }
 
 $repository = (Resolve-Path -LiteralPath $RepositoryPath).Path
-$colChanged = @(Get-ScopeChangedFile -Repository $repository -Base $BaseSha -Head $HeadSha)
-$mergeBase = if ($colChanged.Count -gt 0) { $colChanged[0].MergeBase } else {
-	(Invoke-ScopeGitText -Repository $repository -Arguments @('merge-base', $BaseSha, $HeadSha)).Trim()
+$changeSet = Get-ScopeChangeSet -Repository $repository -Base $BaseSha -Head $HeadSha
+$mergeBase = $changeSet.MergeBase
+$colChanged = @($changeSet.Changes)
+
+if ($ChangesOnly) {
+	$scopeChanges = [pscustomobject]@{
+		BaseSha   = $BaseSha
+		HeadSha   = $HeadSha
+		MergeBase = $mergeBase
+		Changes   = $colChanged
+	}
+	if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
+		$scopeChanges | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $OutputPath -Encoding utf8
+	}
+	$scopeChanges
+	return
 }
 
 $colFiles = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 $colDependencies = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 $colReasons = [Collections.Generic.List[object]]::new()
-$colInvalidFormats = [Collections.Generic.List[string]]::new()
+$colFormatMetadata = [Collections.Generic.List[object]]::new()
+$colOutputTypeChanges = [Collections.Generic.List[object]]::new()
+$colDiagnostics = [Collections.Generic.List[object]]::new()
 $hasFullScan = $false
 $hashFunctionIndex = $null
 $hashCallerIndex = $null
 
 foreach ($itemChange in $colChanged) {
 	$path = $itemChange.Path -replace '\\', '/'
-	if ($path -match '\.ps1$' -and $itemChange.Status -notmatch '^D') {
-		Add-ScopeFile -Files $colFiles -Dependencies $colDependencies -Reasons $colReasons -Path $path -Kind 'Changed' -Reason 'Changed PowerShell file' -Dependency $false
+	$oldPath = if ([string]::IsNullOrEmpty($itemChange.OldPath)) { $null } else { $itemChange.OldPath -replace '\\', '/' }
+	$existsAtHead = $itemChange.Status -notmatch '^D' -and (Test-ScopeExistingFile -Repository $repository -Path $path)
+
+	if ($existsAtHead -and $path -match '\.ps1$') {
+		Add-ScopeFile -Files $colFiles -Dependencies $colDependencies -Reasons $colReasons -Path $path -Kind 'Changed' -Reason 'Changed PowerShell file' -Scope Target
 	}
 
 	if ([IO.Path]::GetFileName($path) -ieq 'ps1-lint.json') {
@@ -239,44 +331,42 @@ foreach ($itemChange in $colChanged) {
 		}
 	}
 
-	if ($path -match '^d365bap\.tools/xml/.+\.ps1xml$') {
-		try {
-			$text = Get-Content -LiteralPath (Join-Path $repository $path) -Raw
-			$colTypes = @(Get-ScopeFormatTypeName -Path $path -Text $text)
+	if ((Test-ScopeFormatXmlPath $path) -or ($null -ne $oldPath -and (Test-ScopeFormatXmlPath $oldPath))) {
+		$format = Get-ScopeFormatView -Repository $repository -MergeBase $mergeBase -Change $itemChange
+		$colFormatMetadata.Add($format)
+		if (-not [string]::IsNullOrEmpty($format.HeadError)) {
+			$colDiagnostics.Add([pscustomobject]@{ Kind = 'InvalidFormatXml'; Path = $format.Path; Message = $format.HeadError })
 		}
-		catch {
-			$colInvalidFormats.Add("$path`: $($_.Exception.Message)")
-			continue
-		}
-
-		if ($colTypes.Count -eq 0) { continue }
-		if ($null -eq $hashFunctionIndex) { $hashFunctionIndex = Get-ScopeModuleFunctionIndex -Repository $repository }
-		foreach ($itemFunction in $hashFunctionIndex) {
-			$matched = @($colTypes | Where-Object {
-					$itemType = $_
-					@($itemFunction.Types | Where-Object { $_ -ieq $itemType -or $_ -ieq "$itemType[]" -or $_.TrimEnd('[]') -ieq $itemType.TrimEnd('[]') }).Count -gt 0 -or
-					@($itemFunction.Emitted | Where-Object { $_ -ieq $itemType }).Count -gt 0
-				}).Count -gt 0
-			if (-not $matched) { continue }
-			Add-ScopeFile -Files $colFiles -Dependencies $colDependencies -Reasons $colReasons -Path $itemFunction.Path -Kind 'FormatView' -Reason "Format view changed for $($colTypes -join ', ')"
+		if ($format.Types.Count -gt 0) {
+			if ($null -eq $hashFunctionIndex) { $hashFunctionIndex = Get-ScopeModuleFunctionIndex -Repository $repository }
+			foreach ($itemFunction in $hashFunctionIndex) {
+				$matched = @($format.Types | Where-Object {
+						$itemType = $_
+						@($itemFunction.Types | Where-Object { $_ -ieq $itemType -or $_ -ieq "$itemType[]" -or $_.TrimEnd('[]') -ieq $itemType.TrimEnd('[]') }).Count -gt 0 -or
+						@($itemFunction.Emitted | Where-Object { $_ -ieq $itemType }).Count -gt 0
+					}).Count -gt 0
+				if (-not $matched) { continue }
+				Add-ScopeFile -Files $colFiles -Dependencies $colDependencies -Reasons $colReasons -Path $itemFunction.Path -Kind 'FormatView' -Reason "Format view changed for $($format.Types -join ', ')"
+			}
 		}
 	}
 
 	if ($path -match '^build/ps1-lint/|^prek\.toml$') {
 		$hasFullScan = $true
-		foreach ($itemPath in @(Get-ScopePowerShellFile -Repository $repository -RelativeDirectory 'd365bap.tools')) {
-			Add-ScopeFile -Files $colFiles -Dependencies $colDependencies -Reasons $colReasons -Path $itemPath -Kind 'RuleChange' -Reason 'Lint rule implementation or settings changed'
-		}
-		foreach ($itemPath in @(Get-ScopePowerShellFile -Repository $repository -RelativeDirectory 'build')) {
-			Add-ScopeFile -Files $colFiles -Dependencies $colDependencies -Reasons $colReasons -Path $itemPath -Kind 'RuleChange' -Reason 'Lint rule implementation or settings changed'
-		}
 	}
 
-	if ($itemChange.Status -notmatch '^D' -and $path -match '^d365bap\.tools/(functions|internal/functions)/[^/]+\.ps1$') {
-		$baseText = Get-ScopeTextAtRevision -Repository $repository -Revision $mergeBase -Path $itemChange.OldPath ?? $path
-		$headText = Get-Content -LiteralPath (Join-Path $repository $path) -Raw
+	if ($existsAtHead -and $path -match '^d365bap\.tools/(functions|internal/functions)/[^/]+\.ps1$') {
+		$basePath = if ($null -ne $oldPath) { $oldPath } else { $path }
+		$baseText = Get-ScopeTextAtRevision -Repository $repository -Revision $mergeBase -Path $basePath
+		$headText = Get-ScopeHeadText -Repository $repository -Path $path
 		$baseTypes = @(Get-ScopeDeclaredType -Text $baseText -Path $path | Sort-Object -Unique)
 		$headTypes = @(Get-ScopeDeclaredType -Text $headText -Path $path | Sort-Object -Unique)
+		$colOutputTypeChanges.Add([pscustomobject]@{
+				Path      = $path
+				OldPath   = $oldPath
+				BaseTypes = $baseTypes
+				HeadTypes = $headTypes
+			})
 		if (($baseTypes -join '|') -cne ($headTypes -join '|')) {
 			$functionName = [IO.Path]::GetFileNameWithoutExtension($path)
 			if ($null -eq $hashCallerIndex) { $hashCallerIndex = Get-ScopeCallerIndex -Repository $repository }
@@ -289,15 +379,21 @@ foreach ($itemChange in $colChanged) {
 	}
 }
 
+$colDependencies.ExceptWith($colFiles)
+
 $scope = [pscustomobject]@{
-	BaseSha            = $BaseSha
-	HeadSha            = $HeadSha
-	MergeBase          = $mergeBase
-	Files              = @($colFiles | Sort-Object)
-	DependencyFiles    = @($colDependencies | Sort-Object)
-	Reasons            = @($colReasons | Sort-Object Path, Kind, Reason)
-	InvalidFormatFiles = @($colInvalidFormats)
-	FullScan           = $hasFullScan
+	BaseSha         = $BaseSha
+	HeadSha         = $HeadSha
+	MergeBase       = $mergeBase
+	Files           = @($colFiles | Sort-Object)
+	DependencyFiles = @($colDependencies | Sort-Object)
+	Reasons         = @($colReasons | Sort-Object Path, Kind, Reason)
+	Metadata        = [pscustomobject]@{
+		FormatViews       = @($colFormatMetadata)
+		OutputTypeChanges = @($colOutputTypeChanges)
+	}
+	Diagnostics     = @($colDiagnostics)
+	FullScan        = $hasFullScan
 }
 
 if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
