@@ -1,16 +1,4 @@
-﻿function Write-Ps1ParameterContractDiagnostic {
-	param([string] $Path, [string] $Rule, [string] $Message, $Extent)
-	[pscustomobject]@{
-		RuleName   = $Rule
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
-function Test-Ps1WildcardSupport {
+﻿function Test-Ps1WildcardSupport {
 	param($Parameter)
 	$null -ne (Get-Ps1ParameterWildcardAttribute -Parameter $Parameter)
 }
@@ -99,29 +87,28 @@ function Get-Ps1ParameterContractDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	$fileName = [IO.Path]::GetFileName($Path)
-	$positionAllowed = $normalized -match '/d365bap\.tools/(functions|internal)/' -and
-	$fileName -notlike '*Tests.ps1' -and
-	$fileName -ne 'Get-PpacFinOpsAsset.ps1'
+	$scope = $Analysis.Scope
+	$positionAllowed = $scope.IsModuleSource -and
+	-not $scope.IsTestsFile -and
+	$scope.FileName -ne 'Get-PpacFinOpsAsset.ps1'
 
 	$colFunctionParameters = [System.Collections.Generic.HashSet[object]]::new()
 	$hashParameterFunctions = [System.Collections.Generic.Dictionary[object, object]]::new()
-	foreach ($itemFunction in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+	foreach ($itemFunction in @(Get-Ps1AstNode $Analysis FunctionDefinitionAst)) {
 		foreach ($itemParameter in $itemFunction.Parameters) {
-			$null = $colFunctionParameters.Add($itemParameter)
+			$colFunctionParameters.Add($itemParameter) > $null
 			if (-not $hashParameterFunctions.ContainsKey($itemParameter)) { $hashParameterFunctions[$itemParameter] = $itemFunction }
 		}
 		if ($null -eq $itemFunction.Body.ParamBlock) { continue }
 		foreach ($itemParameter in $itemFunction.Body.ParamBlock.Parameters) {
-			$null = $colFunctionParameters.Add($itemParameter)
+			$colFunctionParameters.Add($itemParameter) > $null
 			if (-not $hashParameterFunctions.ContainsKey($itemParameter)) { $hashParameterFunctions[$itemParameter] = $itemFunction }
 		}
 	}
 
 	$defaults = Get-Ps1ParameterAttributeDefault
 
-	foreach ($itemParameter in $Analysis.Ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
+	foreach ($itemParameter in @(Get-Ps1AstNode $Analysis ParameterAst)) {
 		$name = $itemParameter.Name.VariablePath.UserPath
 
 		foreach ($itemAttribute in $itemParameter.Attributes) {
@@ -129,16 +116,16 @@ function Get-Ps1ParameterContractDiagnostic {
 			if ($itemAttribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.ParameterAttribute]) { continue }
 
 			if ($itemAttribute.NamedArguments.Count -eq 0 -and $itemAttribute.PositionalArguments.Count -eq 0) {
-				Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidRedundantParameterAttribute' "Remove the empty [Parameter()] attribute on -$name. It adds no value." $itemAttribute.Extent
+				New-Ps1Diagnostic -Path $Path 'PSAvoidRedundantParameterAttribute' "Remove the empty [Parameter()] attribute on -$name. It adds no value." $itemAttribute.Extent
 			}
 
 			foreach ($itemArgument in $itemAttribute.NamedArguments) {
 				if ($itemArgument.ArgumentName -eq 'Mandatory' -and (Test-Ps1ShorthandMandatory $itemArgument)) {
-					Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidShorthandMandatory' "Use the explicit form [Parameter(Mandatory = `$true)] instead of the shorthand Mandatory on -$name." $itemArgument.Argument.Extent
+					New-Ps1Diagnostic -Path $Path 'PSAvoidShorthandMandatory' "Use the explicit form [Parameter(Mandatory = `$true)] instead of the shorthand Mandatory on -$name." $itemArgument.Argument.Extent
 				}
 
 				if ($positionAllowed -and $itemArgument.ArgumentName -ieq 'Position') {
-					Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidExplicitParameterPosition' "Remove the explicit Position = $($itemArgument.Argument.Extent.Text) argument from -$name; declaration order defines parameter positions." $itemArgument.Extent
+					New-Ps1Diagnostic -Path $Path 'PSAvoidExplicitParameterPosition' "Remove the explicit Position = $($itemArgument.Argument.Extent.Text) argument from -$name; declaration order defines parameter positions." $itemArgument.Extent
 				}
 
 				$default = $null
@@ -153,7 +140,7 @@ function Get-Ps1ParameterContractDiagnostic {
 
 				$value = Get-Ps1ArgumentValue $itemArgument.Argument
 				if (-not (Test-Ps1SameValue $value $default)) { continue }
-				Write-Ps1ParameterContractDiagnostic $Path 'PSAvoidRedundantParameterAttribute' "Remove the redundant $($itemArgument.ArgumentName) = $($itemArgument.Argument.Extent.Text) argument on -$name; it restates the [Parameter()] default." $itemArgument.Extent
+				New-Ps1Diagnostic -Path $Path 'PSAvoidRedundantParameterAttribute' "Remove the redundant $($itemArgument.ArgumentName) = $($itemArgument.Argument.Extent.Text) argument on -$name; it restates the [Parameter()] default." $itemArgument.Extent
 			}
 		}
 
@@ -163,7 +150,7 @@ function Get-Ps1ParameterContractDiagnostic {
 					$_.TypeName.FullName -in @('string', 'System.String', 'string[]', 'System.String[]')
 				}).Count -gt 0
 			if ($isString -and -not (Test-Ps1ValidateNotNullOrEmpty $itemParameter)) {
-				Write-Ps1ParameterContractDiagnostic $Path 'PSUseValidateNotNullOrEmpty' "Parameter -$name is mandatory but does not declare [ValidateNotNullOrEmpty()]. Add the attribute to state the non-empty contract explicitly." $itemParameter.Extent
+				New-Ps1Diagnostic -Path $Path 'PSUseValidateNotNullOrEmpty' "Parameter -$name is mandatory but does not declare [ValidateNotNullOrEmpty()]. Add the attribute to state the non-empty contract explicitly." $itemParameter.Extent
 			}
 		}
 
@@ -176,7 +163,7 @@ function Get-Ps1ParameterContractDiagnostic {
 					$_.TypeName.FullName -in @('string', 'System.String', 'string[]', 'System.String[]')
 				}).Count -gt 0
 			if ($isString -and -not (Test-Ps1WildcardSupport $itemParameter)) {
-				Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name has a wildcard default value. Add [SupportsWildcards()] to the parameter." $itemParameter.DefaultValue.Extent
+				New-Ps1Diagnostic -Path $Path 'PSUseSupportsWildcards' "Parameter -$name has a wildcard default value. Add [SupportsWildcards()] to the parameter." $itemParameter.DefaultValue.Extent
 			}
 		}
 
@@ -189,7 +176,7 @@ function Get-Ps1ParameterContractDiagnostic {
 				$itemParameter.DefaultValue.Value -eq '*'
 
 				if (-not $hasStarDefault) {
-					Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name declares [SupportsWildcards()] but does not default to '*'. Wildcard parameters always have a value; set the default to '*'." $wildcardAttribute.Extent
+					New-Ps1Diagnostic -Path $Path 'PSUseSupportsWildcards' "Parameter -$name declares [SupportsWildcards()] but does not default to '*'. Wildcard parameters always have a value; set the default to '*'." $wildcardAttribute.Extent
 				}
 
 				if ($hashParameterFunctions.ContainsKey($itemParameter)) {
@@ -213,7 +200,7 @@ function Get-Ps1ParameterContractDiagnostic {
 						elseif ($itemArgument -is [Management.Automation.Language.ExpandableStringExpressionAst] -and $itemArgument.NestedExpressions.Count -eq 0) { $itemKey = $itemArgument.Value }
 						if ($null -eq $itemKey -or $itemKey -ine $name) { continue }
 
-						Write-Ps1ParameterContractDiagnostic $Path 'PSUseSupportsWildcards' "Parameter -$name is a wildcard parameter and always has a value, so `$PSBoundParameters.$($itemLookup.Member.Value)('$name') is unnecessary. Use -$name directly." $itemLookup.Extent
+						New-Ps1Diagnostic -Path $Path 'PSUseSupportsWildcards' "Parameter -$name is a wildcard parameter and always has a value, so `$PSBoundParameters.$($itemLookup.Member.Value)('$name') is unnecessary. Use -$name directly." $itemLookup.Extent
 					}
 				}
 			}

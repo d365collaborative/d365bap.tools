@@ -29,33 +29,17 @@ function Test-Ps1LiteralArrayStatement {
 	$Statement.PipelineElements[0].Expression -is [Management.Automation.Language.ArrayLiteralAst]
 }
 
-function New-Ps1ComplexArrayElementDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseOneComplexArrayElementPerLine'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1ComplexArrayElementDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
 	$message = 'Put each complex array element on its own line. A hashtable or scriptblock element makes a crowded line hard to read.'
 
 	$colReportedLiterals = [System.Collections.Generic.List[object]]::new()
 
-	foreach ($itemLiteral in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ArrayLiteralAst] }, $true)) {
+	foreach ($itemLiteral in @(Get-Ps1AstNode $Analysis ArrayLiteralAst)) {
 		$tmpElements = @($itemLiteral.Elements)
 		if ($tmpElements.Count -le 1) { continue }
 
@@ -65,19 +49,17 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 		for ($index = 0; $index -lt ($tmpComplex.Count - 1); $index++) {
 			if ($tmpComplex[$index].Extent.StartLineNumber -ne $tmpComplex[$index + 1].Extent.StartLineNumber) { continue }
 
-			New-Ps1ComplexArrayElementDiagnostic -Path $Path `
-				-Extent $itemLiteral.Extent `
-				-Message $message
+			New-Ps1Diagnostic $Path 'PSUseOneComplexArrayElementPerLine' $message $itemLiteral.Extent
 			$colReportedLiterals.Add($itemLiteral)
 			break
 		}
 	}
 
-	foreach ($itemSub in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.ArrayExpressionAst] }, $true)) {
+	foreach ($itemSub in @(Get-Ps1AstNode $Analysis ArrayExpressionAst)) {
 		if ($itemSub.Extent.StartLineNumber -ne $itemSub.Extent.EndLineNumber) { continue }
 
 		$hasReportedLiteral = $false
-		foreach ($itemNested in @($itemSub.FindAll({ param($Node) $Node -is [Management.Automation.Language.ArrayLiteralAst] }, $true))) {
+		foreach ($itemNested in @(Get-Ps1AstNode $Analysis ArrayLiteralAst $itemSub)) {
 			if (-not $colReportedLiterals.Contains($itemNested)) { continue }
 			$hasReportedLiteral = $true
 			break
@@ -92,8 +74,6 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 		}
 		if ($tmpComplex.Count -eq 0) { continue }
 
-		New-Ps1ComplexArrayElementDiagnostic -Path $Path `
-			-Extent $itemSub.Extent `
-			-Message $message
+		New-Ps1Diagnostic $Path 'PSUseOneComplexArrayElementPerLine' $message $itemSub.Extent
 	}
 }

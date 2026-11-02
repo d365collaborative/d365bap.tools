@@ -1,28 +1,12 @@
-﻿function New-Ps1MultilineSelectObjectPropertyDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseMultilineSelectObjectProperty'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
-function Get-Ps1MultilineSelectObjectPropertyDiagnostic {
+﻿function Get-Ps1MultilineSelectObjectPropertyDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
 	$message = 'Put each Select-Object calculated property on its own line. More than one property on one line is hard to read.'
 
-	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$commandName = $itemCommand.GetCommandName()
 		if ($null -eq $commandName) { continue }
 		if (($commandName -split '\\')[-1] -ine 'Select-Object') { continue }
@@ -57,9 +41,7 @@ function Get-Ps1MultilineSelectObjectPropertyDiagnostic {
 			$itemProperty = $tmpProperty[$index]
 			if ($itemProperty -is [Management.Automation.Language.HashtableAst] -and
 				$itemProperty.Extent.StartLineNumber -eq $tmpPreviousLine) {
-				New-Ps1MultilineSelectObjectPropertyDiagnostic -Path $Path `
-					-Extent $itemProperty.Extent `
-					-Message $message
+				New-Ps1Diagnostic $Path 'PSUseMultilineSelectObjectProperty' $message $itemProperty.Extent
 				break
 			}
 

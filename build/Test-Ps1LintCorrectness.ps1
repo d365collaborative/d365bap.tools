@@ -142,6 +142,75 @@ Write-Output 'pin'
 	Assert-True ($plainHash -ceq $decoyHash) 'Formatting must be byte-identical with a newer analyzer version installed.'
 	Assert-True ($analyzerPlain.ExitCode -eq $analyzerDecoy.ExitCode -and $analyzerPlain.Output -ceq $analyzerDecoy.Output) 'Analysis must be identical with a newer analyzer version installed.'
 
+	# The shared analysis helpers keep one scope table, cached node
+	# collections, and one diagnostic shape. Their behavior is part of the
+	# contract every rule relies on.
+	foreach ($itemHelper in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis')) {
+		. (Join-Path $PSScriptRoot "ps1-lint/internal/$itemHelper.ps1")
+	}
+	$helperRoot = Join-Path $root 'helpers'
+	function New-HelperFixture {
+		param([string] $RelativePath, [string] $Content)
+		$path = Join-Path $helperRoot $RelativePath
+		$null = New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force
+		[IO.File]::WriteAllText($path, $Content.Replace("`r`n", "`n"))
+		$path
+	}
+
+	$moduleFunction = New-HelperFixture 'd365bap.tools/functions/Get-Thing.ps1' "function Get-Thing {`n`tGet-Date | Select-Object -First 1`n}`n"
+	$moduleAnalysis = Get-Ps1Analysis -Path $moduleFunction
+	Assert-True (Test-Ps1RuleScope -Analysis $moduleAnalysis -Scope 'ModuleSource') 'A public function file must be module source.'
+	Assert-True (Test-Ps1RuleScope -Analysis $moduleAnalysis -Scope 'PublicFunction') 'A public function file must match the public-function scope.'
+	Assert-True (Test-Ps1RuleScope -Analysis $moduleAnalysis -Scope 'Documentation') 'Comment linting covers module function files.'
+
+	foreach ($itemCase in @(
+			@{ Relative = 'd365bap.tools/functions/Get-Thing.Tests.ps1'; Scope = 'ModuleSource' }
+			@{ Relative = 'd365bap.tools/internal/tepp/example.tepp.ps1'; Scope = 'ModuleSource' }
+			@{ Relative = 'd365bap.tools/internal/tepp/assignment.ps1'; Scope = 'ModuleSource' }
+			@{ Relative = 'd365bap.tools/tests/general/Help.ps1'; Scope = 'Documentation' }
+			@{ Relative = 'build/Run-Thing.ps1'; Scope = 'ModuleOrLintTooling' }
+		)) {
+		$fixturePath = New-HelperFixture $itemCase.Relative "Write-Output 'fixture'`n"
+		$fixtureAnalysis = Get-Ps1Analysis -Path $fixturePath
+		Assert-True (-not (Test-Ps1RuleScope -Analysis $fixtureAnalysis -Scope $itemCase.Scope)) "$($itemCase.Relative) must not match the $($itemCase.Scope) scope."
+	}
+
+	$buildScript = New-HelperFixture 'build/Run-Thing.ps1' "Write-Output 'fixture'`n"
+	$buildAnalysis = Get-Ps1Analysis -Path $buildScript
+	Assert-True (Test-Ps1RuleScope -Analysis $buildAnalysis -Scope 'ModuleOrBuild') 'A build script must match the module-or-build scope.'
+	Assert-True (-not (Test-Ps1RuleScope -Analysis $buildAnalysis -Scope 'ModuleSource')) 'A build script is not module source.'
+
+	$lintTooling = New-HelperFixture 'build/ps1-lint/internal/Test-Thing.ps1' "Write-Output 'fixture'`n"
+	$lintAnalysis = Get-Ps1Analysis -Path $lintTooling
+	Assert-True (Test-Ps1RuleScope -Analysis $lintAnalysis -Scope 'ModuleOrLintTooling') 'Lint tooling must match the lint-tooling scope.'
+
+	$outsideScript = New-HelperFixture 'scripts/Run-Thing.ps1' "Write-Output 'fixture'`n"
+	$outsideAnalysis = Get-Ps1Analysis -Path $outsideScript
+	Assert-True (Test-Ps1RuleScope -Analysis $outsideAnalysis -Scope 'Documentation') 'A script outside the module may use ordinary comments.'
+	Assert-True (-not (Test-Ps1RuleScope -Analysis $outsideAnalysis -Scope 'ModuleSource')) 'A script outside the module is not module source.'
+
+	# Node collections are cached once per type and search root.
+	$colCommands = @(Get-Ps1AstNode -Analysis $moduleAnalysis -Type CommandAst)
+	Assert-True ($colCommands.Count -eq 2) "The module fixture must contain two commands, found $($colCommands.Count)."
+	$cacheKey = $moduleAnalysis.Ast
+	Assert-True ($moduleAnalysis.Nodes[$cacheKey].ContainsKey('CommandAst')) 'The first node collection must be cached.'
+	$cachedBefore = $moduleAnalysis.Nodes[$cacheKey].Count
+	$null = @(Get-Ps1AstNode -Analysis $moduleAnalysis -Type CommandAst)
+	Assert-True ($moduleAnalysis.Nodes[$cacheKey].Count -eq $cachedBefore) 'A repeated node collection must reuse the cached nodes.'
+
+	$colPipes = @(Get-Ps1TokenNode -Analysis $moduleAnalysis -Kind Pipe)
+	Assert-True ($colPipes.Count -eq 1) "The module fixture must contain one pipe token, found $($colPipes.Count)."
+	Assert-True ($moduleAnalysis.TokenCache.ContainsKey('Pipe')) 'The first token collection must be cached.'
+
+	$diagnostic = New-Ps1Diagnostic -Path $moduleFunction -Rule 'PSTestRule' -Message 'message' -Extent $moduleAnalysis.Ast.Extent
+	Assert-True ($diagnostic.RuleName -eq 'PSTestRule' -and $diagnostic.Severity -eq 'Error') 'A diagnostic must keep its rule name and Error severity.'
+	Assert-True ($diagnostic.ScriptName -eq 'Get-Thing.ps1') 'A diagnostic must report the file name without its directory.'
+	Assert-True ($diagnostic.Line -eq 1 -and $diagnostic.Column -eq 1) 'A diagnostic must take its position from the extent.'
+	$positional = New-Ps1Diagnostic -Path $moduleFunction -Rule 'PSTestRule' -Message 'message' -Line 4 -Column 2
+	Assert-True ($positional.Line -eq 4 -and $positional.Column -eq 2) 'A diagnostic must take an explicit line and column.'
+	$unpositioned = New-Ps1Diagnostic -Path $moduleFunction -Rule 'PSTestRule' -Message 'message'
+	Assert-True ($null -eq $unpositioned.Line -and $null -eq $unpositioned.Column) 'A diagnostic without a position must keep null line and column.'
+
 	# The documented semantics must match the rule messages.
 	$readmeText = Get-Content -LiteralPath $readme -Raw
 	Assert-True ($readmeText -match 'already rejects null and empty values') 'README must describe mandatory string binding accurately.'

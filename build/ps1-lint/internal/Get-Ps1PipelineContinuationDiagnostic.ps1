@@ -1,28 +1,13 @@
-﻿function New-Ps1PipelineContinuationDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUsePipelineContinuationBreak'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
-function Get-Ps1PipelineContinuationDiagnostic {
+﻿function Get-Ps1PipelineContinuationDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	$colPipes = @($Analysis.Tokens | Where-Object { $_.Kind -eq [System.Management.Automation.Language.TokenKind]::Pipe })
+	$colPipes = @(Get-Ps1TokenNode $Analysis Pipe)
 
-	foreach ($itemPipeline in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.PipelineAst] -and $Node.PipelineElements.Count -gt 1 }, $true)) {
+	$colPipelines = @(Get-Ps1AstNode $Analysis PipelineAst | Where-Object { $_.PipelineElements.Count -gt 1 })
+	foreach ($itemPipeline in $colPipelines) {
 		$tmpElements = @($itemPipeline.PipelineElements)
 
 		for ($index = 1; $index -lt $tmpElements.Count; $index++) {
@@ -46,23 +31,17 @@ function Get-Ps1PipelineContinuationDiagnostic {
 				$next.Extent.StartLineNumber -eq $pipe.Extent.EndLineNumber
 				if ($isClosingLine) { continue }
 
-				New-Ps1PipelineContinuationDiagnostic -Path $Path `
-					-Extent $pipe.Extent `
-					-Message 'Keep `|` and the next command on the closing brace line of a multiline hashtable element: } | ConvertTo-Json.'
+				New-Ps1Diagnostic $Path 'PSUsePipelineContinuationBreak' 'Keep `|` and the next command on the closing brace line of a multiline hashtable element: } | ConvertTo-Json.' $pipe.Extent
 				break
 			}
 
 			if ($previous.Extent.EndLineNumber -eq $next.Extent.StartLineNumber) {
-				New-Ps1PipelineContinuationDiagnostic -Path $Path `
-					-Extent $pipe.Extent `
-					-Message 'Break the pipeline after `|`: put the pipe at the end of the line and start the next command on a new line.'
+				New-Ps1Diagnostic $Path 'PSUsePipelineContinuationBreak' 'Break the pipeline after `|`: put the pipe at the end of the line and start the next command on a new line.' $pipe.Extent
 				break
 			}
 
 			if ($pipe.Extent.StartLineNumber -ne $previous.Extent.EndLineNumber) {
-				New-Ps1PipelineContinuationDiagnostic -Path $Path `
-					-Extent $pipe.Extent `
-					-Message 'Move `|` to the end of the previous line and start the next command on a new line.'
+				New-Ps1Diagnostic $Path 'PSUsePipelineContinuationBreak' 'Move `|` to the end of the previous line and start the next command on a new line.' $pipe.Extent
 				break
 			}
 		}

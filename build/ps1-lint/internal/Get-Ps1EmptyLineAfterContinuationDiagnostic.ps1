@@ -1,30 +1,13 @@
-﻿function New-Ps1EmptyLineAfterContinuationDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseEmptyLineAfterContinuation'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
-function Get-Ps1EmptyLineAfterContinuationDiagnostic {
+﻿function Get-Ps1EmptyLineAfterContinuationDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	$colContinuations = @($Analysis.Tokens | Where-Object { $_.Kind -eq [System.Management.Automation.Language.TokenKind]::LineContinuation })
+	$colContinuations = @(Get-Ps1TokenNode $Analysis LineContinuation)
 	if ($colContinuations.Count -eq 0) { return }
 
-	$scriptBlock = { param($Node) $Node -is [Management.Automation.Language.NamedBlockAst] -or $Node -is [Management.Automation.Language.StatementBlockAst] }
-	foreach ($itemBlock in $Analysis.Ast.FindAll($scriptBlock, $true)) {
+	foreach ($itemBlock in @(Get-Ps1AstNode $Analysis NamedBlockAst, StatementBlockAst)) {
 		$tmpStatements = @($itemBlock.Statements)
 		for ($index = 0; $index -lt $tmpStatements.Count - 1; $index++) {
 			$current = $tmpStatements[$index]
@@ -42,9 +25,7 @@ function Get-Ps1EmptyLineAfterContinuationDiagnostic {
 			}
 			if (-not $hasContinuation) { continue }
 
-			New-Ps1EmptyLineAfterContinuationDiagnostic -Path $Path `
-				-Extent $next.Extent `
-				-Message 'Add an empty line after the line continuation so the next statement is clearly separate.'
+			New-Ps1Diagnostic $Path 'PSUseEmptyLineAfterContinuation' 'Add an empty line after the line continuation so the next statement is clearly separate.' $next.Extent
 		}
 	}
 }

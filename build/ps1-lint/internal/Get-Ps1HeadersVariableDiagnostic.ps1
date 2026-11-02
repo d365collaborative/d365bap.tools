@@ -16,31 +16,15 @@
 	$false
 }
 
-function New-Ps1HeadersVariableDiagnostic {
-	param([string] $Path, [string] $Message, $Extent)
-
-	[pscustomobject]@{
-		RuleName   = 'PSUseVariableForHeaders'
-		Severity   = 'Error'
-		ScriptName = [IO.Path]::GetFileName($Path)
-		Line       = $Extent.StartLineNumber
-		Column     = $Extent.StartColumnNumber
-		Message    = $Message
-	}
-}
-
 function Get-Ps1HeadersVariableDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$normalized = $Path -replace '\\', '/'
-	if ($normalized -notmatch '/d365bap\.tools/(functions|internal)/') { return }
-	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
-	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
+	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
 	$message = 'Assign the headers to a variable first and pass it to -Headers. An inline hashtable inside a multi-line call hides where the hashtable ends.'
 
-	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $true)) {
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$tmpElements = @($itemCommand.CommandElements)
 		for ($index = 0; $index -lt ($tmpElements.Count - 1); $index++) {
 			$itemParameter = $tmpElements[$index]
@@ -50,9 +34,7 @@ function Get-Ps1HeadersVariableDiagnostic {
 			$itemArgument = $tmpElements[$index + 1]
 			if (-not (Test-Ps1InlineHashtable -Node $itemArgument)) { continue }
 
-			New-Ps1HeadersVariableDiagnostic -Path $Path `
-				-Extent $itemArgument.Extent `
-				-Message $message
+			New-Ps1Diagnostic $Path 'PSUseVariableForHeaders' $message $itemArgument.Extent
 		}
 	}
 }
