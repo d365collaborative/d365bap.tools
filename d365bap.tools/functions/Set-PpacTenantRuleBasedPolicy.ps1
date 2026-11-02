@@ -64,7 +64,7 @@ function Set-PpacTenantRuleBasedPolicy {
 	)
 
 	process {
-		if (-not $PSBoundParameters.ContainsKey('Name') -and -not $PSBoundParameters.ContainsKey('RuleSet')) {
+		if (-not $Name -and -not $RuleSet) {
 			Stop-PSFFunction -Message "Specify -Name, -RuleSet, or both."
 			return
 		}
@@ -79,8 +79,8 @@ function Set-PpacTenantRuleBasedPolicy {
 			return
 		}
 
-		$payloadName = if ($PSBoundParameters.ContainsKey('Name')) { $Name } else { $colCurrent[0].Name }
-		$payloadRuleSets = if ($PSBoundParameters.ContainsKey('RuleSet')) { @($RuleSet) } else { @($colCurrent[0].RuleSets) }
+		$payloadName = if ($Name) { $Name } else { $colCurrent[0].Name }
+		$payloadRuleSets = if ($RuleSet) { @($RuleSet) } else { @($colCurrent[0].RuleSets) }
 
 		$policyName = $colCurrent[0].Name
 		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }

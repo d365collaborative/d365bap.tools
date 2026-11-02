@@ -50,7 +50,7 @@ function Set-PpacTenantAcpPolicy {
 	)
 
 	process {
-		if (-not $PSBoundParameters.ContainsKey('Name') -and -not $PSBoundParameters.ContainsKey('ConnectorId')) {
+		if (-not $Name -and -not $ConnectorId) {
 			Stop-PSFFunction -Message "Specify -Name, -ConnectorId, or both."
 			return
 		}
@@ -71,7 +71,7 @@ function Set-PpacTenantAcpPolicy {
 			return
 		}
 
-		if ($PSBoundParameters.ContainsKey('ConnectorId')) {
+		if ($ConnectorId) {
 			$colAllowed = foreach ($itemConnector in $ConnectorId) {
 				$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
 				[ordered]@{
@@ -100,7 +100,7 @@ function Set-PpacTenantAcpPolicy {
 			PolicyId = $colCurrent[0].PolicyId
 			RuleSet  = @($hashRuleSet)
 		}
-		if ($PSBoundParameters.ContainsKey('Name')) { $hashParams.Name = $Name }
+		if ($Name) { $hashParams.Name = $Name }
 
 		$null = Set-PpacTenantRuleBasedPolicy @hashParams -Confirm:$false
 		Get-PpacTenantAcpPolicy -PolicyId $colCurrent[0].PolicyId
