@@ -58,9 +58,9 @@ What runs on PowerShell files:
   Current help-quality extensions: DESCRIPTION must not repeat SYNOPSIS, and
   parameters with code defaults must document them with a trailing
   `Default: ...` line as the last paragraph of the `.PARAMETER` section.
-  `d365bap.tools/functions/ps1-lint.json` disables `PSAvoidParameterAliases`
-  for the public functions: the `PpacEnvId` pipeline alias is an established
-  repo-wide convention, so declaring it is not a violation there.
+  `d365bap.tools/functions/ps1-lint.json` lists `PpacEnvId` in
+  `allowedParameterAliases`: the pipeline alias is an established repo-wide
+  convention, so declaring and using it is not a violation there.
 - `ps1-format/Run.ps1` — Invoke-Formatter with `internal/Ps1FormatSettings.psd1`
   plus UTF-8 BOM enforcement. Rewrites files and exits 1 when anything changed
   or a file could not be formatted. A formatting failure no longer disappears

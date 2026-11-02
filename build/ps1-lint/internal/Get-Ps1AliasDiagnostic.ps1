@@ -22,7 +22,8 @@ function Get-Ps1AliasDiagnostic {
 	}
 	$moduleRoot = Get-Ps1ModuleRoot -Path $Path
 	$repositoryFunctions = if ($null -ne $moduleRoot) {
-		(Get-Ps1RepositoryIndex -ModuleRoot $moduleRoot -Worker $Worker).Functions
+		(Get-Ps1RepositoryIndex -ModuleRoot $moduleRoot `
+			-Worker $Worker).Functions
 	}
 	else {
 		@{}
@@ -42,7 +43,8 @@ function Get-Ps1AliasDiagnostic {
 	}
 	foreach ($itemParameter in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.ParameterAst] }, $true)) {
 		foreach ($itemAlias in Get-Ps1DeclaredAlias $itemParameter.Attributes) {
-			if ($rules.PSAvoidParameterAliases -and $itemAlias.Name -notin @($rules.AllowedParameterAliases)) {
+			if (-not $itemAlias.Name) { continue }
+			if ($itemAlias.Name -notin @($rules.AllowedParameterAliases)) {
 				New-Ps1AliasDiagnostic $Path 'PSAvoidParameterAliases' $itemAlias.Extent "Do not declare parameter aliases. Use '$($itemParameter.Name.VariablePath.UserPath)'."
 			}
 		}
@@ -66,7 +68,7 @@ function Get-Ps1AliasDiagnostic {
 		$hashResolvedCommands[$itemCommand] = $resolved
 		if ($resolved.Command.Name -notin @('Set-Alias', 'New-Alias', 'Set-Item', 'New-Item')) { continue }
 		$isAliasCommand = $resolved.Command.Name -in @('Set-Alias', 'New-Alias')
-		if ($isAliasCommand) { $null = $colDeclarations.Add($itemCommand) }
+		if ($isAliasCommand) { $colDeclarations.Add($itemCommand) > $null }
 		$binding = [Management.Automation.Language.StaticParameterBinder]::BindCommand($itemCommand)
 		try {
 			if ($isAliasCommand) { $tmpAliasNames = @($binding.BoundParameters['Name'].Value.SafeGetValue()) }
@@ -75,7 +77,7 @@ function Get-Ps1AliasDiagnostic {
 				$tmpProviderPaths = @($binding.BoundParameters[$pathParameter].Value.SafeGetValue())
 				$tmpAliasNames = @(foreach ($itemProviderPath in $tmpProviderPaths) {
 						if ($itemProviderPath -isnot [string] -or $itemProviderPath -notmatch '^Alias:') { continue }
-						$null = $colDeclarations.Add($itemCommand)
+						$colDeclarations.Add($itemCommand) > $null
 						$providerName = $itemProviderPath -replace '^Alias:[\\/]*', ''
 						if ($providerName) { $providerName }
 						elseif ($binding.BoundParameters.ContainsKey('Name')) { $binding.BoundParameters['Name'].Value.SafeGetValue() }

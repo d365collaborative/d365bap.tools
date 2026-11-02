@@ -17,6 +17,7 @@ $ErrorActionPreference = 'Stop'
 $expectedSuite = @(
 	'Test-Ps1AccessTokenRule.ps1'
 	'Test-Ps1AddMemberRule.ps1'
+	'Test-Ps1AliasRule.ps1'
 	'Test-Ps1CentralApiVersionRule.ps1'
 	'Test-Ps1CommentRule.ps1'
 	'Test-Ps1ComplexArrayElementRule.ps1'
