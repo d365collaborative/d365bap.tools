@@ -37,6 +37,7 @@ What runs on PowerShell files:
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
+  `PSUseReturnAfterStopPSFFunction`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -1164,6 +1165,51 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectStringCheckRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyLineAfterContinuationRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1DirectParameterCheckRule.ps1
+```
+
+## Return after Stop-PSFFunction
+
+`PSUseReturnAfterStopPSFFunction` requires a plain `Stop-PSFFunction` to be
+followed by `return`, `throw`, or `exit` before any later statement runs. The
+rule walks out through enclosing blocks, so a stop at the end of an inner block
+is reported when the function continues after that block:
+
+```powershell
+# Fails: the function continues after the if block
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+}
+Get-Thing
+
+# Fails: continue does not return from the function
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+    continue
+}
+
+# Passes
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+    return
+}
+
+# Passes: the function ends at the stop
+if ($null -eq $thing) {
+    Stop-PSFFunction -Message 'Not found'
+}
+
+# Passes: explicit continuation
+Stop-PSFFunction -Message 'Try the next one' -Continue
+```
+
+`-StepsUpward`, `-EnableException $true`, and `-Continue` are exempt because
+they do not fall through to the next statement in the same way. Test files and
+tepp fixtures are exempt. The rule runs on module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1ReturnAfterStopRule.ps1
 ```
 
 ## Example prose
