@@ -747,25 +747,44 @@ files, and tepp fixtures are out of scope.
 
 ## Output discards
 
-`PSAvoidOutNull` rejects `Out-Null` in module code and the lint tooling. A
-discard redirects to `$null`, which is the faster, allocation-free form and
-keeps the discarded value visible in review:
+`PSAvoidOutNull` rejects, in module code and the lint tooling, the two discard
+forms that do not redirect output to `$null`: `Out-Null` and assigning a command
+or expression to `$null`. A discard redirects to `$null`, which is the faster,
+allocation-free form and keeps the discarded value visible in review:
 
 ```powershell
 # Fails
 [int]::TryParse($Value, [ref]$IsInt) | Out-Null
 Out-Null -InputObject (Get-Thing)
+$null = Invoke-RestMethod -Method Post -Uri $uri
+$null = $list.Add($item)
+$null = $_.Exception.Message
+$null = 5
+$null = $commandName, $parameterName
+$null = if ($true) { Get-Thing }
 
 # Passes
 [int]::TryParse($Value, [ref]$IsInt) > $null
 Get-Thing > $null
+Invoke-RestMethod -Method Post -Uri $uri > $null
+$list.Add($item) > $null
+$_.Exception.Message > $null
+5 > $null
+$(if ($true) { Get-Thing }) > $null
 ```
 
-The rule matches the command name, so `Microsoft.PowerShell.Core\Out-Null` and
-`out-null` are reported too. A file that defines `function Out-Null` or
-`Set-Alias Out-Null` is skipped because the local name may have different
-behavior. Test files and tepp fixtures are exempt. Existing call sites in the
-lint tooling migrate as those files are touched.
+The `Out-Null` check matches the command name, so
+`Microsoft.PowerShell.Core\Out-Null` and `out-null` are reported too. A file
+that defines `function Out-Null` or `Set-Alias Out-Null` skips that check
+because the local name may have different behavior; the `$null` assignment check
+still runs.
+
+The `$null` assignment check reports every assignment to `$null`. The message
+names the command when the right side contains one; a keyword statement is
+reported with the `$(...)` redirect form. A variable named `$null` with a scope
+qualifier is not the automatic variable and is not checked. Test files and tepp
+fixtures are exempt. Existing call sites in the lint tooling migrate as those
+files are touched.
 
 ## Splatting module commands
 
