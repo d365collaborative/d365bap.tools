@@ -1193,11 +1193,11 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1TernaryInObjectInitializationRule.ps1
 ```
 
-## Multiline if conditions
+## Multiline if conditions and Where-Object predicates
 
-`PSUseMultilineIfCondition` requires every test in a compound `if` or `elseif`
-condition to sit in parentheses on its own line, with `-and` or `-or` leftmost
-on the continuation line:
+`PSUseMultilineIfCondition` requires every test in a compound `if`, `elseif`,
+or `Where-Object` predicate to sit in parentheses on its own line, with `-and`
+or `-or` leftmost on the continuation line:
 
 ```powershell
 # Fails: two tests on one line
@@ -1244,14 +1244,29 @@ if (
 ) {
     $objValue[0]
 }
+
+# Fails: the Where-Object predicate tests are on one line
+$objPipeline | Where-Object { $_.Count -gt 0 -and $_.Name }
+
+# Passes: the Where-Object predicate tests are split
+$objPipeline | Where-Object {
+    ($_.Count -gt 0) `
+    -and ($_.Name)
+}
 ```
 
 Every operand of an `-and` or `-or` chain must be a parenthesized expression and
 start on its own line. The operator starts the continuation line, so the logic
 split stays visible at the left edge. A chain of the same operator is read left
 to right, so three or more tests produce one operator line per test. A nested
-`-and` or `-or` is checked recursively. A single test, an `if` expression, and a
-`Where-Object` script block are not compound conditions and are not reported.
+`-and` or `-or` is checked recursively, and a leading `-not` is traversed so the
+enclosed chain is still checked. PowerShell operator precedence is preserved:
+mixed `-and` and `-or` levels are checked separately, and a grouped test must
+be parenthesized. A single test and an `if` expression are not compound
+conditions and are not reported. `Where-Object` predicates are found through
+the cmdlet name, its `?` and `where` aliases, and a module-qualified name, with
+either a positional script block or `-FilterScript`. Simplified syntax such as
+`Where-Object Name -eq 'abc'` and a filter passed by variable are not checked.
 Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
 module code (public and internal).
 

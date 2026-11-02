@@ -1,7 +1,7 @@
-﻿function Get-Ps1IfConditionExpression {
-	param($Condition)
+﻿function Get-Ps1BooleanExpression {
+	param($Expression)
 
-	$tmp = $Condition
+	$tmp = $Expression
 	while ($true) {
 		if ($tmp -is [Management.Automation.Language.PipelineAst] -and
 			$tmp.PipelineElements.Count -eq 1 -and
@@ -13,20 +13,25 @@
 			$tmp = $tmp.Pipeline
 			continue
 		}
+		if ($tmp -is [Management.Automation.Language.UnaryExpressionAst] -and
+			"$($tmp.TokenKind)" -eq 'Not') {
+			$tmp = $tmp.Child
+			continue
+		}
 		$tmp
 		return
 	}
 }
 
-function Get-Ps1IfConditionOperand {
+function Get-Ps1BooleanOperand {
 	param($Expression, [string] $Operator, [System.Collections.Generic.List[object]] $Operands)
 
 	if ($Expression -is [Management.Automation.Language.BinaryExpressionAst] -and
 		"$($Expression.Operator)" -eq $Operator) {
-		Get-Ps1IfConditionOperand -Expression $Expression.Left `
+		Get-Ps1BooleanOperand -Expression $Expression.Left `
 			-Operator $Operator `
 			-Operands $Operands
-		Get-Ps1IfConditionOperand -Expression $Expression.Right `
+		Get-Ps1BooleanOperand -Expression $Expression.Right `
 			-Operator $Operator `
 			-Operands $Operands
 		return
@@ -35,7 +40,7 @@ function Get-Ps1IfConditionOperand {
 	$Operands.Add($Expression)
 }
 
-function Test-Ps1IfConditionOperatorLine {
+function Test-Ps1BooleanOperatorLine {
 	param($Expression, $Tokens)
 
 	$tmpToken = $null
@@ -52,32 +57,27 @@ function Test-Ps1IfConditionOperatorLine {
 	foreach ($itemChild in @($Expression.Left, $Expression.Right)) {
 		if ($itemChild -isnot [Management.Automation.Language.BinaryExpressionAst]) { continue }
 		if ("$($itemChild.Operator)" -notin @('And', 'Or')) { continue }
-		if (-not (Test-Ps1IfConditionOperatorLine -Expression $itemChild `
+		if (-not (Test-Ps1BooleanOperatorLine -Expression $itemChild `
 					-Tokens $Tokens)) { $false; return }
 	}
 
 	$true
 }
 
-function Test-Ps1IfConditionExpression {
+function Test-Ps1BooleanLayout {
 	param($Expression, $Tokens)
 
-	$tmp = $Expression
-	if ($tmp -is [Management.Automation.Language.ParenExpressionAst]) {
-		Test-Ps1IfConditionExpression -Expression (Get-Ps1IfConditionExpression -Condition $tmp.Pipeline) `
-			-Tokens $Tokens
-		return
-	}
+	$tmp = Get-Ps1BooleanExpression -Expression $Expression
 	if ($tmp -isnot [Management.Automation.Language.BinaryExpressionAst]) { $true; return }
 
 	$operator = "$($tmp.Operator)"
 	if ($operator -notin @('And', 'Or')) { $true; return }
 
-	if (-not (Test-Ps1IfConditionOperatorLine -Expression $tmp `
+	if (-not (Test-Ps1BooleanOperatorLine -Expression $tmp `
 				-Tokens $Tokens)) { $false; return }
 
 	$colOperands = [System.Collections.Generic.List[object]]::new()
-	Get-Ps1IfConditionOperand -Expression $tmp `
+	Get-Ps1BooleanOperand -Expression $tmp `
 		-Operator $operator `
 		-Operands $colOperands
 
@@ -85,11 +85,62 @@ function Test-Ps1IfConditionExpression {
 		$itemOperand = $colOperands[$index]
 		if ($index -gt 0 -and $itemOperand.Extent.StartLineNumber -eq $colOperands[$index - 1].Extent.StartLineNumber) { $false; return }
 		if ($itemOperand -isnot [Management.Automation.Language.ParenExpressionAst]) { $false; return }
-		if (-not (Test-Ps1IfConditionExpression -Expression (Get-Ps1IfConditionExpression -Condition $itemOperand.Pipeline) `
+		if (-not (Test-Ps1BooleanLayout -Expression $itemOperand `
 					-Tokens $Tokens)) { $false; return }
 	}
 
 	$true
+}
+
+function Get-Ps1WhereObjectFilter {
+	param($Command)
+
+	$name = "$($Command.GetCommandName())"
+	if ([string]::IsNullOrWhiteSpace($name)) { return }
+
+	# Strip a module or scope qualifier before matching the cmdlet and its
+	# standard aliases.
+	$leaf = @($name -split '[\\:]')[-1]
+	if ($leaf -notin @('Where-Object', 'where', '?')) { return }
+
+	$colElements = @($Command.CommandElements)
+	for ($index = 1; $index -lt $colElements.Count; $index++) {
+		$itemElement = $colElements[$index]
+		if ($itemElement -is [Management.Automation.Language.CommandParameterAst]) {
+			if ("$($itemElement.ParameterName)" -ne 'FilterScript') { continue }
+			# `-FilterScript:{ ... }` binds the script block to the parameter
+			# itself instead of adding a separate command element.
+			if ($itemElement.Argument -is [Management.Automation.Language.ScriptBlockExpressionAst]) {
+				$itemElement.Argument
+				return
+			}
+			# A named -FilterScript binds only the argument that follows it. A
+			# variable or other expression there cannot be checked statically.
+			if ($index + 1 -ge $colElements.Count) { return }
+			$itemArgument = $colElements[$index + 1]
+			if ($itemArgument -is [Management.Automation.Language.ScriptBlockExpressionAst]) { $itemArgument; return }
+			return
+		}
+		if ($itemElement -is [Management.Automation.Language.ScriptBlockExpressionAst]) { $itemElement; return }
+	}
+}
+
+function Test-Ps1WhereObjectFilter {
+	param($Filter, $Tokens)
+
+	$hasViolation = $false
+	$colBlocks = @($Filter.ScriptBlock.BeginBlock, $Filter.ScriptBlock.ProcessBlock, $Filter.ScriptBlock.EndBlock)
+	foreach ($itemBlock in $colBlocks) {
+		if ($null -eq $itemBlock) { continue }
+		foreach ($itemStatement in $itemBlock.Statements) {
+			if ($itemStatement -isnot [Management.Automation.Language.PipelineAst]) { continue }
+			if (Test-Ps1BooleanLayout -Expression $itemStatement `
+					-Tokens $Tokens) { continue }
+			$hasViolation = $true
+		}
+	}
+
+	$hasViolation
 }
 
 function New-Ps1MultilineIfConditionDiagnostic {
@@ -118,13 +169,23 @@ function Get-Ps1MultilineIfConditionDiagnostic {
 
 	foreach ($itemIf in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.IfStatementAst] }, $true)) {
 		foreach ($itemClause in $itemIf.Clauses) {
-			$tmpCondition = Get-Ps1IfConditionExpression -Condition $itemClause.Item1
-			if (Test-Ps1IfConditionExpression -Expression $tmpCondition `
+			if (Test-Ps1BooleanLayout -Expression $itemClause.Item1 `
 					-Tokens $Analysis.Tokens) { continue }
 
 			New-Ps1MultilineIfConditionDiagnostic -Path $Path `
 				-Extent $itemClause.Item1.Extent `
 				-Message $message
 		}
+	}
+
+	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $true)) {
+		$itemFilter = Get-Ps1WhereObjectFilter -Command $itemCommand
+		if ($null -eq $itemFilter) { continue }
+		if (-not (Test-Ps1WhereObjectFilter -Filter $itemFilter `
+					-Tokens $Analysis.Tokens)) { continue }
+
+		New-Ps1MultilineIfConditionDiagnostic -Path $Path `
+			-Extent $itemFilter.Extent `
+			-Message $message
 	}
 }
