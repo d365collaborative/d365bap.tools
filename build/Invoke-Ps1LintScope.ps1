@@ -16,17 +16,20 @@ $ErrorActionPreference = 'Stop'
 $repository = (Resolve-Path -LiteralPath $RepositoryPath).Path
 $scope = & (Join-Path $PSScriptRoot 'Get-Ps1LintScope.ps1') -BaseSha $BaseSha -HeadSha $HeadSha -RepositoryPath $repository -OutputPath $OutputPath
 
-Write-Host "Changed PowerShell files: $(@($scope.Files | Where-Object { $_ -match '\.ps1$' }).Count)"
-Write-Host "Dependency-affected files: $($scope.DependencyFiles.Count)"
+Write-Host "Touched PowerShell files: $($scope.Files.Count)"
+Write-Host "Dependency-affected files (report only): $($scope.DependencyFiles.Count)"
 Write-Host "Full custom-rule scan recommended: $($scope.FullScan)"
 
 foreach ($itemReason in $scope.Reasons) {
 	Write-Host "  $($itemReason.Kind): $($itemReason.Path) — $($itemReason.Reason)"
 }
 
-if ($scope.InvalidFormatFiles.Count -gt 0) {
-	foreach ($itemError in $scope.InvalidFormatFiles) { Write-Host "  invalid format XML: $itemError" }
-	throw "Malformed format XML changed in this pull request: $($scope.InvalidFormatFiles -join '; ')"
+foreach ($itemDiagnostic in $scope.Diagnostics) {
+	Write-Host "  $($itemDiagnostic.Kind): $($itemDiagnostic.Path) — $($itemDiagnostic.Message)"
+}
+if ($scope.Diagnostics.Count -gt 0) {
+	$colDetail = @($scope.Diagnostics | ForEach-Object { "$($_.Path): $($_.Message)" })
+	throw "Touched files changed in this pull request have blocking diagnostics: $($colDetail -join '; ')"
 }
 
 if ($scope.FullScan) {

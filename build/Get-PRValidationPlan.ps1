@@ -14,62 +14,18 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repository = (Resolve-Path -LiteralPath $RepositoryPath).Path
-
-function Invoke-GitBytes([string[]] $Arguments) {
-	$start = [System.Diagnostics.ProcessStartInfo]::new()
-	$start.FileName = 'git'
-	$start.WorkingDirectory = $repository
-	$start.UseShellExecute = $false
-	$start.RedirectStandardOutput = $true
-	$start.RedirectStandardError = $true
-	foreach ($itemArgument in $Arguments) { $null = $start.ArgumentList.Add($itemArgument) }
-	$process = [System.Diagnostics.Process]::Start($start)
-	try {
-		$errorTask = $process.StandardError.ReadToEndAsync()
-		$bytes = [System.IO.MemoryStream]::new()
-		try {
-			$process.StandardOutput.BaseStream.CopyTo($bytes)
-			$process.WaitForExit()
-			$stderr = $errorTask.GetAwaiter().GetResult()
-			if ($process.ExitCode -ne 0) { throw "git failed ($($process.ExitCode)): $stderr" }
-			return , $bytes.ToArray()
-		}
-		finally { $bytes.Dispose() }
-	}
-	finally { $process.Dispose() }
-}
-
-foreach ($sha in @($BaseSha, $HeadSha)) {
-	if ($sha -notmatch '^[0-9a-fA-F]{40}([0-9a-fA-F]{24})?$') { throw "Invalid commit object ID: $sha" }
-}
-$mergeBase = [Text.Encoding]::UTF8.GetString((Invoke-GitBytes @('merge-base', $BaseSha, $HeadSha))).Trim()
-if ($mergeBase -notmatch '^[0-9a-fA-F]{40}([0-9a-fA-F]{24})?$') { throw 'Could not determine a unique merge base.' }
-$raw = Invoke-GitBytes @('diff', '--name-status', '-z', '--find-renames', $mergeBase, $HeadSha, '--')
-$records = [Text.Encoding]::UTF8.GetString($raw).Split([char]0)
-if ($records[-1] -ne '') { throw 'Git returned an unterminated diff record.' }
-
-$entries = [System.Collections.Generic.List[object]]::new()
-for ($i = 0; $i -lt $records.Length - 1; ) {
-	$status = $records[$i++]
-	if ($status -notmatch '^[A-Z][0-9]*$' -or $i -ge $records.Length - 1) { throw 'Malformed git diff output.' }
-	$path = $records[$i++]
-	$oldPath = $null
-	if ($status -match '^[RC]') {
-		if ($i -ge $records.Length - 1) { throw 'Malformed rename/copy record.' }
-		$oldPath = $path
-		$path = $records[$i++]
-	}
-	$entries.Add([pscustomobject]@{ Status = $status; Path = $path; OldPath = $oldPath })
-}
+$changeSet = & (Join-Path $PSScriptRoot 'Get-Ps1LintScope.ps1') -BaseSha $BaseSha -HeadSha $HeadSha -RepositoryPath $repository -ChangesOnly
+$mergeBase = $changeSet.MergeBase
+$entries = @($changeSet.Changes)
 
 function Test-Documentation([string] $Path) {
-	if ([string]::IsNullOrEmpty($Path)) { return $false }
-	if ([IO.Path]::GetFileName($Path) -ieq 'AGENTS.md') { return $false }
-	return ($Path -ieq 'README.md' -or
-		$Path -ieq 'd365bap.tools/readme.md' -or
-		$Path -ieq 'd365bap.tools/changelog.md' -or
-		$Path -match '^(docs|learning)/.+\.md$' -or
-		$Path -match '^wiki/[^/]+\.md$')
+	if ([string]::IsNullOrEmpty($Path)) { $false; return }
+	if ([IO.Path]::GetFileName($Path) -ieq 'AGENTS.md') { $false; return }
+	$Path -ieq 'README.md' -or
+	$Path -ieq 'd365bap.tools/readme.md' -or
+	$Path -ieq 'd365bap.tools/changelog.md' -or
+	$Path -match '^(docs|learning)/.+\.md$' -or
+	$Path -match '^wiki/[^/]+\.md$'
 }
 
 $mode = 'docs'
