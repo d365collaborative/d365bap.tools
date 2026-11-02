@@ -125,6 +125,8 @@ function Invoke-Ps1Analysis {
 				$tmpDiagnostics.AddRange(@(Get-Ps1OneParameterPerLineDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1AliasDiagnostic -Analysis $analysis `
 							-Worker $Analyzer.Worker))
+				$tmpDiagnostics.AddRange(@(Get-Ps1CentralApiVersionDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1FormattedUrlDiagnostic -Analysis $analysis))
 			}
 
 			$result = [pscustomobject]@{
@@ -160,6 +162,8 @@ function Invoke-Ps1Analysis {
 . "$PSScriptRoot/Get-Ps1StandardExcelExportDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1LoopAppendDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1OneParameterPerLineDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1CentralApiVersionDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1FormattedUrlDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/Resolve-Ps1AliasCommand.ps1"
