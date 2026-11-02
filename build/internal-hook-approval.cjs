@@ -5,6 +5,7 @@ const CHECK = 'Internal hook approval';
 const ACCEPT = '/accept-intenal-hook';
 const PROTECTED_PATHS = [
   'build/ps1-lint/internal/',
+  'build/ps1-lint/lint/',
   'build/ps1-lint/ps1-format/',
   'build/ps1-lint/psscriptanalyzer/',
   'build/ps1-lint/setup/',

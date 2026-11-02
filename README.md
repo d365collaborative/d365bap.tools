@@ -137,9 +137,11 @@ pwsh -NoProfile -File ./build/Test-Behavior.ps1
 Pull request lint uses the same shared change scope as local runs
 (`build/Get-Ps1LintScope.ps1`). It offers every changed file to the cheap hooks
 (`check-merge-conflict`, `trailing-whitespace`, `end-of-file-fixer`,
-`check-json`, `check-yaml`), runs `ps1-format` and `psscriptanalyzer` only on
-changed `.ps1`, `.psm1`, and `.psd1` files, and runs `actionlint` only on touched
-workflow files. Untouched files never fail a pull request.
+`check-json`, `check-yaml`), runs the combined `ps1-lint` hook only on changed
+`.ps1`, `.psm1`, and `.psd1` files, and runs `actionlint` only on touched
+workflow files. Untouched files never fail a pull request. The CI lint step sets
+`PS1_LINT_CHECK_ONLY=1`, so the hook reports formatting drift and analyzes the
+formatted text without writing to the checkout.
 
 The lint job installs only what the hooks it is about to run need: prek when any
 hook runs, the pinned PSScriptAnalyzer when PowerShell files change (see

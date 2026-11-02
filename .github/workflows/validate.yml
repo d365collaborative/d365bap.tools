@@ -69,10 +69,15 @@ jobs:
     - name: Lint changed PowerShell files
       if: steps.lint_scope.outputs.powershell == 'true'
       shell: pwsh
+      env:
+        # CI must never rewrite the checkout. The combined ps1-lint hook reports
+        # formatting drift as a failure and analyzes the formatted text from
+        # memory, so the result matches a local write-mode run.
+        PS1_LINT_CHECK_ONLY: '1'
       run: |
         $plan = Get-Content -Raw lint-plan.json | ConvertFrom-Json
         $files = @($plan.PowerShellFiles)
-        & prek run ps1-format psscriptanalyzer --config prek.toml --files @files
+        & prek run ps1-lint --config prek.toml --files @files
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     - name: Restore pinned actionlint
       if: steps.lint_scope.outputs.workflows == 'true'
@@ -143,7 +148,7 @@ jobs:
     - name: Test change-aware validation infrastructure
       shell: pwsh
       run: |
-        foreach ($test in @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-CiLintPlan', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness')) {
+        foreach ($test in @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-CiLintPlan', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness', 'Test-Ps1LintBatch')) {
           & pwsh -NoProfile -NonInteractive -File "./build/$test.ps1"
           if ($LASTEXITCODE -ne 0) { throw "Validation infrastructure regression failed: $test" }
         }

@@ -165,10 +165,22 @@ function New-Ps1Diagnostic {
 }
 
 function Get-Ps1Analysis {
-	param([string] $Path)
+	param(
+		[string] $Path,
+		# The combined lint batch passes the formatted text, so analysis sees
+		# what the formatter would write even when -CheckOnly prevents a write.
+		[AllowEmptyString()]
+		[string] $Content
+	)
+
 	$tokens = $null
 	$parseErrors = $null
-	$ast = [Management.Automation.Language.Parser]::ParseFile($Path, [ref]$tokens, [ref]$parseErrors)
+	if ($PSBoundParameters.ContainsKey('Content')) {
+		$ast = [Management.Automation.Language.Parser]::ParseInput($Content, [ref]$tokens, [ref]$parseErrors)
+	}
+	else {
+		$ast = [Management.Automation.Language.Parser]::ParseFile($Path, [ref]$tokens, [ref]$parseErrors)
+	}
 	$hashAnalysis = @{
 		Path        = $Path
 		Ast         = $ast

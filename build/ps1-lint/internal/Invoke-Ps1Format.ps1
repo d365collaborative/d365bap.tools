@@ -1,4 +1,5 @@
 ﻿. "$PSScriptRoot/Import-Ps1Analyzer.ps1"
+. "$PSScriptRoot/Get-Ps1FormattedContent.ps1"
 
 function Invoke-Ps1Format {
 	<#
@@ -63,25 +64,11 @@ function Invoke-Ps1Format {
 
 		foreach ($itemFile in $colFiles) {
 			try {
-				$original = [System.IO.File]::ReadAllText($itemFile, [System.Text.UTF8Encoding]::new($false, $false))
-				$formatted = Invoke-Formatter `
-					-ScriptDefinition $original `
-					-Settings $SettingsPath
+				$objContent = Get-Ps1FormattedContent -Path $itemFile `
+					-SettingsPath $SettingsPath
 
-				if ($null -eq $formatted) {
-					$formatted = $original
-				}
-
-				if ($formatted -cne $original) {
-					[System.IO.File]::WriteAllText($itemFile, $formatted, $objUtf8Bom)
-				}
-				else {
-					$bytes = [System.IO.File]::ReadAllBytes($itemFile)
-					$hasBom = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
-
-					if (-not $hasBom) {
-						[System.IO.File]::WriteAllText($itemFile, $original, $objUtf8Bom)
-					}
+				if ($objContent.Changed) {
+					[System.IO.File]::WriteAllText($itemFile, $objContent.Content, $objUtf8Bom)
 				}
 			}
 			catch {
