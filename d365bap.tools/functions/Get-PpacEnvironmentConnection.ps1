@@ -64,9 +64,12 @@ function Get-PpacEnvironmentConnection {
 		$objRoute = Get-PpacConnectivityRoute -EnvironmentId $EnvironmentId
 
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$requestUri = "https://api.powerplatform.com/connectivity/environments/$($objRoute.RouteId)/connections?api-version=$apiVersion"
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.PowerPlatform
+		$requestUri = 'https://api.powerplatform.com/connectivity/environments/{0}/connections?api-version={1}' `
+			-f $objRoute.RouteId,
+		$apiVersion
 
 		try {
 			$result = Invoke-BapSdkRequest `
@@ -78,8 +81,11 @@ function Get-PpacEnvironmentConnection {
 		}
 		catch {
 			$messageString = "Failed to retrieve connections from environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the connection request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the connection request failed." `
+				-Exception $_.Exception
 			return
 		}
 
@@ -95,7 +101,8 @@ function Get-PpacEnvironmentConnection {
 		$colItems = @($colItems | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
 
 		$colRes = @(
-			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnection' -Property `
+			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnection' `
+				-Property `
 				'id as ConnectionId',
 			'name as ConnectionName',
 			'properties.displayName as DisplayName',
@@ -117,10 +124,8 @@ function Get-PpacEnvironmentConnection {
 		)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnection' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnection' `
+				-WarningAction SilentlyContinue
 			return
 		}
 

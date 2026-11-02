@@ -62,10 +62,14 @@ function Get-PpacEnvironmentConnector {
 		$objRoute = Get-PpacConnectivityRoute -EnvironmentId $EnvironmentId
 
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$filter = [uri]::EscapeDataString("environment eq '$($objRoute.RouteId -replace "'", "''")'")
-		$requestUri = "https://api.powerplatform.com/connectivity/environments/$($objRoute.RouteId)/connectors?`$filter=$filter&api-version=$apiVersion"
+		$requestUri = 'https://api.powerplatform.com/connectivity/environments/{0}/connectors?$filter={1}&api-version={2}' `
+			-f $objRoute.RouteId,
+		$filter,
+		$apiVersion
 
 		try {
 			$result = Invoke-BapSdkRequest `
@@ -77,8 +81,11 @@ function Get-PpacEnvironmentConnector {
 		}
 		catch {
 			$messageString = "Failed to retrieve connectors from environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the connector request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the connector request failed." `
+				-Exception $_.Exception
 			return
 		}
 
@@ -91,7 +98,8 @@ function Get-PpacEnvironmentConnector {
 		$colItems = @($colItems | Sort-Object -Property @{ Expression = { $_.properties.displayName } }, @{ Expression = { $_.name } })
 
 		$colRes = @(
-			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnector' -Property `
+			$colItems | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnector' `
+				-Property `
 				'id as ConnectorId',
 			'name as ConnectorName',
 			'properties.displayName as DisplayName',
@@ -109,10 +117,8 @@ function Get-PpacEnvironmentConnector {
 		)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnector' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentConnector' `
+				-WarningAction SilentlyContinue
 			return
 		}
 
