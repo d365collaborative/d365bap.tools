@@ -54,10 +54,10 @@ function Set-PpacTenantRuleBasedPolicy {
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 
-		[ValidateScript({ -not [string]::IsNullOrWhiteSpace("$_") })]
+		[PSFValidatePattern('\S', ErrorMessage = 'The name must contain a non-whitespace character.')]
 		[string] $Name,
 
-		[ValidateScript({ @($_).Count -gt 0 })]
+		[ValidateCount(1, [int]::MaxValue)]
 		[object[]] $RuleSet,
 
 		[switch] $Merge
