@@ -290,6 +290,13 @@ function Get-Ps1DirectParameterCheckDiagnostic {
 			continue
 		}
 
+		if ($parameter.StaticType -eq [string]) {
+			New-Ps1DirectParameterCheckDiagnostic -Path $Path `
+				-Extent $itemInvoke.Extent `
+				-Message "Do not gate on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). An omitted string parameter is empty; test the value directly with [string]::IsNullOrEmpty(`$$parameterName) or if (`$$parameterName). Do not add a default value."
+			continue
+		}
+
 		New-Ps1DirectParameterCheckDiagnostic -Path $Path `
 			-Extent $itemInvoke.Extent `
 			-Message "Do not gate on `$PSBoundParameters.$($itemInvoke.Member.Value)('$key'). Trust the parameter's null value and test -not (`$null -eq `$$parameterName) directly. Do not add a default value."

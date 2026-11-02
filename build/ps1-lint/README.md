@@ -1142,7 +1142,7 @@ if ($PSBoundParameters.ContainsKey('Description')) { $payload.description = $Des
 if ($EnvironmentGroupId) { ... }
 $isByEnvironment = [bool] $EnvironmentId
 $buildGiven = -not [string]::IsNullOrWhiteSpace($Build)
-if (-not ($null -eq $Description)) { $payload.description = $Description }
+if (-not [string]::IsNullOrEmpty($Description)) { $payload.description = $Description }
 ```
 
 A parameter whose default is also a valid explicit value is exempt, because the
@@ -1152,8 +1152,11 @@ reported as always bound. `$PSBoundParameters` passed as a value
 (`-BoundParameters $PSBoundParameters`) and a dynamic key (`ContainsKey($name)`)
 are not checked.
 
-The message for an optional parameter says to trust its null value and test
-`-not ($null -eq $Parameter)` directly; it does not ask for a `= $null` default.
+The message for an optional non-string parameter says to trust its null value
+and test `-not ($null -eq $Parameter)` directly; it does not ask for a
+`= $null` default. An omitted `[string]` parameter is empty, not `$null`, so
+the message for a string points to `[string]::IsNullOrEmpty($Parameter)` or
+`if ($Parameter)` instead.
 
 Run its regression checks under PowerShell 7.6 or later:
 
