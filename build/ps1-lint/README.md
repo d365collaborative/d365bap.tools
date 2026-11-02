@@ -33,7 +33,7 @@ What runs on PowerShell files:
   `PSUseOrderedPSCustomObject`,
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
-  `PSAvoidLoopAppend`,
+  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
   `PSUseOneParameterPerLine`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
@@ -946,6 +946,48 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1FormattedUrlRule.ps1
+```
+
+## Null comparisons
+
+`$null` always sits on the left of a comparison. Two rules enforce the style:
+
+- The built-in `PSPossibleIncorrectComparisonWithNull` reports a `$null` on the
+  right. It is in the fatal high-signal set for module and build code.
+- `PSAvoidNotEqualNull` reports `-ne` or `-cne` with `$null` on the left.
+  Negation goes through `-Not` around a positive `$null -eq` test.
+
+```powershell
+# Fails: null on the right (built-in)
+$x -eq $null
+$x -ne $null
+$Value -ceq $null
+$Value -cne $null
+$Value -eq $NULL
+$Value -ine $null
+
+# Fails: -ne with null on the left (repository rule)
+$null -ne $x
+$null -cne $x
+
+# Passes
+$null -eq $x
+$null -ceq $x
+-Not ($null -eq $x)
+-Not ($null -ceq $x)
+
+# Passes: simplified Where-Object cannot put null on the left
+Where-Object Name -ne $null
+```
+
+The scriptblock form `Where-Object { $_.Name -eq $null }` is reported by the
+built-in. The simplified form is not, because a property name cannot be the
+right side of a `$null -eq` test.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1NullComparisonRule.ps1
 ```
 
 ## Example prose
