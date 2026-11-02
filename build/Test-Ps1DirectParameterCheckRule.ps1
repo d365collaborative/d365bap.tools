@@ -124,6 +124,18 @@ function Get-Fixture {
         $Description
     }
 }
+'@ -Expected 1 @('omitted string parameter is empty')
+
+Assert-DirectParameter 'Key check for an optional string array' @'
+function Get-Fixture {
+    param (
+        [string[]] $Names
+    )
+
+    if ($PSBoundParameters.ContainsKey('Names')) {
+        $Names
+    }
+}
 '@ -Expected 1 @('Trust the parameter')
 
 Assert-DirectParameter 'Key check for a version default' @'
