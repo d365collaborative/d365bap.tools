@@ -36,6 +36,7 @@ on:
       - 'build/Test-Ps1NullComparisonRule.ps1'
       - 'build/Test-Ps1DirectParameterCheckRule.ps1'
       - 'build/Test-Ps1ReturnAfterStopRule.ps1'
+      - 'build/Test-Ps1PipelineContinuationRule.ps1'
       - 'build/Test-Ps1OneParameterPerLineRule.ps1'
       - 'build/Test-Ps1CentralApiVersionRule.ps1'
       - 'build/Test-Ps1FormattedUrlRule.ps1'
@@ -159,6 +160,9 @@ jobs:
     - name: Test return after Stop-PSFFunction lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1ReturnAfterStopRule.ps1
+    - name: Test pipeline continuation lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1PipelineContinuationRule.ps1
     - name: Test one-parameter-per-line lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1OneParameterPerLineRule.ps1

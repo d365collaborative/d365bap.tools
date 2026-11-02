@@ -33,7 +33,7 @@ What runs on PowerShell files:
   `PSUseOrderedPSCustomObject`,
   `PSAvoidOutNull`,
   `PSUseStandardExcelExport`,
-  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`,
+  `PSAvoidLoopAppend`, `PSAvoidNotEqualNull`, `PSUsePipelineContinuationBreak`,
   `PSUseOneParameterPerLine`, `PSUseDirectValueInStringCheck`,
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
@@ -1225,10 +1225,68 @@ Stop-PSFFunction -Message 'Try the next one' -Continue
 they do not fall through to the next statement in the same way. Test files and
 tepp fixtures are exempt. The rule runs on module code (public and internal).
 
+## Pipeline continuation
+
+`PSUsePipelineContinuationBreak` requires a pipeline with more than one command
+to break after each pipe. A multiline hashtable that closes with `}` keeps the
+pipe and the next command on the closing brace line. Any other element breaks
+after the pipe:
+
+```powershell
+# Fails
+$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+
+# Fails: a backtick continuation keeps the next command on the same line
+$objRoute = Get-Route `
+    -Name 'fixture' | Select-Object -First 1
+
+# Fails: a closing parenthesis keeps the next command on the same line
+$objRoute = (Get-Route `
+    -Name 'fixture') | Select-Object -First 1
+
+# Fails: leading pipe
+$envObj = Get-Environment -EnvironmentId $EnvironmentId
+    | Select-Object -First 1
+
+# Passes
+$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+    Select-Object -First 1
+
+# Passes: a backtick continuation breaks after the pipe
+$objRoute = Get-Route `
+    -Name 'fixture' |
+    Select-Object -First 1
+
+# Passes: a closing parenthesis breaks after the pipe
+$objRoute = (Get-Route `
+    -Name 'fixture') |
+    Select-Object -First 1
+
+# Passes: the closing brace, the pipe, and the next command share a line
+$body = [ordered]@{
+    name     = $Name
+    ruleSets = @($RuleSet)
+} | ConvertTo-Json -Depth 20
+
+# Fails: the pipe and the next command leave the closing brace line
+$body = [ordered]@{
+    name     = $Name
+    ruleSets = @($RuleSet)
+} |
+    ConvertTo-Json -Depth 20
+```
+
+A multiline element ending with `}` keeps `|` plus the next command on that
+line. Any other element, including a backtick continuation or a closing
+parenthesis, starts the next command on a new line. A single-command pipeline is
+not checked. A pipe inside a string is not a pipeline. Test files and tepp
+fixtures are exempt. The rule runs on module code (public and internal).
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ReturnAfterStopRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1PipelineContinuationRule.ps1
 ```
 
 ## Example prose
