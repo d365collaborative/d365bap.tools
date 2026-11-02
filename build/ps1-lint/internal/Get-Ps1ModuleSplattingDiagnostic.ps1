@@ -1,46 +1,15 @@
-﻿function Get-Ps1ModuleFunctionIndex {
-	param([string] $ModuleRoot)
-
-	if ($null -eq $script:Ps1ModuleFunctionIndex) { $script:Ps1ModuleFunctionIndex = @{} }
-	$cacheKey = $ModuleRoot.ToLowerInvariant()
-	if ($script:Ps1ModuleFunctionIndex.ContainsKey($cacheKey)) {
-		$script:Ps1ModuleFunctionIndex[$cacheKey]
-		return
-	}
-
-	$hashFunctions = @{}
-	foreach ($itemFile in @(Get-ChildItem -LiteralPath $ModuleRoot `
-				-Recurse `
-				-File)) {
-		if ($itemFile.Extension -notin @('.ps1', '.psm1')) { continue }
-		$normalized = $itemFile.FullName -replace '\\', '/'
-		if ($normalized -match '/tests/') { continue }
-		if ($normalized -match '/internal/tepp/') { continue }
-
-		$tokens = $null
-		$parseErrors = $null
-		$ast = [Management.Automation.Language.Parser]::ParseFile($itemFile.FullName, [ref]$tokens, [ref]$parseErrors)
-		if (@($parseErrors).Count -gt 0) { continue }
-
-		foreach ($itemFunction in $ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
-			$hashFunctions[$itemFunction.Name.ToLowerInvariant()] = $itemFunction.Name
-		}
-	}
-
-	$script:Ps1ModuleFunctionIndex[$cacheKey] = $hashFunctions
-	$hashFunctions
-}
-
-function Get-Ps1ModuleSplattingDiagnostic {
-	param([hashtable] $Analysis)
+﻿function Get-Ps1ModuleSplattingDiagnostic {
+	param([hashtable] $Analysis, [hashtable] $Worker)
 	$Path = $Analysis.Path
+	if ($null -eq $Worker) { $Worker = Get-Ps1AnalysisWorker }
 
 	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
 	$moduleRoot = Get-Ps1ModuleRoot -Path $Path
 	if ([string]::IsNullOrEmpty($moduleRoot)) { return }
 
-	$hashFunctions = Get-Ps1ModuleFunctionIndex -ModuleRoot $moduleRoot
+	$hashFunctions = (Get-Ps1RepositoryIndex -ModuleRoot $moduleRoot `
+			-Worker $Worker).Commands
 
 	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
 		$commandName = $itemCommand.GetCommandName()
