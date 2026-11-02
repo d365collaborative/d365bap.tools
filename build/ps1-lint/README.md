@@ -31,6 +31,9 @@ What runs on PowerShell files:
   `PSUseValidationAttributeOnMandatory`,
   `PSUseWildcardParameterAsFilter`,
   `PSUseOrderedPSCustomObject`,
+  `PSAvoidOutNull`,
+  `PSUseStandardExcelExport`,
+  `PSAvoidLoopAppend`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
   per-directory `ps1-lint.json` allowlist:
@@ -738,6 +741,84 @@ such as `[pscustomobject]$hashSource` cannot be ordered statically and is
 ignored. It runs on module code (public and internal); build scripts, test
 files, and tepp fixtures are out of scope.
 
+## Output discards
+
+`PSAvoidOutNull` rejects `Out-Null` in module code and the lint tooling. A
+discard redirects to `$null`, which is the faster, allocation-free form and
+keeps the discarded value visible in review:
+
+```powershell
+# Fails
+[int]::TryParse($Value, [ref]$IsInt) | Out-Null
+Out-Null -InputObject (Get-Thing)
+
+# Passes
+[int]::TryParse($Value, [ref]$IsInt) > $null
+Get-Thing > $null
+```
+
+The rule matches the command name, so `Microsoft.PowerShell.Core\Out-Null` and
+`out-null` are reported too. A file that defines `function Out-Null` or
+`Set-Alias Out-Null` is skipped because the local name may have different
+behavior. Test files and tepp fixtures are exempt. Existing call sites in the
+lint tooling migrate as those files are touched.
+
+## Excel export blocks
+
+`PSUseStandardExcelExport` requires every public cmdlet that declares
+`[switch] $AsExcelOutput` to end with the canonical export block. The switch
+must do something, name its worksheet after the cmdlet, and return:
+
+```powershell
+if ($AsExcelOutput) {
+    $resCol | Export-Excel -WorksheetName 'Get-Fixture'
+    return
+}
+```
+
+Reported shapes: no `if ($AsExcelOutput)` block at all, an `elseif`/`else`
+branch on that block, a result-count guard inside it (`if ($resCol) { ... }`),
+a worksheet name that is not the cmdlet name, and a block that does not end
+with a bare `return`. Additional `Export-Excel` parameters after
+`-WorksheetName` are allowed.
+
+`Get-UdeConnection` is exempt from the name check because its worksheet is
+`UdeConnection`; the rest of the shape still applies to it. A non-literal
+worksheet name such as `-WorksheetName $name` cannot be verified and is
+ignored. A wrapper that only forwards `-AsExcelOutput` to another command has
+no local block and is exempt. The rule runs on public cmdlets under
+`d365bap.tools/functions`; internal helpers are out of scope.
+
+## Loop appends
+
+`PSAvoidLoopAppend` rejects a `foreach` whose only statement adds the loop
+variable to another collection. The loop is a copy; assign the source or use
+`AddRange`:
+
+```powershell
+# Fails
+foreach ($item in $colSource) {
+    $colTarget.Add($item)
+}
+
+# Passes
+$colTarget.AddRange($colSource)
+
+# Passes: the loop body does more than copy
+foreach ($item in $colSource) {
+    $colTarget.Add($item.Projection)
+}
+```
+
+The body must be exactly one statement, and that statement must be
+`<collection>.Add($<loop variable>)` with the canonical `Add` spelling. A
+property argument, a second statement, an `if`, or a different argument name is
+not the shape and is ignored. A set-building loop still reports; `UnionWith` is
+the replacement. `ForEach-Object` and `.ForEach()` are not covered, because the
+set-construction pipelines that use them build a union rather than a copy.
+Scope: module code (public and internal); build scripts, test files, and tepp
+fixtures are out of scope.
+
 Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
@@ -745,6 +826,9 @@ pwsh -NoProfile -NonInteractive -File build/Test-Ps1ObjectArrayCastRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1WildcardParameterAsFilterRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1OrderedPSCustomObjectRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1OutNullRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1StandardExcelExportRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1LoopAppendRule.ps1
 ```
 
 ## Example prose
