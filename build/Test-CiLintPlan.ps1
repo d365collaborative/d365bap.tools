@@ -215,6 +215,22 @@ function Set-Changed {
 	Assert-True ($lintJob -match 'actionlint-\$\{\{ runner\.os \}\}-\$\{\{ env\.ACTIONLINT_VERSION \}\}') 'The lint job must cache actionlint under the pinned version.'
 	Assert-True ($lintJob -match 'go install') 'The lint job must install the pinned actionlint on a cache miss.'
 
+	# The lint job restores the pinned prek installation read-only and verifies
+	# its exact version. A cache miss or mismatch is reinstalled at the same pin
+	# by Install-Prek.ps1; the job never runs a bare pip install of its own.
+	Assert-True ($lintJob -match 'actions/cache/restore@v5') 'The lint job must restore prek without writing a cache.'
+	Assert-True ($lintJob -match 'prek-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\(''build/ToolCacheRequirements\.json''\) \}\}') 'The lint job must key the prek cache from the shared pin file.'
+	Assert-True ($lintJob -match 'Install-Prek\.ps1') 'The lint job must verify and install prek through Install-Prek.ps1.'
+	Assert-True ($lintJob -match 'GITHUB_PATH') 'The lint job must put the restored prek directory on PATH.'
+	Assert-True ($lintJob -notmatch 'pip install "prek==') 'The lint job must not install prek outside the verified cache step.'
+
+	# cache-warm.yml is the only cache producer: PR restores cannot save, and a
+	# cache saved by one PR is not visible to another.
+	$warmText = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../.github/workflows/cache-warm.yml') -Raw
+	Assert-True ($warmText -match 'prek-\$\{\{ runner\.os \}\}-\$\{\{ hashFiles\(''build/ToolCacheRequirements\.json''\) \}\}') 'The warm workflow must use the same prek cache key as the lint job.'
+	Assert-True ($warmText -match 'Install-Prek\.ps1') 'The warm workflow must install prek through Install-Prek.ps1.'
+	Assert-True ($warmText -match 'steps\.cache-prek\.outputs\.cache-hit != ''true''') 'The warm workflow must install only when the prek cache misses.'
+
 	Write-Host 'CI lint plan regression checks passed.'
 }
 finally {
