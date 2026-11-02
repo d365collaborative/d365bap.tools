@@ -76,6 +76,20 @@ function Get-Ps1CatchLogCommand {
 	}
 }
 
+function Get-Ps1CatchBlock {
+	param($Node)
+
+	$parent = $Node.Parent
+	while ($null -ne $parent) {
+		if ($parent -is [Management.Automation.Language.StatementBlockAst]) {
+			$parent
+			return
+		}
+		$parent = $parent.Parent
+	}
+	$null
+}
+
 function New-Ps1SingleCatchErrorChannelDiagnostic {
 	param([string] $Path, [string] $Message, $Extent)
 
@@ -99,15 +113,32 @@ function Get-Ps1SingleCatchErrorChannelDiagnostic {
 	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
 
 	foreach ($itemCatch in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CatchClauseAst] }, $true)) {
-		$tmpLog = @(Get-Ps1CatchLogCommand -Catch $itemCatch)
-		if ($tmpLog.Count -eq 0) { continue }
+		$tmpBlocks = @{}
 
-		$tmpStop = @(Get-Ps1CatchCommand -Catch $itemCatch `
-				-Name 'Stop-PSFFunction')
-		if ($tmpStop.Count -eq 0) { continue }
+		foreach ($itemLog in @(Get-Ps1CatchLogCommand -Catch $itemCatch)) {
+			$tmpBlock = Get-Ps1CatchBlock -Node $itemLog
+			if ($null -eq $tmpBlock) { continue }
+
+			$tmpKey = "$($tmpBlock.Extent.StartOffset)"
+			if (-not $tmpBlocks.ContainsKey($tmpKey)) { $tmpBlocks[$tmpKey] = @{ Log = $false; Stop = $false } }
+			$tmpBlocks[$tmpKey].Log = $true
+		}
+
+		foreach ($itemStop in @(Get-Ps1CatchCommand -Catch $itemCatch `
+					-Name 'Stop-PSFFunction')) {
+			$tmpBlock = Get-Ps1CatchBlock -Node $itemStop
+			if ($null -eq $tmpBlock) { continue }
+
+			$tmpKey = "$($tmpBlock.Extent.StartOffset)"
+			if (-not $tmpBlocks.ContainsKey($tmpKey)) { $tmpBlocks[$tmpKey] = @{ Log = $false; Stop = $false } }
+			$tmpBlocks[$tmpKey].Stop = $true
+		}
+
+		$tmpDouble = @($tmpBlocks.Values | Where-Object { $_.Log -and $_.Stop })
+		if ($tmpDouble.Count -eq 0) { continue }
 
 		New-Ps1SingleCatchErrorChannelDiagnostic -Path $Path `
 			-Extent $itemCatch.Extent `
-			-Message 'The catch block logs with Write-PSFMessage and stops with Stop-PSFFunction. Keep one error channel: log and return, or stop without a separate log.'
+			-Message 'The catch block logs with Write-PSFMessage and stops with Stop-PSFFunction on the same path. Keep one error channel: log and return, or stop without a separate log.'
 	}
 }

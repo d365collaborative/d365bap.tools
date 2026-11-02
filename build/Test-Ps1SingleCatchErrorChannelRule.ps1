@@ -106,6 +106,52 @@ function Get-Fixture {
 }
 '@
 
+Assert-CatchChannel 'Log in a branch and stop outside' @'
+function Get-Fixture {
+    try {
+        Get-Thing
+    }
+    catch {
+        if ($_.Exception.Message -like '*retry*') {
+            Write-PSFMessage -Level Important -Message $_.Exception.Message
+            return
+        }
+        Stop-PSFFunction -Message 'Failed'
+    }
+}
+'@
+
+Assert-CatchChannel 'Log and stop in the same branch' @'
+function Get-Fixture {
+    try {
+        Get-Thing
+    }
+    catch {
+        if ($_.Exception.Message -like '*retry*') {
+            Write-PSFMessage -Level Important -Message $_.Exception.Message
+            Stop-PSFFunction -Message 'Failed'
+        }
+        return
+    }
+}
+'@ -Expected 1
+
+Assert-CatchChannel 'Log and stop in opposite branches' @'
+function Get-Fixture {
+    try {
+        Get-Thing
+    }
+    catch {
+        if ($_.Exception.Message -like '*retry*') {
+            Write-PSFMessage -Level Important -Message $_.Exception.Message
+        }
+        else {
+            Stop-PSFFunction -Message 'Failed'
+        }
+    }
+}
+'@
+
 Assert-CatchChannel 'Nested handler owns its stop' @'
 function Get-Fixture {
     try {
