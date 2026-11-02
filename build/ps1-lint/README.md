@@ -38,6 +38,7 @@ What runs on PowerShell files:
   `PSUseVariableForHeaders`, `PSAvoidSplattingForModuleCommands`,
   `PSUseEmptyLineAfterContinuation`, `PSUseDirectParameterCheck`,
   `PSUseOneComplexArrayElementPerLine`,
+  `PSUseExplicitSelectObjectProperty`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -993,7 +994,25 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ComplexArrayElementRule.ps1
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1SelectObjectPropertyRule.ps1
 ```
+
+## Select-Object projections
+
+`PSUseExplicitSelectObjectProperty` requires `Select-Object` to name `-Property`
+when its positional property list contains a calculated property:
+
+```powershell
+# Fails
+$item | Select-Object *, @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }
+```
+
+Simple property names, `-First`, `-ExpandProperty`, and a splat stay clean.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
 
 ## Central API version
 
