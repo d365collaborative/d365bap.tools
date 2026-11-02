@@ -12,7 +12,10 @@ default_install_hook_types = ["pre-commit"]
 #   prek run setup --stage manual   # one-time: installs PSScriptAnalyzer
 #   prek run                         # changed/staged files
 #   prek run --all-files --stage manual   # whole tree
-# PRs on GitHub run the same hooks on changed files (see .github/workflows/ps1-lint.yml).
+# PRs on GitHub run the same hooks on changed files (see .github/workflows/validate.yml).
+# CI offers every changed file to the cheap builtin hooks, but installs and runs
+# the PowerShell hooks only when a changed script can match them. Full-tree and
+# dependency-aware scans stay opt-in; they are not required PR checks.
 
 [[repos]]
 repo = "local"
