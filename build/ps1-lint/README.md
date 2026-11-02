@@ -758,12 +758,19 @@ allocation-free form and keeps the discarded value visible in review:
 Out-Null -InputObject (Get-Thing)
 $null = Invoke-RestMethod -Method Post -Uri $uri
 $null = $list.Add($item)
+$null = $_.Exception.Message
+$null = 5
+$null = $commandName, $parameterName
+$null = if ($true) { Get-Thing }
 
 # Passes
 [int]::TryParse($Value, [ref]$IsInt) > $null
 Get-Thing > $null
 Invoke-RestMethod -Method Post -Uri $uri > $null
 $list.Add($item) > $null
+$_.Exception.Message > $null
+5 > $null
+$(if ($true) { Get-Thing }) > $null
 ```
 
 The `Out-Null` check matches the command name, so
@@ -772,10 +779,10 @@ that defines `function Out-Null` or `Set-Alias Out-Null` skips that check
 because the local name may have different behavior; the `$null` assignment check
 still runs.
 
-The `$null` assignment check reports a command or a method call on the right
-side. A constant, a property, or an array of variables assigned to `$null` is
-not output and stays clean. A keyword statement such as `$null = if (...) { ... }`
-is also clean because it has no valid redirect form. Test files and tepp
+The `$null` assignment check reports every assignment to `$null`. The message
+names the command when the right side contains one; a keyword statement is
+reported with the `$(...)` redirect form. A variable named `$null` with a scope
+qualifier is not the automatic variable and is not checked. Test files and tepp
 fixtures are exempt. Existing call sites in the lint tooling migrate as those
 files are touched.
 

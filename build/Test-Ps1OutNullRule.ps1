@@ -117,27 +117,45 @@ function Get-Fixture {
 }
 '@ -Expected 1
 
-Assert-OutNull 'Property assigned to null is not output' @'
+Assert-OutNull 'Property assigned to null' @'
 function Get-Fixture {
     $null = $_.Exception.Message
 }
-'@
+'@ -Expected 1 @('<expression>')
 
-Assert-OutNull 'Constant assigned to null is not output' @'
+Assert-OutNull 'Constant assigned to null' @'
 function Get-Fixture {
     $null = 5
 }
-'@
+'@ -Expected 1
 
-Assert-OutNull 'Array of variables assigned to null is not output' @'
+Assert-OutNull 'Array of variables assigned to null' @'
 function Get-Fixture {
     $null = $commandName, $parameterName
 }
-'@
+'@ -Expected 1
 
-Assert-OutNull 'Keyword statement assigned to null is not output' @'
+Assert-OutNull 'Keyword statement assigned to null' @'
 function Get-Fixture {
     $null = if ($true) { Get-Thing }
+}
+'@ -Expected 1 @('subexpression')
+
+Assert-OutNull 'Keyword statement redirect' @'
+function Get-Fixture {
+    $(if ($true) { Get-Thing }) > $null
+}
+'@
+
+Assert-OutNull 'Constant redirect' @'
+function Get-Fixture {
+    5 > $null
+}
+'@
+
+Assert-OutNull 'Property redirect' @'
+function Get-Fixture {
+    $_.Exception.Message > $null
 }
 '@
 

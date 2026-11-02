@@ -36,47 +36,39 @@ function New-Ps1OutNullDiagnostic {
 	}
 }
 
+function Test-Ps1KeywordStatement {
+	param($Node)
+
+	$Node -is [Management.Automation.Language.IfStatementAst] -or
+	$Node -is [Management.Automation.Language.SwitchStatementAst] -or
+	$Node -is [Management.Automation.Language.ForEachStatementAst] -or
+	$Node -is [Management.Automation.Language.ForStatementAst] -or
+	$Node -is [Management.Automation.Language.WhileStatementAst] -or
+	$Node -is [Management.Automation.Language.DoWhileStatementAst] -or
+	$Node -is [Management.Automation.Language.TryStatementAst]
+}
+
 function Get-Ps1NullAssignmentMessage {
 	param($Assignment)
 
 	if ($Assignment.Left -isnot [Management.Automation.Language.VariableExpressionAst]) { $null; return }
 	if ($Assignment.Left.VariablePath.UserPath -ine 'null') { $null; return }
 
-	$right = $Assignment.Right
-	if ($right -is [Management.Automation.Language.PipelineAst]) {
-		$target = @($right.PipelineElements)[-1]
+	if (Test-Ps1KeywordStatement -Node $Assignment.Right) {
+		'Do not use a `$null` assignment. Wrap the statement in a subexpression and redirect it to `$null` instead: $(<statement>) > `$null.'
+		return
 	}
-	elseif ($right -is [Management.Automation.Language.CommandExpressionAst]) {
-		$target = $right
-	}
-	else { $null; return }
 
+	$colCommand = @($Assignment.Right.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $false))
 	$commandName = $null
-	$hasCommand = $false
-	if ($target -is [Management.Automation.Language.CommandAst]) {
-		$hasCommand = $true
-		$commandName = $target.GetCommandName()
-	}
-	else {
-		$hasCommand = $null -ne $target.Find({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $false)
-		if ($target -is [Management.Automation.Language.CommandExpressionAst] -and
-			$target.Expression -is [Management.Automation.Language.ParenExpressionAst]) {
-			$colInner = @($target.Expression.Pipeline.PipelineElements)
-			if ($colInner.Count -eq 1 -and $colInner[0] -is [Management.Automation.Language.CommandAst]) {
-				$commandName = $colInner[0].GetCommandName()
-			}
-		}
-	}
-
-	$hasInvocation = $null -ne $target.Find({ param($Node) $Node -is [Management.Automation.Language.InvokeMemberExpressionAst] }, $false)
-	if (-not $hasCommand -and -not $hasInvocation) { $null; return }
+	if ($colCommand.Count -gt 0) { $commandName = $colCommand[0].GetCommandName() }
 
 	if (-not [string]::IsNullOrEmpty($commandName)) {
 		"Do not discard output with a `$null` assignment. Redirect it to `$null` instead: $commandName ... > `$null."
 		return
 	}
 
-	'Do not discard output with a $null assignment. Redirect it to $null instead: <expression> > $null.'
+	'Do not discard a value with a `$null` assignment. Redirect it to `$null` instead: <expression> > `$null.'
 }
 
 function Get-Ps1OutNullDiagnostic {
