@@ -142,7 +142,9 @@ function Get-Ps1RedundantIdentityProjectionDiagnostic {
 
 				$doubleSelect = $tmpAssigned.ContainsKey($sourceName) -and $tmpAssigned[$sourceName] -lt $itemCommand.Extent.StartOffset
 				if ($doubleSelect -or $selfSelect) {
-					New-Ps1RedundantIdentityProjectionDiagnostic -Path $Path -Extent $itemCommand.Extent -Message 'Do not select an already selected variable again. Combine the projections into one Select-PSFObject call.'
+					New-Ps1RedundantIdentityProjectionDiagnostic -Path $Path `
+						-Extent $itemCommand.Extent `
+						-Message 'Do not select an already selected variable again. Combine the projections into one Select-PSFObject call.'
 					continue
 				}
 			}
@@ -156,9 +158,12 @@ function Get-Ps1RedundantIdentityProjectionDiagnostic {
 				$argument = if ($null -ne $element.Argument) { $element.Argument } elseif ($index + 1 -lt $tmpElements.Count) { $tmpElements[$index + 1] } else { $null }
 				if ($null -eq $argument) { continue }
 
-				if (-not (Test-Ps1IdentityProjection -Command $itemCommand -Argument $argument)) { continue }
+				if (-not (Test-Ps1IdentityProjection -Command $itemCommand `
+							-Argument $argument)) { continue }
 
-				New-Ps1RedundantIdentityProjectionDiagnostic -Path $Path -Extent $element.Extent -Message 'Drop -Property and keep -TypeName (or set PSTypeName in the literal); every property is already projected under the same name.'
+				New-Ps1RedundantIdentityProjectionDiagnostic -Path $Path `
+					-Extent $element.Extent `
+					-Message 'Drop -Property and keep -TypeName (or set PSTypeName in the literal); every property is already projected under the same name.'
 			}
 		}
 	}
