@@ -20,7 +20,7 @@ function Get-Ps1MultilineSelectObjectPropertyDiagnostic {
 	if ([IO.Path]::GetFileName($Path) -like '*Tests.ps1') { return }
 	if ($normalized -match '/d365bap\.tools/internal/tepp/') { return }
 
-	$message = 'Put each Select-Object calculated property on its own line. More than one @{ Name = ...; Expression = ... } element on one line is hard to read.'
+	$message = 'Put each Select-Object calculated property on its own line. More than one property on one line is hard to read.'
 
 	foreach ($itemCommand in $Analysis.Ast.FindAll({ param($Node) $Node -is [Management.Automation.Language.CommandAst] }, $true)) {
 		$commandName = $itemCommand.GetCommandName()
@@ -28,43 +28,42 @@ function Get-Ps1MultilineSelectObjectPropertyDiagnostic {
 		if (($commandName -split '\\')[-1] -ine 'Select-Object') { continue }
 
 		$tmpElements = @($itemCommand.CommandElements)
-		$hasProperty = @($tmpElements | Where-Object {
-				$_ -is [Management.Automation.Language.CommandParameterAst] -and $_.ParameterName -ieq 'Property'
-			}).Count -gt 0
-		if (-not $hasProperty) { continue }
-
-		$tmpPreviousLine = $tmpElements[0].Extent.StartLineNumber
-		$tmpCalculated = @()
-		$tmpMisplaced = @()
-
+		$tmpArgument = $null
 		for ($index = 1; $index -lt $tmpElements.Count; $index++) {
 			$itemElement = $tmpElements[$index]
+			if ($itemElement -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
+			if ($itemElement.ParameterName -ine 'Property') { continue }
 
-			if ($itemElement -is [Management.Automation.Language.CommandParameterAst]) {
-				$tmpPreviousLine = $itemElement.Extent.StartLineNumber
-				continue
+			if ($null -ne $itemElement.Argument) {
+				$tmpArgument = $itemElement.Argument
 			}
-
-			$tmpChild = if ($itemElement -is [Management.Automation.Language.ArrayLiteralAst]) {
-				@($itemElement.Elements)
+			elseif (($index + 1) -lt $tmpElements.Count) {
+				$tmpArgument = $tmpElements[$index + 1]
 			}
-			else {
-				@($itemElement)
-			}
-			foreach ($itemChild in $tmpChild) {
-				if ($itemChild -is [Management.Automation.Language.HashtableAst]) {
-					$tmpCalculated += $itemChild
-					if ($itemChild.Extent.StartLineNumber -eq $tmpPreviousLine) { $tmpMisplaced += $itemChild }
-				}
-
-				$tmpPreviousLine = $itemChild.Extent.StartLineNumber
-			}
+			break
 		}
+		if ($null -eq $tmpArgument) { continue }
 
-		if ($tmpCalculated.Count -gt 1 -and $tmpMisplaced.Count -gt 0) {
-			New-Ps1MultilineSelectObjectPropertyDiagnostic -Path $Path `
-				-Extent $tmpMisplaced[0].Extent `
-				-Message $message
+		$tmpProperty = if ($tmpArgument -is [Management.Automation.Language.ArrayLiteralAst]) {
+			@($tmpArgument.Elements)
+		}
+		else {
+			@($tmpArgument)
+		}
+		if ($tmpProperty.Count -le 1) { continue }
+
+		$tmpPreviousLine = $tmpProperty[0].Extent.StartLineNumber
+		for ($index = 1; $index -lt $tmpProperty.Count; $index++) {
+			$itemProperty = $tmpProperty[$index]
+			if ($itemProperty -is [Management.Automation.Language.HashtableAst] -and
+				$itemProperty.Extent.StartLineNumber -eq $tmpPreviousLine) {
+				New-Ps1MultilineSelectObjectPropertyDiagnostic -Path $Path `
+					-Extent $itemProperty.Extent `
+					-Message $message
+				break
+			}
+
+			$tmpPreviousLine = $itemProperty.Extent.StartLineNumber
 		}
 	}
 }

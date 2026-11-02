@@ -1033,10 +1033,14 @@ module code (public and internal).
 
 ## Multiline Select-Object properties
 
-`PSUseMultilineSelectObjectProperty` requires each of more than one calculated
-property on a `Select-Object` property list to start on its own line:
+`PSUseMultilineSelectObjectProperty` requires a calculated property on a
+`Select-Object` property list to start on its own line. A list with one
+calculated property and another element on the same line is reported:
 
 ```powershell
+# Fails: simple name and calculated property on one line
+$item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }
+
 # Fails: two calculated properties on one line
 $item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'Source'; Expression = { $source } }
 
@@ -1049,14 +1053,22 @@ $item | Select-Object -Property *,
     @{ Name = 'Kind'; Expression = { $kind } },
     @{ Name = 'Source'; Expression = { $source } }
 
+# Passes: the calculated property starts on the next line
+$item | Select-Object -Property *
+, @{ Name = 'Kind'; Expression = { $kind } }
+
 # Passes: one calculated property
 $item | Select-Object -Property @{ Name = 'Kind'; Expression = { $kind } }
+
+# Passes: one calculated property on a continuation line
+$item | Select-Object `
+    -Property @{ Name = 'Kind'; Expression = { $kind } }
 ```
 
-A single calculated property may stay on the command line. Simple property
-names, a splat, and a parameter argument such as `-ExpandProperty Name` are not
-checked. Test files, tepp fixtures, and `build/` scripts are exempt. The rule
-runs on module code (public and internal).
+A single calculated property may share the line with `-Property`. Simple
+property names, a splat, and a parameter argument such as `-ExpandProperty Name`
+are not checked. Test files, tepp fixtures, and `build/` scripts are exempt. The
+rule runs on module code (public and internal).
 
 Run its regression checks under PowerShell 7.6 or later:
 

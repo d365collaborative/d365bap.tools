@@ -42,6 +42,26 @@ function Get-Fixture {
 }
 '@ -Expected 1 @('PSUseMultilineSelectObjectProperty', 'own line')
 
+Assert-MultilineSelectObjectProperty 'Simple name and calculated property on one line' @'
+function Get-Fixture {
+    $item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }
+}
+'@ -Expected 1
+
+Assert-MultilineSelectObjectProperty 'Calculated property on the next line' @'
+function Get-Fixture {
+    $item | Select-Object -Property *
+, @{ Name = 'Kind'; Expression = { $kind } }
+}
+'@
+
+Assert-MultilineSelectObjectProperty 'Single calculated property on a continuation line' @'
+function Get-Fixture {
+    $item | Select-Object `
+    -Property @{ Name = 'Kind'; Expression = { $kind } }
+}
+'@
+
 Assert-MultilineSelectObjectProperty 'Second calculated property on the first line' @'
 function Get-Fixture {
     $item | Select-Object -Property *,
