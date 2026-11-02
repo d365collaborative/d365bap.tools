@@ -1,19 +1,18 @@
 ﻿<#
     .SYNOPSIS
-        List effective classic DLP policies for an environment.
+        List classic DLP policies for an environment.
 
     .DESCRIPTION
-        Retrieves classic DLP policies that apply to an environment,
-        including inherited tenant policies.
+        Retrieves classic DLP policies visible to an environment, including
+        inherited tenant policies.
 
-        A policy requested directly is returned even when it does not apply,
-        with IsEffective set to false.
+        IsEffective shows whether a policy applies to the environment.
 
     .PARAMETER EnvironmentId
         Environment name, GUID, or Power Platform environment identifier.
 
     .PARAMETER PolicyId
-        Policy GUID, display name, or wildcard filter. Includes non-effective policies.
+        Policy GUID, display name, or wildcard filter.
 
         Default: *
 
@@ -23,7 +22,7 @@
     .EXAMPLE
         PS C:\> Get-PpacEnvironmentDlpPolicy -EnvironmentId "00000000-0000-0000-0000-000000000000"
 
-        Lists the DLP policies that apply to the environment.
+        Lists the DLP policies for the environment.
         It uses -EnvironmentId to select the environment.
 
     .EXAMPLE
