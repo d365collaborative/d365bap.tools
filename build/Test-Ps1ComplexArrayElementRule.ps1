@@ -129,6 +129,50 @@ function Get-Fixture {
 }
 '@
 
+Assert-ComplexArrayElement 'Scriptblock in a one-line array subexpression' @'
+function Get-Fixture {
+    $tmpConnectorManagement = @($item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
+    $tmpConnectorManagement
+}
+'@ -Expected 1 @('PSUseOneComplexArrayElementPerLine', 'own line')
+
+Assert-ComplexArrayElement 'Scriptblock in a multiline array subexpression' @'
+function Get-Fixture {
+    $tmpConnectorManagement = @(
+        $item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }
+    ) | Select-Object -First 1
+    $tmpConnectorManagement
+}
+'@
+
+Assert-ComplexArrayElement 'Hashtable in a one-line array subexpression' @'
+function Get-Fixture {
+    $colRows = @([pscustomobject]@{ Name = 'a' })
+    $colRows
+}
+'@ -Expected 1
+
+Assert-ComplexArrayElement 'Simplified Where-Object in an array subexpression' @'
+function Get-Fixture {
+    $colItem = @($items | Where-Object Name -like 'demo*')
+    $colItem
+}
+'@
+
+Assert-ComplexArrayElement 'Pipeline without a complex element' @'
+function Get-Fixture {
+    $objItem = @($items | Select-Object -First 1)
+    $objItem
+}
+'@
+
+Assert-ComplexArrayElement 'ForEach-Object in a one-line array subexpression' @'
+function Get-Fixture {
+    $colName = @($items | ForEach-Object { $_.Name })
+    $colName
+}
+'@ -Expected 1
+
 Assert-ComplexArrayElement 'Complex syntax in a string' @'
 function Get-Fixture {
     $text = '@{ Name = ''a'' }, @{ Name = ''b'' }'
