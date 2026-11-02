@@ -60,7 +60,9 @@ function New-PpacTenantAcpPolicy {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$colCreated = @(New-PpacTenantRuleBasedPolicy -Name $Name -RuleSet $colRuleSet -Confirm:$false)
+		$colCreated = @(New-PpacTenantRuleBasedPolicy -Name $Name `
+				-RuleSet $colRuleSet `
+				-Confirm:$false)
 		if ($colCreated.Count -eq 0) { return }
 		Get-PpacTenantAcpPolicy -PolicyId $colCreated[0].PolicyId
 	}

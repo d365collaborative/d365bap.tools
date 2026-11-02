@@ -20,20 +20,25 @@ function Get-BapGovernancePolicy {
 	param ()
 
 	$objSecureToken = Get-BapAccessToken -PowerPlatform
-	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
+	$tokenValue = ConvertFrom-SecureString -AsPlainText `
+		-SecureString $objSecureToken
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 		Accept        = 'application/json'
 	}
 
-	$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-	$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies?api-version=$apiVersion"
+	$apiVersion = $script:BapApiVersions.PowerPlatform
+	$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies?api-version={0}' `
+		-f $apiVersion
 	$colPolicies = [Collections.Generic.List[object]]::new()
 	$colVisited = [Collections.Generic.HashSet[string]]::new()
 
 	do {
-		$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $hashHeaders -ErrorAction Stop
-		foreach ($itemPolicy in @($response.value)) { $colPolicies.Add($itemPolicy) }
+		$response = Invoke-RestMethod -Method Get `
+			-Uri $uri `
+			-Headers $hashHeaders `
+			-ErrorAction Stop
+		$colPolicies.AddRange(@($response.value))
 
 		$nextLink = "$($response.'@odata.nextLink')"
 		if ([string]::IsNullOrWhiteSpace($nextLink)) { $nextLink = "$($response.nextLink)" }

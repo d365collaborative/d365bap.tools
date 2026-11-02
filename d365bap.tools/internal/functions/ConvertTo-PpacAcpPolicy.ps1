@@ -44,6 +44,7 @@ function ConvertTo-PpacAcpPolicy {
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $TypeName,
+
 		[switch] $ExpandConnectors
 	)
 
@@ -53,7 +54,7 @@ function ConvertTo-PpacAcpPolicy {
 			foreach ($itemEntry in @($tmpConnectorManagement.inputs.AllowedConnectorList)) {
 				if ($null -eq $itemEntry) { continue }
 
-				[pscustomobject]@{
+				[pscustomobject][ordered]@{
 					PolicyId                   = $item.PolicyId
 					PolicyName                 = $item.Name
 					ConnectorId                = $itemEntry.AllowedConnector
@@ -66,7 +67,8 @@ function ConvertTo-PpacAcpPolicy {
 					PpacEnvId                  = $item.PpacEnvId
 					PpacEnvName                = $item.PpacEnvName
 					EnvironmentGroupId         = $item.EnvironmentGroupId
-				} | Select-PSFObject -TypeName 'D365Bap.Tools.PpacAcpConnector' -Property `
+				} | Select-PSFObject -TypeName 'D365Bap.Tools.PpacAcpConnector' `
+					-Property `
 					'PolicyId as PolicyId',
 				'PolicyName as PolicyName',
 				'ConnectorId as ConnectorId',
@@ -84,16 +86,17 @@ function ConvertTo-PpacAcpPolicy {
 		return
 	}
 
-	$Policy | Select-PSFObject -TypeName $TypeName -Property `
+	$Policy | Select-PSFObject -TypeName $TypeName `
+		-Property `
 		'PolicyId as PolicyId',
 	'Name as Name',
 	'LastModified as LastModified',
-	@{ Name = 'RuleSetVersion'; Expression = { $objCm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if ($null -ne $objCm) { $objCm.version } } },
+	@{ Name = 'RuleSetVersion'; Expression = { $objCm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if (-Not ($null -eq $objCm)) { $objCm.version } } },
 	'AllowedConnectorCount as AllowedConnectorCount',
 	'AssignmentSource as AssignmentSource',
 	'IsEffective as IsEffective',
 	'TenantId as TenantId',
-	@{ Name = 'AllowedConnectors'; Expression = { $objCm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if ($null -ne $objCm) { @($objCm.inputs.AllowedConnectorList) } } },
+	@{ Name = 'AllowedConnectors'; Expression = { $objCm = @($_.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1; if (-Not ($null -eq $objCm)) { @($objCm.inputs.AllowedConnectorList) } } },
 	'PpacEnvId as PpacEnvId',
 	'PpacEnvName as PpacEnvName',
 	'EnvironmentGroupId as EnvironmentGroupId',

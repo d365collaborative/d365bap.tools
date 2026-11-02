@@ -65,13 +65,13 @@ function Get-PpacTenantAcpPolicy {
 		}
 
 		$colPolicies = @(Get-PpacTenantRuleBasedPolicy @hashParams)
-		$colRes = @(ConvertTo-PpacAcpPolicy -Policy $colPolicies -TypeName 'D365Bap.Tools.PpacTenantAcpPolicy' -ExpandConnectors:$ExpandConnectors)
+		$colRes = @(ConvertTo-PpacAcpPolicy -Policy $colPolicies `
+				-TypeName 'D365Bap.Tools.PpacTenantAcpPolicy' `
+				-ExpandConnectors:$ExpandConnectors)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacTenantAcpPolicy' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacTenantAcpPolicy' `
+				-WarningAction SilentlyContinue
 			return
 		}
 

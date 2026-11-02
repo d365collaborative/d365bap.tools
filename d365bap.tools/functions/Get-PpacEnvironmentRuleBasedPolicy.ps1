@@ -90,35 +90,36 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 		try {
 			$colPolicies = @(Get-BapGovernancePolicy)
 			$colAssignments = @(Get-BapGovernancePolicyAssignment -EnvironmentId $routeEnvironmentId)
-			$colPolicies = @(Get-BapGovernancePolicyView -Policy $colPolicies -Assignment $colAssignments -Scope Environment)
+			$colPolicies = @(Get-BapGovernancePolicyView -Policy $colPolicies `
+					-Assignment $colAssignments `
+					-Scope Environment)
 		}
 		catch {
 			$messageString = "Failed to retrieve governance policies for environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the governance policy request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the governance policy request failed." `
+				-Exception $_.Exception
 			return
 		}
 
 		if ($Kind -eq 'Acp') { $colPolicies = @($colPolicies | Where-Object Kind -eq 'Acp') }
 
-		if ($PolicyId -ne '*') {
-			$colPolicies = @($colPolicies | Where-Object {
-					$_.id -like $PolicyId -or $_.name -like $PolicyId
-				})
-		}
-		else {
-			$colPolicies = @($colPolicies | Where-Object IsEffective)
-		}
+		$colPolicies = @($colPolicies | Where-Object {
+				$_.id -like $PolicyId -or $_.name -like $PolicyId
+			})
 
 		$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentRuleBasedPolicy' -Property `
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentRuleBasedPolicy' `
+				-Property `
 				'id as PolicyId',
 			'name as Name',
 			'Kind as Kind',
 			'lastModified as LastModified',
-			@{ Name = 'RuleSetCount'; Expression = { if ($null -ne $_.ruleSetCount) { $_.ruleSetCount } else { @($_.ruleSets).Count } } },
+			@{ Name = 'RuleSetCount'; Expression = { if (-Not ($null -eq $_.ruleSetCount)) { $_.ruleSetCount } else { @($_.ruleSets).Count } } },
 			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id | Where-Object { $_ }) -join ', ' } },
 			'AssignmentSource as AssignmentSource',
 			'IsEffective as IsEffective',
@@ -130,10 +131,8 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentRuleBasedPolicy' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentRuleBasedPolicy' `
+				-WarningAction SilentlyContinue
 			return
 		}
 

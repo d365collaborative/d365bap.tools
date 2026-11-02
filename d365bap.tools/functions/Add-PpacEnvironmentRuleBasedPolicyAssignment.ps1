@@ -60,23 +60,36 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colPolicy[0].PolicyId)/environments/$routeEnvironmentId/assignments?api-version=$apiVersion"
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.PowerPlatform
+		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/{0}/environments/{1}/assignments?api-version={2}' `
+			-f $colPolicy[0].PolicyId,
+		$routeEnvironmentId,
+		$apiVersion
 
 		try {
-			$null = Invoke-RestMethod -Method Post -Uri $uri -Headers @{
+			$null = Invoke-RestMethod -Method Post `
+				-Uri $uri `
+				-Headers @{
 				Authorization = "Bearer $tokenValue"
 				Accept        = 'application/json'
-			} -Body '{}' -ContentType 'application/json' -ErrorAction Stop
+			} `
+				-Body '{}' `
+				-ContentType 'application/json' `
+				-ErrorAction Stop
 		}
 		catch {
 			$messageString = "Failed to assign governance policy <c='em'>$PolicyId</c> to environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the governance assignment request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the governance assignment request failed." `
+				-Exception $_.Exception
 			return
 		}
 
-		Get-PpacEnvironmentRuleBasedPolicy -EnvironmentId $EnvironmentId -PolicyId $colPolicy[0].PolicyId
+		Get-PpacEnvironmentRuleBasedPolicy -EnvironmentId $EnvironmentId `
+			-PolicyId $colPolicy[0].PolicyId
 	}
 }

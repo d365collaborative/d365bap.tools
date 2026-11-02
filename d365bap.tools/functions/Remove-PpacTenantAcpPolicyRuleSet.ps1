@@ -46,7 +46,9 @@ function Remove-PpacTenantAcpPolicyRuleSet {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$null = Remove-PpacTenantRuleBasedPolicyRuleSet -PolicyId $colCurrent[0].PolicyId -RuleSetId 'ConnectorManagement' -Confirm:$false
+		$null = Remove-PpacTenantRuleBasedPolicyRuleSet -PolicyId $colCurrent[0].PolicyId `
+			-RuleSetId 'ConnectorManagement' `
+			-Confirm:$false
 		Get-PpacTenantAcpPolicy -PolicyId $colCurrent[0].PolicyId
 	}
 }

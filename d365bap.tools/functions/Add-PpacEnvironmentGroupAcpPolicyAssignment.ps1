@@ -39,7 +39,7 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 		$groupLabel = $EnvironmentGroupId
 		try {
 			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
-			if ($null -ne $objGroup -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+			if (-Not ($null -eq $objGroup) -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
 				$groupLabel = $objGroup.DisplayName
 			}
 		}
@@ -65,8 +65,11 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$colAssigned = @(Add-PpacEnvironmentGroupRuleBasedPolicyAssignment -EnvironmentGroupId $EnvironmentGroupId -PolicyId $colPolicy[0].PolicyId -Confirm:$false)
+		$colAssigned = @(Add-PpacEnvironmentGroupRuleBasedPolicyAssignment -EnvironmentGroupId $EnvironmentGroupId `
+				-PolicyId $colPolicy[0].PolicyId `
+				-Confirm:$false)
 		if ($colAssigned.Count -eq 0) { return }
-		Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId $EnvironmentGroupId -PolicyId $colPolicy[0].PolicyId
+		Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId $EnvironmentGroupId `
+			-PolicyId $colPolicy[0].PolicyId
 	}
 }

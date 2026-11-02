@@ -58,8 +58,11 @@ function Add-PpacEnvironmentAcpPolicyAssignment {
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$colAssigned = @(Add-PpacEnvironmentRuleBasedPolicyAssignment -EnvironmentId $EnvironmentId -PolicyId $colPolicy[0].PolicyId -Confirm:$false)
+		$colAssigned = @(Add-PpacEnvironmentRuleBasedPolicyAssignment -EnvironmentId $EnvironmentId `
+				-PolicyId $colPolicy[0].PolicyId `
+				-Confirm:$false)
 		if ($colAssigned.Count -eq 0) { return }
-		Get-PpacEnvironmentAcpPolicy -EnvironmentId $EnvironmentId -PolicyId $colPolicy[0].PolicyId
+		Get-PpacEnvironmentAcpPolicy -EnvironmentId $EnvironmentId `
+			-PolicyId $colPolicy[0].PolicyId
 	}
 }

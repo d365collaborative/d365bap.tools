@@ -74,12 +74,17 @@ function Get-PpacTenantRuleBasedPolicy {
 
 	process {
 		try {
-			$colPolicies = @(Get-BapGovernancePolicyView -Policy @(Get-BapGovernancePolicy) -Assignment @() -Scope Tenant)
+			$colPolicies = @(Get-BapGovernancePolicyView -Policy @(Get-BapGovernancePolicy) `
+					-Assignment @() `
+					-Scope Tenant)
 		}
 		catch {
 			$messageString = "Failed to retrieve governance rule-based policies. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the governance policy request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the governance policy request failed." `
+				-Exception $_.Exception
 			return
 		}
 
@@ -92,12 +97,13 @@ function Get-PpacTenantRuleBasedPolicy {
 		$colPolicies = @($colPolicies | Sort-Object -Property name, id)
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantRuleBasedPolicy' -Property `
+			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantRuleBasedPolicy' `
+				-Property `
 				'id as PolicyId',
 			'name as Name',
 			'Kind as Kind',
 			'lastModified as LastModified',
-			@{ Name = 'RuleSetCount'; Expression = { if ($null -ne $_.ruleSetCount) { $_.ruleSetCount } else { @($_.ruleSets).Count } } },
+			@{ Name = 'RuleSetCount'; Expression = { if (-Not ($null -eq $_.ruleSetCount)) { $_.ruleSetCount } else { @($_.ruleSets).Count } } },
 			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id | Where-Object { $_ }) -join ', ' } },
 			'AssignmentSource as AssignmentSource',
 			'IsEffective as IsEffective',
@@ -107,10 +113,8 @@ function Get-PpacTenantRuleBasedPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacTenantRuleBasedPolicy' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacTenantRuleBasedPolicy' `
+				-WarningAction SilentlyContinue
 			return
 		}
 

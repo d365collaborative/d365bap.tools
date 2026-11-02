@@ -60,20 +60,31 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 		} | ConvertTo-Json -Depth 20
 
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colCurrent[0].PolicyId)/removeRule?api-version=$apiVersion"
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.PowerPlatform
+		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/{0}/removeRule?api-version={1}' `
+			-f $colCurrent[0].PolicyId,
+		$apiVersion
 
 		try {
-			$null = Invoke-RestMethod -Method Patch -Uri $uri -Headers @{
+			$null = Invoke-RestMethod -Method Patch `
+				-Uri $uri `
+				-Headers @{
 				Authorization = "Bearer $tokenValue"
 				Accept        = 'application/json'
-			} -Body $body -ContentType 'application/json' -ErrorAction Stop
+			} `
+				-Body $body `
+				-ContentType 'application/json' `
+				-ErrorAction Stop
 		}
 		catch {
 			$messageString = "Failed to remove rule set <c='em'>$RuleSetId</c> from policy <c='em'>$PolicyId</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the governance rule set removal failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the governance rule set removal failed." `
+				-Exception $_.Exception
 			return
 		}
 

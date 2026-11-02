@@ -41,21 +41,29 @@ function Get-BapGovernancePolicyAssignment {
 	)
 
 	$objSecureToken = Get-BapAccessToken -PowerPlatform
-	$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
+	$tokenValue = ConvertFrom-SecureString -AsPlainText `
+		-SecureString $objSecureToken
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 		Accept        = 'application/json'
 	}
 
-	$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
+	$apiVersion = $script:BapApiVersions.PowerPlatform
 
 	if ($PSCmdlet.ParameterSetName -eq 'EnvironmentGroup') {
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/environmentGroups/$EnvironmentGroupId/assignments?api-version=$apiVersion&includeRuleSetCounts=true"
+		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/environmentGroups/{0}/assignments?api-version={1}&includeRuleSetCounts=true' `
+			-f $EnvironmentGroupId,
+		$apiVersion
 	}
 	else {
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/environments/$EnvironmentId/assignments?api-version=$apiVersion&includeRuleSetCounts=true"
+		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/environments/{0}/assignments?api-version={1}&includeRuleSetCounts=true' `
+			-f $EnvironmentId,
+		$apiVersion
 	}
 
-	$response = Invoke-RestMethod -Method Get -Uri $uri -Headers $hashHeaders -ErrorAction Stop
-	[object[]]@($response.value)
+	$response = Invoke-RestMethod -Method Get `
+		-Uri $uri `
+		-Headers $hashHeaders `
+		-ErrorAction Stop
+	@($response.value)
 }

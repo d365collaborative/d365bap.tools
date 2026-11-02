@@ -42,10 +42,10 @@ function Set-PpacTenantAcpPolicy {
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 
-		[ValidateNotNullOrEmpty()]
+		[ValidateScript({ -not [string]::IsNullOrWhiteSpace("$_") })]
 		[string] $Name,
 
-		[ValidateNotNullOrEmpty()]
+		[ValidateScript({ @($_).Count -gt 0 })]
 		[string[]] $ConnectorId
 	)
 

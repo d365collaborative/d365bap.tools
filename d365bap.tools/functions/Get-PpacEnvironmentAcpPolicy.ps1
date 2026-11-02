@@ -78,13 +78,13 @@ function Get-PpacEnvironmentAcpPolicy {
 		}
 
 		$colPolicies = @(Get-PpacEnvironmentRuleBasedPolicy @hashParams)
-		$colRes = @(ConvertTo-PpacAcpPolicy -Policy $colPolicies -TypeName 'D365Bap.Tools.PpacEnvironmentAcpPolicy' -ExpandConnectors:$ExpandConnectors)
+		$colRes = @(ConvertTo-PpacAcpPolicy -Policy $colPolicies `
+				-TypeName 'D365Bap.Tools.PpacEnvironmentAcpPolicy' `
+				-ExpandConnectors:$ExpandConnectors)
 
 		if ($AsExcelOutput) {
-			if ($colRes.Count -gt 0) {
-				$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentAcpPolicy' `
-					-WarningAction SilentlyContinue
-			}
+			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentAcpPolicy' `
+				-WarningAction SilentlyContinue
 			return
 		}
 

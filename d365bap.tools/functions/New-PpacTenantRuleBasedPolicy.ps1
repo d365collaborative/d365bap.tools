@@ -49,20 +49,30 @@ function New-PpacTenantRuleBasedPolicy {
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies?api-version=$apiVersion"
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.PowerPlatform
+		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies?api-version={0}' `
+			-f $apiVersion
 
 		try {
-			$created = Invoke-RestMethod -Method Post -Uri $uri -Headers @{
+			$created = Invoke-RestMethod -Method Post `
+				-Uri $uri `
+				-Headers @{
 				Authorization = "Bearer $tokenValue"
 				Accept        = 'application/json'
-			} -Body $body -ContentType 'application/json' -ErrorAction Stop
+			} `
+				-Body $body `
+				-ContentType 'application/json' `
+				-ErrorAction Stop
 		}
 		catch {
 			$messageString = "Failed to create governance policy <c='em'>$Name</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the governance policy create request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the governance policy create request failed." `
+				-Exception $_.Exception
 			return
 		}
 

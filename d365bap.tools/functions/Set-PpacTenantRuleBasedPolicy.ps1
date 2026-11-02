@@ -54,10 +54,10 @@ function Set-PpacTenantRuleBasedPolicy {
 		[ValidateNotNullOrEmpty()]
 		[string] $PolicyId,
 
-		[ValidateNotNullOrEmpty()]
+		[ValidateScript({ -not [string]::IsNullOrWhiteSpace("$_") })]
 		[string] $Name,
 
-		[ValidateNotNullOrEmpty()]
+		[ValidateScript({ @($_).Count -gt 0 })]
 		[object[]] $RuleSet,
 
 		[switch] $Merge
@@ -96,21 +96,32 @@ function Set-PpacTenantRuleBasedPolicy {
 		} | ConvertTo-Json -Depth 20
 
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
-		$tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $objSecureToken
-		$apiVersion = if ([string]::IsNullOrWhiteSpace("$script:BapSdkApiVersion")) { '2024-10-01' } else { $script:BapSdkApiVersion }
-		$uri = "https://api.powerplatform.com/governance/ruleBasedPolicies/$($colCurrent[0].PolicyId)?api-version=$apiVersion"
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+		$apiVersion = $script:BapApiVersions.PowerPlatform
+		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/{0}?api-version={1}' `
+			-f $colCurrent[0].PolicyId,
+		$apiVersion
 		$method = if ($Merge) { 'Patch' } else { 'Put' }
 
 		try {
-			$null = Invoke-RestMethod -Method $method -Uri $uri -Headers @{
+			$null = Invoke-RestMethod -Method $method `
+				-Uri $uri `
+				-Headers @{
 				Authorization = "Bearer $tokenValue"
 				Accept        = 'application/json'
-			} -Body $body -ContentType 'application/json' -ErrorAction Stop
+			} `
+				-Body $body `
+				-ContentType 'application/json' `
+				-ErrorAction Stop
 		}
 		catch {
 			$messageString = "Failed to update governance policy <c='em'>$PolicyId</c>. $($_.Exception.Message)"
-			Write-PSFMessage -Level Important -Message $messageString -Exception $_.Exception
-			Stop-PSFFunction -Message "Stopping because the governance policy update request failed." -Exception $_.Exception
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+			Stop-PSFFunction -Message "Stopping because the governance policy update request failed." `
+				-Exception $_.Exception
 			return
 		}
 
