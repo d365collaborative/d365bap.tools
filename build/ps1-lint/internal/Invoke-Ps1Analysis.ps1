@@ -134,6 +134,9 @@ function Invoke-Ps1Analysis {
 							-Worker $Analyzer.Worker))
 				$tmpDiagnostics.AddRange(@(Get-Ps1CentralApiVersionDiagnostic -Analysis $analysis))
 				$tmpDiagnostics.AddRange(@(Get-Ps1FormattedUrlDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineIfExpressionDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1MultilineIfConditionDiagnostic -Analysis $analysis))
+				$tmpDiagnostics.AddRange(@(Get-Ps1TernaryInObjectInitializationDiagnostic -Analysis $analysis))
 			}
 
 			$result = [pscustomobject]@{
@@ -182,6 +185,9 @@ function Invoke-Ps1Analysis {
 . "$PSScriptRoot/Get-Ps1ComplexArrayElementDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1SelectObjectPropertyDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1MultilineSelectObjectPropertyDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1MultilineIfExpressionDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1MultilineIfConditionDiagnostic.ps1"
+. "$PSScriptRoot/Get-Ps1TernaryInObjectInitializationDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasDiagnostic.ps1"
 . "$PSScriptRoot/Get-Ps1AliasConfiguration.ps1"
 . "$PSScriptRoot/Resolve-Ps1AliasCommand.ps1"

@@ -41,6 +41,8 @@ What runs on PowerShell files:
   `PSUseOneComplexArrayElementPerLine`,
   `PSUseExplicitSelectObjectProperty`,
   `PSUseMultilineSelectObjectProperty`,
+  `PSUseMultilineIfExpression`,
+  `PSUseMultilineIfCondition`, `PSUseTernaryInObjectInitialization`,
   `PSUseCentralApiVersion`, `PSUseFormattedUrl`,
   `PSUseStandardParameterLayout`.
   Both alias rules are always on; the only way to permit an alias is a
@@ -1094,6 +1096,169 @@ Run its regression checks under PowerShell 7.6 or later:
 
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineSelectObjectPropertyRule.ps1
+```
+
+## Multiline if expressions
+
+`PSUseMultilineIfExpression` requires an `if`/`else` used as an assignment value
+to put each branch on its own lines. The rule covers variable and property
+assignments:
+
+```powershell
+# Fails
+$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
+
+# Passes: multiline if expression
+$fullId = if ($itemConnector -like '/providers/*') {
+    $itemConnector
+}
+else {
+    "/providers/Microsoft.PowerApps/apis/$itemConnector"
+}
+
+# Passes: declared variable
+$fullId = $null
+if ($itemConnector -like '/providers/*') {
+    $fullId = $itemConnector
+}
+else {
+    $fullId = "/providers/Microsoft.PowerApps/apis/$itemConnector"
+}
+
+# Passes: ternary
+$fullId = $itemConnector -like '/providers/*' ? $itemConnector : "/providers/Microsoft.PowerApps/apis/$itemConnector"
+```
+
+The `{` and `}` of each branch and the `else` keyword each start on their own
+line. An `if` expression without an `else` is not reported. A plain `if`
+statement is not an assignment and is not reported. An `if` expression used as
+an object initializer value belongs to `PSUseTernaryInObjectInitialization`.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineIfExpressionRule.ps1
+```
+
+## Ternary in object initializers
+
+`PSUseTernaryInObjectInitialization` requires an `if`/`else` used as a hashtable
+value to be a ternary operator instead. A multiline `if` block inside a
+hashtable breaks the property layout; the ternary keeps one value on one line:
+
+```powershell
+# Fails
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) { '1.0' } else { $objRuleSet.version }
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Fails: a multiline branch does not fix the object layout
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) {
+        '1.0'
+    }
+    else {
+        $objRuleSet.version
+    }
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Passes
+$hashRuleSet = [ordered]@{
+    id      = 'ConnectorManagement'
+    version = [string]::IsNullOrWhiteSpace("$($objRuleSet.version")) ? '1.0' : $objRuleSet.version
+    inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
+}
+
+# Passes: an if without an else has no ternary equivalent
+$hashRuleSet = @{
+    version = if ($Version) { $Version.ToString() }
+}
+```
+
+The rule covers every hashtable literal, including `[ordered]@{}` and
+`[pscustomobject]@{}` values and nested hashtables. Only an `if` with an `else`
+is reported. Property assignments are not object initializers and stay with
+`PSUseMultilineIfExpression`. Test files, tepp fixtures, and `build/` scripts
+are exempt.
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1TernaryInObjectInitializationRule.ps1
+```
+
+## Multiline if conditions
+
+`PSUseMultilineIfCondition` requires every test in a compound `if` or `elseif`
+condition to sit in parentheses on its own line, with `-and` or `-or` leftmost
+on the continuation line:
+
+```powershell
+# Fails: two tests on one line
+if (-Not ($null -eq $objGroup) -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Fails: the operator ends the line instead of starting it
+if ((-Not ($null -eq $objGroup)) -and
+    (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Fails: the tests are not parenthesized
+if (-Not ($null -eq $objGroup) `
+        -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Passes: two tests
+if ((-Not ($null -eq $objGroup)) `
+        -and (-not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)"))) {
+    $groupLabel = $objGroup.DisplayName
+}
+
+# Passes: three tests
+if (($null -eq $objValue) `
+        -and ($objValue.Count -gt 0) `
+        -and ($objValue[0])) {
+    $objValue[0]
+}
+
+# Passes: nested -or
+if (($colValue.Count -gt 0) `
+        -and (($colValue[0] -eq 'a') `
+            -or ($colValue[0] -eq 'b'))) {
+    $colValue[0]
+}
+
+# Passes: a condition inside the if parentheses
+if (
+    ($null -eq $objValue) `
+        -and ($objValue.Count -gt 0)
+) {
+    $objValue[0]
+}
+```
+
+Every operand of an `-and` or `-or` chain must be a parenthesized expression and
+start on its own line. The operator starts the continuation line, so the logic
+split stays visible at the left edge. A chain of the same operator is read left
+to right, so three or more tests produce one operator line per test. A nested
+`-and` or `-or` is checked recursively. A single test, an `if` expression, and a
+`Where-Object` script block are not compound conditions and are not reported.
+Test files, tepp fixtures, and `build/` scripts are exempt. The rule runs on
+module code (public and internal).
+
+Run its regression checks under PowerShell 7.6 or later:
+
+```powershell
+pwsh -NoProfile -NonInteractive -File build/Test-Ps1MultilineIfConditionRule.ps1
 ```
 
 ## Central API version

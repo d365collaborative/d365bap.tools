@@ -40,6 +40,9 @@ on:
       - 'build/Test-Ps1ComplexArrayElementRule.ps1'
       - 'build/Test-Ps1SelectObjectPropertyRule.ps1'
       - 'build/Test-Ps1MultilineSelectObjectPropertyRule.ps1'
+      - 'build/Test-Ps1MultilineIfExpressionRule.ps1'
+      - 'build/Test-Ps1MultilineIfConditionRule.ps1'
+      - 'build/Test-Ps1TernaryInObjectInitializationRule.ps1'
       - 'build/Test-Ps1OneParameterPerLineRule.ps1'
       - 'build/Test-Ps1CentralApiVersionRule.ps1'
       - 'build/Test-Ps1FormattedUrlRule.ps1'
@@ -175,6 +178,15 @@ jobs:
     - name: Test multiline Select-Object property lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1MultilineSelectObjectPropertyRule.ps1
+    - name: Test multiline if expression lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1MultilineIfExpressionRule.ps1
+    - name: Test multiline if condition lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1MultilineIfConditionRule.ps1
+    - name: Test ternary in object initialization lint rule
+      shell: pwsh
+      run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1TernaryInObjectInitializationRule.ps1
     - name: Test one-parameter-per-line lint rule
       shell: pwsh
       run: pwsh -NoProfile -NonInteractive -File ./build/Test-Ps1OneParameterPerLineRule.ps1
