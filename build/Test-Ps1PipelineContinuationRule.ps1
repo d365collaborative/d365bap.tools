@@ -80,6 +80,27 @@ function Get-Fixture {
 }
 '@
 
+Assert-PipelineContinuation 'Hashtable to ConvertTo-Json on the same line' @'
+function Get-Fixture {
+    $body = [ordered]@{
+        name     = $Name
+        ruleSets = @($RuleSet)
+    } | ConvertTo-Json -Depth 20
+    $body
+}
+'@ -Expected 1 @('Break the pipeline')
+
+Assert-PipelineContinuation 'Hashtable to ConvertTo-Json on a new line' @'
+function Get-Fixture {
+    $body = [ordered]@{
+        name     = $Name
+        ruleSets = @($RuleSet)
+    } |
+        ConvertTo-Json -Depth 20
+    $body
+}
+'@
+
 Assert-PipelineContinuation 'Single command' @'
 function Get-Fixture {
     Get-Thing -Name 'x'

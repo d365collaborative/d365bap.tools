@@ -1176,6 +1176,12 @@ command starts a new line:
 # Fails
 $envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
 
+# Fails: the closing brace and the next command share a line
+$body = [ordered]@{
+    name     = $Name
+    ruleSets = @($RuleSet)
+} | ConvertTo-Json -Depth 20
+
 # Fails: leading pipe
 $envObj = Get-Environment -EnvironmentId $EnvironmentId
     | Select-Object -First 1
@@ -1183,6 +1189,13 @@ $envObj = Get-Environment -EnvironmentId $EnvironmentId
 # Passes
 $envObj = Get-Environment -EnvironmentId $EnvironmentId |
     Select-Object -First 1
+
+# Passes: the closing brace stays on its own line
+$body = [ordered]@{
+    name     = $Name
+    ruleSets = @($RuleSet)
+} |
+    ConvertTo-Json -Depth 20
 ```
 
 A single-command pipeline is not checked. A pipe inside a string is not a
