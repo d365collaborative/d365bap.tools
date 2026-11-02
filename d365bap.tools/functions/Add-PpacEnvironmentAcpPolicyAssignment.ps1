@@ -48,9 +48,10 @@ function Add-PpacEnvironmentAcpPolicyAssignment {
 		}
 
 		$policyName = $colPolicy[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colPolicy[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colPolicy[0].PolicyId }
 
-		$envObj = Get-Environment -EnvironmentId $EnvironmentId | Select-Object -First 1
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 		$environmentLabel = $envObj.PpacEnvName
 
 		$shouldAffected = $policyName
@@ -61,7 +62,9 @@ function Add-PpacEnvironmentAcpPolicyAssignment {
 		$colAssigned = @(Add-PpacEnvironmentRuleBasedPolicyAssignment -EnvironmentId $EnvironmentId `
 				-PolicyId $colPolicy[0].PolicyId `
 				-Confirm:$false)
+
 		if ($colAssigned.Count -eq 0) { return }
+
 		Get-PpacEnvironmentAcpPolicy -EnvironmentId $EnvironmentId `
 			-PolicyId $colPolicy[0].PolicyId
 	}

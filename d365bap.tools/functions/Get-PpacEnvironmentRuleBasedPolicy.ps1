@@ -76,9 +76,8 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 	)
 
 	process {
-		$envObj = Get-Environment `
-			-EnvironmentId $EnvironmentId | `
-			Select-Object -First 1
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
 		$routeEnvironmentId = $envObj.PpacEnvId
 		$routeEnvironmentName = $envObj.PpacEnvName
@@ -97,28 +96,39 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the governance policy request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
-		if ($Kind -eq 'Acp') { $colPolicies = @($colPolicies | Where-Object Kind -eq 'Acp') }
+		if ($Kind -eq 'Acp') {
+			$colPolicies = @($colPolicies |
+				Where-Object Kind -eq 'Acp')
+		}
 
-		$colPolicies = @($colPolicies | Where-Object {
-				$_.id -like $PolicyId -or $_.name -like $PolicyId
+		$colPolicies = @($colPolicies |
+			Where-Object {
+				($_.id -like $PolicyId) `
+					-or ($_.name -like $PolicyId)
 			})
 
-		$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
+		$colPolicies = @($colPolicies |
+			Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
+			@{ Expression = { $_.name } },
+			@{ Expression = { $_.id } })
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentRuleBasedPolicy' `
+			$colPolicies |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentRuleBasedPolicy' `
 				-Property `
 				'id as PolicyId',
 			'name as Name',
 			'Kind as Kind',
 			'lastModified as LastModified',
 			@{ Name = 'RuleSetCount'; Expression = { if (-Not ($null -eq $_.ruleSetCount)) { $_.ruleSetCount } else { @($_.ruleSets).Count } } },
-			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id | Where-Object { $_ }) -join ', ' } },
+			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id).Where({ $_ }) -join ', ' } },
 			'AssignmentSource as AssignmentSource',
 			'IsEffective as IsEffective',
 			'tenantId as TenantId',
@@ -129,8 +139,10 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentRuleBasedPolicy' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentRuleBasedPolicy' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

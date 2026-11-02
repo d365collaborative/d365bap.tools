@@ -83,28 +83,37 @@ function Get-PpacTenantRuleBasedPolicy {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the governance policy request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
-		if ($Kind -eq 'Acp') { $colPolicies = @($colPolicies | Where-Object Kind -eq 'Acp') }
+		if ($Kind -eq 'Acp') {
+			$colPolicies = @($colPolicies |
+				Where-Object Kind -eq 'Acp')
+		}
 
-		$colPolicies = @($colPolicies | Where-Object {
-				$_.id -like $PolicyId -or $_.name -like $PolicyId
+		$colPolicies = @($colPolicies |
+			Where-Object {
+				($_.id -like $PolicyId) `
+					-or ($_.name -like $PolicyId)
 			})
 
-		$colPolicies = @($colPolicies | Sort-Object -Property name, id)
+		$colPolicies = @($colPolicies |
+			Sort-Object -Property name, id)
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantRuleBasedPolicy' `
+			$colPolicies |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantRuleBasedPolicy' `
 				-Property `
 				'id as PolicyId',
 			'name as Name',
 			'Kind as Kind',
 			'lastModified as LastModified',
 			@{ Name = 'RuleSetCount'; Expression = { if (-Not ($null -eq $_.ruleSetCount)) { $_.ruleSetCount } else { @($_.ruleSets).Count } } },
-			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id | Where-Object { $_ }) -join ', ' } },
+			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id).Where({ $_ }) -join ', ' } },
 			'AssignmentSource as AssignmentSource',
 			'IsEffective as IsEffective',
 			'tenantId as TenantId',
@@ -113,8 +122,10 @@ function Get-PpacTenantRuleBasedPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacTenantRuleBasedPolicy' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacTenantRuleBasedPolicy' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

@@ -70,20 +70,19 @@ function Get-PpacEnvironmentGroupAcpPolicy {
 	)
 
 	process {
-		$hashParams = @{
-			Kind               = 'Acp'
-			EnvironmentGroupId = $EnvironmentGroupId
-			PolicyId           = $PolicyId
-		}
+		$colPolicies = @(Get-PpacEnvironmentGroupRuleBasedPolicy -Kind 'Acp' `
+				-EnvironmentGroupId $EnvironmentGroupId `
+				-PolicyId $PolicyId)
 
-		$colPolicies = @(Get-PpacEnvironmentGroupRuleBasedPolicy @hashParams)
 		$colRes = @(ConvertTo-PpacAcpPolicy -Policy $colPolicies `
 				-TypeName 'D365Bap.Tools.PpacEnvironmentGroupAcpPolicy' `
 				-ExpandConnectors:$ExpandConnectors)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentGroupAcpPolicy' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentGroupAcpPolicy' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

@@ -43,6 +43,7 @@ function Get-BapGovernancePolicyAssignment {
 	$objSecureToken = Get-BapAccessToken -PowerPlatform
 	$tokenValue = ConvertFrom-SecureString -AsPlainText `
 		-SecureString $objSecureToken
+
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 		Accept        = 'application/json'
@@ -50,7 +51,7 @@ function Get-BapGovernancePolicyAssignment {
 
 	$apiVersion = $script:BapApiVersions.PowerPlatform
 
-	if ($PSCmdlet.ParameterSetName -eq 'EnvironmentGroup') {
+	if ($EnvironmentGroupId) {
 		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/environmentGroups/{0}/assignments?api-version={1}&includeRuleSetCounts=true' `
 			-f $EnvironmentGroupId,
 		$apiVersion
@@ -65,5 +66,6 @@ function Get-BapGovernancePolicyAssignment {
 		-Uri $uri `
 		-Headers $hashHeaders `
 		-ErrorAction Stop
+
 	@($response.value)
 }

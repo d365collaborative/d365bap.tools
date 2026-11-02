@@ -50,7 +50,8 @@ function Set-PpacTenantAcpPolicy {
 	)
 
 	process {
-		if (-not $Name -and -not $ConnectorId) {
+		if ((-not $Name) `
+				-and (-not $ConnectorId)) {
 			Stop-PSFFunction -Message "Specify -Name, -ConnectorId, or both."
 			return
 		}
@@ -65,7 +66,11 @@ function Set-PpacTenantAcpPolicy {
 			return
 		}
 
-		$objRuleSet = @($colCurrent[0].RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
+		$objRuleSet = @(
+			$colCurrent[0].RuleSets |
+			Where-Object { "$($_.id)" -eq 'ConnectorManagement' }
+		) |
+		Select-Object -First 1
 		if ($null -eq $objRuleSet) {
 			Stop-PSFFunction -Message "Policy '$PolicyId' has no ConnectorManagement rule set."
 			return
@@ -73,7 +78,7 @@ function Set-PpacTenantAcpPolicy {
 
 		if ($ConnectorId) {
 			$colAllowed = foreach ($itemConnector in $ConnectorId) {
-				$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
+				$fullId = $itemConnector -like '/providers/*' ? $itemConnector : "/providers/Microsoft.PowerApps/apis/$itemConnector"
 				[ordered]@{
 					AllowedConnector           = $fullId
 					AllowedActionsMode         = 'AllAllowed'
@@ -83,26 +88,31 @@ function Set-PpacTenantAcpPolicy {
 
 			$hashRuleSet = [ordered]@{
 				id      = 'ConnectorManagement'
-				version = if ([string]::IsNullOrWhiteSpace("$($objRuleSet.version)")) { '1.0' } else { $objRuleSet.version }
+				version = [string]::IsNullOrWhiteSpace($objRuleSet.version) ? '1.0' : $objRuleSet.version
 				inputs  = [ordered]@{ AllowedConnectorList = @($colAllowed) }
 			}
 		}
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = 'Update advanced connector policy'
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$hashParams = @{
-			PolicyId = $colCurrent[0].PolicyId
-			RuleSet  = @($hashRuleSet)
+		if ($Name) {
+			Set-PpacTenantRuleBasedPolicy -PolicyId $colCurrent[0].PolicyId `
+				-RuleSet @($hashRuleSet) `
+				-Name $Name `
+				-Confirm:$false > $null
 		}
-		if ($Name) { $hashParams.Name = $Name }
+		else {
+			Set-PpacTenantRuleBasedPolicy -PolicyId $colCurrent[0].PolicyId `
+				-RuleSet @($hashRuleSet) `
+				-Confirm:$false > $null
+		}
 
-		$null = Set-PpacTenantRuleBasedPolicy @hashParams -Confirm:$false
 		Get-PpacTenantAcpPolicy -PolicyId $colCurrent[0].PolicyId
 	}
 }

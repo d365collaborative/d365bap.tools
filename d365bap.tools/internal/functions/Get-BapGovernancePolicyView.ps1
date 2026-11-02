@@ -45,21 +45,31 @@ function Get-BapGovernancePolicyView {
 
 	foreach ($item in $Policy) {
 		$tmpRuleSets = @($item.ruleSets)
-		$tmpConnectorManagement = @($tmpRuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
-		$kind = if (-Not ($null -eq $tmpConnectorManagement)) { 'Acp' } else { 'Other' }
-		$allowedConnectorCount = if (-Not ($null -eq $tmpConnectorManagement)) { @($tmpConnectorManagement.inputs.AllowedConnectorList).Count } else { 0 }
+		$tmpConnectorManagement = @(
+			$tmpRuleSets |
+			Where-Object { "$($_.id)" -eq 'ConnectorManagement' }
+		) |
+		Select-Object -First 1
+		$isConnectorManagement = -Not ($null -eq $tmpConnectorManagement)
+		$kind = $isConnectorManagement ? 'Acp' : 'Other'
+		$allowedConnectorCount = $isConnectorManagement ? @($tmpConnectorManagement.inputs.AllowedConnectorList).Count : 0
 
 		$policyId = "$($item.id)"
-		$tmpMatchingAssignment = @($Assignment | Where-Object {
-				$assignmentPolicyId = if (-not [string]::IsNullOrWhiteSpace("$($_.policyId)")) { "$($_.policyId)" } else { "$($_.PolicyId)" }
+		$tmpMatchingAssignment = @(
+			$Assignment |
+			Where-Object {
+				$assignmentPolicyId = -not [string]::IsNullOrWhiteSpace($_.policyId) ? "$($_.policyId)" : "$($_.PolicyId)"
 				$assignmentPolicyId -eq $policyId
-			}) | Select-Object -First 1
+			}
+		) |
+		Select-Object -First 1
 
 		$assignmentSource = switch ($Scope) {
 			'Tenant' { 'Definition' }
 			'Environment' {
 				if ($null -eq $tmpMatchingAssignment) { 'None' }
-				elseif ("$($tmpMatchingAssignment.resourceType)" -eq 'EnvironmentGroup' -or "$($tmpMatchingAssignment.ResourceType)" -eq 'EnvironmentGroup') { 'Inherited' }
+				elseif (("$($tmpMatchingAssignment.resourceType)" -eq 'EnvironmentGroup') `
+						-or ("$($tmpMatchingAssignment.ResourceType)" -eq 'EnvironmentGroup')) { 'Inherited' }
 				else { 'Direct' }
 			}
 			'EnvironmentGroup' {
@@ -67,8 +77,14 @@ function Get-BapGovernancePolicyView {
 			}
 		}
 
-		$isEffective = if ($Scope -eq 'Tenant') { $true } else { -Not ($null -eq $tmpMatchingAssignment) }
+		$isEffective = $Scope -eq 'Tenant' ? $true : -Not ($null -eq $tmpMatchingAssignment)
 
-		$item | Select-Object *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'ConnectorManagement'; Expression = { $tmpConnectorManagement } }, @{ Name = 'AllowedConnectorCount'; Expression = { $allowedConnectorCount } }, @{ Name = 'AssignmentSource'; Expression = { $assignmentSource } }, @{ Name = 'IsEffective'; Expression = { $isEffective } }
+		$item |
+		Select-Object -Property *,
+		@{ Name = 'Kind'; Expression = { $kind } },
+		@{ Name = 'ConnectorManagement'; Expression = { $tmpConnectorManagement } },
+		@{ Name = 'AllowedConnectorCount'; Expression = { $allowedConnectorCount } },
+		@{ Name = 'AssignmentSource'; Expression = { $assignmentSource } },
+		@{ Name = 'IsEffective'; Expression = { $isEffective } }
 	}
 }

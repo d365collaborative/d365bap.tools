@@ -38,8 +38,10 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 	process {
 		$groupLabel = $EnvironmentGroupId
 		try {
-			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
-			if (-Not ($null -eq $objGroup) -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId |
+			Select-Object -First 1
+			if ((-Not ($null -eq $objGroup)) `
+					-and (-not [string]::IsNullOrWhiteSpace($objGroup.DisplayName))) {
 				$groupLabel = $objGroup.DisplayName
 			}
 		}
@@ -58,7 +60,7 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 		}
 
 		$policyName = $colPolicy[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colPolicy[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colPolicy[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = "Assign policy to group '$groupLabel'"
@@ -68,6 +70,12 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+			Accept        = 'application/json'
+		}
+
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/{0}/environmentGroups/{1}/assignments?api-version={2}' `
 			-f $colPolicy[0].PolicyId,
@@ -75,23 +83,22 @@ function Add-PpacEnvironmentGroupRuleBasedPolicyAssignment {
 		$apiVersion
 
 		try {
-			$null = Invoke-RestMethod -Method Post `
+			Invoke-RestMethod -Method Post `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-				Accept        = 'application/json'
-			} `
+				-Headers $hashHeaders `
 				-Body '{}' `
 				-ContentType 'application/json' `
-				-ErrorAction Stop
+				-ErrorAction Stop > $null
 		}
 		catch {
 			$messageString = "Failed to assign governance policy <c='em'>$PolicyId</c> to environment group <c='em'>$EnvironmentGroupId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the governance assignment request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 

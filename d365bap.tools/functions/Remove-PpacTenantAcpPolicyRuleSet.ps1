@@ -39,16 +39,17 @@ function Remove-PpacTenantAcpPolicyRuleSet {
 		}
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = 'Remove ACP policy rule set'
 
 		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
 
-		$null = Remove-PpacTenantRuleBasedPolicyRuleSet -PolicyId $colCurrent[0].PolicyId `
+		Remove-PpacTenantRuleBasedPolicyRuleSet -PolicyId $colCurrent[0].PolicyId `
 			-RuleSetId 'ConnectorManagement' `
-			-Confirm:$false
+			-Confirm:$false > $null
+
 		Get-PpacTenantAcpPolicy -PolicyId $colCurrent[0].PolicyId
 	}
 }

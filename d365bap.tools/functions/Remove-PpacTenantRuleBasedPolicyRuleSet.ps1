@@ -47,7 +47,7 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 		}
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = "Remove policy rule set '$RuleSetId'"
@@ -56,35 +56,42 @@ function Remove-PpacTenantRuleBasedPolicyRuleSet {
 
 		$body = [ordered]@{
 			name     = $colCurrent[0].Name
-			ruleSets = @([ordered]@{ id = $RuleSetId })
+			ruleSets = @(
+				[ordered]@{ id = $RuleSetId }
+			)
 		} | ConvertTo-Json -Depth 20
 
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+			Accept        = 'application/json'
+		}
+
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/{0}/removeRule?api-version={1}' `
 			-f $colCurrent[0].PolicyId,
 		$apiVersion
 
 		try {
-			$null = Invoke-RestMethod -Method Patch `
+			Invoke-RestMethod -Method Patch `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-				Accept        = 'application/json'
-			} `
+				-Headers $hashHeaders `
 				-Body $body `
 				-ContentType 'application/json' `
-				-ErrorAction Stop
+				-ErrorAction Stop > $null
 		}
 		catch {
 			$messageString = "Failed to remove rule set <c='em'>$RuleSetId</c> from policy <c='em'>$PolicyId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the governance rule set removal failed." `
 				-Exception $_.Exception
+
 			return
 		}
 

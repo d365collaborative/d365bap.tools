@@ -38,8 +38,10 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 	process {
 		$groupLabel = $EnvironmentGroupId
 		try {
-			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId | Select-Object -First 1
-			if (-Not ($null -eq $objGroup) -and -not [string]::IsNullOrWhiteSpace("$($objGroup.DisplayName)")) {
+			$objGroup = Get-PpacEnvironmentGroup -EnvironmentGroup $EnvironmentGroupId |
+			Select-Object -First 1
+			if ((-Not ($null -eq $objGroup)) `
+					-and (-not [string]::IsNullOrWhiteSpace($objGroup.DisplayName))) {
 				$groupLabel = $objGroup.DisplayName
 			}
 		}
@@ -58,7 +60,7 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 		}
 
 		$policyName = $colPolicy[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colPolicy[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colPolicy[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = "Assign ACP policy to group '$groupLabel'"
@@ -68,7 +70,9 @@ function Add-PpacEnvironmentGroupAcpPolicyAssignment {
 		$colAssigned = @(Add-PpacEnvironmentGroupRuleBasedPolicyAssignment -EnvironmentGroupId $EnvironmentGroupId `
 				-PolicyId $colPolicy[0].PolicyId `
 				-Confirm:$false)
+
 		if ($colAssigned.Count -eq 0) { return }
+
 		Get-PpacEnvironmentGroupAcpPolicy -EnvironmentGroupId $EnvironmentGroupId `
 			-PolicyId $colPolicy[0].PolicyId
 	}

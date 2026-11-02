@@ -64,7 +64,8 @@ function Set-PpacTenantRuleBasedPolicy {
 	)
 
 	process {
-		if (-not $Name -and -not $RuleSet) {
+		if ((-not $Name) `
+				-and (-not $RuleSet)) {
 			Stop-PSFFunction -Message "Specify -Name, -RuleSet, or both."
 			return
 		}
@@ -79,11 +80,11 @@ function Set-PpacTenantRuleBasedPolicy {
 			return
 		}
 
-		$payloadName = if ($Name) { $Name } else { $colCurrent[0].Name }
-		$payloadRuleSets = if ($RuleSet) { @($RuleSet) } else { @($colCurrent[0].RuleSets) }
+		$payloadName = $Name ? $Name : $colCurrent[0].Name
+		$payloadRuleSets = $RuleSet ? @($RuleSet) : @($colCurrent[0].RuleSets)
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = 'Update governance policy'
@@ -98,30 +99,36 @@ function Set-PpacTenantRuleBasedPolicy {
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+			Accept        = 'application/json'
+		}
+
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies/{0}?api-version={1}' `
 			-f $colCurrent[0].PolicyId,
 		$apiVersion
-		$method = if ($Merge) { 'Patch' } else { 'Put' }
+
+		$method = $Merge ? 'Patch' : 'Put'
 
 		try {
-			$null = Invoke-RestMethod -Method $method `
+			Invoke-RestMethod -Method $method `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-				Accept        = 'application/json'
-			} `
+				-Headers $hashHeaders `
 				-Body $body `
 				-ContentType 'application/json' `
-				-ErrorAction Stop
+				-ErrorAction Stop > $null
 		}
 		catch {
 			$messageString = "Failed to update governance policy <c='em'>$PolicyId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the governance policy update request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 

@@ -51,6 +51,12 @@ function New-PpacTenantRuleBasedPolicy {
 		$objSecureToken = Get-BapAccessToken -PowerPlatform
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+			Accept        = 'application/json'
+		}
+
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$uri = 'https://api.powerplatform.com/governance/ruleBasedPolicies?api-version={0}' `
 			-f $apiVersion
@@ -58,10 +64,7 @@ function New-PpacTenantRuleBasedPolicy {
 		try {
 			$created = Invoke-RestMethod -Method Post `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-				Accept        = 'application/json'
-			} `
+				-Headers $hashHeaders `
 				-Body $body `
 				-ContentType 'application/json' `
 				-ErrorAction Stop
@@ -71,12 +74,14 @@ function New-PpacTenantRuleBasedPolicy {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the governance policy create request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
-		if (-not [string]::IsNullOrWhiteSpace("$($created.id)")) {
+		if (-not [string]::IsNullOrWhiteSpace($created.id)) {
 			Get-PpacTenantRuleBasedPolicy -PolicyId $created.id
 		}
 	}

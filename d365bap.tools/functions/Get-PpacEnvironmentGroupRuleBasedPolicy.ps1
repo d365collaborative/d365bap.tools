@@ -89,28 +89,39 @@ function Get-PpacEnvironmentGroupRuleBasedPolicy {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the governance policy request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
-		if ($Kind -eq 'Acp') { $colPolicies = @($colPolicies | Where-Object Kind -eq 'Acp') }
+		if ($Kind -eq 'Acp') {
+			$colPolicies = @($colPolicies |
+				Where-Object Kind -eq 'Acp')
+		}
 
-		$colPolicies = @($colPolicies | Where-Object {
-				$_.id -like $PolicyId -or $_.name -like $PolicyId
+		$colPolicies = @($colPolicies |
+			Where-Object {
+				($_.id -like $PolicyId) `
+					-or ($_.name -like $PolicyId)
 			})
 
-		$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
+		$colPolicies = @($colPolicies |
+			Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
+			@{ Expression = { $_.name } },
+			@{ Expression = { $_.id } })
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentGroupRuleBasedPolicy' `
+			$colPolicies |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentGroupRuleBasedPolicy' `
 				-Property `
 				'id as PolicyId',
 			'name as Name',
 			'Kind as Kind',
 			'lastModified as LastModified',
 			@{ Name = 'RuleSetCount'; Expression = { if (-Not ($null -eq $_.ruleSetCount)) { $_.ruleSetCount } else { @($_.ruleSets).Count } } },
-			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id | Where-Object { $_ }) -join ', ' } },
+			@{ Name = 'RuleSetIds'; Expression = { @($_.ruleSets.id).Where({ $_ }) -join ', ' } },
 			'AssignmentSource as AssignmentSource',
 			'IsEffective as IsEffective',
 			'tenantId as TenantId',
@@ -120,8 +131,10 @@ function Get-PpacEnvironmentGroupRuleBasedPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentGroupRuleBasedPolicy' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentGroupRuleBasedPolicy' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

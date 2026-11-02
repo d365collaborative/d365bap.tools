@@ -39,7 +39,7 @@ function New-PpacTenantAcpPolicy {
 
 	process {
 		$colAllowed = foreach ($itemConnector in $ConnectorId) {
-			$fullId = if ($itemConnector -like '/providers/*') { $itemConnector } else { "/providers/Microsoft.PowerApps/apis/$itemConnector" }
+			$fullId = $itemConnector -like '/providers/*' ? $itemConnector : "/providers/Microsoft.PowerApps/apis/$itemConnector"
 			[ordered]@{
 				AllowedConnector           = $fullId
 				AllowedActionsMode         = 'AllAllowed'
@@ -63,6 +63,7 @@ function New-PpacTenantAcpPolicy {
 		$colCreated = @(New-PpacTenantRuleBasedPolicy -Name $Name `
 				-RuleSet $colRuleSet `
 				-Confirm:$false)
+
 		if ($colCreated.Count -eq 0) { return }
 		Get-PpacTenantAcpPolicy -PolicyId $colCreated[0].PolicyId
 	}
