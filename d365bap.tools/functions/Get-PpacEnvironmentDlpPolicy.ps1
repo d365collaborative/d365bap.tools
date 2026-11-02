@@ -65,9 +65,8 @@ function Get-PpacEnvironmentDlpPolicy {
 	)
 
 	process {
-		$envObj = Get-Environment `
-			-EnvironmentId $EnvironmentId | `
-			Select-Object -First 1
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
 		$routeEnvironmentId = $envObj.PpacEnvId
 		$routeEnvironmentName = $envObj.PpacEnvName
@@ -80,7 +79,10 @@ function Get-PpacEnvironmentDlpPolicy {
 			if ($routeEnvironmentId -like 'Default-*') {
 				$routeEnvironmentId.Substring(8)
 			}
-		) | Where-Object { -not [string]::IsNullOrWhiteSpace("$_") } | ForEach-Object { "$_".ToLowerInvariant() } | Select-Object -Unique
+		) |
+		Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+		ForEach-Object { "$_".ToLowerInvariant() } |
+		Select-Object -Unique
 
 		try {
 			$colPolicies = @(Get-BapDlpPolicy)
@@ -90,15 +92,19 @@ function Get-PpacEnvironmentDlpPolicy {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the DLP policy request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
 		$colPolicies = @(
 			foreach ($itemPolicy in $colPolicies) {
-				$tmpPolicyIds = @($itemPolicy.environments.id | ForEach-Object { "$_".ToLowerInvariant() })
-				$matchesEnvironment = @($candidateIds | Where-Object { $_ -in $tmpPolicyIds }).Count -gt 0
+				$tmpPolicyIds = @($itemPolicy.environments.id |
+					ForEach-Object { "$_".ToLowerInvariant() })
+				$matchesEnvironment = @($candidateIds |
+					Where-Object { $_ -in $tmpPolicyIds }).Count -gt 0
 
 				$isEffective = switch ("$($itemPolicy.environmentType)") {
 					'AllEnvironments' { $true }
@@ -108,18 +114,36 @@ function Get-PpacEnvironmentDlpPolicy {
 					Default { $false }
 				}
 
-				$itemPolicy | Select-Object *, @{ Name = 'IsEffective'; Expression = { $isEffective } }, @{ Name = 'IsInherited'; Expression = { $_.environmentType -ne 'SingleEnvironment' } }
+				$tmpConnectorCount = (@($itemPolicy.connectorGroups) |
+					ForEach-Object { @($_.connectors).Count } |
+					Measure-Object -Sum).Sum
+				$tmpEnvironmentNames = @($itemPolicy.environments.name) |
+				Where-Object { $_ } |
+				Sort-Object -Unique
+
+				$itemPolicy |
+				Select-Object -Property *,
+				@{ Name = 'IsEffective'; Expression = { $isEffective } },
+				@{ Name = 'IsInherited'; Expression = { $_.environmentType -ne 'SingleEnvironment' } },
+				@{ Name = 'ConnectorCount'; Expression = { $tmpConnectorCount } },
+				@{ Name = 'EnvironmentNames'; Expression = { $tmpEnvironmentNames -join ', ' } }
 			}
 		)
 
-		$colPolicies = @($colPolicies | Where-Object {
-				$_.name -like $PolicyId -or $_.displayName -like $PolicyId
+		$colPolicies = @($colPolicies |
+			Where-Object {
+				($_.name -like $PolicyId) `
+					-or ($_.displayName -like $PolicyId)
 			})
 
-		$colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.displayName } }, @{ Expression = { $_.name } })
+		$colPolicies = @($colPolicies |
+			Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
+			@{ Expression = { $_.displayName } },
+			@{ Expression = { $_.name } })
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentDlpPolicy' `
+			$colPolicies |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentDlpPolicy' `
 				-Property `
 				'name as PolicyId',
 			'displayName as Name',
@@ -129,13 +153,13 @@ function Get-PpacEnvironmentDlpPolicy {
 			'environmentType as EnvironmentType',
 			'defaultConnectorsClassification as DefaultConnectorClassification',
 			@{ Name = 'ConnectorGroupCount'; Expression = { @($_.connectorGroups).Count } },
-			@{ Name = 'ConnectorCount'; Expression = { (@($_.connectorGroups) | ForEach-Object { @($_.connectors).Count } | Measure-Object -Sum).Sum } },
+			'ConnectorCount as ConnectorCount',
 			@{ Name = 'EnvironmentCount'; Expression = { @($_.environments).Count } },
 			@{ Name = 'EnvironmentIds'; Expression = { @($_.environments.id) -join ', ' } },
-			@{ Name = 'EnvironmentNames'; Expression = { @($_.environments.name | Where-Object { $_ } | Sort-Object -Unique) -join ', ' } },
-			@{ Name = 'CreatedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace("$($_.createdBy.displayName)")) { $_.createdBy.displayName } else { $_.createdBy.userPrincipalName } } },
+			'EnvironmentNames as EnvironmentNames',
+			@{ Name = 'CreatedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace($_.createdBy.displayName)) { $_.createdBy.displayName } else { $_.createdBy.userPrincipalName } } },
 			'createdTime as CreatedTime',
-			@{ Name = 'LastModifiedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace("$($_.lastModifiedBy.displayName)")) { $_.lastModifiedBy.displayName } else { $_.lastModifiedBy.userPrincipalName } } },
+			@{ Name = 'LastModifiedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace($_.lastModifiedBy.displayName)) { $_.lastModifiedBy.displayName } else { $_.lastModifiedBy.userPrincipalName } } },
 			'lastModifiedTime as LastModifiedTime',
 			'isLegacySchemaVersion as IsLegacySchemaVersion',
 			'connectorGroups as ConnectorGroups',
@@ -144,8 +168,10 @@ function Get-PpacEnvironmentDlpPolicy {
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacEnvironmentDlpPolicy' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentDlpPolicy' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

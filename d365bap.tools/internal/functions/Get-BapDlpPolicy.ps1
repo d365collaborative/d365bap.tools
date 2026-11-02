@@ -23,6 +23,7 @@ function Get-BapDlpPolicy {
 	$objSecureToken = Get-BapAccessToken -Bap
 	$tokenValue = ConvertFrom-SecureString -AsPlainText `
 		-SecureString $objSecureToken
+
 	$hashHeaders = @{
 		Authorization = "Bearer $tokenValue"
 	}
@@ -30,6 +31,7 @@ function Get-BapDlpPolicy {
 	$apiVersion = $script:BapApiVersions.ClassicBap
 	$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version={0}' `
 		-f $apiVersion
+
 	$colPolicies = [Collections.Generic.List[object]]::new()
 	$colVisited = [Collections.Generic.HashSet[string]]::new()
 
@@ -46,7 +48,8 @@ function Get-BapDlpPolicy {
 			$nextLink = "$($response.'@odata.nextLink')"
 		}
 
-		if (-not [string]::IsNullOrWhiteSpace($nextLink) -and -not $colVisited.Add($nextLink)) {
+		if ((-not [string]::IsNullOrWhiteSpace($nextLink)) `
+				-and (-not $colVisited.Add($nextLink))) {
 			throw 'The DLP policy API returned a repeated continuation URL.'
 		}
 

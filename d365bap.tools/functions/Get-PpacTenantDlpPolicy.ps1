@@ -55,26 +55,51 @@ function Get-PpacTenantDlpPolicy {
 
 	process {
 		try {
-			$colPolicies = @(Get-BapDlpPolicy | Where-Object { $_.environmentType -ne 'SingleEnvironment' })
+			$colPolicies = @(
+				Get-BapDlpPolicy |
+				Where-Object { $_.environmentType -ne 'SingleEnvironment' }
+			)
 		}
 		catch {
 			$messageString = "Failed to retrieve tenant DLP policies. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the DLP policy request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
-		$colPolicies = @($colPolicies | Where-Object {
-				$_.name -like $PolicyId -or $_.displayName -like $PolicyId
+		$colPolicies = @($colPolicies |
+			Where-Object {
+				($_.name -like $PolicyId) `
+					-or ($_.displayName -like $PolicyId)
 			})
 
-		$colPolicies = @($colPolicies | Sort-Object -Property displayName, name)
+		$colPolicies = @($colPolicies |
+			Sort-Object -Property displayName, name)
+
+		$colPolicies = @(
+			foreach ($itemPolicy in $colPolicies) {
+				$tmpConnectorCount = (@($itemPolicy.connectorGroups) |
+					ForEach-Object { @($_.connectors).Count } |
+					Measure-Object -Sum).Sum
+				$tmpEnvironmentNames = @($itemPolicy.environments.name) |
+				Where-Object { $_ } |
+				Sort-Object -Unique
+
+				$itemPolicy |
+				Select-Object -Property *,
+				@{ Name = 'ConnectorCount'; Expression = { $tmpConnectorCount } },
+				@{ Name = 'EnvironmentNames'; Expression = { $tmpEnvironmentNames -join ', ' } }
+			}
+		)
 
 		$colRes = @(
-			$colPolicies | Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantDlpPolicy' `
+			$colPolicies |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantDlpPolicy' `
 				-Property `
 				'name as PolicyId',
 			'displayName as Name',
@@ -82,21 +107,23 @@ function Get-PpacTenantDlpPolicy {
 			'environmentType as EnvironmentType',
 			'defaultConnectorsClassification as DefaultConnectorClassification',
 			@{ Name = 'ConnectorGroupCount'; Expression = { @($_.connectorGroups).Count } },
-			@{ Name = 'ConnectorCount'; Expression = { (@($_.connectorGroups) | ForEach-Object { @($_.connectors).Count } | Measure-Object -Sum).Sum } },
+			'ConnectorCount as ConnectorCount',
 			@{ Name = 'EnvironmentCount'; Expression = { @($_.environments).Count } },
 			@{ Name = 'EnvironmentIds'; Expression = { @($_.environments.id) -join ', ' } },
-			@{ Name = 'EnvironmentNames'; Expression = { @($_.environments.name | Where-Object { $_ } | Sort-Object -Unique) -join ', ' } },
-			@{ Name = 'CreatedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace("$($_.createdBy.displayName)")) { $_.createdBy.displayName } else { $_.createdBy.userPrincipalName } } },
+			'EnvironmentNames as EnvironmentNames',
+			@{ Name = 'CreatedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace($_.createdBy.displayName)) { $_.createdBy.displayName } else { $_.createdBy.userPrincipalName } } },
 			'createdTime as CreatedTime',
-			@{ Name = 'LastModifiedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace("$($_.lastModifiedBy.displayName)")) { $_.lastModifiedBy.displayName } else { $_.lastModifiedBy.userPrincipalName } } },
+			@{ Name = 'LastModifiedBy'; Expression = { if (-not [string]::IsNullOrWhiteSpace($_.lastModifiedBy.displayName)) { $_.lastModifiedBy.displayName } else { $_.lastModifiedBy.userPrincipalName } } },
 			'lastModifiedTime as LastModifiedTime',
 			'isLegacySchemaVersion as IsLegacySchemaVersion',
 			'connectorGroups as ConnectorGroups'
 		)
 
 		if ($AsExcelOutput) {
-			$colRes | Export-Excel -WorksheetName 'Get-PpacTenantDlpPolicy' `
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacTenantDlpPolicy' `
 				-WarningAction SilentlyContinue
+
 			return
 		}
 

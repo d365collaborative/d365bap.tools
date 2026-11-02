@@ -39,13 +39,14 @@ function Remove-PpacEnvironmentDlpPolicy {
 	process {
 		$objRoute = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
 		$routeEnvironmentId = $objRoute.RouteId
-		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
+		if ([string]::IsNullOrWhiteSpace($routeEnvironmentId)) {
 			Stop-PSFFunction -Message "No environment matched '$EnvironmentId'."
 			return
 		}
 
 		$colCurrent = @(Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId `
 				-PolicyId $PolicyId)
+
 		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No environment DLP policy matched '$PolicyId'."
 			return
@@ -56,7 +57,7 @@ function Remove-PpacEnvironmentDlpPolicy {
 		}
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = "Delete DLP policy from '$($objRoute.Name)'"
@@ -66,6 +67,11 @@ function Remove-PpacEnvironmentDlpPolicy {
 		$objSecureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+		}
+
 		$apiVersion = $script:BapApiVersions.ClassicBap
 		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/{0}/apiPolicies/{1}?api-version={2}' `
 			-f $routeEnvironmentId,
@@ -73,20 +79,20 @@ function Remove-PpacEnvironmentDlpPolicy {
 		$apiVersion
 
 		try {
-			$null = Invoke-RestMethod -Method Delete `
+			Invoke-RestMethod -Method Delete `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-			} `
-				-ErrorAction Stop
+				-Headers $hashHeaders `
+				-ErrorAction Stop > $null
 		}
 		catch {
 			$messageString = "Failed to delete the environment DLP policy. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the environment DLP delete request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 	}

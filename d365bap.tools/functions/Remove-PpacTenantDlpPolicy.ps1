@@ -39,7 +39,7 @@ function Remove-PpacTenantDlpPolicy {
 		}
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = 'Delete tenant DLP policy'
@@ -49,26 +49,31 @@ function Remove-PpacTenantDlpPolicy {
 		$objSecureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+		}
+
 		$apiVersion = $script:BapApiVersions.ClassicBap
 		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies/{0}?api-version={1}' `
 			-f $colCurrent[0].PolicyId,
 		$apiVersion
 
 		try {
-			$null = Invoke-RestMethod -Method Delete `
+			Invoke-RestMethod -Method Delete `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-			} `
-				-ErrorAction Stop
+				-Headers $hashHeaders `
+				-ErrorAction Stop > $null
 		}
 		catch {
 			$messageString = "Failed to delete the tenant DLP policy. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the tenant DLP delete request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 	}

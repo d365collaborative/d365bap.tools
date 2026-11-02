@@ -31,8 +31,8 @@ function New-PpacTenantDlpPolicy {
 
 	process {
 		$policyName = "$($Policy.displayName)"
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = "$($Policy.name)" }
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = 'DLP policy' }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = "$($Policy.name)" }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = 'DLP policy' }
 
 		$shouldAffected = $policyName
 		$shouldLabel = 'Create tenant DLP policy'
@@ -42,17 +42,23 @@ function New-PpacTenantDlpPolicy {
 		$objSecureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+		}
+
 		$apiVersion = $script:BapApiVersions.ClassicBap
 		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version={0}' `
 			-f $apiVersion
 
+		$jsonBody = $Policy |
+		ConvertTo-Json -Depth 20
+
 		try {
 			$created = Invoke-RestMethod -Method Post `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-			} `
-				-Body ($Policy | ConvertTo-Json -Depth 20) `
+				-Headers $hashHeaders `
+				-Body $jsonBody `
 				-ContentType 'application/json' `
 				-ErrorAction Stop
 		}
@@ -61,15 +67,17 @@ function New-PpacTenantDlpPolicy {
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the tenant DLP create request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
-		if (-not [string]::IsNullOrWhiteSpace("$($created.name)")) {
+		if (-not [string]::IsNullOrWhiteSpace($created.name)) {
 			Get-PpacTenantDlpPolicy -PolicyId $created.name
 		}
-		elseif (-not [string]::IsNullOrWhiteSpace("$($created.displayName)")) {
+		elseif (-not [string]::IsNullOrWhiteSpace($created.displayName)) {
 			Get-PpacTenantDlpPolicy -PolicyId $created.displayName
 		}
 	}

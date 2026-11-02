@@ -49,7 +49,7 @@ function Set-PpacTenantDlpPolicy {
 		}
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = 'Update tenant DLP policy'
@@ -59,28 +59,35 @@ function Set-PpacTenantDlpPolicy {
 		$objSecureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+		}
+
 		$apiVersion = $script:BapApiVersions.ClassicBap
 		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies/{0}?api-version={1}' `
 			-f $colCurrent[0].PolicyId,
 		$apiVersion
+		$jsonBody = $Policy |
+		ConvertTo-Json -Depth 20
 
 		try {
-			$null = Invoke-RestMethod -Method Put `
+			Invoke-RestMethod -Method Put `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-			} `
-				-Body ($Policy | ConvertTo-Json -Depth 20) `
+				-Headers $hashHeaders `
+				-Body $jsonBody `
 				-ContentType 'application/json' `
-				-ErrorAction Stop
+				-ErrorAction Stop > $null
 		}
 		catch {
 			$messageString = "Failed to update the tenant DLP policy. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the tenant DLP update request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 

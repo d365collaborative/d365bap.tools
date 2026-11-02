@@ -49,13 +49,14 @@ function Set-PpacEnvironmentDlpPolicy {
 	process {
 		$objRoute = Get-PpacEnvironmentDlpRoute -EnvironmentId $EnvironmentId
 		$routeEnvironmentId = $objRoute.RouteId
-		if ([string]::IsNullOrWhiteSpace("$routeEnvironmentId")) {
+		if ([string]::IsNullOrWhiteSpace($routeEnvironmentId)) {
 			Stop-PSFFunction -Message "No environment matched '$EnvironmentId'."
 			return
 		}
 
 		$colCurrent = @(Get-PpacEnvironmentDlpPolicy -EnvironmentId $EnvironmentId `
 				-PolicyId $PolicyId)
+
 		if ($colCurrent.Count -eq 0) {
 			Stop-PSFFunction -Message "No environment DLP policy matched '$PolicyId'."
 			return
@@ -66,7 +67,7 @@ function Set-PpacEnvironmentDlpPolicy {
 		}
 
 		$policyName = $colCurrent[0].Name
-		if ([string]::IsNullOrWhiteSpace("$policyName")) { $policyName = $colCurrent[0].PolicyId }
+		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colCurrent[0].PolicyId }
 
 		$shouldAffected = $policyName
 		$shouldLabel = "Update DLP policy in '$($objRoute.Name)'"
@@ -76,29 +77,36 @@ function Set-PpacEnvironmentDlpPolicy {
 		$objSecureToken = Get-BapAccessToken -Bap
 		$tokenValue = ConvertFrom-SecureString -AsPlainText `
 			-SecureString $objSecureToken
+
+		$hashHeaders = @{
+			Authorization = "Bearer $tokenValue"
+		}
+
 		$apiVersion = $script:BapApiVersions.ClassicBap
 		$uri = 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/{0}/apiPolicies/{1}?api-version={2}' `
 			-f $routeEnvironmentId,
 		$colCurrent[0].PolicyId,
 		$apiVersion
+		$jsonBody = $Policy |
+		ConvertTo-Json -Depth 20
 
 		try {
-			$null = Invoke-RestMethod -Method Patch `
+			Invoke-RestMethod -Method Patch `
 				-Uri $uri `
-				-Headers @{
-				Authorization = "Bearer $tokenValue"
-			} `
-				-Body ($Policy | ConvertTo-Json -Depth 20) `
+				-Headers $hashHeaders `
+				-Body $jsonBody `
 				-ContentType 'application/json' `
-				-ErrorAction Stop
+				-ErrorAction Stop > $null
 		}
 		catch {
 			$messageString = "Failed to update the environment DLP policy. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
+
 			Stop-PSFFunction -Message "Stopping because the environment DLP update request failed." `
 				-Exception $_.Exception
+
 			return
 		}
 
