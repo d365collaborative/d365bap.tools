@@ -1,5 +1,6 @@
 @{
-	# The analyzer always imports this exact version. The setup hook installs it.
+	# The formatter and the analyzer both import this exact version. The setup
+	# hook installs it. No lint path may import whatever version is newest.
 	PSScriptAnalyzerVersion = '1.25.0'
 	# These rules are owned by another hook or by a repository rule:
 	#   PSAvoidUsingCmdletAliases  -> PSAvoidCommandAliases / PSAvoidParameterAliases

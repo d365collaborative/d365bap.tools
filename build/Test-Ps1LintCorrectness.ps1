@@ -74,11 +74,73 @@ try {
 
 	# The hook dependency is pinned, not whatever happens to be installed.
 	$hashSettings = Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal/Ps1AnalyzerSettings.psd1')
-	Assert-True ($hashSettings.PSScriptAnalyzerVersion -eq '1.25.0') 'The analyzer settings must pin PSScriptAnalyzer 1.25.0.'
+	$objPin = [version] $hashSettings.PSScriptAnalyzerVersion
+	Assert-True ("$objPin" -eq '1.25.0') 'The analyzer settings must pin PSScriptAnalyzer 1.25.0.'
+
+	# CI and setup pins must match the import pin, or CI can install one version
+	# while the hooks import another.
+	$hashRequirements = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ModuleCacheRequirements.json') -Raw | ConvertFrom-Json
+	foreach ($itemSet in @('lint', 'base')) {
+		$colAnalyzer = @($hashRequirements.$itemSet | Where-Object Name -EQ 'PSScriptAnalyzer')
+		Assert-True ($colAnalyzer.Count -eq 1 -and "$($colAnalyzer[0].Version)" -eq "$objPin") "The $itemSet module cache must pin PSScriptAnalyzer $objPin."
+	}
+
+	# Only the shared import may load the module. A direct Import-Module without
+	# a version would pick the newest installed version again.
+	foreach ($itemScript in @('Invoke-Ps1Format.ps1', 'Invoke-Ps1Analysis.ps1')) {
+		$text = Get-Content -LiteralPath (Join-Path $PSScriptRoot "ps1-lint/internal/$itemScript") -Raw
+		Assert-True ($text -match 'Import-Ps1Analyzer') "$itemScript must import PSScriptAnalyzer through the shared pin."
+		Assert-True ($text -notmatch 'Import-Module\s+PSScriptAnalyzer') "$itemScript must not import PSScriptAnalyzer directly."
+	}
+
+	Import-Ps1Analyzer > $null
+	Assert-True ("$((Get-Module -Name PSScriptAnalyzer).Version)" -eq "$objPin") 'Import-Ps1Analyzer must load the pinned version.'
+
 	. (Join-Path $PSScriptRoot 'ps1-lint/internal/Ensure-PsScriptAnalyzer.ps1')
 	Assert-True (Ensure-PsScriptAnalyzer) 'The setup hook default must make the pinned analyzer available.'
-	$colInstalled = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ ([version] '1.25.0'))
+	$colInstalled = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ $objPin)
 	Assert-True ($colInstalled.Count -gt 0) 'The pinned PSScriptAnalyzer version must be installed.'
+
+	# A newer installed version must never win. The decoy fails when imported,
+	# so formatting and analysis still passing proves the pin held.
+	$decoyRoot = Join-Path $root 'decoy-modules/PSScriptAnalyzer/99.0.0'
+	$null = New-Item -ItemType Directory -Path $decoyRoot -Force
+	Set-Content -LiteralPath (Join-Path $decoyRoot 'PSScriptAnalyzer.psd1') -Value "@{ ModuleVersion = '99.0.0'; RootModule = 'PSScriptAnalyzer.psm1'; FunctionsToExport = @('Invoke-Formatter', 'Invoke-ScriptAnalyzer') }"
+	Set-Content -LiteralPath (Join-Path $decoyRoot 'PSScriptAnalyzer.psm1') -Value "throw 'The decoy PSScriptAnalyzer 99.0.0 must never be imported.'"
+
+	$formatSource = @'
+$objValue=1
+if ($null -eq $objValue) {
+Write-Output 'pin'
+}
+'@
+	$plain = Join-Path $root 'pin/Plain.ps1'
+	$decoy = Join-Path $root 'pin/Decoy.ps1'
+	foreach ($itemTarget in @($plain, $decoy)) {
+		$null = New-Item -ItemType Directory -Path (Split-Path $itemTarget) -Force
+		Set-Content -LiteralPath $itemTarget -Value $formatSource -Encoding utf8
+	}
+
+	$decoyModules = Join-Path $root 'decoy-modules'
+	$runPlain = Invoke-Hook $formatHook $plain
+	$analyzerPlain = Invoke-Hook $hook $clean
+	$previousModulePath = $env:PSModulePath
+	try {
+		$env:PSModulePath = "$decoyModules$([IO.Path]::PathSeparator)$previousModulePath"
+		$colDecoy = @(Get-Module -Name PSScriptAnalyzer -ListAvailable | Where-Object Version -EQ ([version] '99.0.0'))
+		Assert-True ($colDecoy.Count -eq 1) 'The decoy analyzer version must be discoverable.'
+		$runDecoy = Invoke-Hook $formatHook $decoy
+		$analyzerDecoy = Invoke-Hook $hook $clean
+	}
+	finally {
+		$env:PSModulePath = $previousModulePath
+	}
+
+	Assert-True ($runPlain.ExitCode -eq 1 -and $runDecoy.ExitCode -eq 1) 'The format hook must report the same unformatted fixture with a newer version installed.'
+	$plainHash = (Get-FileHash -LiteralPath $plain -Algorithm SHA256).Hash
+	$decoyHash = (Get-FileHash -LiteralPath $decoy -Algorithm SHA256).Hash
+	Assert-True ($plainHash -ceq $decoyHash) 'Formatting must be byte-identical with a newer analyzer version installed.'
+	Assert-True ($analyzerPlain.ExitCode -eq $analyzerDecoy.ExitCode -and $analyzerPlain.Output -ceq $analyzerDecoy.Output) 'Analysis must be identical with a newer analyzer version installed.'
 
 	# The documented semantics must match the rule messages.
 	$readmeText = Get-Content -LiteralPath $readme -Raw

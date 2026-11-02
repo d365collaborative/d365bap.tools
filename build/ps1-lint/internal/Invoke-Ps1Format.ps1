@@ -1,12 +1,14 @@
-﻿function Invoke-Ps1Format {
+﻿. "$PSScriptRoot/Import-Ps1Analyzer.ps1"
+
+function Invoke-Ps1Format {
 	<#
 		.SYNOPSIS
 			Formats PowerShell scripts with repository settings.
 
 		.DESCRIPTION
-			Uses PSScriptAnalyzer Invoke-Formatter with this repository's
-			PowerShell extension settings. Rewrites changed files as UTF-8 with
-			a BOM, and adds a missing BOM even when formatting is unchanged.
+			Runs Invoke-Formatter with the repository settings and enforces a
+			UTF-8 BOM. Imports exactly the pinned analyzer version, so another
+			installed version cannot change the result.
 
 		.PARAMETER Path
 			One or more .ps1 files or directories (directories are scanned recursively).
@@ -30,11 +32,7 @@
 		$colAllPaths = [System.Collections.Generic.List[string]]::new()
 		$colFailures = [System.Collections.Generic.List[string]]::new()
 
-		if (-not (Get-Module -Name PSScriptAnalyzer -ListAvailable -ErrorAction SilentlyContinue)) {
-			throw 'PSScriptAnalyzer is not installed. Install-Module PSScriptAnalyzer -Scope CurrentUser'
-		}
-
-		Import-Module PSScriptAnalyzer -ErrorAction Stop
+		Import-Ps1Analyzer > $null
 
 		if (-not (Test-Path -LiteralPath $SettingsPath)) {
 			throw "Formatter settings not found: $SettingsPath"
@@ -44,7 +42,7 @@
 	process {
 		foreach ($item in @($Path)) {
 			if (-not [string]::IsNullOrWhiteSpace($item)) {
-				$colAllPaths.Add($item) | Out-Null
+				$colAllPaths.Add($item) > $null
 			}
 		}
 	}
@@ -66,7 +64,9 @@
 		foreach ($itemFile in $colFiles) {
 			try {
 				$original = [System.IO.File]::ReadAllText($itemFile, [System.Text.UTF8Encoding]::new($false, $false))
-				$formatted = Invoke-Formatter -ScriptDefinition $original -Settings $SettingsPath
+				$formatted = Invoke-Formatter `
+					-ScriptDefinition $original `
+					-Settings $SettingsPath
 
 				if ($null -eq $formatted) {
 					$formatted = $original
@@ -85,7 +85,7 @@
 				}
 			}
 			catch {
-				$colFailures.Add("Failed to format '$itemFile': $($_.Exception.Message)") | Out-Null
+				$colFailures.Add("Failed to format '$itemFile': $($_.Exception.Message)") > $null
 			}
 		}
 

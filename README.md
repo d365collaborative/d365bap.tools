@@ -141,6 +141,13 @@ Pull request lint uses the same shared change scope as local runs
 changed `.ps1`, `.psm1`, and `.psd1` files, and runs `actionlint` only on touched
 workflow files. Untouched files never fail a pull request.
 
+The lint job installs only what the hooks it is about to run need: prek when any
+hook runs, the pinned PSScriptAnalyzer when PowerShell files change (see
+`build/ModuleCacheRequirements.json`, `lint` set), and a cached pinned
+`actionlint` binary when workflow files change. The formatter and the analyzer
+share one PSScriptAnalyzer version, so local and CI formatting cannot drift
+because a newer module version is installed.
+
 Full-tree and dependency-aware lint are not pull request gates. Run them locally
 before a broad change:
 

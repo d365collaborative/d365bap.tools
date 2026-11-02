@@ -1,8 +1,9 @@
 ﻿name: Warm Module Cache
 
-# Sole cache producer. Both dependency sets are warmed here on trusted
-# main-branch runs so PR jobs (including pull_request_target regen, whose
-# token cannot save caches) can restore them read-only.
+# Sole cache producer for the PowerShell module sets. Every dependency set is
+# warmed here on trusted main-branch runs so PR jobs (including
+# pull_request_target regen, whose token cannot save caches) can restore them
+# read-only.
 on:
   push:
     branches: [main]
@@ -11,6 +12,26 @@ on:
   workflow_dispatch:
 
 jobs:
+  warm-lint:
+    name: Warm lint module
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+
+    - name: Cache lint PowerShell modules
+      id: cache-lint-modules
+      uses: actions/cache@v5
+      with:
+        path: ~\Documents\PowerShell\Modules
+        key: pwsh-modules-${{ runner.os }}-lint-v1-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+
+    - name: Install lint modules
+      if: steps.cache-lint-modules.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: ./build/Install-RequiredModules.ps1 -Set lint
+
   warm-base:
     name: Warm base modules
     runs-on: windows-latest

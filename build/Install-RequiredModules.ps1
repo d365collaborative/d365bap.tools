@@ -3,16 +3,16 @@
         Ensures the CI module set is installed.
 
     .DESCRIPTION
-        Installs any missing module from ModuleCacheRequirements.json at its pinned version. Runs after a restore-only cache step; a cache miss only makes the job slower.
+        Installs any missing module from ModuleCacheRequirements.json at its pinned version. Runs after a restore-only cache step, so a cache miss only makes the job slower. The lint cache holds only what the PowerShell lint hooks import.
 
     .PARAMETER Set
-        'base' (validate, build) or 'generated' (regen, freshness).
+        'lint' (validate lint), 'base' (validate, build) or 'generated' (regen, freshness).
 #>
 [CmdletBinding()]
 param(
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
-	[ValidateSet('base', 'generated')]
+	[ValidateSet('lint', 'base', 'generated')]
 	[string]$Set
 )
 
