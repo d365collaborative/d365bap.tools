@@ -165,6 +165,22 @@ function Get-Fixture {
 }
 '@ -Expected 1 @('already selected')
 
+Assert-IdentityProjection 'Two-step select with continuation and excludes' @'
+function Get-Fixture {
+    $resColRaw = $resAdminApps | Select-PSFObject `
+        -ExcludeProperty "@odata.etag", "applicationId" `
+        -Property "applicationId as appId"
+
+    $resCol = $resColRaw | Select-PSFObject -TypeName "D365Bap.Tools.PpacAdminManagementApplication" `
+        -ExcludeProperty "@odata.etag", "appId" `
+        -Property "id as ServicePrincipalId",
+    "displayName as ServicePrincipalName",
+    "appId as AppId",
+    *
+    $resCol
+}
+'@ -Expected 1 @('already selected')
+
 Assert-IdentityProjection 'Self-projecting select' @'
 function Get-Fixture {
     $resCol = @(Get-Thing)
