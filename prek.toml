@@ -9,10 +9,13 @@ default_install_hook_types = ["pre-commit"]
 # Local (optional, opt-in):
 #   pip install prek
 #   prek install
-#   prek run setup --stage manual   # one-time: installs PSScriptAnalyzer
+#   prek run setup --stage manual   # one-time: installs the pinned PSScriptAnalyzer
 #   prek run                         # changed/staged files
 #   prek run --all-files --stage manual   # whole tree
-# PRs on GitHub run the same hooks on changed files (see .github/workflows/validate.yml).
+# The formatter and the analyzer import one pinned PSScriptAnalyzer version
+# (build/ps1-lint/internal/Ps1AnalyzerSettings.psd1); a newer installed version
+# is never used. PRs on GitHub run the same hooks on changed files (see
+# .github/workflows/validate.yml) and install only the tools those hooks need.
 # CI offers every changed file to the cheap builtin hooks, but installs and runs
 # the PowerShell hooks only when a changed script can match them. Full-tree and
 # dependency-aware scans stay opt-in; they are not required PR checks.

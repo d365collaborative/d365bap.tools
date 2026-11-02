@@ -1,6 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "comment": "Single source of truth for CI PowerShell module caches. The cache key is derived from this file (hashFiles), so changing a version invalidates the cache. The schedule keeps existing caches alive; it does not update their contents.",
+  "comment": "Single source of truth for CI PowerShell module caches. The cache key is derived from this file (hashFiles), so changing a version invalidates the cache. The schedule keeps existing caches alive; it does not update their contents. The lint set holds only what the PowerShell lint hooks import.",
+  "lint": [
+    { "Name": "PSScriptAnalyzer", "Version": "1.25.0" }
+  ],
   "base": [
     { "Name": "Pester", "Version": "6.2.0" },
     { "Name": "PSFramework", "Version": "1.15.472" },

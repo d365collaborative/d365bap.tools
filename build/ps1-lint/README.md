@@ -68,6 +68,26 @@ What runs on PowerShell files:
 - `setup/Run.ps1` — installs the pinned PSScriptAnalyzer 1.25.0 (CurrentUser)
   when that version is missing.
 
+### One pinned analyzer runtime
+
+`internal/Ps1AnalyzerSettings.psd1` owns the single `PSScriptAnalyzerVersion`
+pin (1.25.0). `internal/Import-Ps1Analyzer.ps1` is the only import path:
+
+- `ps1-format` and `psscriptanalyzer` both import through it, so formatting and
+  analysis always run on the same module build.
+- It removes any other loaded version, imports the pinned one with
+  `-RequiredVersion`, and throws unless the pinned version is the only one
+  loaded. A newer version that happens to be installed cannot win.
+- `setup/Run.ps1` and the CI lint job install that same pin
+  (`build/ModuleCacheRequirements.json`, `lint` set). A regression check asserts
+  the settings pin and the cache pins match.
+
+`build/Test-Ps1LintCorrectness.ps1` proves the pin: it installs a decoy
+PSScriptAnalyzer 99.0.0 that throws on import, runs both hooks with the decoy
+first on `PSModulePath`, and requires byte-identical formatting and identical
+analysis to a run without it. Because CI and local runs execute the same hook
+scripts, that check covers both.
+
 ### High-signal built-in warnings
 
 These existing PSScriptAnalyzer rules are fatal for module and build code even

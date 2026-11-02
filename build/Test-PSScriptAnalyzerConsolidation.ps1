@@ -4,10 +4,10 @@ param()
 $ErrorActionPreference = 'Stop'
 
 Import-Module Pester -MinimumVersion 5.0 -ErrorAction Stop
-Import-Module PSScriptAnalyzer -ErrorAction Stop
 
 $entry = Join-Path $PSScriptRoot 'ps1-lint/internal/Invoke-Ps1Analysis.ps1'
 . $entry
+Import-Ps1Analyzer > $null
 
 $root = Join-Path ([IO.Path]::GetTempPath()) ('ps1-analyzer-' + [guid]::NewGuid().ToString('N'))
 $moduleRoot = Join-Path $root 'd365bap.tools'

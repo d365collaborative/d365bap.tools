@@ -204,6 +204,17 @@ function Set-Changed {
 	try { & $planScript -BaseSha 'not-a-sha' -HeadSha $head -OutputPath $badOut -RepositoryPath $root } catch { $failed = $true }
 	Assert-True ($failed -and -not (Test-Path -LiteralPath $badOut)) 'Invalid revisions must fail closed.'
 
+	# The lint job restores only the lint module set and runs a cached pinned
+	# actionlint, never a from-scratch go run of the newest resolution.
+	$workflowText = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../.github/workflows/validate.yml') -Raw
+	$lintJob = ($workflowText -split '(?m)^  lint:\r?\n', 2)[1]
+	$lintJob = ($lintJob -split '(?m)^  changes:\r?\n', 2)[0]
+	Assert-True ($lintJob -match 'Install-RequiredModules\.ps1 -Set lint') 'The lint job must install only the lint module set.'
+	Assert-True ($lintJob -notmatch 'base-v2') 'The lint job must not restore the full base module cache.'
+	Assert-True ($lintJob -notmatch 'go run') 'The lint job must not build actionlint on every run.'
+	Assert-True ($lintJob -match 'actionlint-\$\{\{ runner\.os \}\}-\$\{\{ env\.ACTIONLINT_VERSION \}\}') 'The lint job must cache actionlint under the pinned version.'
+	Assert-True ($lintJob -match 'go install') 'The lint job must install the pinned actionlint on a cache miss.'
+
 	Write-Host 'CI lint plan regression checks passed.'
 }
 finally {

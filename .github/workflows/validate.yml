@@ -15,6 +15,8 @@ jobs:
     runs-on: windows-latest
     env:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      # Pinned once: the cache key and go install below must resolve the same tag.
+      ACTIONLINT_VERSION: v1.7.7
     steps:
     - uses: actions/checkout@v5
       with:
@@ -34,25 +36,28 @@ jobs:
         $cheap = @($plan.CheapFiles).Count -gt 0
         $powershell = @($plan.PowerShellFiles).Count -gt 0
         $workflows = @($plan.WorkflowFiles).Count -gt 0
+        # One setup step for prek: it runs both the cheap and the PowerShell hooks.
+        $hooks = $cheap -or $powershell
         "cheap=$($cheap.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
         "powershell=$($powershell.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
         "workflows=$($workflows.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
-    - name: Restore PowerShell modules
+        "hooks=$($hooks.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+    - name: Restore pinned PSScriptAnalyzer
       if: steps.lint_scope.outputs.powershell == 'true'
       uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
-        key: pwsh-modules-${{ runner.os }}-base-v2-${{ hashFiles('build/ModuleCacheRequirements.json') }}
+        key: pwsh-modules-${{ runner.os }}-lint-v1-${{ hashFiles('build/ModuleCacheRequirements.json') }}
         restore-keys: |
-          pwsh-modules-${{ runner.os }}-base-v2-
-    - name: Install prek
-      if: steps.lint_scope.outputs.cheap == 'true'
-      shell: pwsh
-      run: pip install "prek==0.5.7"
-    - name: Setup PSScriptAnalyzer for hooks
+          pwsh-modules-${{ runner.os }}-lint-v1-
+    - name: Ensure pinned PSScriptAnalyzer
       if: steps.lint_scope.outputs.powershell == 'true'
       shell: pwsh
-      run: prek run setup --stage manual --config prek.toml
+      run: ./build/Install-RequiredModules.ps1 -Set lint
+    - name: Install prek
+      if: steps.lint_scope.outputs.hooks == 'true'
+      shell: pwsh
+      run: pip install "prek==0.5.7"
     - name: Lint changed files with cheap hooks
       if: steps.lint_scope.outputs.cheap == 'true'
       shell: pwsh
@@ -69,13 +74,28 @@ jobs:
         $files = @($plan.PowerShellFiles)
         & prek run ps1-format psscriptanalyzer --config prek.toml --files @files
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - name: Restore pinned actionlint
+      if: steps.lint_scope.outputs.workflows == 'true'
+      id: actionlint_cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ runner.temp }}\actionlint
+        key: actionlint-${{ runner.os }}-${{ env.ACTIONLINT_VERSION }}
+    - name: Install pinned actionlint
+      if: steps.lint_scope.outputs.workflows == 'true' && steps.actionlint_cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      env:
+        GOBIN: ${{ runner.temp }}\actionlint
+      run: go install "github.com/rhysd/actionlint/cmd/actionlint@$env:ACTIONLINT_VERSION"
     - name: Lint touched workflow files
       if: steps.lint_scope.outputs.workflows == 'true'
       shell: pwsh
       run: |
         $plan = Get-Content -Raw lint-plan.json | ConvertFrom-Json
         $files = @($plan.WorkflowFiles | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
-        & go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 @files
+        $actionlint = Join-Path $env:RUNNER_TEMP 'actionlint/actionlint.exe'
+        if (-not (Test-Path -LiteralPath $actionlint)) { throw 'The pinned actionlint binary was not restored or installed.' }
+        & $actionlint @files
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   changes:

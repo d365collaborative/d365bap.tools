@@ -16,19 +16,8 @@ function New-Ps1Analyzer {
 	)
 
 	$hashSettings = Get-Ps1AnalyzerSettings -Path $SettingsPath
-	$targetVersion = [version] $hashSettings.PSScriptAnalyzerVersion
-	$colAvailable = @(Get-Module -Name PSScriptAnalyzer `
-			-ListAvailable `
-			-ErrorAction SilentlyContinue |
-		Where-Object { $_.Version -eq $targetVersion })
 
-	if ($colAvailable.Count -eq 0) {
-		throw "PSScriptAnalyzer $($hashSettings.PSScriptAnalyzerVersion) is not installed. Run build/ps1-lint/setup/Run.ps1."
-	}
-
-	Import-Module PSScriptAnalyzer `
-		-RequiredVersion $hashSettings.PSScriptAnalyzerVersion `
-		-ErrorAction Stop
+	Import-Ps1Analyzer -SettingsPath $SettingsPath > $null
 
 	[pscustomobject]@{
 		Settings = $hashSettings
@@ -182,3 +171,4 @@ foreach ($itemRule in Get-Ps1DiagnosticRule) {
 . "$PSScriptRoot/Get-Ps1CommentGroup.ps1"
 . "$PSScriptRoot/Get-Ps1HelpSection.ps1"
 . "$PSScriptRoot/Get-Ps1Analysis.ps1"
+. "$PSScriptRoot/Import-Ps1Analyzer.ps1"
