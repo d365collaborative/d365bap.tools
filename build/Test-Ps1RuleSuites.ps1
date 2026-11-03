@@ -1,14 +1,22 @@
 ﻿<#
 .SYNOPSIS
-    Runs every PowerShell lint rule regression suite.
+	Runs every PowerShell lint rule regression suite.
 
 .DESCRIPTION
-    Discovers the rule suites under build, checks them against the explicit
-    registry, and runs each suite in a fresh pwsh process. A missing,
-    unregistered, or failing suite fails the run, so nothing is skipped.
+	Discovers rule suites under build, checks the registry, and runs each suite
+	in a fresh pwsh process in parallel. A missing, unregistered, or failing
+	suite fails the run.
+
+.PARAMETER ThrottleLimit
+	Maximum concurrent suite processes.
+
+	Default: min(4, processor count)
 #>
 [CmdletBinding()]
-param()
+param(
+	[ValidateRange(1, 32)]
+	[int] $ThrottleLimit = 0
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -71,14 +79,57 @@ if ($unregisteredSuite.Count -gt 0) {
 	throw "Unregistered rule suite(s): $($unregisteredSuite -join ', '). Add them to `$expectedSuite in $PSCommandPath."
 }
 
-$pwsh = (Get-Process -Id $PID).Path
-$failedSuite = [System.Collections.Generic.List[string]]::new()
+if ($ThrottleLimit -le 0) {
+	# windows-latest public runners expose 4 vCPUs; cap so local high-core boxes
+	# do not spawn dozens of pwsh processes for tiny fixture scripts.
+	$ThrottleLimit = [Math]::Max(1, [Math]::Min(4, [Environment]::ProcessorCount))
+}
 
-foreach ($itemSuite in $expectedSuite) {
-	Write-Output "Running $itemSuite"
-	& $pwsh -NoProfile -NonInteractive -File (Join-Path $PSScriptRoot $itemSuite)
-	if ($LASTEXITCODE -ne 0) {
-		$failedSuite.Add("$itemSuite (exit $LASTEXITCODE)")
+$pwsh = (Get-Process -Id $PID).Path
+$root = $PSScriptRoot
+$logRoot = Join-Path ([IO.Path]::GetTempPath()) ('rule-suites-' + [guid]::NewGuid().ToString('N'))
+$null = New-Item -ItemType Directory -Path $logRoot -Force
+$totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+Write-Output "Running $($expectedSuite.Count) rule suites with ThrottleLimit=$ThrottleLimit"
+
+try {
+	$jobResult = $expectedSuite | ForEach-Object -ThrottleLimit $ThrottleLimit -Parallel {
+		$itemSuite = $_
+		$suitePath = Join-Path $using:root $itemSuite
+		$stdoutPath = Join-Path $using:logRoot ($itemSuite + '.out.log')
+		$stderrPath = Join-Path $using:logRoot ($itemSuite + '.err.log')
+		$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+		$process = Start-Process -FilePath $using:pwsh `
+			-ArgumentList @('-NoProfile', '-NonInteractive', '-File', $suitePath) `
+			-WorkingDirectory $using:root `
+			-RedirectStandardOutput $stdoutPath `
+			-RedirectStandardError $stderrPath `
+			-Wait `
+			-PassThru `
+			-NoNewWindow
+		$stopwatch.Stop()
+		[pscustomobject]@{
+			Suite    = $itemSuite
+			ExitCode = $process.ExitCode
+			Seconds  = [math]::Round($stopwatch.Elapsed.TotalSeconds, 1)
+		}
+	}
+}
+finally {
+	if (Test-Path -LiteralPath $logRoot) {
+		Remove-Item -LiteralPath $logRoot -Recurse -Force -ErrorAction SilentlyContinue
+	}
+}
+
+$totalStopwatch.Stop()
+$failedSuite = [System.Collections.Generic.List[string]]::new()
+foreach ($itemResult in @($jobResult | Where-Object { $_ -is [pscustomobject] -and $_.Suite } | Sort-Object Suite)) {
+	if ($itemResult.ExitCode -ne 0) {
+		$failedSuite.Add("$($itemResult.Suite) (exit $($itemResult.ExitCode))")
+		Write-Output "FAILED $($itemResult.Suite) after $($itemResult.Seconds)s"
+	}
+	else {
+		Write-Output "PASSED $($itemResult.Suite) in $($itemResult.Seconds)s"
 	}
 }
 
@@ -86,4 +137,4 @@ if ($failedSuite.Count -gt 0) {
 	throw "Rule suite(s) failed: $($failedSuite -join ', ')."
 }
 
-Write-Output "Rule suite regression checks passed: $($expectedSuite.Count) suites."
+Write-Output "Rule suite regression checks passed: $($expectedSuite.Count) suites in $([math]::Round($totalStopwatch.Elapsed.TotalSeconds, 1))s (ThrottleLimit=$ThrottleLimit)."

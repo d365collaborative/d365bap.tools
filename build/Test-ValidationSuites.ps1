@@ -1,14 +1,33 @@
 ﻿<#
 .SYNOPSIS
-    Runs every validation regression suite.
+	Runs the selected validation regression suites.
 
 .DESCRIPTION
-    Discovers the validation suites under build, checks them against the
-    explicit registry, and runs each suite in a fresh pwsh process with its own
-    working directory. A missing, unregistered, or failing suite fails the run.
+	Discovers validation suites under build, checks the registry, and runs each
+	selected suite in a fresh pwsh process. A missing, unregistered, or failing
+	suite fails the run.
+
+.PARAMETER BaseSha
+	Pull request base commit for suite selection.
+
+	Default: $env:BASE_SHA
+
+.PARAMETER HeadSha
+	Pull request head commit for suite selection.
+
+	Default: $env:HEAD_SHA
+
+.PARAMETER ForceAll
+	Run every registered suite.
 #>
 [CmdletBinding()]
-param()
+param(
+	[string] $BaseSha = $env:BASE_SHA,
+
+	[string] $HeadSha = $env:HEAD_SHA,
+
+	[switch] $ForceAll
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -68,6 +87,34 @@ if ($unregisteredSuite.Count -gt 0) {
 	throw "Unregistered validation suite(s): $($unregisteredSuite -join ', '). Add them to `$expectedSuite in $PSCommandPath or list them in `$notSuite with the workflow that runs them."
 }
 
+$planPath = Join-Path ([IO.Path]::GetTempPath()) ('validation-suite-plan-' + [guid]::NewGuid().ToString('N') + '.json')
+$planArgs = @{
+	RepositoryPath = (Split-Path -Parent $PSScriptRoot)
+	OutputPath     = $planPath
+}
+if ($ForceAll) { $planArgs.ForceAll = $true }
+if ($BaseSha) { $planArgs.BaseSha = $BaseSha }
+if ($HeadSha) { $planArgs.HeadSha = $HeadSha }
+
+try {
+	$null = & (Join-Path $PSScriptRoot 'Get-ValidationSuitePlan.ps1') @planArgs
+	$plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
+}
+finally {
+	if (Test-Path -LiteralPath $planPath) { Remove-Item -LiteralPath $planPath -Force }
+}
+$selectedSuite = @($plan.Suites)
+foreach ($itemSuite in $selectedSuite) {
+	if ($itemSuite -notin $expectedSuite) {
+		throw "Validation suite plan selected unknown suite: $itemSuite"
+	}
+}
+
+if ($selectedSuite.Count -eq 0) {
+	Write-Output 'Validation suite regression checks passed: 0 suites selected for this diff.'
+	return
+}
+
 $pwsh = (Get-Process -Id $PID).Path
 $rootTemp = Join-Path ([IO.Path]::GetTempPath()) ('validation-suites-' + [guid]::NewGuid().ToString('N'))
 $failedSuite = [System.Collections.Generic.List[string]]::new()
@@ -76,7 +123,7 @@ $totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $null = New-Item -ItemType Directory -Path $rootTemp -Force
 
 try {
-	foreach ($itemSuite in $expectedSuite) {
+	foreach ($itemSuite in $selectedSuite) {
 		# A fresh process and working directory per suite: no suite can mutate
 		# another suite's variables, environment, or relative files.
 		$suitePath = Join-Path $PSScriptRoot $itemSuite
@@ -115,4 +162,4 @@ if ($failedSuite.Count -gt 0) {
 	throw "Validation suite(s) failed: $($failedSuite -join ', ')."
 }
 
-Write-Output "Validation suite regression checks passed: $($expectedSuite.Count) suites in $([math]::Round($totalStopwatch.Elapsed.TotalSeconds, 1))s."
+Write-Output "Validation suite regression checks passed: $($selectedSuite.Count) of $($expectedSuite.Count) suite(s) in $([math]::Round($totalStopwatch.Elapsed.TotalSeconds, 1))s."
