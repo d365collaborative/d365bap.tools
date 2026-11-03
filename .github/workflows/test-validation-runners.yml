@@ -1,25 +1,40 @@
 name: test-validation-runners
 
-# This conditional workflow exercises validation infrastructure changes.
+# Conditional workflow: starts when a registered subject changes, then
+# Get-ValidationSuitePlan narrows which PowerShell suites actually run.
 # Keep it out of required-check rules: unrelated PRs do not trigger it.
 on:
   pull_request:
     paths:
+      # Runner / plan (always selects the full suite list)
       - '.github/workflows/test-validation-runners.yml'
+      - 'build/Test-ValidationSuites.ps1'
+      - 'build/Get-ValidationSuitePlan.ps1'
+      - 'build/Test-Ps1RuleSuites.ps1'
+
+      # Lint engine + rule fixtures -> rule / example-help suites
+      - 'build/ps1-lint/**'
       - 'build/Test-*.ps1'
+
+      # Publication / build packaging
       - 'build/Publish-ModuleWithRetry.ps1'
       - 'build/vsts-build.ps1'
       - 'build/build-notifications.cjs'
       - 'build/build-notifications.test.cjs'
       - '.github/workflows/build-notifications.yml'
       - '.github/workflows/build-v2.yml'
+
+      # Preload exit-code contract
       - 'd365bap.tools/internal/sdk/token-preload.ps1'
       - 'd365bap.tools/internal/sdk/finopsversion-preload.ps1'
-      - 'build/ps1-lint/**'
+
+      # Module / tool install contract
       - 'build/Install-RequiredModules.ps1'
       - 'build/Install-Prek.ps1'
       - 'build/ModuleCacheRequirements.json'
       - 'build/ToolCacheRequirements.json'
+
+      # Pester runner / analyzer consolidation
       - 'd365bap.tools/tests/pester.ps1'
       - 'd365bap.tools/tests/pester-PSScriptAnalyzer.ps1'
       - 'd365bap.tools/tests/general/PSScriptAnalyzer.Tests.ps1'
@@ -38,6 +53,8 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     - name: Test build notifications
       run: node --test build/build-notifications.test.cjs
     - name: Restore PowerShell modules
@@ -52,4 +69,14 @@ jobs:
       run: ./build/Install-RequiredModules.ps1 -Set base
     - name: Run validation suites
       shell: pwsh
-      run: pwsh -NoProfile -NonInteractive -File ./build/Test-ValidationSuites.ps1
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha || github.sha }}
+        HEAD_SHA: ${{ github.sha }}
+      run: |
+        $force = $null -eq '${{ github.event.pull_request.base.sha }}' -or '${{ github.event.pull_request.base.sha }}' -eq ''
+        if ($force) {
+          pwsh -NoProfile -NonInteractive -File ./build/Test-ValidationSuites.ps1 -ForceAll
+        }
+        else {
+          pwsh -NoProfile -NonInteractive -File ./build/Test-ValidationSuites.ps1
+        }
