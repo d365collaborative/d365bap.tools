@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "comment": "Single source of truth for CI tool caches. The cache key is derived from this file (hashFiles), so changing a pin invalidates the cache. cache-warm.yml is the sole producer: it warms these installs on trusted main-branch runs, so pull_request jobs can restore them read-only. prek is installed with pip --target, so the cached directory holds a relocatable executable instead of entry-point paths from another runner.",
+  "prek": "0.5.7"
+}

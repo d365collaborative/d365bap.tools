@@ -77,6 +77,8 @@ What runs on PowerShell files:
   content stays unchanged.
 - `setup/Run.ps1` — installs the pinned PSScriptAnalyzer 1.25.0 (CurrentUser)
   when that version is missing.
+- The local analysis result cache reuses an unchanged file's result on the next
+  local run. CI never uses it. See [Local analysis result cache](#local-analysis-result-cache).
 
 ### One batch process
 
@@ -91,7 +93,7 @@ in the same process:
    `.psd1` files are analyzed from their path because the formatter never
    touches them.
 
-`pass_filenames=64` in `prek.toml` bounds the process. Inside it, files are
+`pass_filenames=128` in `prek.toml` bounds the process. Inside it, files are
 processed in chunks of 32 (`-BatchSize`) so formatted text for a large tree is
 not held in memory at once. Each file has its own `try/catch`: a read-only file,
 a formatter failure, or a rule exception is reported and the rest of the batch
@@ -162,6 +164,17 @@ registering it in `Get-Ps1DiagnosticRule`, and adding a
 `build/Test-Ps1*Rule.ps1` suite (registered in
 `build/Test-Ps1RuleSuites.ps1`).
 
+`Invoke-Ps1Analysis -SkipCustomRules` is the built-in-only mode the full-module
+scans use. It passes the same flag to `Get-Ps1Analysis`, which then builds only
+what the built-in analyzer and the failure policy read: the parse result,
+tokens, parse errors, the scope flags, and the node and token caches. Comment
+groups and help sections serve repository rules only, and each comment group
+parses the whole file again, so built-in-only scans do not build them and the
+analysis carries no `CommentGroups` or `HelpSections` key.
+`Test-Ps1LintCorrectness.ps1` pins both halves: the entry point asks for the
+mode, and the keys are absent. Diagnostics, parse errors, and the severity and
+high-signal failure rules do not change.
+
 ### Repository metadata index
 
 Rules that need repository facts share one index per module root and analysis
@@ -179,13 +192,54 @@ files are read once, and the index records:
 
 The index is built the first time a rule asks for it and reused by every later
 rule and file in that process. `prek.toml` batches the combined hook with
-`pass_filenames=64`, so a full repository scan pays the build once per batch
+`pass_filenames=128`, so a full repository scan pays the build once per batch
 instead of once per file, and formatting no longer starts a second process that
 would never use the index. Each process starts a new worker, so the next run
 always sees edits. A running worker does not rebuild the index;
 repository facts must not be cached at script scope, because that would keep
 stale results for the rest of the process. `Test-Ps1LintCorrectness.ps1` checks
 both halves of that contract with the worker's `RepositoryIndexBuilds` counter.
+
+### Local analysis result cache
+
+Repeated local runs reuse the analysis result of an unchanged file.
+`internal/Get-Ps1AnalysisCache.ps1` stores one result per file and kind under
+`.ps1-lint-cache/` at the repository root, which `.gitignore` keeps out of git.
+
+- `builtin` entries hold the PSScriptAnalyzer diagnostics. The key is the
+  analyzed text (the formatted text in a lint batch, the file bytes otherwise),
+  the analyzer settings file content, the pinned PSScriptAnalyzer version, and
+  the file path.
+- `custom` entries hold the repository rule diagnostics. The key adds a
+  fingerprint of the repository metadata the rules read: function parameter
+  names and aliases, declared output types, and command names from the shared
+  index, plus the `ps1-lint.json` allowlist that applies to the file, plus a
+  session-level fingerprint of the rule implementation itself (every
+  `Get-Ps1*Diagnostic.ps1` and the shared helpers it calls). Editing one
+  function's body leaves another file's custom entry valid; changing a
+  parameter or an output type anywhere in the module invalidates it, and so
+  does editing a rule under `build/ps1-lint/internal`. The rule-code
+  fingerprint does not touch built-in entries, so a rule edit still reuses the
+  PSScriptAnalyzer result.
+- A complete hit skips the parse, the analyzer, and the rules. A parse failure
+  is stored with the entry, so it reproduces the parse-only result.
+- Every read revalidates the schema and the stored key. A missing, damaged, or
+  mismatched entry is a miss, and any cache error disables the cache for the
+  rest of the process instead of failing the run.
+- Cache entries never expire; the folder is reset once the recorded write count
+  passes 20000, so it cannot grow without bound.
+
+The cache is local only. It stays off when `CI` or `TF_BUILD` is set, and
+`PS1_LINT_CACHE=off` disables it explicitly; `PS1_LINT_CACHE=<folder>` points it
+elsewhere. CI therefore runs exactly the uncached path. A local run prints one
+line with the reuse count:
+
+```text
+  analysis cache: reused 941 of 941 result(s) (100%), wrote 0 entry(ies).
+```
+
+`build/Test-Ps1AnalysisCache.ps1` covers the reuse, the invalidation inputs, the
+damaged-entry fallback, and the CI and off switches.
 
 ### High-signal built-in warnings
 
