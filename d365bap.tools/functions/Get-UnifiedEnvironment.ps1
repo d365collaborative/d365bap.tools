@@ -65,7 +65,7 @@
 #>
 function Get-UnifiedEnvironment {
 	[CmdletBinding(DefaultParameterSetName = 'Default')]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.UdeEnvironment[]')]
 	param (
 		[SupportsWildcards()]
 		[string] $EnvironmentId = "*",
@@ -93,194 +93,223 @@ function Get-UnifiedEnvironment {
 	}
 
 	process {
-		$filteredEnvs = $colEnv | Where-Object FinOpsMetadataEnvType -eq "Internal"
+		$colFilteredEnvs = @(
+			$colEnv |
+			Where-Object FinOpsMetadataEnvType -eq "Internal"
+		)
 
-		$tokenPowerApiValue = ''
-
-		if (-not $SkipVersionDetails -and @($filteredEnvs).Count -gt 0) {
-			$secureTokenPowerApi = Get-BapAccessToken -PowerPlatform
-			$tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenPowerApi
+		if ($searchById) {
+			$colFilteredEnvs = @(
+				$colFilteredEnvs |
+				Where-Object PpacEnvId -like $EnvironmentId
+			)
+		}
+		else {
+			$colFilteredEnvs = @(
+				$colFilteredEnvs |
+				Where-Object PpacEnvName -like $EnvironmentId
+			)
 		}
 
-		$resCol = $filteredEnvs | ForEach-Object -Parallel {
-			$envObj = $_
-			$localTokenPowerApi = $using:tokenPowerApiValue
-			$localHeadersPowerApi = @{
-				Authorization = "Bearer $localTokenPowerApi"
-			}
+		$hashFinOpsProperties = @{}
 
-			if ($using:searchById) {
-				if (-not ($envObj.PpacEnvId -like $using:EnvironmentId)) { continue }
-			}
-			else {
-				if (-not ($envObj.PpacEnvName -like $using:EnvironmentId)) { continue }
-			}
+		if ((-not $SkipVersionDetails) `
+				-and ($colFilteredEnvs.Count -gt 0)) {
+			$objSecureTokenPowerApi = Get-BapAccessToken -PowerPlatform
+			$tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText `
+				-SecureString $objSecureTokenPowerApi
 
-			if ($using:SkipVersionDetails) {
-				$envObj
+			$hashFinOpsProperties = Get-FinOpsEnvironmentProperty `
+				-EnvironmentId @($colFilteredEnvs.PpacEnvId) `
+				-Token $tokenPowerApiValue
+		}
 
-				continue
-			}
+		$colMissedEnvs = [System.Collections.Generic.List[object]]::new()
 
-			Import-Module PSFramework -ErrorAction SilentlyContinue
+		$colRes = @(
+			foreach ($itemEnv in $colFilteredEnvs) {
+				$tmpResponse = $null
 
-			$Response = $null
-
-			try {
-				$Response = Invoke-RestMethod `
-					-Uri "https://api.powerplatform.com/dynamics/environments/$($envObj.PpacEnvId)/finopsproperties?api-version=2024-10-01" `
-					-Method Get `
-					-Headers $localHeadersPowerApi
-			}
-			catch {
-				$Response = $null
-			}
-
-			$provisioningApp = ''
-			$provisioningPlatform = ''
-			$provisioningType = ''
-
-			if ($null -ne $Response) {
-				$provisioningApp = "$($Response.applicationVersion)"
-				$provisioningPlatform = "$($Response.platformVersion)"
-				$provisioningType = switch ("$($Response.deploymentType)") {
-					"UnifiedDeveloper" { "OnlineDev" }
-					"Sandbox" { "Sandbox" }
-					default { "$($Response.deploymentType)" }
+				if (-not $SkipVersionDetails) {
+					$tmpResponse = $hashFinOpsProperties[$itemEnv.PpacEnvId]
 				}
-			}
-			else {
-				$messageString = "Could not obtain the <c='em'>FinOps properties</c> for <c='em'>$($envObj.PpacEnvName)</c>. It could be due to insufficient permissions or the environment not being fully provisioned. Please try to access the environment details from PowerPlatform Admin Center (PPAC)."
-				Write-PSFMessage -Level Important -Message $messageString
-				Write-PSFHostColor -String "- <c='em'>https://admin.powerplatform.microsoft.com/environments/environment/$($envObj.PpacEnvId)/hub</c>"
-			}
 
-			$envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `
-				-ExcludeProperty EnvType `
-				-Property @{Name = "PpacProvApp"; Expression = { $provisioningApp } },
-			@{Name = "PpacProvPlatform"; Expression = { $provisioningPlatform } },
-			@{Name = "PpacProvType"; Expression = { $provisioningType } },
-			@{Name = "PpacRuntimeState"; Expression = { "$($_.Properties.states.runtime.id)" } },
-			@{Name = "EnvType"; Expression = {
-					switch ($provisioningType) {
-						"OnlineDev" { "UDE" }
-						"Sandbox" { "USE" }
-						Default { "N/A" }
-					}
-				}
-			},
-			*
-		}
+				$provisioningApp = ''
+				$provisioningPlatform = ''
+				$provisioningType = ''
 
-		if ($UdeOnly) {
-			$resCol = $resCol | Where-Object EnvType -eq "UDE"
-		}
-		elseif ($UseOnly) {
-			$resCol = $resCol | Where-Object EnvType -eq "USE"
-		}
+				if (-not ($null -eq $tmpResponse)) {
+					$provisioningApp = "$($tmpResponse.applicationVersion)"
+					$provisioningPlatform = "$($tmpResponse.platformVersion)"
+					$provisioningType = switch ("$($tmpResponse.deploymentType)") {
+						"UnifiedDeveloper" { "OnlineDev" }
+						"UnifiedSandbox" { "Sandbox" }
+						"Sandbox" { "Sandbox" }
+						default {
+							if (-not [string]::IsNullOrWhiteSpace($tmpResponse.deploymentType)) {
+								Write-PSFMessage -Level Verbose `
+									-Message "Unmapped deployment type <c='em'>$($tmpResponse.deploymentType)</c> for <c='em'>$($itemEnv.PpacEnvName)</c>."
+							}
 
-		if (-not $SkipVersionDetails) {
-			$missedEnvs = @()
-
-			$resCol = @(
-				foreach ($envObj in @($resCol)) {
-					if ($null -eq $envObj) { continue }
-
-					$provApp = "$($envObj.PpacProvApp)".Trim()
-					$provPlatform = "$($envObj.PpacProvPlatform)".Trim()
-					$missed = $false
-
-					if ([string]::IsNullOrWhiteSpace($provApp)) {
-						$verInfo = $null
-					}
-					else {
-						$verInfo = Resolve-FinOpsVersionFromCache -Build $provApp -ErrorAction SilentlyContinue
-
-						if ($null -eq $verInfo) {
-							$missed = $true
+							"$($tmpResponse.deploymentType)"
 						}
 					}
+				}
+				elseif (-not $SkipVersionDetails) {
+					$messageString = "Could not obtain the <c='em'>FinOps properties</c> for <c='em'>$($itemEnv.PpacEnvName)</c>. It could be due to insufficient permissions or the environment not being fully provisioned. Please try to access the environment details from PowerPlatform Admin Center (PPAC)."
+					Write-PSFMessage -Level Important `
+						-Message $messageString
 
-					$appVersion = if ($null -ne $verInfo) { "$($verInfo.AppVersion)" } else { "" }
-					$appBuild = if ($null -ne $verInfo) { "$($verInfo.AppBuild)" } else { "" }
-					$platVersion = if ($null -ne $verInfo) { "$($verInfo.PlatVersion)" } else { "" }
-					$platBuild = if ($null -ne $verInfo) { "$($verInfo.PlatBuild)" } else { "" }
+					$messageUrl = "- <c='em'>https://admin.powerplatform.microsoft.com/environments/environment/{0}/hub</c>" `
+						-f $itemEnv.PpacEnvId
 
-					$versionProperties = @(
+					Write-PSFHostColor -String $messageUrl
+				}
+
+				$tmpVerInfo = $null
+				$missed = $false
+
+				if ((-not $SkipVersionDetails) `
+						-and (-not [string]::IsNullOrWhiteSpace($provisioningApp.Trim()))) {
+					$tmpVerInfo = Resolve-FinOpsVersionFromCache `
+						-Build $provisioningApp.Trim() `
+						-ErrorAction SilentlyContinue
+
+					if ($null -eq $tmpVerInfo) {
+						$missed = $true
+					}
+				}
+
+				$appVersion = ''
+				$appBuild = ''
+				$platVersion = ''
+				$platBuild = ''
+
+				if (-not ($null -eq $tmpVerInfo)) {
+					$appVersion = "$($tmpVerInfo.AppVersion)"
+					$appBuild = "$($tmpVerInfo.AppBuild)"
+					$platVersion = "$($tmpVerInfo.PlatVersion)"
+					$platBuild = "$($tmpVerInfo.PlatBuild)"
+				}
+
+				$tmpVersionProperties = @()
+
+				if (-not $SkipVersionDetails) {
+					$tmpVersionProperties = @(
 						@{Name = "AppVersion"; Expression = { $appVersion } }
 						@{Name = "AppBuild"; Expression = { $appBuild } }
 						@{Name = "Track"; Expression = { $appBuild } }
-						@{Name = "Build"; Expression = { $provApp } }
+						@{Name = "Build"; Expression = { $provisioningApp } }
 						@{Name = "PlatVersion"; Expression = { $platVersion } }
 						@{Name = "PlatBuild"; Expression = { $platBuild } }
-						@{Name = "PlatformVersion"; Expression = { $provPlatform } }
+						@{Name = "PlatformVersion"; Expression = { $provisioningPlatform } }
 					)
-
-					$projected = $envObj | Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" -Property (@('*') + $versionProperties)
-
-					if ($missed) {
-						$missedEnvs += $projected
-					}
-
-					$projected
 				}
-			)
 
-			if (@($missedEnvs).Count -gt 0) {
-				$authEnv = @((@($resCol) + @($filteredEnvs)) | Where-Object { $null -ne $_ -and -not [string]::IsNullOrWhiteSpace("$($_.PpacEnvUri)") } | Select-Object -First 1)
-
-				if (@($authEnv).Count -gt 0) {
-					try {
-						$authUri = "$($authEnv[0].PpacEnvUri)".TrimEnd("/") + "/"
-						$secureLive = Get-BapAccessToken -ResourceUrl $authUri
-						$liveToken = ConvertFrom-SecureString -AsPlainText -SecureString $secureLive
-
-						$liveHeaders = @{
-							"Correlationid"           = [guid]::NewGuid().ToString()
-							"Dataverseenvironmenturi" = "$($authEnv[0].PpacEnvUri)"
-							"Authorization"           = "Bearer $liveToken"
-							"Odata-Maxversion"        = "4.0"
-							"Odata-Version"           = "4.0"
-							"Accept"                  = "application/json"
-						}
-
-						$liveCatalog = Invoke-RestMethod -Method Get `
-							-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsversions" `
-							-Headers $liveHeaders `
-							-ErrorAction Stop
-
-						if ($null -ne $liveCatalog -and @($liveCatalog).Count -gt 0) {
-							Write-FinOpsVersionCache -Versions @($liveCatalog)
-
-							foreach ($missedEnv in @($missedEnvs)) {
-								$missedBuild = "$($missedEnv.PpacProvApp)".Trim()
-								$missedInfo = Resolve-FinOpsVersionFromCache -Build $missedBuild -ErrorAction SilentlyContinue
-
-								if ($null -eq $missedInfo) { continue }
-
-								$missedEnv.AppVersion = "$($missedInfo.AppVersion)"
-								$missedEnv.AppBuild = "$($missedInfo.AppBuild)"
-								$missedEnv.Track = "$($missedInfo.AppBuild)"
-								$missedEnv.PlatVersion = "$($missedInfo.PlatVersion)"
-								$missedEnv.PlatBuild = "$($missedInfo.PlatBuild)"
+				$tmpProjected = $itemEnv |
+				Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `
+					-ExcludeProperty EnvType `
+					-Property (@(
+						@{Name = "PpacProvApp"; Expression = { $provisioningApp } }
+						@{Name = "PpacProvPlatform"; Expression = { $provisioningPlatform } }
+						@{Name = "PpacProvType"; Expression = { $provisioningType } }
+						@{Name = "PpacRuntimeState"; Expression = { "$($_.Properties.states.runtime.id)" } }
+						@{Name = "EnvType"; Expression = {
+								switch ($provisioningType) {
+									"OnlineDev" { "UDE" }
+									"Sandbox" { "USE" }
+									Default { "N/A" }
+								}
 							}
 						}
+					) + $tmpVersionProperties + @('*'))
+
+				if ($missed) {
+					$colMissedEnvs.Add($tmpProjected)
+				}
+
+				$tmpProjected
+			}
+		)
+
+		if ($UdeOnly) {
+			$colRes = $colRes |
+			Where-Object EnvType -eq "UDE"
+		}
+		elseif ($UseOnly) {
+			$colRes = $colRes |
+			Where-Object EnvType -eq "USE"
+		}
+
+		if ((-not $SkipVersionDetails) `
+				-and ($colMissedEnvs.Count -gt 0)) {
+			$colAuthCandidates = @(@($colRes) + @($colFilteredEnvs))
+			$colAuthEnv = @(
+				$colAuthCandidates |
+				Where-Object {
+					(-not ($null -eq $_)) `
+						-and (-not [string]::IsNullOrWhiteSpace($_.PpacEnvUri))
+				} | Select-Object -First 1
+			)
+
+			if (@($colAuthEnv).Count -gt 0) {
+				try {
+					$authUri = "$($colAuthEnv[0].PpacEnvUri)".TrimEnd("/") + "/"
+					$objSecureLive = Get-BapAccessToken -ResourceUrl $authUri
+					$liveToken = ConvertFrom-SecureString -AsPlainText `
+						-SecureString $objSecureLive
+
+					$hashLiveHeaders = @{
+						"Correlationid"           = [guid]::NewGuid().ToString()
+						"Dataverseenvironmenturi" = "$($colAuthEnv[0].PpacEnvUri)"
+						"Authorization"           = "Bearer $liveToken"
+						"Odata-Maxversion"        = "4.0"
+						"Odata-Version"           = "4.0"
+						"Accept"                  = "application/json"
 					}
-					catch {
-						Write-PSFMessage -Level Verbose -Message "FinOps version catalog refresh skipped: $($_.Exception.Message)"
+
+					$liveCatalog = Invoke-RestMethod -Method Get `
+						-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsversions" `
+						-Headers $hashLiveHeaders `
+						-ErrorAction Stop
+
+					if ((-not ($null -eq $liveCatalog)) `
+							-and (@($liveCatalog).Count -gt 0)) {
+						Write-FinOpsVersionCache -Versions @($liveCatalog)
+
+						foreach ($itemMissedEnv in @($colMissedEnvs)) {
+							$tmpMissedBuild = "$($itemMissedEnv.PpacProvApp)".Trim()
+							$tmpMissedInfo = Resolve-FinOpsVersionFromCache `
+								-Build $tmpMissedBuild `
+								-ErrorAction SilentlyContinue
+
+							if ($null -eq $tmpMissedInfo) { continue }
+
+							$itemMissedEnv.AppVersion = "$($tmpMissedInfo.AppVersion)"
+							$itemMissedEnv.AppBuild = "$($tmpMissedInfo.AppBuild)"
+							$itemMissedEnv.Track = "$($tmpMissedInfo.AppBuild)"
+							$itemMissedEnv.PlatVersion = "$($tmpMissedInfo.PlatVersion)"
+							$itemMissedEnv.PlatBuild = "$($tmpMissedInfo.PlatBuild)"
+						}
 					}
+				}
+				catch {
+					Write-PSFMessage -Level Verbose `
+						-Message "FinOps version catalog refresh skipped: $($_.Exception.Message)"
 				}
 			}
 		}
 
 		if ($AsExcelOutput) {
-			$resCol | Export-Excel `
+			$colRes |
+			Export-Excel `
 				-WorksheetName "Get-UnifiedEnvironment" `
 				-NoNumberConversion PpacProvApp, PpacProvPlatform, AppVersion, AppBuild, Track, Build, PlatVersion, PlatBuild, PlatformVersion
+
 			return
 		}
 
-		$resCol
+		$colRes
 	}
 
 	end {
