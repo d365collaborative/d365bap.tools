@@ -55,6 +55,10 @@ jobs:
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0
+        # Check out the PR branch tip so merge-base(base, head) works. The
+        # default pull_request ref is a temporary merge commit (github.sha).
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
     - name: Test build notifications
       run: node --test build/build-notifications.test.cjs
     - name: Restore PowerShell modules
@@ -70,11 +74,10 @@ jobs:
     - name: Run validation suites
       shell: pwsh
       env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha || github.sha }}
-        HEAD_SHA: ${{ github.sha }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
-        $force = $null -eq '${{ github.event.pull_request.base.sha }}' -or '${{ github.event.pull_request.base.sha }}' -eq ''
-        if ($force) {
+        if ([string]::IsNullOrWhiteSpace($env:BASE_SHA) -or [string]::IsNullOrWhiteSpace($env:HEAD_SHA)) {
           pwsh -NoProfile -NonInteractive -File ./build/Test-ValidationSuites.ps1 -ForceAll
         }
         else {

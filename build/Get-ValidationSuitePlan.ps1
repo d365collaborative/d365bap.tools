@@ -118,13 +118,18 @@ function Get-ValidationSuiteChangedPath {
 		& git -C $Repository merge-base $Base $Head 2>$null |
 		Select-Object -First 1
 	)
-	if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($mergeBase)) {
-		throw 'Could not determine a unique merge base for the validation suite plan.'
+	$diffFrom = $Base
+	if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($mergeBase)) {
+		$mergeBase = $mergeBase.Trim()
+		$diffFrom = $mergeBase
 	}
-	$mergeBase = $mergeBase.Trim()
+	else {
+		$mergeBase = $null
+		Write-Output "Validation suite plan: merge-base unavailable; diffing $Base...$Head."
+	}
 
 	$colPath = [System.Collections.Generic.List[string]]::new()
-	$raw = & git -C $Repository diff --name-only -z --find-renames $mergeBase $Head --
+	$raw = & git -C $Repository diff --name-only -z --find-renames $diffFrom $Head --
 	if ($LASTEXITCODE -ne 0) {
 		throw 'Git diff failed while building the validation suite plan.'
 	}
