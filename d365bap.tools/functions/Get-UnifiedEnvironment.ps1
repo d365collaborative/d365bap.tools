@@ -14,7 +14,7 @@
         Default: "*".
 
     .PARAMETER SkipVersionDetails
-        Skips the per-environment version lookup for faster results.
+        Deprecated; will be removed on 2027-03-31. Skips the per-environment version lookup.
 
     .PARAMETER UdeOnly
         Instructs the function to only return UDE environments.
@@ -40,7 +40,8 @@
         PS C:\> Get-UnifiedEnvironment -SkipVersionDetails
 
         It will retrieve all environments without version details.
-        It applies -SkipVersionDetails to skip the version lookup.
+        It applies -SkipVersionDetails, which is deprecated.
+        It will be removed on 2027-03-31.
 
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironment -UdeOnly
@@ -83,6 +84,29 @@ function Get-UnifiedEnvironment {
 	)
 
 	begin {
+		if ($PSBoundParameters.ContainsKey('SkipVersionDetails')) {
+			$moduleBase = ''
+			if (-not ($null -eq $MyInvocation.MyCommand.Module)) {
+				$moduleBase = "$($MyInvocation.MyCommand.Module.ModuleBase)"
+			}
+
+			$callerScript = "$($MyInvocation.ScriptName)"
+			$isModuleCaller = $false
+
+			if ((-not [string]::IsNullOrWhiteSpace($callerScript)) `
+					-and (-not [string]::IsNullOrWhiteSpace($moduleBase)) `
+					-and ($callerScript.StartsWith($moduleBase, [StringComparison]::OrdinalIgnoreCase))) {
+				$isModuleCaller = $true
+			}
+
+			if (-not $isModuleCaller) {
+				Write-PSFMessage -Level Warning `
+					-Tag 'Deprecated' `
+					-Once 'Get-UnifiedEnvironment.SkipVersionDetails' `
+					-Message "The <c='em'>-SkipVersionDetails</c> parameter is deprecated and will be removed on 2027-03-31. Omit it for version details, or use <c='em'>Get-BapEnvironment</c> for the raw environment list. See https://github.com/d365collaborative/d365bap.tools/issues/367"
+			}
+		}
+
 		$colEnv = Get-BapEnvironment -EnvironmentId $EnvironmentId `
 			-FscmEnabled
 
@@ -138,11 +162,13 @@ function Get-UnifiedEnvironment {
 				$provisioningApp = ''
 				$provisioningPlatform = ''
 				$provisioningType = ''
+				$deploymentType = ''
 
 				if (-not ($null -eq $tmpResponse)) {
 					$provisioningApp = "$($tmpResponse.applicationVersion)"
 					$provisioningPlatform = "$($tmpResponse.platformVersion)"
-					$provisioningType = switch ("$($tmpResponse.deploymentType)") {
+					$deploymentType = "$($tmpResponse.deploymentType)"
+					$provisioningType = switch ($deploymentType) {
 						"UnifiedDeveloper" { "OnlineDev" }
 						"UnifiedSandbox" { "Sandbox" }
 						"Sandbox" { "Sandbox" }
@@ -204,12 +230,16 @@ function Get-UnifiedEnvironment {
 
 				$tmpProjected = $itemEnv |
 				Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `
-					-ExcludeProperty EnvType `
+					-ExcludeProperty EnvType, Name, Id `
 					-Property (@(
 						@{Name = "PpacProvApp"; Expression = { $provisioningApp } }
 						@{Name = "PpacProvPlatform"; Expression = { $provisioningPlatform } }
 						@{Name = "PpacProvType"; Expression = { $provisioningType } }
+						@{Name = "DeployType"; Expression = { $deploymentType } }
+						@{Name = "FinOpsUri"; Expression = { $_.FinOpsEnvUri } }
+						@{Name = "PpeUri"; Expression = { $_.PpacEnvUri } }
 						@{Name = "PpacRuntimeState"; Expression = { "$($_.Properties.states.runtime.id)" } }
+						@{Name = "RuntimeState"; Expression = { "$($_.Properties.states.runtime.id)" } }
 						@{Name = "EnvType"; Expression = {
 								switch ($provisioningType) {
 									"OnlineDev" { "UDE" }
@@ -218,6 +248,8 @@ function Get-UnifiedEnvironment {
 								}
 							}
 						}
+						@{Name = "Name"; Expression = { $_.PpacEnvName } }
+						@{Name = "Id"; Expression = { $_.EnvId } }
 					) + $tmpVersionProperties + @('*'))
 
 				if ($missed) {

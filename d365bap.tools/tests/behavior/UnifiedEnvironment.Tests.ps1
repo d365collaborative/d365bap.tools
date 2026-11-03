@@ -12,36 +12,46 @@
 		$script:envs = @(
 			[pscustomobject]@{
 				PpacEnvId             = '1287d8af-e9bc-e5a5-9ee6-3687e4c09f5b'
+				EnvId                 = '1287d8af-e9bc-e5a5-9ee6-3687e4c09f5b'
 				PpacEnvName           = 'Features-Test-10.0.49'
 				PpacEnvUri            = 'https://es-features-test-49.crm4.dynamics.com'
 				FinOpsMetadataEnvType = 'Internal'
 				EnvType               = 'Unified'
+				name                  = 'raw-resource-name'
+				id                    = 'raw-resource-id'
 				Properties            = [pscustomobject]@{
 					states = [pscustomobject]@{ runtime = [pscustomobject]@{ id = 'Normal' } }
 				}
 			}
 			[pscustomobject]@{
 				PpacEnvId             = '46874ac1-aaa0-e949-8d38-42caa04ecc5e'
+				EnvId                 = '46874ac1-aaa0-e949-8d38-42caa04ecc5e'
 				PpacEnvName           = 'Features-Uat-10.0.47'
 				PpacEnvUri            = 'https://features-uat-47.crm4.dynamics.com'
 				FinOpsMetadataEnvType = 'Internal'
 				EnvType               = 'Unified'
+				name                  = 'raw-resource-name'
+				id                    = 'raw-resource-id'
 				Properties            = [pscustomobject]@{
 					states = [pscustomobject]@{ runtime = [pscustomobject]@{ id = 'Normal' } }
 				}
 			}
 			[pscustomobject]@{
 				PpacEnvId             = '2c97ad60-6c88-4f0e-a8b1-6fb3f0f3f0aa'
+				EnvId                 = '2c97ad60-6c88-4f0e-a8b1-6fb3f0f3f0aa'
 				PpacEnvName           = 'es-ude-motz-01'
 				PpacEnvUri            = 'https://es-ude-motz-01.crm4.dynamics.com'
 				FinOpsMetadataEnvType = 'Internal'
 				EnvType               = 'Unified'
+				name                  = 'raw-resource-name'
+				id                    = 'raw-resource-id'
 				Properties            = [pscustomobject]@{
 					states = [pscustomobject]@{ runtime = [pscustomobject]@{ id = 'Normal' } }
 				}
 			}
 			[pscustomobject]@{
 				PpacEnvId             = '9a9cbb8a-3b0d-4a8d-9a2c-0f8b0b8e9c11'
+				EnvId                 = '9a9cbb8a-3b0d-4a8d-9a2c-0f8b0b8e9c11'
 				PpacEnvName           = 'linked-env-01'
 				PpacEnvUri            = 'https://linked-env-01.crm4.dynamics.com'
 				FinOpsMetadataEnvType = 'Linked'
@@ -138,6 +148,12 @@ Describe 'Get-UnifiedEnvironment environment types' {
 
 		$envObj.EnvType | Should -Be 'USE'
 		$envObj.PpacProvType | Should -Be 'Sandbox'
+		$envObj.DeployType | Should -Be 'UnifiedSandbox'
+		$envObj.Name | Should -Be 'Features-Test-10.0.49'
+		$envObj.Id | Should -Be '1287d8af-e9bc-e5a5-9ee6-3687e4c09f5b'
+		$envObj.EnvId | Should -Be $envObj.Id
+		$envObj.RuntimeState | Should -Be 'Normal'
+		$envObj.PpacRuntimeState | Should -Be 'Normal'
 	}
 
 	It 'labels a unified developer environment as UDE' {
@@ -145,6 +161,7 @@ Describe 'Get-UnifiedEnvironment environment types' {
 
 		$envObj.EnvType | Should -Be 'UDE'
 		$envObj.PpacProvType | Should -Be 'OnlineDev'
+		$envObj.DeployType | Should -Be 'UnifiedDeveloper'
 	}
 
 	It 'returns only USE environments with -UseOnly' {

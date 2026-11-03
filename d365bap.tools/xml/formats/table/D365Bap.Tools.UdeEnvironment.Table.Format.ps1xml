@@ -9,44 +9,56 @@
             <TableControl>
                 <TableHeaders>
                     <TableColumnHeader>
-                        <Width>22</Width>
+                        <Width>24</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Width>18</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Width>10</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Width>9</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Width>10</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Width>14</Width>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Width>38</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Width>8</Width>
-                    </TableColumnHeader>
-                    <TableColumnHeader>
-                        <Width>15</Width>
-                    </TableColumnHeader>
-                    <TableColumnHeader>
-                        <Width>16</Width>
-                    </TableColumnHeader>
-                    <TableColumnHeader>
-                        <Width>17</Width>
-                    </TableColumnHeader>
-                    <TableColumnHeader>
-                        <Width>36</Width>
                     </TableColumnHeader>
                 </TableHeaders>
                 <TableRowEntries>
                     <TableRowEntry>
                         <TableColumnItems>
                             <TableColumnItem>
-                                <PropertyName>EnvName</PropertyName>
+                                <PropertyName>Name</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>DeployType</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Sku</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Managed</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>AdminMode</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>RuntimeState</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Id</PropertyName>
                             </TableColumnItem>
                             <TableColumnItem>
                                 <PropertyName>EnvType</PropertyName>
-                            </TableColumnItem>
-                            <TableColumnItem>
-                                <PropertyName>PpacProvApp</PropertyName>
-                            </TableColumnItem>
-                            <TableColumnItem>
-                                <PropertyName>PpacProvPlatform</PropertyName>
-                            </TableColumnItem>
-                            <TableColumnItem>
-                                <PropertyName>PpacRuntimeState</PropertyName>
-                            </TableColumnItem>
-                            <TableColumnItem>
-                                <PropertyName>EnvId</PropertyName>
                             </TableColumnItem>
                         </TableColumnItems>
                     </TableRowEntry>
