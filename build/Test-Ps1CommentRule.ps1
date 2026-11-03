@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    Tests the comment-based help only lint rule.
+    Tests the comment-based-help-only lint rule.
 
 .DESCRIPTION
     Parses fixture scripts and checks that only comment-based help and region
