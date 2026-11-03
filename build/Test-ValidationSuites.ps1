@@ -39,6 +39,7 @@ $notSuite = [ordered]@{
 	'Test-PrekInstall.ps1'             = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-PRValidationPlan.ps1'        = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-Ps1FormatXml.ps1'            = 'Runs in the validate.yml infrastructure-tests job.'
+	'Test-Ps1AnalysisCache.ps1'        = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-Ps1LintBatch.ps1'            = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-Ps1LintCorrectness.ps1'      = 'Runs in the validate.yml infrastructure-tests job.'
 	'Test-Ps1LintScope.ps1'            = 'Runs in the validate.yml infrastructure-tests job.'
