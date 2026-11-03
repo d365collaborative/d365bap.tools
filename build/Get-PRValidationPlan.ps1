@@ -1,4 +1,27 @@
-﻿[CmdletBinding()]
+﻿<#
+.SYNOPSIS
+    Derives the validation scope for a pull request.
+
+.DESCRIPTION
+    Derives module test, analyzer scan, selective test, compiled import, and
+    infrastructure decisions from one change set; an unclassifiable change
+    falls back to full module coverage.
+
+.PARAMETER BaseSha
+    The pull request base commit.
+
+.PARAMETER HeadSha
+    The pull request head commit.
+
+.PARAMETER OutputPath
+    Writes the plan as JSON for the workflow jobs that consume it.
+
+.PARAMETER RepositoryPath
+    The repository to inspect.
+
+    Default: the parent of this script's directory.
+#>
+[CmdletBinding()]
 param(
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
@@ -36,6 +59,26 @@ $infrastructurePattern = @(
 	'^\.github/workflows/validate\.yml$'
 )
 
+# The analyzer jobs run d365bap.tools/tests/general/PSScriptAnalyzer.Tests.ps1
+# through d365bap.tools/tests/pester-PSScriptAnalyzer.ps1. Nothing else under
+# tests/ reaches them, so a change to those two files is the only test change
+# that needs the full scans.
+$analyzerHarnessPath = @(
+	'd365bap.tools/tests/general/PSScriptAnalyzer.Tests.ps1'
+	'd365bap.tools/tests/pester-PSScriptAnalyzer.ps1'
+)
+
+# A module test change runs the General job, which excludes the analyzer
+# harness. Behavior tests run in the compiled-import job instead.
+$behaviorTestPattern = '^d365bap\.tools/tests/behavior/'
+
+# A formatting-only change keeps the tokens of every changed module file and
+# the token/line-break layout. Nothing the module tests or the analyzer scans
+# read has changed, so only the compiled-import check runs. The detection is
+# deliberately strict: any token, comment, string, line-break, or backtick
+# continuation change disqualifies it.
+$modulePowerShellPattern = '^d365bap\.tools/.+\.(ps1|psm1|psd1)$'
+
 function Test-Documentation([string] $Path) {
 	if ([string]::IsNullOrEmpty($Path)) { $false; return }
 	if ([IO.Path]::GetFileName($Path) -ieq 'AGENTS.md') { $false; return }
@@ -46,46 +89,209 @@ function Test-Documentation([string] $Path) {
 	$Path -match '^wiki/[^/]+\.md$'
 }
 
-$mode = 'docs'
-$reasons = [System.Collections.Generic.List[string]]::new()
-$publicPaths = [System.Collections.Generic.List[string]]::new()
-$infrastructurePaths = [System.Collections.Generic.List[string]]::new()
-if ($entries.Count -eq 0) { $mode = 'full'; $reasons.Add('No changed files were detected.') }
+function Get-ChangedText([string] $Revision, [string] $Path) {
+	$start = [System.Diagnostics.ProcessStartInfo]::new()
+	$start.FileName = 'git'
+	$start.WorkingDirectory = $repository
+	$start.UseShellExecute = $false
+	$start.RedirectStandardOutput = $true
+	$start.RedirectStandardError = $true
+	foreach ($itemArgument in @('show', "${Revision}:$Path")) { $null = $start.ArgumentList.Add($itemArgument) }
+	$process = [System.Diagnostics.Process]::Start($start)
+	try {
+		$errorTask = $process.StandardError.ReadToEndAsync()
+		$bytes = [System.IO.MemoryStream]::new()
+		try {
+			$process.StandardOutput.BaseStream.CopyTo($bytes)
+			$process.WaitForExit()
+			$null = $errorTask.GetAwaiter().GetResult()
+			if ($process.ExitCode -ne 0) { return }
+			[Text.Encoding]::UTF8.GetString($bytes.ToArray()).TrimStart([char]0xFEFF)
+		}
+		finally { $bytes.Dispose() }
+	}
+	finally { $process.Dispose() }
+}
+
+function Get-TokenSignature([string] $Text) {
+	if ([string]::IsNullOrEmpty($Text)) { return }
+	# Line endings are the lint hook's business: a checkout may use CRLF while
+	# the blob uses LF, and a multi-line comment or here-string token keeps the
+	# endings inside its text. Normalize before comparing tokens.
+	$normalizedText = $Text.Replace("`r`n", "`n")
+	$colTokens = $null
+	$parseErrors = $null
+	$null = [Management.Automation.Language.Parser]::ParseInput($normalizedText, [ref]$colTokens, [ref]$parseErrors)
+	if ($null -eq $colTokens -or @($parseErrors).Count -gt 0) { return }
+	$colSignature = [System.Collections.Generic.List[string]]::new()
+	$previousEndLine = 0
+	foreach ($itemToken in $colTokens) {
+		# Newline tokens carry no text of their own; the line-break flag below
+		# already records where one sits, and a blank line is inert.
+		if ($itemToken.Kind -eq 'NewLine') { continue }
+		# The line-break flag keeps a moved statement a real change. Tokens keep
+		# the text of strings, here-strings, and comments, so editing any of
+		# them disqualifies the file as well.
+		$startsLine = if ($itemToken.Extent.StartLineNumber -ne $previousEndLine) { '1' } else { '0' }
+		$colSignature.Add("$startsLine|$($itemToken.Kind)|$($itemToken.Text)")
+		$previousEndLine = $itemToken.Extent.EndLineNumber
+	}
+	$colSignature -join "`n"
+}
+
+function Test-FormattingOnlyChange($Entry) {
+	if ($Entry.Status -cne 'M' -or $null -ne $Entry.OldPath) { $false; return }
+	$path = $Entry.Path -replace '\\', '/'
+	if ($path -notmatch $modulePowerShellPattern) { $false; return }
+	$headPath = Join-Path $repository $path
+	if (-not (Test-Path -LiteralPath $headPath -PathType Leaf)) { $false; return }
+	$baseText = Get-ChangedText -Revision $mergeBase -Path $path
+	if ([string]::IsNullOrEmpty($baseText)) { $false; return }
+	$headText = [IO.File]::ReadAllText($headPath).TrimStart([char]0xFEFF)
+	if ([string]::IsNullOrEmpty($headText) -or $baseText -ceq $headText) { $false; return }
+	# Whitespace around a line continuation changes meaning, so a file that uses
+	# one keeps the full module coverage.
+	if ($baseText -match '(?m)`[ \t\r]*$' -or $headText -match '(?m)`[ \t\r]*$') { $false; return }
+	$baseSignature = Get-TokenSignature -Text $baseText
+	$headSignature = Get-TokenSignature -Text $headText
+	if ([string]::IsNullOrEmpty($baseSignature) -or [string]::IsNullOrEmpty($headSignature)) { $false; return }
+	$baseSignature -ceq $headSignature
+}
+
+$colReasons = [System.Collections.Generic.List[string]]::new()
+$colPublicPaths = [System.Collections.Generic.List[string]]::new()
+$colInfrastructurePaths = [System.Collections.Generic.List[string]]::new()
+$isModuleTests = $false
+$isAnalyzerScans = $false
+$isSelectiveTests = $false
+$isCompiledImport = $false
+$fallback = $false
+$formattingOnly = $true
+$nonDocumentationCount = 0
+if ($entries.Count -eq 0) {
+	$fallback = $true
+	$isModuleTests = $true
+	$isAnalyzerScans = $true
+	$colReasons.Add('No changed files were detected.')
+}
 foreach ($entry in $entries) {
 	# Both sides of a rename count: moving tooling out of build/ still changes it.
-	foreach ($path in @($entry.Path) + @($entry.OldPath)) {
-		if ([string]::IsNullOrEmpty($path)) { continue }
+	$path = $entry.Path -replace '\\', '/'
+	$oldPath = if ([string]::IsNullOrEmpty($entry.OldPath)) { $null } else { $entry.OldPath -replace '\\', '/' }
+	$pathInfrastructure = $false
+	$oldInfrastructure = $false
+	foreach ($candidate in @($path) + @($oldPath)) {
+		if ([string]::IsNullOrEmpty($candidate)) { continue }
 		foreach ($pattern in $infrastructurePattern) {
-			if ($path -match $pattern) { $infrastructurePaths.Add($path); break }
+			if ($candidate -notmatch $pattern) { continue }
+			$colInfrastructurePaths.Add($candidate)
+			if ($candidate -ceq $path) { $pathInfrastructure = $true }
+			if ($candidate -ceq $oldPath) { $oldInfrastructure = $true }
+			break
 		}
 	}
 	if ((Test-Documentation $entry.Path) -and ($null -eq $entry.OldPath -or (Test-Documentation $entry.OldPath))) { continue }
-	if ($entry.Status -notin @('A', 'M') -or $entry.Path -cnotmatch '^d365bap\.tools/functions/[A-Za-z][A-Za-z0-9]*-[A-Za-z][A-Za-z0-9]*\.ps1$') {
-		$mode = 'full'
-		$reasons.Add("Shared, unknown, deleted, or renamed path: $($entry.Status) $($entry.Path)")
+	$nonDocumentationCount++
+
+	if ($formattingOnly) {
+		if (-not (Test-FormattingOnlyChange $entry)) { $formattingOnly = $false }
+	}
+
+	if ($pathInfrastructure) { continue }
+	if ($oldInfrastructure) {
+		# Moving tooling out of build/ leaves an unknown destination, so keep the
+		# conservative fallback even though the flag is already set.
+		$fallback = $true
+		$isModuleTests = $true
+		$isAnalyzerScans = $true
+		$colReasons.Add("Infrastructure moved to an unknown path: $($entry.Status) $path")
 		continue
 	}
-	if (-not (Test-Path -LiteralPath (Join-Path $repository $entry.Path) -PathType Leaf)) {
-		$mode = 'full'
-		$reasons.Add("Missing changed source at checkout: $($entry.Path)")
+	if ($path -match '^d365bap\.tools/tests/') {
+		if ($analyzerHarnessPath -contains $path) { $isAnalyzerScans = $true; continue }
+		# Behavior tests run inside the compiled-import job.
+		if ($path -match $behaviorTestPattern) { $isCompiledImport = $true; continue }
+		$isModuleTests = $true
 		continue
 	}
-	if ($mode -eq 'docs') { $mode = 'selective' }
-	$publicPaths.Add($entry.Path)
+	if ($path -match '^d365bap\.tools/') {
+		$isPublic = $entry.Status -in @('A', 'M') -and
+		$null -eq $oldPath -and
+		$path -match '^d365bap\.tools/functions/[A-Za-z][A-Za-z0-9]*-[A-Za-z][A-Za-z0-9]*\.ps1$' -and
+		(Test-Path -LiteralPath (Join-Path $repository $path) -PathType Leaf)
+		if ($isPublic) {
+			$isSelectiveTests = $true
+			$colPublicPaths.Add($path)
+			continue
+		}
+		# Shared or deleted module code: the full module coverage stays until
+		# dependency selection is proven.
+		$isModuleTests = $true
+		$isAnalyzerScans = $true
+		continue
+	}
+
+	$fallback = $true
+	$isModuleTests = $true
+	$isAnalyzerScans = $true
+	$colReasons.Add("Shared, unknown, deleted, or renamed path: $($entry.Status) $path")
 }
-# No detected change means the diff could not be read, so run the suites rather
-# than claim the tooling is untouched.
-$infrastructureChange = $entries.Count -eq 0 -or $infrastructurePaths.Count -gt 0
+
+$infrastructureChange = $entries.Count -eq 0 -or $colInfrastructurePaths.Count -gt 0
+
+# Everything except a documentation-only change loads the module. The plan emits
+# no other partial scope, which is the invariant the result gate enforces.
+if ($fallback -or $isModuleTests -or $isAnalyzerScans -or $isSelectiveTests -or $infrastructureChange) {
+	$isCompiledImport = $true
+}
+
+if ($formattingOnly -and -not $fallback -and $nonDocumentationCount -gt 0 -and -not $infrastructureChange) {
+	$isModuleTests = $false
+	$isAnalyzerScans = $false
+	$isSelectiveTests = $false
+	$colPublicPaths.Clear()
+	$colReasons.Add('Formatting-only change: the changed module files keep every token and line break.')
+}
+
+$colScope = [System.Collections.Generic.List[string]]::new()
+if ($isSelectiveTests) { $colScope.Add('selective') }
+if ($isModuleTests) { $colScope.Add('module-tests') }
+if ($isAnalyzerScans) { $colScope.Add('analyzer-scans') }
+if ($isCompiledImport) { $colScope.Add('compiled-import') }
+if ($infrastructureChange) { $colScope.Add('infrastructure') }
+$scope = if ($colScope.Count -eq 0) { 'docs' } else { $colScope -join '+' }
+
+# Compatibility alias for consumers that predate the split. The base-branch
+# workflow rejects a plan without a valid Mode, so keep deriving one from the
+# decisions: documentation stays docs, a targeted public-function change stays
+# selective, and everything else keeps the former full label. A base job may run
+# more work than the new scope; the flags below remain the decision source.
+$mode = if ($scope -ceq 'docs') {
+	'docs'
+}
+elseif ($isSelectiveTests -and -not $isModuleTests -and -not $isAnalyzerScans -and -not $infrastructureChange) {
+	'selective'
+}
+else {
+	'full'
+}
+
 $plan = [ordered]@{
 	Mode                 = $mode
+	Scope                = $scope
+	ModuleTests          = $isModuleTests
+	AnalyzerScans        = $isAnalyzerScans
+	SelectiveTests       = $isSelectiveTests
+	CompiledImport       = $isCompiledImport
 	InfrastructureChange = $infrastructureChange
-	InfrastructurePaths  = @($infrastructurePaths | Sort-Object -Unique)
-	PublicPaths          = @($publicPaths | Sort-Object -Unique)
-	Reasons              = @($reasons)
+	InfrastructurePaths  = @($colInfrastructurePaths | Sort-Object -Unique)
+	PublicPaths          = @($colPublicPaths | Sort-Object -Unique)
+	Reasons              = @($colReasons)
 	MergeBase            = $mergeBase
 	HeadSha              = $HeadSha
 }
 $plan | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputPath -Encoding utf8
-Write-Host "Validation mode: $mode ($($entries.Count) changed file(s))."
-Write-Host "Infrastructure change: $infrastructureChange ($($infrastructurePaths.Count) matched path(s))."
-foreach ($reason in $reasons) { Write-Host "  $reason" }
+Write-Host "Validation scope: $scope ($($entries.Count) changed file(s))."
+Write-Host "Compatibility mode: $mode."
+Write-Host "Module tests: $isModuleTests; analyzer scans: $isAnalyzerScans; selective tests: $isSelectiveTests; compiled import: $isCompiledImport; infrastructure: $infrastructureChange."
+foreach ($reason in $colReasons) { Write-Host "  $reason" }

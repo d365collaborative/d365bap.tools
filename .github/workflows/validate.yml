@@ -117,7 +117,11 @@ jobs:
     name: Determine validation scope
     runs-on: windows-latest
     outputs:
-      mode: ${{ steps.scope.outputs.mode }}
+      scope: ${{ steps.scope.outputs.scope }}
+      module_tests: ${{ steps.scope.outputs.module_tests }}
+      analyzer_scans: ${{ steps.scope.outputs.analyzer_scans }}
+      selective_tests: ${{ steps.scope.outputs.selective_tests }}
+      compiled_import: ${{ steps.scope.outputs.compiled_import }}
       infrastructure: ${{ steps.scope.outputs.infrastructure }}
       plan_hash: ${{ steps.scope.outputs.plan_hash }}
     steps:
@@ -133,15 +137,24 @@ jobs:
       run: |
         ./build/Get-PRValidationPlan.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -OutputPath validation-plan.json
         $plan = Get-Content -Raw validation-plan.json | ConvertFrom-Json
-        if ($plan.Mode -notin @('docs', 'selective', 'full')) { throw 'Invalid validation mode' }
-        if ($plan.InfrastructureChange -isnot [bool]) { throw 'Invalid infrastructure-change flag' }
-        "mode=$($plan.Mode)" >> $env:GITHUB_OUTPUT
-        "infrastructure=$($plan.InfrastructureChange.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+        if ([string]::IsNullOrWhiteSpace($plan.Scope)) { throw 'Invalid validation scope' }
+        $flag = [ordered]@{
+          module_tests   = $plan.ModuleTests
+          analyzer_scans = $plan.AnalyzerScans
+          selective_tests = $plan.SelectiveTests
+          compiled_import = $plan.CompiledImport
+          infrastructure = $plan.InfrastructureChange
+        }
+        foreach ($itemName in $flag.Keys) {
+          if ($flag[$itemName] -isnot [bool]) { throw "Invalid $itemName flag" }
+          "$itemName=$($flag[$itemName].ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+        }
+        "scope=$($plan.Scope)" >> $env:GITHUB_OUTPUT
         "plan_hash=$((Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash)" >> $env:GITHUB_OUTPUT
   general-unit-tests:
     name: Validate General Unit Tests
     needs: changes
-    if: needs.changes.outputs.mode == 'full'
+    if: needs.changes.outputs.module_tests == 'true'
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
@@ -185,7 +198,7 @@ jobs:
   public-functions-unit-tests:
     name: Validate Public Functions using PSScriptAnalyzer Unit Tests
     needs: changes
-    if: needs.changes.outputs.mode == 'full'
+    if: needs.changes.outputs.analyzer_scans == 'true'
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
@@ -206,7 +219,7 @@ jobs:
   internal-functions-unit-tests:
     name: Validate Internal Functions using PSScriptAnalyzer Unit Tests
     needs: changes
-    if: needs.changes.outputs.mode == 'full'
+    if: needs.changes.outputs.analyzer_scans == 'true'
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
@@ -226,9 +239,11 @@ jobs:
 
   selective-tests:
     name: Validate Relevant Tests
+    needs: changes
+    if: needs.changes.outputs.selective_tests == 'true'
     runs-on: windows-latest
     outputs:
-      mode: ${{ steps.scope.outputs.mode }}
+      scope: ${{ steps.scope.outputs.scope }}
       plan_hash: ${{ steps.scope.outputs.plan_hash }}
     steps:
     - uses: actions/checkout@v5
@@ -243,11 +258,10 @@ jobs:
       run: |
         ./build/Get-PRValidationPlan.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -OutputPath validation-plan.json
         $plan = Get-Content -Raw validation-plan.json | ConvertFrom-Json
-        if ($plan.Mode -notin @('docs', 'selective', 'full')) { throw 'Invalid validation mode' }
-        "mode=$($plan.Mode)" >> $env:GITHUB_OUTPUT
+        if ($plan.SelectiveTests -isnot [bool] -or -not $plan.SelectiveTests) { throw 'This job only runs a selective-tests plan' }
+        "scope=$($plan.Scope)" >> $env:GITHUB_OUTPUT
         "plan_hash=$((Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash)" >> $env:GITHUB_OUTPUT
     - name: Restore PowerShell modules
-      if: steps.scope.outputs.mode == 'selective'
       uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
@@ -255,19 +269,19 @@ jobs:
         restore-keys: |
           pwsh-modules-${{ runner.os }}-base-v2-
     - name: Ensure prerequisites
-      if: steps.scope.outputs.mode == 'selective'
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
     - name: Validate
-      if: steps.scope.outputs.mode == 'selective'
       shell: pwsh
       run: ./build/Invoke-SelectiveValidation.ps1 -PlanPath validation-plan.json
 
   compiled-import:
     name: Validate Compiled Module Import
+    needs: changes
+    if: needs.changes.outputs.compiled_import == 'true'
     runs-on: windows-latest
     outputs:
-      mode: ${{ steps.scope.outputs.mode }}
+      scope: ${{ steps.scope.outputs.scope }}
       plan_hash: ${{ steps.scope.outputs.plan_hash }}
     steps:
     - uses: actions/checkout@v5
@@ -282,11 +296,10 @@ jobs:
       run: |
         ./build/Get-PRValidationPlan.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -OutputPath validation-plan.json
         $plan = Get-Content -Raw validation-plan.json | ConvertFrom-Json
-        if ($plan.Mode -notin @('docs', 'selective', 'full')) { throw 'Invalid validation mode' }
-        "mode=$($plan.Mode)" >> $env:GITHUB_OUTPUT
+        if ($plan.CompiledImport -isnot [bool] -or -not $plan.CompiledImport) { throw 'This job only runs a compiled-import plan' }
+        "scope=$($plan.Scope)" >> $env:GITHUB_OUTPUT
         "plan_hash=$((Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash)" >> $env:GITHUB_OUTPUT
     - name: Restore PowerShell modules
-      if: steps.scope.outputs.mode != 'docs'
       uses: actions/cache/restore@v5
       with:
         path: ~\Documents\PowerShell\Modules
@@ -294,15 +307,12 @@ jobs:
         restore-keys: |
           pwsh-modules-${{ runner.os }}-base-v2-
     - name: Ensure prerequisites
-      if: steps.scope.outputs.mode != 'docs'
       shell: pwsh
       run: ./build/Install-RequiredModules.ps1 -Set base
     - name: Validate
-      if: steps.scope.outputs.mode != 'docs'
       shell: pwsh
       run: ./build/Test-CompiledImport.ps1
     - name: Validate behavioral tests
-      if: steps.scope.outputs.mode != 'docs'
       shell: pwsh
       run: ./build/Test-Behavior.ps1
 
@@ -319,13 +329,17 @@ jobs:
       env:
         LINT: ${{ needs.lint.result }}
         CHANGE_RESULT: ${{ needs.changes.result }}
-        MODE: ${{ needs.changes.outputs.mode }}
+        SCOPE: ${{ needs.changes.outputs.scope }}
+        MODULE_TESTS: ${{ needs.changes.outputs.module_tests }}
+        ANALYZER_SCANS: ${{ needs.changes.outputs.analyzer_scans }}
+        SELECTIVE_TESTS: ${{ needs.changes.outputs.selective_tests }}
+        COMPILED_IMPORT: ${{ needs.changes.outputs.compiled_import }}
         INFRASTRUCTURE: ${{ needs.changes.outputs.infrastructure }}
         PLAN_HASH: ${{ needs.changes.outputs.plan_hash }}
         SELECTIVE_HASH: ${{ needs.selective-tests.outputs.plan_hash }}
         COMPILED_HASH: ${{ needs.compiled-import.outputs.plan_hash }}
-        SELECTIVE_MODE: ${{ needs.selective-tests.outputs.mode }}
-        COMPILED_MODE: ${{ needs.compiled-import.outputs.mode }}
+        SELECTIVE_SCOPE: ${{ needs.selective-tests.outputs.scope }}
+        COMPILED_SCOPE: ${{ needs.compiled-import.outputs.scope }}
         GENERAL: ${{ needs.general-unit-tests.result }}
         PUBLIC: ${{ needs.public-functions-unit-tests.result }}
         INTERNAL: ${{ needs.internal-functions-unit-tests.result }}
@@ -336,13 +350,17 @@ jobs:
         ./build/Invoke-ValidationResultGate.ps1 `
           -Lint $env:LINT `
           -ChangeResult $env:CHANGE_RESULT `
-          -Mode $env:MODE `
+          -Scope $env:SCOPE `
+          -ModuleTests $env:MODULE_TESTS `
+          -AnalyzerScans $env:ANALYZER_SCANS `
+          -SelectiveTests $env:SELECTIVE_TESTS `
+          -CompiledImport $env:COMPILED_IMPORT `
           -InfrastructureChange $env:INFRASTRUCTURE `
           -PlanHash $env:PLAN_HASH `
           -SelectiveHash $env:SELECTIVE_HASH `
           -CompiledHash $env:COMPILED_HASH `
-          -SelectiveMode $env:SELECTIVE_MODE `
-          -CompiledMode $env:COMPILED_MODE `
+          -SelectiveScope $env:SELECTIVE_SCOPE `
+          -CompiledScope $env:COMPILED_SCOPE `
           -General $env:GENERAL `
           -Public $env:PUBLIC `
           -Internal $env:INTERNAL `

@@ -9,8 +9,8 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $testRoot = Join-Path $repoRoot 'd365bap.tools/tests'
 $plan = Get-Content -Raw -LiteralPath $PlanPath | ConvertFrom-Json -ErrorAction Stop
-if ($plan.Mode -ne 'selective' -or $plan.PublicPaths -isnot [array]) {
-	throw 'Expected a selective validation plan with a PublicPaths array.'
+if ($plan.SelectiveTests -ne $true -or $plan.PublicPaths -isnot [array]) {
+	throw 'Expected a validation plan with SelectiveTests true and a PublicPaths array.'
 }
 
 function Resolve-SelectedFiles([object[]] $Paths, [string] $Pattern) {
