@@ -25,7 +25,7 @@
 #>
 function Get-UdeConnection {
 	[CmdletBinding()]
-	[OutputType('D365Bap.Tools.UdeConnection')]
+	[OutputType('D365Bap.Tools.UdeConnection[]')]
 	param (
 		[string] $Path = "$env:APPDATA\Microsoft\CRMDeveloperToolKit",
 
