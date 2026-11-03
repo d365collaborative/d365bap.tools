@@ -1,26 +1,7 @@
-﻿
-<#
-    Centralized Azure access token minter for d365bap.tools.
-
-    Known audiences live in $script:BapAccessTokenEndpoints and are selected through a
-    dedicated switch. Anything else is passed as an explicit resource URL.
-
-    A failed mint stops execution entirely with a terminating error: running any code
-    without a token makes no sense, so there is no soft-fail path.
-
-    Tokens are cached per normalized resource + tenant + account in $script:BapTokenCache
-    and reused while more than 15 minutes of lifetime remain. The current Azure context
-    is re-read on every call: a manual context switch outside Switch-BapTenant changes
-    the cache key / stored stamp, so the next call treats the entry as a miss and mints
-    a fresh token.
-#>
-
-if ($null -eq $script:BapTokenCache) {
+﻿if ($null -eq $script:BapTokenCache) {
 	$script:BapTokenCache = @{}
 }
 
-# Single source of truth for the audiences the module requests. Keys are the switch
-# names exposed by Get-BapAccessToken; values are the resource URLs they select.
 if ($null -eq $script:BapAccessTokenEndpoints) {
 	$script:BapAccessTokenEndpoints = [ordered]@{
 		Bap                = 'https://service.powerapps.com/'
@@ -30,32 +11,99 @@ if ($null -eq $script:BapAccessTokenEndpoints) {
 	}
 }
 
-# Resolves the audience for a request, preferring the canonical known endpoint.
 function Resolve-BapAccessTokenResource {
+	[OutputType([string])]
 	param ([string] $ResourceUrl, [string] $Endpoint)
 
-	if (-not [string]::IsNullOrWhiteSpace($Endpoint) -and $script:BapAccessTokenEndpoints.Contains($Endpoint)) {
-		return "$($script:BapAccessTokenEndpoints[$Endpoint])"
+	if ((-not [string]::IsNullOrWhiteSpace($Endpoint)) `
+			-and ($script:BapAccessTokenEndpoints.Contains($Endpoint))) {
+		"$($script:BapAccessTokenEndpoints[$Endpoint])"
+		return
 	}
 
 	$value = "$ResourceUrl".Trim()
 	$normalizedValue = $value.TrimEnd('/')
 
-	foreach ($known in $script:BapAccessTokenEndpoints.Values) {
-		if ("$known".TrimEnd('/') -ieq $normalizedValue) {
-			return "$known"
+	foreach ($itemKnown in $script:BapAccessTokenEndpoints.Values) {
+		if ("$itemKnown".TrimEnd('/') -ieq $normalizedValue) {
+			"$itemKnown"
+			return
 		}
 	}
 
-	return $value
+	$value
 }
 
-# Builds the cache key so equivalent audiences share one cached token.
 function Get-BapAccessTokenCacheKey {
+	[OutputType([string])]
 	param ([string] $Resource, [string] $TenantId, [string] $AccountId)
 
 	$normalizedResource = "$Resource".Trim().TrimEnd('/').ToLowerInvariant()
-	return "$normalizedResource|$("$TenantId".ToLowerInvariant())|$("$AccountId".ToLowerInvariant())"
+	"$normalizedResource|$("$TenantId".ToLowerInvariant())|$("$AccountId".ToLowerInvariant())"
+}
+
+function Get-BapAccessTokenContextStamp {
+	[OutputType([hashtable])]
+	param ([string] $Provider)
+
+	if ($null -eq $script:BapContextStampCache) {
+		$script:BapContextStampCache = @{}
+	}
+
+	$hashCached = $script:BapContextStampCache["$Provider"]
+	$stampIsFresh = $false
+
+	if (-not ($null -eq $hashCached)) {
+		$stampIsFresh = ([datetime]::UtcNow - $hashCached.ValidatedUtc).TotalSeconds -lt 60
+	}
+
+	if ($stampIsFresh) {
+		$hashCached
+		return
+	}
+
+	$currentAccountId = ''
+	$currentTenantId = ''
+
+	if ("$Provider" -eq 'AzAccount') {
+		try {
+			$azContext = Get-AzContext -ErrorAction Stop
+			if (-not ($null -eq $azContext)) {
+				$currentAccountId = "$($azContext.Account.Id)"
+				$currentTenantId = "$($azContext.Tenant.Id)"
+			}
+		}
+		catch {
+			Write-PSFMessage -Level Verbose `
+				-Message "Unable to read the current Az context. Continuing without a context stamp."
+		}
+	}
+	elseif ("$Provider" -eq 'AzCli') {
+		try {
+			$accountJson = az account show --query '{user:user.name, tenant:tenantId}' -o json 2>$null
+			if (($LASTEXITCODE -eq 0) `
+					-and (-not [string]::IsNullOrWhiteSpace($accountJson))) {
+				$accountObj = $accountJson |
+				ConvertFrom-Json -ErrorAction Stop
+				$currentAccountId = "$($accountObj.user)"
+				$currentTenantId = "$($accountObj.tenant)"
+			}
+		}
+		catch {
+			Write-PSFMessage -Level Verbose `
+				-Message "Unable to read the current Azure CLI account. Continuing without a context stamp."
+		}
+	}
+
+	$hashStamp = @{
+		AccountId    = "$currentAccountId"
+		TenantId     = "$currentTenantId"
+		ValidatedUtc = [datetime]::UtcNow
+	}
+
+	$script:BapContextStampCache["$Provider"] = $hashStamp
+
+	$hashStamp
 }
 
 <#
@@ -63,9 +111,10 @@ function Get-BapAccessTokenCacheKey {
         Mints Azure access tokens for the module.
 
     .DESCRIPTION
-        Returns a SecureString for a known endpoint switch or an explicit resource.
-        Get-AzAccessToken serves the AzAccount provider and the Azure CLI serves the
-        AzCli provider. Equivalent audiences share the in-memory token cache.
+        Known audiences map to fixed URLs; anything else passes through.
+        Caches tokens per audience, tenant, and account while over 15 minutes remain.
+        The context stamp is reused for 60 seconds, so a manual switch can lag.
+        A failed mint stops execution.
 
     .PARAMETER ResourceUrl
         Explicit audience for endpoints that are not known to the module.
@@ -129,54 +178,36 @@ function Get-BapAccessToken {
 	}
 
 	$endpointName = ''
-	foreach ($name in $script:BapAccessTokenEndpoints.Keys) {
-		if ($PSBoundParameters.ContainsKey($name)) {
-			$endpointName = $name
+	foreach ($itemName in $script:BapAccessTokenEndpoints.Keys) {
+		if ($PSBoundParameters.ContainsKey($itemName)) {
+			$endpointName = $itemName
 			break
 		}
 	}
 
-	$resource = Resolve-BapAccessTokenResource -ResourceUrl $ResourceUrl -Endpoint $endpointName
+	$resource = Resolve-BapAccessTokenResource -ResourceUrl $ResourceUrl `
+		-Endpoint $endpointName
 
-	$provider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
-	if ([string]::IsNullOrWhiteSpace("$provider")) {
+	$provider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' `
+		-Fallback 'AzAccount'
+
+	if ([string]::IsNullOrWhiteSpace($provider)) {
 		$provider = 'AzAccount'
 	}
 
 	#region Resolve current context stamp (account + tenant)
-	$currentAccountId = ''
-	$currentTenantId = ''
-
-	if ("$provider" -eq 'AzAccount') {
-		try {
-			$azContext = Get-AzContext -ErrorAction Stop
-			if ($null -ne $azContext) {
-				$currentAccountId = "$($azContext.Account.Id)"
-				$currentTenantId = "$($azContext.Tenant.Id)"
-			}
-		}
-		catch {
-			Write-PSFMessage -Level Verbose -Message "Unable to read the current Az context. Continuing without a context stamp."
-		}
-	}
-	elseif ("$provider" -eq 'AzCli') {
-		try {
-			$accountJson = az account show --query '{user:user.name, tenant:tenantId}' -o json 2>$null
-			if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$accountJson")) {
-				$accountObj = "$accountJson" | ConvertFrom-Json -ErrorAction Stop
-				$currentAccountId = "$($accountObj.user)"
-				$currentTenantId = "$($accountObj.tenant)"
-			}
-		}
-		catch {
-			Write-PSFMessage -Level Verbose -Message "Unable to read the current Azure CLI account. Continuing without a context stamp."
-		}
-	}
-	else {
+	if (("$provider" -ne 'AzAccount') `
+			-and ("$provider" -ne 'AzCli')) {
 		$messageString = "Unknown auth provider '<c='em'>$provider</c>'. Expected 'AzAccount' or 'AzCli' in configuration 'd365bap.tools.auth.provider'."
-		Write-PSFMessage -Level Critical -Message $messageString
+		Write-PSFMessage -Level Critical `
+			-Message $messageString
+
 		throw $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 	}
+
+	$hashStamp = Get-BapAccessTokenContextStamp -Provider "$provider"
+	$currentAccountId = "$($hashStamp.AccountId)"
+	$currentTenantId = "$($hashStamp.TenantId)"
 	#endregion Resolve current context stamp
 
 	if (-not [string]::IsNullOrWhiteSpace($TenantId)) {
@@ -186,12 +217,17 @@ function Get-BapAccessToken {
 		$effectiveTenantId = $currentTenantId
 	}
 
-	$cacheKey = Get-BapAccessTokenCacheKey -Resource $resource -TenantId $effectiveTenantId -AccountId $currentAccountId
+	$cacheKey = Get-BapAccessTokenCacheKey -Resource $resource `
+		-TenantId $effectiveTenantId `
+		-AccountId $currentAccountId
 
 	#region Serve from cache
 	$cached = $script:BapTokenCache[$cacheKey]
-	if ($null -ne $cached -and $null -ne $cached.Token -and $null -ne $cached.ExpiresOn) {
-		if ("$($cached.AccountId)" -eq "$currentAccountId" -and "$($cached.TenantId)" -eq "$effectiveTenantId") {
+	if ((-not ($null -eq $cached)) `
+			-and (-not ($null -eq $cached.Token)) `
+			-and (-not ($null -eq $cached.ExpiresOn))) {
+		if (("$($cached.AccountId)" -eq "$currentAccountId") `
+				-and ("$($cached.TenantId)" -eq "$effectiveTenantId")) {
 			$remainingMinutes = -1
 			try {
 				$remainingMinutes = (([datetime]$cached.ExpiresOn).ToUniversalTime() - [datetime]::UtcNow).TotalMinutes
@@ -201,14 +237,19 @@ function Get-BapAccessToken {
 			}
 
 			if ($remainingMinutes -gt 15) {
-				Write-PSFMessage -Level Verbose -Message "Returning cached access token for resource <c='em'>$resource</c>."
-				return $cached.Token
+				Write-PSFMessage -Level Verbose `
+					-Message "Returning cached access token for resource <c='em'>$resource</c>."
+
+				$cached.Token
+				return
 			}
 
-			Write-PSFMessage -Level Verbose -Message "Cached access token for resource <c='em'>$resource</c> expires soon. Minting a new token."
+			Write-PSFMessage -Level Verbose `
+				-Message "Cached access token for resource <c='em'>$resource</c> expires soon. Minting a new token."
 		}
 		else {
-			Write-PSFMessage -Level Verbose -Message "Azure context changed since the token was cached. Minting a new token for resource <c='em'>$resource</c>."
+			Write-PSFMessage -Level Verbose `
+				-Message "Azure context changed since the token was cached. Minting a new token for resource <c='em'>$resource</c>."
 		}
 	}
 	#endregion Serve from cache
@@ -219,17 +260,19 @@ function Get-BapAccessToken {
 
 	if ("$provider" -eq 'AzAccount') {
 		try {
-			$tokenParams = @{
+			$hashTokenParams = @{
 				ResourceUrl    = $resource
 				AsSecureString = $true
 				ErrorAction    = 'Stop'
 			}
-			if (-not [string]::IsNullOrWhiteSpace($TenantId) -and "$TenantId" -ne "$currentTenantId") {
-				$tokenParams['TenantId'] = $TenantId
+			if ((-not [string]::IsNullOrWhiteSpace($TenantId)) `
+					-and ("$TenantId" -ne "$currentTenantId")) {
+				$hashTokenParams['TenantId'] = $TenantId
 			}
 
-			$azToken = Get-AzAccessToken @tokenParams
-			if ($null -eq $azToken -or $null -eq $azToken.Token) {
+			$azToken = Get-AzAccessToken @hashTokenParams
+			if (($null -eq $azToken) `
+					-or ($null -eq $azToken.Token)) {
 				throw "Get-AzAccessToken returned an empty result for resource '$resource'."
 			}
 
@@ -247,25 +290,29 @@ function Get-BapAccessToken {
 		}
 		catch {
 			$messageString = "Failed to mint an access token for resource <c='em'>$resource</c> via Get-AzAccessToken. Stopping execution, a missing token must never be ignored."
-			Write-PSFMessage -Level Critical -Message $messageString -Exception $_.Exception
+			Write-PSFMessage -Level Critical `
+				-Message $messageString `
+				-Exception $_.Exception
+
 			throw
 		}
 	}
 	else {
 		try {
-			$cliArgs = @('account', 'get-access-token', '--resource', $resource)
+			$colCliArgs = @('account', 'get-access-token', '--resource', $resource)
 			if (-not [string]::IsNullOrWhiteSpace($TenantId)) {
-				$cliArgs += @('--tenant', $TenantId)
+				$colCliArgs += @('--tenant', $TenantId)
 			}
-			# Request both expiry shapes: expires_on (POSIX epoch, UTC) and expiresOn (datetime string).
-			$cliArgs += @('--query', '{accessToken:accessToken, expires_on:expires_on, expiresOn:expiresOn}', '-o', 'json')
+			$colCliArgs += @('--query', '{accessToken:accessToken, expires_on:expires_on, expiresOn:expiresOn}', '-o', 'json')
 
-			$rawJson = & az @cliArgs 2>$null
-			if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace("$rawJson")) {
+			$rawJson = & az @colCliArgs 2>$null
+			if (($LASTEXITCODE -ne 0) `
+					-or ([string]::IsNullOrWhiteSpace($rawJson))) {
 				throw "The Azure CLI command 'az account get-access-token' failed with exit code $LASTEXITCODE."
 			}
 
-			$tokenJson = "$rawJson" | ConvertFrom-Json -ErrorAction Stop
+			$tokenJson = "$rawJson" |
+			ConvertFrom-Json -ErrorAction Stop
 			$accessTokenPlain = "$($tokenJson.accessToken)"
 			if ([string]::IsNullOrWhiteSpace($accessTokenPlain)) {
 				throw "The Azure CLI returned an empty access token for resource '$resource'."
@@ -290,11 +337,16 @@ function Get-BapAccessToken {
 				}
 			}
 
-			$secureToken = ConvertTo-SecureString -String $accessTokenPlain -AsPlainText -Force
+			$secureToken = ConvertTo-SecureString -String $accessTokenPlain `
+				-AsPlainText `
+				-Force
 		}
 		catch {
 			$messageString = "Failed to mint an access token for resource <c='em'>$resource</c> via the Azure CLI. Stopping execution, a missing token must never be ignored."
-			Write-PSFMessage -Level Critical -Message $messageString -Exception $_.Exception
+			Write-PSFMessage -Level Critical `
+				-Message $messageString `
+				-Exception $_.Exception
+
 			throw
 		}
 	}
@@ -307,7 +359,7 @@ function Get-BapAccessToken {
 		TenantId  = "$effectiveTenantId"
 	}
 
-	return $secureToken
+	$secureToken
 }
 
 <#
@@ -329,6 +381,7 @@ function Get-BapAccessToken {
 #>
 function Clear-BapTokenCache {
 	[CmdletBinding()]
+	[OutputType([void])]
 	param ()
 
 	if ($null -eq $script:BapTokenCache) {
@@ -338,5 +391,8 @@ function Clear-BapTokenCache {
 		$script:BapTokenCache.Clear()
 	}
 
-	Write-PSFMessage -Level Verbose -Message "Cleared the BAP access token cache."
+	$script:BapContextStampCache = @{}
+
+	Write-PSFMessage -Level Verbose `
+		-Message "Cleared the BAP access token cache."
 }
