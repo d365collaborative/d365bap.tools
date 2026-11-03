@@ -8,6 +8,9 @@
     .PARAMETER Group
         The ObjectId of the Security Group in Azure AD / Entra ID.
 
+    .PARAMETER AsExcelOutput
+        Exports the member list to an Excel file.
+
     .EXAMPLE
         PS C:\> Get-GraphGroupMember -Group "12345678-90ab-cdef-1234-567890abcdef"
 
@@ -26,11 +29,13 @@
 #>
 function Get-GraphGroupMember {
 	[CmdletBinding()]
-	[OutputType([PSCustomObject])]
+	[OutputType([PSCustomObject[]])]
 	param (
 		[Parameter (Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[string] $Group
+		[string] $Group,
+
+		[switch] $AsExcelOutput
 	)
 
 	end {
@@ -88,9 +93,17 @@ function Get-GraphGroupMember {
 				-StepsUpward 1
 		}
 
-		$colMembers |
+		$colUserMembers = $colMembers |
 		Where-Object {
 			$_.'@odata.type' -eq "#microsoft.graph.user"
 		}
+
+		if ($AsExcelOutput) {
+			$colUserMembers |
+			Export-Excel -WorksheetName "Get-GraphGroupMember"
+			return
+		}
+
+		$colUserMembers
 	}
 }

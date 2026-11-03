@@ -64,9 +64,6 @@ function Get-BapTenant {
 	[OutputType('D365Bap.Tools.TenantCredential[]')]
 	param (
 		[SupportsWildcards()]
-		[Alias("Login")]
-		[Alias("User")]
-		[Alias("Username")]
 		[string] $Upn = "*",
 
 		[SupportsWildcards()]

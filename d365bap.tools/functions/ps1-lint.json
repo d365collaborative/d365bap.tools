@@ -1,9 +1,6 @@
 {
   "allowedCommandAliases": [],
   "allowedParameterAliases": [
-    "PpacEnvId",
-    "Login",
-    "User",
-    "Username"
+    "PpacEnvId"
   ]
 }
