@@ -8,6 +8,9 @@ $planScript = Join-Path $PSScriptRoot 'Get-CiLintPlan.ps1'
 $analyzerScript = Join-Path $PSScriptRoot 'ps1-lint/psscriptanalyzer/Run.ps1'
 $pwsh = (Get-Process -Id $PID).Path
 $gitExe = (Get-Command git -CommandType Application | Select-Object -First 1).Source
+# Keep the local analysis cache out of the checkout while these fixtures run.
+$previousCache = $env:PS1_LINT_CACHE
+$env:PS1_LINT_CACHE = Join-Path $root 'analysis-cache'
 
 function Assert-True([bool] $Condition, [string] $Message) {
 	if (-not $Condition) { throw $Message }
@@ -234,6 +237,7 @@ function Set-Changed {
 	Write-Host 'CI lint plan regression checks passed.'
 }
 finally {
+	$env:PS1_LINT_CACHE = $previousCache
 	if (Test-Path -LiteralPath $root) {
 		$resolved = (Resolve-Path -LiteralPath $root).Path
 		$tempParent = (Resolve-Path -LiteralPath ([IO.Path]::GetTempPath())).Path.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar

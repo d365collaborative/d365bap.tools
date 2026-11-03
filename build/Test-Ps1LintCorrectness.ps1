@@ -8,6 +8,9 @@ $hook = Join-Path $PSScriptRoot 'ps1-lint/psscriptanalyzer/Run.ps1'
 $formatHook = Join-Path $PSScriptRoot 'ps1-lint/ps1-format/Run.ps1'
 $readme = Join-Path $PSScriptRoot 'ps1-lint/README.md'
 $pwsh = (Get-Process -Id $PID).Path
+# Keep the local analysis cache out of the checkout while these fixtures run.
+$previousCache = $env:PS1_LINT_CACHE
+$env:PS1_LINT_CACHE = Join-Path $root 'analysis-cache'
 
 function Assert-True([bool] $Condition, [string] $Message) {
 	if (-not $Condition) { throw $Message }
@@ -376,5 +379,6 @@ function Get-IndexTarget {
 	Write-Host 'Lint correctness regression checks passed.'
 }
 finally {
+	$env:PS1_LINT_CACHE = $previousCache
 	if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
 }
