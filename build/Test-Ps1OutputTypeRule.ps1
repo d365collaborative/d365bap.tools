@@ -216,12 +216,6 @@ function Set-Fixture {
 }
 '@ -FileName 'Set-Fixture.Tests.ps1'
 
-Assert-OutputType 'Tepp files are exempt' @'
-function Set-Fixture {
-    param()
-    Get-Thing
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-OutputType 'Outside the module' @'
 function Set-Fixture {

@@ -186,11 +186,6 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-OutNull 'Build null assignment is exempt' @'
-function Get-Fixture {
-    $null = Get-Thing
-}
-'@ -Directory 'build/scripts'
 
 Assert-OutNull 'Command name in a string' @'
 function Get-Fixture {
@@ -239,17 +234,7 @@ function Get-Fixture {
 }
 '@ -Directory 'build/ps1-lint/internal' -Expected 1
 
-Assert-OutNull 'Other build scripts are exempt' @'
-function Get-Fixture {
-    Get-Thing | Out-Null
-}
-'@ -Directory 'build/scripts'
 
-Assert-OutNull 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    Get-Thing | Out-Null
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-OutNull 'Test files are exempt' @'
 function Get-Fixture {

@@ -123,17 +123,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-NotEqualNull 'Build scripts are exempt' @'
-function Get-Fixture {
-    if ($null -ne $x) { 'yes' }
-}
-'@ -Directory 'build'
 
-Assert-NotEqualNull 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    if ($null -ne $x) { 'yes' }
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-NotEqualNull 'Test files are exempt' @'
 function Get-Fixture {

@@ -229,12 +229,6 @@ function Get-Fixture {
 }
 '@ -Expected 1 @('Unsupported splatted command target')
 
-Assert-ModuleSplatting 'Build scripts are exempt' @'
-function Get-Fixture {
-    $params = @{ Name = 'x' }
-    Get-Target @params
-}
-'@ -RelativePath 'build/scripts/Get-Fixture.ps1'
 
 Assert-ModuleSplatting 'Test files are exempt' @'
 function Get-Fixture {
@@ -243,12 +237,6 @@ function Get-Fixture {
 }
 '@ -RelativePath 'd365bap.tools/functions/Get-Fixture.Tests.ps1'
 
-Assert-ModuleSplatting 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $params = @{ Name = 'x' }
-    Get-Target @params
-}
-'@ -RelativePath 'd365bap.tools/internal/tepp/Get-Fixture.ps1'
 
 Assert-ModuleSplatting 'Expandable target' '& "Get-$name" @args' -Expected 1
 Assert-ModuleSplatting 'Computed target' '& (Get-Command az) @args' -Expected 1

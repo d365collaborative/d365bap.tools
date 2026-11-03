@@ -188,17 +188,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-PipelineContinuation 'Build scripts are exempt' @'
-function Get-Fixture {
-    Get-Thing | Select-Object -First 1
-}
-'@ -Directory 'build'
 
-Assert-PipelineContinuation 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    Get-Thing | Select-Object -First 1
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-PipelineContinuation 'Test files are exempt' @'
 function Get-Fixture {

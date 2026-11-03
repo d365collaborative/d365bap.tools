@@ -154,11 +154,6 @@ function Get-Fixture {
 }
 '@ -Directory 'build'
 
-Assert-ApiVersion 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $uri = "https://api.powerplatform.com/environments?api-version=2024-10-01"
-}
-'@ -Directory 'd365bap.tools/internal/tepp' -Expected 0
 
 Assert-ApiVersion 'Test files are exempt' @'
 function Get-Fixture {

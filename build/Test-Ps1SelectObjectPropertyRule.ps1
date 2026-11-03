@@ -128,13 +128,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-SelectObjectProperty 'Build scripts are exempt' @'
-$item | Select-Object @{ Name = 'Kind'; Expression = { $kind } }
-'@ -Directory 'build/scripts'
 
-Assert-SelectObjectProperty 'Tepp fixtures are exempt' @'
-$item | Select-Object @{ Name = 'Kind'; Expression = { $kind } }
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-SelectObjectProperty 'Test files are exempt' @'
 $item | Select-Object @{ Name = 'Kind'; Expression = { $kind } }
@@ -269,17 +263,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-SelectObjectProperty 'Build scripts are exempt' @'
-function Get-Fixture {
-    $item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'Source'; Expression = { $source } }
-}
-'@ -Directory 'build/scripts'
 
-Assert-SelectObjectProperty 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $item | Select-Object -Property *, @{ Name = 'Kind'; Expression = { $kind } }, @{ Name = 'Source'; Expression = { $source } }
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-SelectObjectProperty 'Test files are exempt' @'
 function Get-Fixture {

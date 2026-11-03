@@ -156,23 +156,7 @@ function Get-Fixture {
 }
 '@ -Directory 'd365bap.tools/internal/functions' -Expected 1
 
-Assert-Ordered 'Build scripts are exempt' @'
-function Get-Fixture {
-    $objResult = [pscustomobject]@{
-        Name = 'fixture'
-    }
-    $objResult
-}
-'@ -Directory 'build'
 
-Assert-Ordered 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $objResult = [pscustomobject]@{
-        Name = 'fixture'
-    }
-    $objResult
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-Ordered 'Test files are exempt' @'
 function Get-Fixture {

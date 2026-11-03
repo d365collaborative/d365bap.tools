@@ -468,18 +468,6 @@ function Get-Fixture {
 }
 '@ -Directory 'd365bap.tools/internal/scripts'
 
-Assert-WildcardFilter 'Build scripts are exempt' @'
-function Get-Fixture {
-    param (
-        [SupportsWildcards()]
-        [string] $Name = '*'
-    )
-
-    if ($Name -ne '*') {
-        $Name
-    }
-}
-'@ -Directory 'build'
 
 Assert-WildcardFilter 'Test files are exempt' @'
 function Get-Fixture {

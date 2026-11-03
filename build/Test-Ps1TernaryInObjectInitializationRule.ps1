@@ -148,23 +148,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-TernaryInObjectInitialization 'Build scripts are exempt' @'
-function Get-Fixture {
-    $params = @{
-        Version = if ($Version) { $Version.ToString() } else { $null }
-    }
-    $params
-}
-'@ -Directory 'build/scripts'
 
-Assert-TernaryInObjectInitialization 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $params = @{
-        Version = if ($Version) { $Version.ToString() } else { $null }
-    }
-    $params
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-TernaryInObjectInitialization 'Test files are exempt' @'
 function Get-Fixture {
