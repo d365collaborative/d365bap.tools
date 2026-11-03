@@ -129,11 +129,13 @@ function Get-ValidationSuiteChangedPath {
 	}
 
 	$colPath = [System.Collections.Generic.List[string]]::new()
-	$raw = & git -C $Repository diff --name-only -z --find-renames $diffFrom $Head --
+	# PowerShell captures git stdout as text. Avoid -z here: a NUL-separated
+	# blob is not a Byte[] after & git, and GetString then fails.
+	$colDiff = @(& git -C $Repository -c core.quotepath=false diff --name-only --find-renames $diffFrom $Head --)
 	if ($LASTEXITCODE -ne 0) {
 		throw 'Git diff failed while building the validation suite plan.'
 	}
-	foreach ($itemPath in [Text.Encoding]::UTF8.GetString($raw).Split([char]0)) {
+	foreach ($itemPath in $colDiff) {
 		if ([string]::IsNullOrWhiteSpace($itemPath)) { continue }
 		$colPath.Add(($itemPath -replace '\\', '/'))
 	}
