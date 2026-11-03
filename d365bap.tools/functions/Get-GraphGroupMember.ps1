@@ -1,79 +1,109 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
         Get members of a Security Group from Azure AD / Entra ID.
-        
+
     .DESCRIPTION
-        Retrieves members of a Security Group from Azure AD / Entra ID based on the supplied GroupId.
-        
+        Retrieves the members from Azure AD / Entra ID. An object ID is matched exactly; a display name is matched as a prefix and the first result is used.
+
     .PARAMETER Group
         The ObjectId of the Security Group in Azure AD / Entra ID.
-        
+
+    .PARAMETER AsExcelOutput
+        Exports the member list to an Excel file.
+
     .EXAMPLE
         PS C:\> Get-GraphGroupMember -Group "12345678-90ab-cdef-1234-567890abcdef"
-        
-        This command retrieves the members of the Security Group with the specified ObjectId.
-        
+
+        Retrieves the members of a security group by object ID.
+        It uses -Group with the object ID of the security group.
+
     .EXAMPLE
         PS C:\> Get-GraphGroupMember -Group "FO-PPE-ENV-ADMINS"
-        
-        This command retrieves the members of the Security Group with the specified display name starting with "FO-PPE-ENV-ADMINS".
-        If multiple groups match, it will take the first one returned by Graph API.
-        
+
+        Retrieves the members of a security group by display name.
+        It uses -Group with the display name of the security group.
+        It will take the first match returned by the Graph API.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-GraphGroupMember {
-    [CmdletBinding()]
-    param (
-        [Parameter (Mandatory = $true)]
-        [string] $Group
-    )
-    
-    end {
-        $secureTokenGraph = Get-BapAccessToken -ResourceUrl "https://graph.microsoft.com/"
-        $tokenGraphValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureTokenGraph
+	[CmdletBinding()]
+	[OutputType([PSCustomObject[]])]
+	param (
+		[Parameter (Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Group,
 
-        $headersGraphApi = @{
-            "Authorization" = "Bearer $($tokenGraphValue)"
-            "Content-Type"  = "application/json"
-        }
+		[switch] $AsExcelOutput
+	)
 
-        if (Test-Guid -InputObject $Group) {
-            $uriGraph = "https://graph.microsoft.com/v1.0/groups?`$filter=id eq '$Group'"
-        }
-        else {
-            $uriGraph = "https://graph.microsoft.com/v1.0/groups?`$filter=startswith(displayName, '$Group')"
-        }
-        
-        $groupObj = Invoke-RestMethod -Method Get `
-            -Uri $uriGraph `
-            -Headers $headersGraphApi 4> $null | `
-            Select-Object -ExpandProperty Value | `
-            Select-Object -First 1
+	end {
+		$objTokenGraph = Get-BapAccessToken -Graph
+		$tokenGraphValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objTokenGraph
 
-        if ($null -eq $groupObj) {
-            $messageString = "The supplied Group: <c='em'>$Group</c> didn't return any matching Security Group in Azure AD / Entra ID. Please verify that the ObjectId is correct - try running the <c='em'>Get-AzADGroup</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because Security Group was NOT found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
-            return
-        }
-        
-        $uriGraph = "https://graph.microsoft.com/v1.0/groups/$($groupObj.id)/transitiveMembers`?`$select=id,displayName,mail,userPrincipalName"
+		$hashHeadersGraphApi = @{
+			"Authorization" = "Bearer $($tokenGraphValue)"
+			"Content-Type"  = "application/json"
+		}
 
-        $colMembers = Invoke-RestMethod -Method Get `
-            -Uri $uriGraph `
-            -Headers $headersGraphApi 4> $null | `
-            Select-Object -ExpandProperty Value
+		if (Test-Guid -InputObject $Group) {
+			$uriGraph = 'https://graph.microsoft.com/v1.0/groups?$filter=id eq ''{0}''' `
+				-f $Group
+		}
+		else {
+			$uriGraph = 'https://graph.microsoft.com/v1.0/groups?$filter=startswith(displayName, ''{0}'')' `
+				-f $Group
+		}
 
-        if ($colMembers.Count -eq 0) {
-            $messageString = "The Security Group: <c='em'>$($groupObj.id) | $($groupObj.displayName)</c> doesn't contain any members. Please verify that the Security Group has members."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because the Security Group has no members." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) -StepsUpward 1
-        }
+		$objGroup = Invoke-RestMethod -Method Get `
+			-Uri $uriGraph `
+			-Headers $hashHeadersGraphApi 4> $null |
+		Select-Object -ExpandProperty Value |
+		Select-Object -First 1
 
-        $colMembers | Where-Object {
-            $_.'@odata.type' -eq "#microsoft.graph.user"
-        }
-    }
+		if ($null -eq $objGroup) {
+			$messageString = "The supplied Group: <c='em'>$Group</c> didn't return any matching Security Group in Azure AD / Entra ID. Please verify that the ObjectId is correct - try running the <c='em'>Get-AzADGroup</c> cmdlet."
+			Write-PSFMessage -Level Important `
+				-Message $messageString
+
+			Stop-PSFFunction -Message "Stopping because Security Group was NOT found." `
+				-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) `
+				-StepsUpward 1
+
+			return
+		}
+
+		$uriGraph = 'https://graph.microsoft.com/v1.0/groups/{0}/transitiveMembers?$select=id,displayName,mail,userPrincipalName' `
+			-f $objGroup.id
+
+		$colMembers = Invoke-RestMethod -Method Get `
+			-Uri $uriGraph `
+			-Headers $hashHeadersGraphApi 4> $null |
+		Select-Object -ExpandProperty Value
+
+		if ($colMembers.Count -eq 0) {
+			$messageString = "The Security Group: <c='em'>$($objGroup.id) | $($objGroup.displayName)</c> doesn't contain any members. Please verify that the Security Group has members."
+			Write-PSFMessage -Level Important `
+				-Message $messageString
+
+			Stop-PSFFunction -Message "Stopping because the Security Group has no members." `
+				-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', ''))) `
+				-StepsUpward 1
+		}
+
+		$colUserMembers = $colMembers |
+		Where-Object {
+			$_.'@odata.type' -eq "#microsoft.graph.user"
+		}
+
+		if ($AsExcelOutput) {
+			$colUserMembers |
+			Export-Excel -WorksheetName "Get-GraphGroupMember"
+			return
+		}
+
+		$colUserMembers
+	}
 }

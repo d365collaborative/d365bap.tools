@@ -11,43 +11,28 @@
                     <ListEntry>
                         <ListItems>
                             <ListItem>
-                                <PropertyName>EnvId</PropertyName>
+                                <PropertyName>Id</PropertyName>
                             </ListItem>
                             <ListItem>
-                                <PropertyName>EnvName</PropertyName>
+                                <PropertyName>Name</PropertyName>
                             </ListItem>
                             <ListItem>
-                                <PropertyName>FinOpsEnvUri</PropertyName>
+                                <PropertyName>FinOpsUri</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>DeployType</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>EnvType</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacProvApp</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacProvPlatform</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacProvState</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacProvType</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>PpacEnvUri</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>AppVersion</PropertyName>
-                            </ListItem>
-                            <ListItem>
-                                <PropertyName>AppBuild</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>Track</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>Build</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>AppVersion</PropertyName>
                             </ListItem>
                             <ListItem>
                                 <PropertyName>PlatVersion</PropertyName>
@@ -57,6 +42,12 @@
                             </ListItem>
                             <ListItem>
                                 <PropertyName>PlatformVersion</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PpacProvType</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <PropertyName>PpeUri</PropertyName>
                             </ListItem>
                         </ListItems>
                     </ListEntry>

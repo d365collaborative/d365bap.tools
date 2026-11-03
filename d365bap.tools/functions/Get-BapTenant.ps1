@@ -1,285 +1,344 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
-        Retrieves information about the available azure tenant.
-        
+        Retrieves the available Azure tenants.
+
     .DESCRIPTION
-        This function retrieves information about the available azure tenants based on cached credentials in the local Azure context (Az PowerShell context or Azure CLI, depending on the auth provider set with Set-BapToolsAuthProvider).
-        
+        Reads the tenant and account pairs from the local Azure context cache. The auth provider set with Set-BapToolsAuthProvider selects Azure CLI or Az.Accounts data, and cached profile files are used when the provider call fails.
+
     .PARAMETER Upn
-        Specifies the User Principal Name (UPN) of the user account to filter the results.
-        
-        Supports wildcard patterns.
-        
-        Defaults to "*" which means all UPNs.
-        
+        Specifies the User Principal Name (UPN) to match. Supports wildcards.
+
+        Default: * (all UPNs)
+
     .PARAMETER TenantId
-        Specifies the Tenant ID to filter the results.
-        
-        Supports wildcard patterns.
-        
-        Defaults to "*" which means all Tenant IDs.
-        
+        Specifies the tenant ID to match. Supports wildcards.
+
+        Default: * (all tenants)
+
     .PARAMETER AsExcelOutput
-        Instructs the function to export the results to an Excel file.
-        
+        Exports the results to an Excel file instead of the console.
+
     .PARAMETER AsHashTable
-        Instructs the function to export the results to a hashtable.
-        
+        Returns the results as a hashtable instead of objects.
+
     .EXAMPLE
         PS C:\> Get-BapTenant
-        
-        This will retrieve all available tenants based on cached Azure PowerShell credentials.
-        
+
+        Lists the cached Azure tenants.
+        It uses the default -Upn * for all accounts.
+        It uses the default -TenantId * for all tenants.
+
     .EXAMPLE
         PS C:\> Get-BapTenant -Upn "alex@contoso.com"
-        
-        This will retrieve the tenant information for the specified UPN.
-        It will only return results where the UPN matches "alex@contoso.com".
-        
+
+        Filters the cached tenants for one account.
+        It filters on -Upn alex@contoso.com.
+        It uses the default -TenantId * for all tenants.
+
     .EXAMPLE
         PS C:\> Get-BapTenant -TenantId "12345678-90ab-cdef-1234-567890abcdef"
-        
-        This will retrieve the tenant information for the specified Tenant ID.
-        It will only return results where the Tenant ID matches "12345678-90ab-cdef-1234-567890abcdef".
-        
+
+        Filters the cached tenants for one tenant ID.
+        It filters on -TenantId 12345678-90ab-cdef-1234-567890abcdef.
+        It uses the default -Upn * for all accounts.
+
     .EXAMPLE
         PS C:\> Get-BapTenant -AsExcelOutput
-        
-        This will export the retrieved tenant information to an Excel file.
-        
+
+        Exports the cached tenants to an Excel file.
+        It uses -AsExcelOutput to write the Get-BapTenant worksheet.
+        It uses the default -Upn * for all accounts.
+
     .EXAMPLE
         PS C:\> Get-BapTenant -AsHashTable
-        
-        This will export the retrieved tenant information to a hashtable.
-        
+
+        Returns the cached tenants as a hashtable.
+        It uses -AsHashTable to convert the results to a hashtable.
+        It uses the default -TenantId * for all tenants.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
-        
 #>
 function Get-BapTenant {
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
-    [OutputType('System.Object[]')]
-    param (
-        [Parameter()]
-        [Alias("Login")]
-        [Alias("User")]
-        [Alias("Username")]
-        [string] $Upn = "*",
-        
-        [Parameter()]
-        [string] $TenantId = "*",
+	[CmdletBinding(DefaultParameterSetName = 'Default')]
+	[OutputType('D365Bap.Tools.TenantCredential[]')]
+	param (
+		[SupportsWildcards()]
+		[string] $Upn = "*",
 
-        [Parameter(ParameterSetName = 'Excel')]
-        [switch] $AsExcelOutput,
+		[SupportsWildcards()]
+		[string] $TenantId = "*",
 
-        [Parameter(ParameterSetName = 'HashTable')]
-        [switch] $AsHashTable
-    )
+		[Parameter(ParameterSetName = 'Excel')]
+		[switch] $AsExcelOutput,
 
-    begin {
-        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
-        try {
-            if ($authProvider -eq 'AzCli') {
-                $tenantDomains = @()
-                try {
-                    $rawNames = az account tenant list --query '[].[tenantId, displayName]' -o tsv 2>$null
-                    if ($LASTEXITCODE -eq 0 -and $rawNames) {
-                        $tenantDomains = @($rawNames | ForEach-Object {
-                                $parts = "$_".Split("`t")
-                                if ($parts.Count -ge 2 -and -not [string]::IsNullOrWhiteSpace($parts[0])) {
-                                    [PSCustomObject]@{ id = $parts[0].Trim(); name = $parts[1].Trim() }
-                                }
-                            } | Where-Object { $null -ne $_ })
-                    }
-                }
-                catch {
-                    Write-PSFMessage -Level Verbose -Message "az account tenant list failed with: $($_.Exception.Message). Tenant names will be empty."
-                }
-            }
-            else {
-                $tenantDomains = @(Get-AzTenant -ErrorAction Stop)
-            }
-        }
-        catch {
-            Write-PSFMessage -Level Verbose -Message "Get-AzTenant failed with: $($_.Exception.Message). Tenant names will be empty."
-            $tenantDomains = @()
-        }
-    }
-    
-    process {
-        $azContexts = $null
-        if ($authProvider -eq 'AzCli') {
-            $azContexts = @()
-            try {
-                $azRaw = az account list --query '[].{account:user.name, tenant:tenantId}' -o json 2>$null
-                if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$azRaw")) {
-                    foreach ($entry in ("$azRaw" | ConvertFrom-Json -ErrorAction Stop)) {
-                        if ($null -eq $entry -or [string]::IsNullOrWhiteSpace("$($entry.tenant)")) { continue }
-                        if ([string]::IsNullOrWhiteSpace("$($entry.account)")) { continue }
+		[Parameter(ParameterSetName = 'HashTable')]
+		[switch] $AsHashTable
+	)
 
-                        $azContexts += [PSCustomObject]@{
-                            Account = [PSCustomObject]@{ Id = "$($entry.account)" }
-                            Tenant  = [PSCustomObject]@{ Id = "$($entry.tenant)" }
-                        }
-                    }
-                }
-            }
-            catch {
-                Write-PSFMessage -Level Verbose -Message "az account list failed with: $($_.Exception.Message). Falling back to cached Azure CLI profile."
-            }
+	begin {
+		$authProvider = Get-PSFConfigValue `
+			-FullName 'd365bap.tools.auth.provider' `
+			-Fallback 'AzAccount'
 
-            if ($azContexts.Count -eq 0) {
-                # Fallback to the Azure CLI profile cache, which holds the same
-                # Account/Tenant pairs Get-BapTenant needs.
-                $profileFiles = @()
-                if (-not [string]::IsNullOrWhiteSpace($env:AZURE_CONFIG_DIR)) {
-                    $profileFiles += Join-Path $env:AZURE_CONFIG_DIR "azureProfile.json"
-                }
-                if ($HOME) {
-                    $profileFiles += Join-Path (Join-Path $HOME ".azure") "azureProfile.json"
-                }
-                if ($env:USERPROFILE) {
-                    $profileFiles += Join-Path (Join-Path $env:USERPROFILE ".azure") "azureProfile.json"
-                }
-                $profileFile = $profileFiles | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path $_) } | Select-Object -First 1
+		try {
+			if ($authProvider -eq 'AzCli') {
+				$colTenantDomains = @()
+				try {
+					$rawNames = az account tenant list --query '[].[tenantId, displayName]' -o tsv 2>$null
+					if (($LASTEXITCODE -eq 0) `
+							-and ($rawNames)) {
+						$colTenantDomains = @($rawNames |
+							ForEach-Object {
+								$parts = "$_".Split("`t")
+								if (($parts.Count -ge 2) `
+										-and (-not [string]::IsNullOrWhiteSpace($parts[0]))) {
+									[pscustomobject][ordered]@{
+										id   = $parts[0].Trim()
+										name = $parts[1].Trim()
+									}
+								}
+							} | Where-Object { -Not ($null -eq $_) })
+					}
+				}
+				catch {
+					Write-PSFMessage `
+						-Level Verbose `
+						-Message "az account tenant list failed with: $($_.Exception.Message). Tenant names will be empty."
+				}
+			}
+			else {
+				$colTenantDomains = @(Get-AzTenant -ErrorAction Stop)
+			}
+		}
+		catch {
+			Write-PSFMessage `
+				-Level Verbose `
+				-Message "Get-AzTenant failed with: $($_.Exception.Message). Tenant names will be empty."
 
-                if ($profileFile) {
-                    try {
-                        $cachedProfile = Get-Content -Raw -Path $profileFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-                        foreach ($sub in @($cachedProfile.subscriptions)) {
-                            if ($null -eq $sub -or [string]::IsNullOrWhiteSpace("$($sub.tenantId)")) { continue }
-                            if ($null -eq $sub.user -or [string]::IsNullOrWhiteSpace("$($sub.user.name)")) { continue }
+			$colTenantDomains = @()
+		}
+	}
 
-                            $azContexts += [PSCustomObject]@{
-                                Account = [PSCustomObject]@{ Id = "$($sub.user.name)" }
-                                Tenant  = [PSCustomObject]@{ Id = "$($sub.tenantId)" }
-                            }
-                        }
-                    }
-                    catch {
-                        Write-PSFMessage -Level Verbose -Message "Failed to read cached Azure CLI profile from '$profileFile': $($_.Exception.Message)"
-                    }
-                }
-            }
+	process {
+		$colAzContexts = $null
+		if ($authProvider -eq 'AzCli') {
+			$colAzContexts = @()
+			try {
+				$azRaw = az account list --query '[].{account:user.name, tenant:tenantId}' -o json 2>$null
+				if (($LASTEXITCODE -eq 0) `
+						-and (-not [string]::IsNullOrWhiteSpace($azRaw))) {
+					foreach ($itemEntry in ("$azRaw" |
+							ConvertFrom-Json -ErrorAction Stop)) {
+						if (($null -eq $itemEntry) `
+								-or ([string]::IsNullOrWhiteSpace($itemEntry.tenant))) { continue }
 
-            if ($azContexts.Count -eq 0) {
-                # Last resort: at least return the current account so the
-                # cmdlet still works when the profile cache is missing. This
-                # also covers tenant-only logins (az login
-                # --allow-no-subscriptions), which az account list omits.
-                try {
-                    $azShow = az account show --query '{user:user.name, tenant:tenantId}' -o json 2>$null
-                    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$azShow")) {
-                        $current = "$azShow" | ConvertFrom-Json -ErrorAction Stop
-                        if ($null -ne $current -and -not [string]::IsNullOrWhiteSpace("$($current.tenant)")) {
-                            $azContexts = @([PSCustomObject]@{
-                                    Account = [PSCustomObject]@{ Id = "$($current.user)" }
-                                    Tenant  = [PSCustomObject]@{ Id = "$($current.tenant)" }
-                                })
-                        }
-                    }
-                }
-                catch {
-                    Write-PSFMessage -Level Verbose -Message "az account show also failed with: $($_.Exception.Message)"
-                }
-            }
-        }
-        else {
-        try {
-            $azContexts = @(Get-AzContext -ListAvailable -ErrorAction Stop)
-        }
-        catch {
-            # Az.Accounts (seen in 2.17.0) throws NullReferenceException from
-            # Get-AzContext -ListAvailable when any cached context has no
-            # subscription (e.g. a tenant-only login created via
-            # Connect-AzAccount -Tenant ... -SkipContextPopulation $true).
-            # It sorts by Subscription.Name without a null check, so one
-            # subscription-less entry breaks the whole listing. Fall back to
-            # the cached profile file, which contains the same Account/Tenant
-            # pairs Get-BapTenant needs.
-            Write-PSFMessage -Level Verbose -Message "Get-AzContext -ListAvailable failed with: $($_.Exception.Message). Falling back to cached Azure profile."
-            $azContexts = @()
+						if ([string]::IsNullOrWhiteSpace($itemEntry.account)) { continue }
 
-            $contextFiles = @()
-            if (-not [string]::IsNullOrWhiteSpace($env:AZURE_CONFIG_DIR)) {
-                $contextFiles += Join-Path $env:AZURE_CONFIG_DIR "AzureRmContext.json"
-            }
-            if ($HOME) {
-                $contextFiles += Join-Path (Join-Path $HOME ".Azure") "AzureRmContext.json"
-            }
-            if ($env:USERPROFILE) {
-                $contextFiles += Join-Path (Join-Path $env:USERPROFILE ".Azure") "AzureRmContext.json"
-            }
-            $contextFile = $contextFiles | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path $_) } | Select-Object -First 1
+						$tmpContext = [pscustomobject][ordered]@{
+							Account = [pscustomobject][ordered]@{ Id = "$($itemEntry.account)" }
+							Tenant  = [pscustomobject][ordered]@{ Id = "$($itemEntry.tenant)" }
+						}
+						$colAzContexts += $tmpContext
+					}
+				}
+			}
+			catch {
+				Write-PSFMessage `
+					-Level Verbose `
+					-Message "az account list failed with: $($_.Exception.Message). Falling back to cached Azure CLI profile."
+			}
 
-            if ($contextFile) {
-                try {
-                    $cachedProfile = Get-Content -Raw -Path $contextFile -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-                    foreach ($prop in $cachedProfile.Contexts.PSObject.Properties) {
-                        $entry = $prop.Value
-                        if ($null -eq $entry -or $null -eq $entry.Tenant -or [string]::IsNullOrWhiteSpace($entry.Tenant.Id)) { continue }
-                        if ($null -eq $entry.Account -or [string]::IsNullOrWhiteSpace($entry.Account.Id)) { continue }
+			if ($colAzContexts.Count -eq 0) {
+				$colProfileFiles = @()
+				if (-not [string]::IsNullOrWhiteSpace($env:AZURE_CONFIG_DIR)) {
+					$colProfileFiles += Join-Path $env:AZURE_CONFIG_DIR "azureProfile.json"
+				}
+				if ($HOME) {
+					$colProfileFiles += Join-Path (Join-Path $HOME ".azure") "azureProfile.json"
+				}
+				if ($env:USERPROFILE) {
+					$colProfileFiles += Join-Path (Join-Path $env:USERPROFILE ".azure") "azureProfile.json"
+				}
+				$objProfileFile = $colProfileFiles |
+				Where-Object {
+					(-not [string]::IsNullOrWhiteSpace($_)) `
+						-and (Test-Path $_)
+				} | Select-Object -First 1
 
-                        $azContexts += [PSCustomObject]@{
-                            Account = [PSCustomObject]@{ Id = $entry.Account.Id }
-                            Tenant  = [PSCustomObject]@{ Id = $entry.Tenant.Id }
-                        }
-                    }
-                }
-                catch {
-                    Write-PSFMessage -Level Verbose -Message "Failed to read cached Azure contexts from '$contextFile': $($_.Exception.Message)"
-                }
-            }
+				if ($objProfileFile) {
+					try {
+						$cachedProfile = Get-Content -Raw `
+							-Path $objProfileFile `
+							-ErrorAction Stop |
+						ConvertFrom-Json -ErrorAction Stop
 
-            if ($azContexts.Count -eq 0) {
-                # Last resort: at least return the current context so the
-                # cmdlet still works when the cache file is missing.
-                try {
-                    $current = Get-AzContext -ErrorAction Stop
-                    if ($null -ne $current -and $null -ne $current.Tenant -and $current.Tenant.Id) {
-                        $azContexts = @($current)
-                    }
-                }
-                catch {
-                    Write-PSFMessage -Level Verbose -Message "Get-AzContext (current) also failed with: $($_.Exception.Message)"
-                }
-            }
-        }
-        }
+						foreach ($itemSub in @($cachedProfile.subscriptions)) {
+							if (($null -eq $itemSub) `
+									-or ([string]::IsNullOrWhiteSpace($itemSub.tenantId))) { continue }
 
-        $cachedCreds = @(
-            ($azContexts | `
-                Where-Object { $null -ne $_.Tenant.Id  } | `
-                Group-Object { $_.Tenant.Id }, { $_.Account.Id }) | `
-                ForEach-Object { $_.Group[0] }
-        )
+							if (($null -eq $itemSub.user) `
+									-or ([string]::IsNullOrWhiteSpace($itemSub.user.name))) { continue }
 
-        $resCol = @(
-            foreach ($credObj in $cachedCreds) {
-                if (-not ($credObj.Account.Id -like $Upn)) { continue }
-                if (-not ($credObj.Tenant.Id -like $TenantId)) { continue }
+							$tmpContext = [pscustomobject][ordered]@{
+								Account = [pscustomobject][ordered]@{ Id = "$($itemSub.user.name)" }
+								Tenant  = [pscustomobject][ordered]@{ Id = "$($itemSub.tenantId)" }
+							}
+							$colAzContexts += $tmpContext
+						}
+					}
+					catch {
+						Write-PSFMessage `
+							-Level Verbose `
+							-Message "Failed to read cached Azure CLI profile from '$objProfileFile': $($_.Exception.Message)"
+					}
+				}
+			}
 
-                $credObj | Select-PSFObject -TypeName "D365Bap.Tools.TenantCredential" `
-                    -Property @{ Name = "Upn"; Expression = { $_.Account.Id } },
-                @{ Name = "TenantId"; Expression = { $_.Tenant.Id } },
-                @{ Name = "TenantName"; Expression = { $tenantDomains | Where-Object id -eq $_.Tenant.Id | Select-Object -ExpandProperty name -First 1 } }
-            }
-        )
+			if ($colAzContexts.Count -eq 0) {
+				try {
+					$azShow = az account show --query '{user:user.name, tenant:tenantId}' -o json 2>$null
+					if (($LASTEXITCODE -eq 0) `
+							-and (-not [string]::IsNullOrWhiteSpace($azShow))) {
+						$current = "$azShow" |
+						ConvertFrom-Json -ErrorAction Stop
 
-        if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-BapTenant"
-            return
-        }
-        elseif ($AsHashTable) {
-            $resCol | ConvertTo-PSFHashtable
-            return
-        }
+						if ((-Not ($null -eq $current)) `
+								-and (-not [string]::IsNullOrWhiteSpace($current.tenant))) {
+							$colAzContexts = @([pscustomobject][ordered]@{
+									Account = [pscustomobject][ordered]@{ Id = "$($current.user)" }
+									Tenant  = [pscustomobject][ordered]@{ Id = "$($current.tenant)" }
+								})
+						}
+					}
+				}
+				catch {
+					Write-PSFMessage `
+						-Level Verbose `
+						-Message "az account show also failed with: $($_.Exception.Message)"
+				}
+			}
+		}
+		else {
+			try {
+				$colAzContexts = @(Get-AzContext `
+						-ListAvailable `
+						-ErrorAction Stop)
+			}
+			catch {
+				Write-PSFMessage `
+					-Level Verbose `
+					-Message "Get-AzContext -ListAvailable failed with: $($_.Exception.Message). Falling back to cached Azure profile."
 
-        $resCol
-    }
-    
-    end {
-        
-    }
+				$colAzContexts = @()
+
+				$colContextFiles = @()
+				if (-not [string]::IsNullOrWhiteSpace($env:AZURE_CONFIG_DIR)) {
+					$colContextFiles += Join-Path $env:AZURE_CONFIG_DIR "AzureRmContext.json"
+				}
+				if ($HOME) {
+					$colContextFiles += Join-Path (Join-Path $HOME ".Azure") "AzureRmContext.json"
+				}
+				if ($env:USERPROFILE) {
+					$colContextFiles += Join-Path (Join-Path $env:USERPROFILE ".Azure") "AzureRmContext.json"
+				}
+				$objContextFile = $colContextFiles |
+				Where-Object {
+					(-not [string]::IsNullOrWhiteSpace($_)) `
+						-and (Test-Path $_)
+				} | Select-Object -First 1
+
+				if ($objContextFile) {
+					try {
+						$cachedProfile = Get-Content -Raw `
+							-Path $objContextFile `
+							-ErrorAction Stop |
+						ConvertFrom-Json -ErrorAction Stop
+
+						foreach ($itemProp in $cachedProfile.Contexts.PSObject.Properties) {
+							$entry = $itemProp.Value
+							if (($null -eq $entry) `
+									-or (($null -eq $entry.Tenant)) `
+									-or ([string]::IsNullOrWhiteSpace($entry.Tenant.Id))) { continue }
+
+							if (($null -eq $entry.Account) `
+									-or ([string]::IsNullOrWhiteSpace($entry.Account.Id))) { continue }
+
+							$tmpContext = [pscustomobject][ordered]@{
+								Account = [pscustomobject][ordered]@{ Id = $entry.Account.Id }
+								Tenant  = [pscustomobject][ordered]@{ Id = $entry.Tenant.Id }
+							}
+							$colAzContexts += $tmpContext
+						}
+					}
+					catch {
+						Write-PSFMessage `
+							-Level Verbose `
+							-Message "Failed to read cached Azure contexts from '$objContextFile': $($_.Exception.Message)"
+					}
+				}
+
+				if ($colAzContexts.Count -eq 0) {
+					try {
+						$current = Get-AzContext -ErrorAction Stop
+						if ((-Not ($null -eq $current)) `
+								-and (-Not ($null -eq $current.Tenant)) `
+								-and ($current.Tenant.Id)) {
+							$colAzContexts = @($current)
+						}
+					}
+					catch {
+						Write-PSFMessage `
+							-Level Verbose `
+							-Message "Get-AzContext (current) also failed with: $($_.Exception.Message)"
+					}
+				}
+			}
+		}
+
+		$colCachedCreds = @(
+			($colAzContexts |
+			Where-Object { -Not ($null -eq $_.Tenant.Id) } |
+			Group-Object { $_.Tenant.Id }, `
+			{ $_.Account.Id }) |
+			ForEach-Object { $_.Group[0] }
+		)
+
+		$colRes = @(
+			foreach ($itemCredObj in $colCachedCreds) {
+				if (-not ($itemCredObj.Account.Id -like $Upn)) { continue }
+				if (-not ($itemCredObj.Tenant.Id -like $TenantId)) { continue }
+
+				$itemCredObj |
+				Select-PSFObject -TypeName "D365Bap.Tools.TenantCredential" `
+					-Property @{ Name = "Upn"; Expression = { $_.Account.Id } },
+				@{ Name = "TenantId"; Expression = { $_.Tenant.Id } },
+				@{ Name = "TenantName"; Expression = {
+						$colTenantDomains |
+						Where-Object id -eq $_.Tenant.Id |
+						Select-Object `
+							-ExpandProperty name `
+							-First 1
+					}
+				}
+			}
+		)
+
+		if ($AsHashTable) {
+			$colRes |
+			ConvertTo-PSFHashtable
+			return
+		}
+
+		if ($AsExcelOutput) {
+			$colRes |
+			Export-Excel -WorksheetName "Get-BapTenant"
+			return
+		}
+
+		$colRes
+	}
+
+	end {
+	}
 }

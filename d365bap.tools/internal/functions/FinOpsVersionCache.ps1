@@ -19,7 +19,12 @@ function Get-FinOpsVersionCachePath {
 	[OutputType([string])]
 	param ()
 
-	$base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
+	$base = if ($env:APPDATA) {
+		$env:APPDATA
+	}
+	else {
+		Join-Path $HOME '.config'
+	}
 
 	Join-Path (Join-Path $base 'd365bap.tools') 'finopsversions.json'
 }
@@ -48,13 +53,16 @@ function Get-FinOpsVersionCacheStamp {
 	$accountId = ''
 
 	try {
-		$provider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+		$provider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' `
+			-Fallback 'AzAccount'
 
 		if ("$provider" -eq 'AzCli') {
 			$raw = & az account show --query '{user:user.name, tenant:tenantId}' -o json 2>$null
 
-			if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$raw")) {
-				$accountObj = "$raw" | ConvertFrom-Json -ErrorAction Stop
+			if (($LASTEXITCODE -eq 0) `
+					-and (-not [string]::IsNullOrWhiteSpace($raw))) {
+				$accountObj = $raw |
+				ConvertFrom-Json -ErrorAction Stop
 				$accountId = "$($accountObj.user)"
 				$tenantId = "$($accountObj.tenant)"
 			}
@@ -62,17 +70,18 @@ function Get-FinOpsVersionCacheStamp {
 		else {
 			$azContext = Get-AzContext -ErrorAction SilentlyContinue
 
-			if ($null -ne $azContext) {
+			if (-not ($null -eq $azContext)) {
 				$accountId = "$($azContext.Account.Id)"
 				$tenantId = "$($azContext.Tenant.Id)"
 			}
 		}
 	}
 	catch {
-		Write-PSFMessage -Level Verbose -Message "FinOps version cache stamp unavailable: $($_.Exception.Message)"
+		Write-PSFMessage -Level Verbose `
+			-Message "FinOps version cache stamp unavailable: $($_.Exception.Message)"
 	}
 
-	return @{
+	@{
 		TenantId  = "$tenantId"
 		AccountId = "$accountId"
 	}
@@ -85,6 +94,7 @@ function Get-FinOpsVersionCache {
 
         .DESCRIPTION
             Returns the cached catalog or null on a miss.
+            The parsed catalog is reused for 60 seconds while the file is unchanged.
 
         .PARAMETER MaxAgeHours
             Maximum cache age in hours.
@@ -95,52 +105,111 @@ function Get-FinOpsVersionCache {
             PS C:\> Get-FinOpsVersionCache
 
             Returns the cached catalog or null.
+            It uses a -MaxAgeHours default of 24.
 
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>
 	[CmdletBinding()]
+	[OutputType([PSCustomObject])]
 	param (
 		[int] $MaxAgeHours = 24
 	)
 
 	$path = Get-FinOpsVersionCachePath
 
-	if (-not (Test-Path -LiteralPath $path)) { return $null }
+	if ($null -eq $script:FinOpsVersionCacheMemo) {
+		$script:FinOpsVersionCacheMemo = @{}
+	}
+
+	if (-not (Test-Path -LiteralPath $path)) {
+		$script:FinOpsVersionCacheMemo = @{}
+		$null
+		return
+	}
 
 	try {
-		$state = Get-Content -LiteralPath $path -Raw -Encoding utf8 -ErrorAction Stop | `
-			ConvertFrom-Json -ErrorAction Stop
+		$fileInfo = Get-Item -LiteralPath $path `
+			-ErrorAction Stop
 	}
 	catch {
-		Write-PSFMessage -Level Verbose -Message "Ignoring unreadable FinOps version cache at $path : $($_.Exception.Message)"
-
-		return $null
+		$null
+		return
 	}
 
-	if ($null -eq $state.refreshedUtc -or $null -eq $state.versions) { return $null }
+	$hashMemo = $script:FinOpsVersionCacheMemo
+
+	if (-not ($null -eq $hashMemo.State)) {
+		$tmpMemoAge = ([datetime]::UtcNow - $hashMemo.ValidatedUtc).TotalSeconds
+
+		if (($tmpMemoAge -lt 60) `
+				-and ("$($hashMemo.Path)" -eq "$path") `
+				-and ($hashMemo.LastWriteUtc -eq $fileInfo.LastWriteTimeUtc) `
+				-and ($hashMemo.Length -eq $fileInfo.Length) `
+				-and (([datetime]::UtcNow - $hashMemo.RefreshedUtc).TotalHours -le $MaxAgeHours)) {
+			$hashMemo.State
+			return
+		}
+	}
+
+	try {
+		$state = Get-Content -LiteralPath $path `
+			-Raw `
+			-Encoding utf8 `
+			-ErrorAction Stop |
+		ConvertFrom-Json -ErrorAction Stop
+	}
+	catch {
+		Write-PSFMessage -Level Verbose `
+			-Message "Ignoring unreadable FinOps version cache at $path : $($_.Exception.Message)"
+
+		$null
+		return
+	}
+
+	if (($null -eq $state.refreshedUtc) `
+			-or ($null -eq $state.versions)) {
+		$null
+		return
+	}
 
 	try {
 		$refreshed = [datetime]$state.refreshedUtc
 		$ageHours = ([datetime]::UtcNow - $refreshed.ToUniversalTime()).TotalHours
 	}
 	catch {
-		return $null
+		$null
+		return
 	}
 
-	if ($ageHours -gt $MaxAgeHours) { return $null }
+	if ($ageHours -gt $MaxAgeHours) { $null; return }
 
-	$stamp = Get-FinOpsVersionCacheStamp
+	$hashStamp = Get-FinOpsVersionCacheStamp
 
-	if (-not [string]::IsNullOrWhiteSpace("$($state.tenantId)") -and -not [string]::IsNullOrWhiteSpace("$($stamp.TenantId)") -and "$($state.tenantId)" -ne "$($stamp.TenantId)") {
-		return $null
+	if ((-not [string]::IsNullOrWhiteSpace($state.tenantId)) `
+			-and (-not [string]::IsNullOrWhiteSpace($hashStamp.TenantId)) `
+			-and ("$($state.tenantId)" -ne "$($hashStamp.TenantId)")) {
+		$null
+		return
 	}
 
-	if (-not [string]::IsNullOrWhiteSpace("$($state.accountId)") -and -not [string]::IsNullOrWhiteSpace("$($stamp.AccountId)") -and "$($state.accountId)" -ne "$($stamp.AccountId)") {
-		return $null
+	if ((-not [string]::IsNullOrWhiteSpace($state.accountId)) `
+			-and (-not [string]::IsNullOrWhiteSpace($hashStamp.AccountId)) `
+			-and ("$($state.accountId)" -ne "$($hashStamp.AccountId)")) {
+		$null
+		return
 	}
 
-	return $state
+	$script:FinOpsVersionCacheMemo = @{
+		Path         = "$path"
+		LastWriteUtc = $fileInfo.LastWriteTimeUtc
+		Length       = $fileInfo.Length
+		ValidatedUtc = [datetime]::UtcNow
+		RefreshedUtc = $refreshed.ToUniversalTime()
+		State        = $state
+	}
+
+	$state
 }
 
 function Write-FinOpsVersionCache {
@@ -164,11 +233,13 @@ function Write-FinOpsVersionCache {
             PS C:\> Write-FinOpsVersionCache -Versions $catalog
 
             Merges fresh catalog rows into the cache.
+            It merges -Versions rows into the cache.
 
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>
 	[CmdletBinding()]
+	[OutputType([void])]
 	param (
 		[object[]] $Versions,
 
@@ -183,79 +254,108 @@ function Write-FinOpsVersionCache {
 
 		if (Test-Path -LiteralPath $path) {
 			try {
-				$current = Get-Content -LiteralPath $path -Raw -Encoding utf8 -ErrorAction Stop | `
-					ConvertFrom-Json -ErrorAction Stop
+				$current = Get-Content -LiteralPath $path `
+					-Raw `
+					-Encoding utf8 `
+					-ErrorAction Stop |
+				ConvertFrom-Json -ErrorAction Stop
 			}
 			catch {
-				Write-PSFMessage -Level Verbose -Message "Ignoring unreadable FinOps version cache at $path : $($_.Exception.Message)"
+				Write-PSFMessage -Level Verbose `
+					-Message "Ignoring unreadable FinOps version cache at $path : $($_.Exception.Message)"
+
 				$current = $null
 			}
 		}
 
-		$stamp = Get-FinOpsVersionCacheStamp
+		$hashStamp = Get-FinOpsVersionCacheStamp
 		$tenantChanged = $false
 
-		if ($null -ne $current -and -not [string]::IsNullOrWhiteSpace("$($current.tenantId)") -and -not [string]::IsNullOrWhiteSpace("$($stamp.TenantId)") -and "$($current.tenantId)" -ne "$($stamp.TenantId)") {
+		if ((-not ($null -eq $current)) `
+				-and (-not [string]::IsNullOrWhiteSpace($current.tenantId)) `
+				-and (-not [string]::IsNullOrWhiteSpace($hashStamp.TenantId)) `
+				-and ("$($current.tenantId)" -ne "$($hashStamp.TenantId)")) {
 			$tenantChanged = $true
 		}
 
-		if ($null -ne $current -and -not [string]::IsNullOrWhiteSpace("$($current.accountId)") -and -not [string]::IsNullOrWhiteSpace("$($stamp.AccountId)") -and "$($current.accountId)" -ne "$($stamp.AccountId)") {
+		if ((-not ($null -eq $current)) `
+				-and (-not [string]::IsNullOrWhiteSpace($current.accountId)) `
+				-and (-not [string]::IsNullOrWhiteSpace($hashStamp.AccountId)) `
+				-and ("$($current.accountId)" -ne "$($hashStamp.AccountId)")) {
 			$tenantChanged = $true
 		}
 
-		$mergedBuilds = @{}
+		$hashMergedBuilds = @{}
 
-		if (-not $tenantChanged -and $null -ne $current -and $null -ne $current.builds) {
-			foreach ($prop in $current.builds.PSObject.Properties) {
-				$mergedBuilds[$prop.Name] = @($prop.Value)
+		if ((-not $tenantChanged) `
+				-and (-not ($null -eq $current)) `
+				-and (-not ($null -eq $current.builds))) {
+			foreach ($itemProperty in $current.builds.PSObject.Properties) {
+				$hashMergedBuilds[$itemProperty.Name] = @($itemProperty.Value)
 			}
 		}
 
-		if ($null -ne $Builds) {
-			foreach ($key in $Builds.Keys) {
-				$mergedBuilds["$key"] = @($Builds[$key])
+		if (-not ($null -eq $Builds)) {
+			foreach ($itemKey in $Builds.Keys) {
+				$hashMergedBuilds["$itemKey"] = @($Builds[$itemKey])
 			}
 		}
 
-		$mergedPlatforms = @{}
+		$hashMergedPlatforms = @{}
 
-		if (-not $tenantChanged -and $null -ne $current -and $null -ne $current.platforms) {
-			foreach ($prop in $current.platforms.PSObject.Properties) {
-				$mergedPlatforms[$prop.Name] = "$($prop.Value)"
+		if ((-not $tenantChanged) `
+				-and (-not ($null -eq $current)) `
+				-and (-not ($null -eq $current.platforms))) {
+			foreach ($itemProperty in $current.platforms.PSObject.Properties) {
+				$hashMergedPlatforms[$itemProperty.Name] = "$($itemProperty.Value)"
 			}
 		}
 
-		if ($null -ne $Platforms) {
-			foreach ($key in $Platforms.Keys) {
-				$mergedPlatforms["$key"] = "$($Platforms[$key])"
+		if (-not ($null -eq $Platforms)) {
+			foreach ($itemKey in $Platforms.Keys) {
+				$hashMergedPlatforms["$itemKey"] = "$($Platforms[$itemKey])"
 			}
 		}
 
-		$finalVersions = @()
+		$colFinalVersions = @()
 
-		if ($null -ne $Versions) {
-			$finalVersions = @($Versions)
+		if (-not ($null -eq $Versions)) {
+			$colFinalVersions = @($Versions)
 		}
-		elseif (-not $tenantChanged -and $null -ne $current -and $null -ne $current.versions) {
-			$finalVersions = @($current.versions)
+		elseif ((-not $tenantChanged) `
+				-and (-not ($null -eq $current)) `
+				-and (-not ($null -eq $current.versions))) {
+			$colFinalVersions = @($current.versions)
 		}
 
-		if ($finalVersions.Count -eq 0) { return }
+		if ($colFinalVersions.Count -eq 0) { return }
 
-		$payload = [ordered]@{
+		$hashPayload = [ordered]@{
 			refreshedUtc = [datetime]::UtcNow.ToString('o')
-			tenantId     = "$($stamp.TenantId)"
-			accountId    = "$($stamp.AccountId)"
-			versions     = $finalVersions
-			builds       = $mergedBuilds
-			platforms    = $mergedPlatforms
+			tenantId     = "$($hashStamp.TenantId)"
+			accountId    = "$($hashStamp.AccountId)"
+			versions     = $colFinalVersions
+			builds       = $hashMergedBuilds
+			platforms    = $hashMergedPlatforms
 		}
 
-		$null = New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force -ErrorAction Stop
-		$payload | ConvertTo-Json -Depth 6 -ErrorAction Stop | Set-Content -LiteralPath $path -Encoding utf8 -ErrorAction Stop
+		New-Item -ItemType Directory `
+			-Path (Split-Path -Parent $path) `
+			-Force `
+			-ErrorAction Stop > $null
+
+		$hashPayload |
+		ConvertTo-Json -Depth 6 `
+			-ErrorAction Stop |
+		Set-Content -LiteralPath $path `
+			-Encoding utf8 `
+			-ErrorAction Stop
+
+		$script:FinOpsVersionCacheMemo = @{}
 	}
 	catch {
-		Write-PSFMessage -Level Verbose -Message "FinOps version cache update skipped: $($_.Exception.Message)"
+		Write-PSFMessage -Level Verbose `
+			-Message "FinOps version cache update skipped: $($_.Exception.Message)"
 	}
 }
 
@@ -276,17 +376,23 @@ function Clear-FinOpsVersionCache {
             Author: Mötz Jensen (@Splaxi)
     #>
 	[CmdletBinding()]
+	[OutputType([void])]
 	param ()
 
 	try {
 		$path = Get-FinOpsVersionCachePath
 
+		$script:FinOpsVersionCacheMemo = @{}
+
 		if (Test-Path -LiteralPath $path) {
-			Remove-Item -LiteralPath $path -Force -ErrorAction Stop
+			Remove-Item -LiteralPath $path `
+				-Force `
+				-ErrorAction Stop
 		}
 	}
 	catch {
-		Write-PSFMessage -Level Verbose -Message "FinOps version cache eviction skipped: $($_.Exception.Message)"
+		Write-PSFMessage -Level Verbose `
+			-Message "FinOps version cache eviction skipped: $($_.Exception.Message)"
 	}
 }
 
@@ -308,6 +414,8 @@ function Get-FinOpsTrackForAppVersion {
             PS C:\> Get-FinOpsTrackForAppVersion -Catalog $catalog -AppVersion "10.0.49"
 
             Returns "10.0.2790".
+            It matches -AppVersion against the catalog.
+            It reads -Catalog rows with appVersion and appBuild properties.
 
         .NOTES
             Author: Mötz Jensen (@Splaxi)
@@ -322,20 +430,29 @@ function Get-FinOpsTrackForAppVersion {
 
 	$normalized = "$AppVersion".Replace('-', '.').Trim()
 
-	if ([string]::IsNullOrWhiteSpace($normalized)) { return $null }
+	if ([string]::IsNullOrWhiteSpace($normalized)) { $null; return }
 
-	$byVer = @($Catalog | Where-Object { $_.appVersion -eq $normalized } | Select-Object -First 1)
+	$colByVer = @($Catalog |
+		Where-Object { $_.appVersion -eq $normalized } |
+		Select-Object -First 1)
 
-	if ($byVer.Count -gt 0) { return "$($byVer[0].appBuild)" }
+	if ($colByVer.Count -gt 0) { "$($colByVer[0].appBuild)"; return }
 
-	$parts = @($normalized -split '\.')
-	$candidate = if ($parts.Count -ge 3) { "$($parts[0]).$($parts[1]).$($parts[2])" } else { $normalized }
+	$colParts = @($normalized -split '\.')
+	$candidate = if ($colParts.Count -ge 3) {
+		"$($colParts[0]).$($colParts[1]).$($colParts[2])"
+	}
+	else {
+		$normalized
+	}
 
-	$byBuild = @($Catalog | Where-Object { $_.appBuild -eq $candidate } | Select-Object -First 1)
+	$colByBuild = @($Catalog |
+		Where-Object { $_.appBuild -eq $candidate } |
+		Select-Object -First 1)
 
-	if ($byBuild.Count -gt 0) { return "$($byBuild[0].appBuild)" }
+	if ($colByBuild.Count -gt 0) { "$($colByBuild[0].appBuild)"; return }
 
-	return $null
+	$null
 }
 
 function Resolve-FinOpsVersionFromCache {
@@ -353,6 +470,7 @@ function Resolve-FinOpsVersionFromCache {
             PS C:\> Resolve-FinOpsVersionFromCache -Build "10.0.2790.46"
 
             Returns the catalog entry of track 10.0.2790.
+            It resolves -Build to the cached catalog entry.
 
         .NOTES
             Author: Mötz Jensen (@Splaxi)
@@ -365,35 +483,55 @@ function Resolve-FinOpsVersionFromCache {
 
 	$normalized = "$Build".Replace('-', '.').Trim()
 
-	if ([string]::IsNullOrWhiteSpace($normalized)) { return $null }
+	if ([string]::IsNullOrWhiteSpace($normalized)) { $null; return }
 
-	$parts = @($normalized -split '\.')
-	$track = if ($parts.Count -ge 3) { "$($parts[0]).$($parts[1]).$($parts[2])" } else { $normalized }
+	$colParts = @($normalized -split '\.')
+	$track = if ($colParts.Count -ge 3) {
+		"$($colParts[0]).$($colParts[1]).$($colParts[2])"
+	}
+	else {
+		$normalized
+	}
 
-	$cached = Get-FinOpsVersionCache -ErrorAction SilentlyContinue
+	$objCached = Get-FinOpsVersionCache -ErrorAction SilentlyContinue
 
-	if ($null -eq $cached -or $null -eq $cached.versions) { return $null }
+	if (($null -eq $objCached) `
+			-or ($null -eq $objCached.versions)) { $null; return }
 
-	$entry = @($cached.versions | Where-Object {
-			$b = if ($null -ne $_.AppBuild) { "$($_.AppBuild)" } else { "$($_.appBuild)" }
+	$colEntry = @($objCached.versions |
+		Where-Object {
+			$b = if (-not ($null -eq $_.AppBuild)) {
+				"$($_.AppBuild)"
+			}
+			else {
+				"$($_.appBuild)"
+			}
+
 			$b -eq $track
 		} | Select-Object -First 1)
 
-	if ($entry.Count -eq 0) {
-		$entry = @($cached.versions | Where-Object {
-				$v = if ($null -ne $_.AppVersion) { "$($_.AppVersion)" } else { "$($_.appVersion)" }
+	if ($colEntry.Count -eq 0) {
+		$colEntry = @($objCached.versions |
+			Where-Object {
+				$v = if (-not ($null -eq $_.AppVersion)) {
+					"$($_.AppVersion)"
+				}
+				else {
+					"$($_.appVersion)"
+				}
+
 				$v -eq $normalized
 			} | Select-Object -First 1)
 
-		if ($entry.Count -eq 0) { return $null }
+		if ($colEntry.Count -eq 0) { $null; return }
 	}
 
-	$e = $entry[0]
+	$e = $colEntry[0]
 
-	return @{
-		AppVersion  = if ($null -ne $e.AppVersion) { "$($e.AppVersion)" } else { "$($e.appVersion)" }
-		AppBuild    = if ($null -ne $e.AppBuild) { "$($e.AppBuild)" } else { "$($e.appBuild)" }
-		PlatVersion = if ($null -ne $e.PlatVersion) { "$($e.PlatVersion)" } else { "$($e.platVersion)" }
-		PlatBuild   = if ($null -ne $e.PlatBuild) { "$($e.PlatBuild)" } else { "$($e.platBuild)" }
+	@{
+		AppVersion  = (-not ($null -eq $e.AppVersion)) ? "$($e.AppVersion)" : "$($e.appVersion)"
+		AppBuild    = (-not ($null -eq $e.AppBuild)) ? "$($e.AppBuild)" : "$($e.appBuild)"
+		PlatVersion = (-not ($null -eq $e.PlatVersion)) ? "$($e.PlatVersion)" : "$($e.platVersion)"
+		PlatBuild   = (-not ($null -eq $e.PlatBuild)) ? "$($e.PlatBuild)" : "$($e.platBuild)"
 	}
 }

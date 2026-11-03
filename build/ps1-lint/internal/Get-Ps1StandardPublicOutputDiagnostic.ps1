@@ -1,9 +1,5 @@
 ﻿. "$PSScriptRoot/Get-Ps1OutputModel.ps1"
 
-$script:Ps1PublicOutputWorksheetExemption = @{
-	'Get-UdeConnection' = 'UdeConnection'
-}
-
 function Get-Ps1OutputTableFormatType {
 	param([string] $TableDirectory)
 
@@ -31,15 +27,6 @@ function Get-Ps1OutputTableFormatType {
 	}
 	$script:Ps1TableFormatTypes = @{ Directory = $TableDirectory; Types = $hashTypes }
 	$hashTypes
-}
-
-function Get-Ps1PublicOutputWorksheetName {
-	param($Function)
-
-	if ($script:Ps1PublicOutputWorksheetExemption.ContainsKey($Function.Name)) {
-		$script:Ps1PublicOutputWorksheetExemption[$Function.Name]; return
-	}
-	$Function.Name
 }
 
 function Get-Ps1OutputExcelConditionVariable {
@@ -111,6 +98,12 @@ function Get-Ps1StandardPublicOutputDiagnostic {
 	}
 }
 
+function Test-Ps1PublicOutputArrayDeclaration {
+	param($Declaration)
+
+	@($Declaration.Types | Where-Object { $_ -match '\[\]$|^System\.Collections\.' }).Count -gt 0
+}
+
 function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 	param($Analysis, $Function, $TableTypes)
 	$Path = $Analysis.Path
@@ -135,7 +128,7 @@ function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 		}
 	}
 
-	$expectedWorksheet = Get-Ps1PublicOutputWorksheetName -Function $Function
+	$expectedWorksheet = $Function.Name
 	if ($model.IsCollection -and -not $model.HasExcelSwitch) {
 
 		New-Ps1Diagnostic $Path 'PSUseStandardPublicOutput' "Add [switch] `$AsExcelOutput to $($Function.Name) and export the result. When -AsExcelOutput is set, call Export-Excel -WorksheetName '$expectedWorksheet' with a literal worksheet name, then use a bare return." $model.Declaration.CollectionAttribute.Extent
@@ -143,9 +136,23 @@ function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 	}
 	if (-not $model.HasExcelSwitch) { return }
 
+	Get-Ps1StandardPublicOutputArrayDiagnostic -Analysis $Analysis `
+		-Function $Function `
+		-Model $model
+
 	Get-Ps1StandardPublicOutputExportDiagnostic -Analysis $Analysis `
 		-Function $Function `
 		-ExpectedWorksheet $expectedWorksheet
+}
+
+function Get-Ps1StandardPublicOutputArrayDiagnostic {
+	param($Analysis, $Function, $Model)
+	$Path = $Analysis.Path
+
+	if ($Model.Declaration.Types.Count -eq 0) { return }
+	if (Test-Ps1PublicOutputArrayDeclaration -Declaration $Model.Declaration) { return }
+
+	New-Ps1Diagnostic $Path 'PSUseStandardPublicOutput' "Function $($Function.Name) uses -AsExcelOutput but declares no array output type. Declare the element type with [] so callers see the exported collection." $Model.Declaration.Attributes[0].Extent
 }
 
 function Get-Ps1StandardPublicOutputExportDiagnostic {
