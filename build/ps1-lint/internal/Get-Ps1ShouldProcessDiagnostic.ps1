@@ -144,6 +144,23 @@ function Test-Ps1ShouldProcessAssignmentStatement {
 	$Statement.Left.VariablePath.UserPath -ieq $Name
 }
 
+function Get-Ps1ShouldProcessGuardValue {
+	param($Expression)
+	$value = $Expression
+	while ($null -ne $value) {
+		if ($value -is [Management.Automation.Language.ParenExpressionAst]) { $value = $value.Pipeline; continue }
+		if ($value -is [Management.Automation.Language.PipelineAst]) {
+			if ($value.PipelineElements.Count -ne 1 -or $value.Background) { return }
+			$value = $value.PipelineElements[0]; continue
+		}
+		if ($value -is [Management.Automation.Language.CommandExpressionAst]) {
+			if ($value.Redirections.Count -gt 0) { return }
+			$value = $value.Expression; continue
+		}
+		$value; return
+	}
+}
+
 function Get-Ps1ShouldProcessStructureMessage {
 	param($Call)
 
@@ -162,14 +179,32 @@ function Get-Ps1ShouldProcessStructureMessage {
 		'Use ShouldProcess as the condition of the if statement.'; return
 	}
 
-	$negated = $condition.Find({ param($Node) $Node -is [Management.Automation.Language.UnaryExpressionAst] -and "$($Node.TokenKind)" -eq 'Not' }, $false)
-	if ($null -eq $negated -or $Call.Extent.StartOffset -lt $negated.Extent.StartOffset -or $Call.Extent.EndOffset -gt $negated.Extent.EndOffset) {
-		'Negate ShouldProcess with -not in the if condition.'; return
+	$value = Get-Ps1ShouldProcessGuardValue $condition
+	if ($value -isnot [Management.Automation.Language.UnaryExpressionAst] -or "$($value.TokenKind)" -ne 'Not') {
+		'Negate ShouldProcess with -not as the entire if condition.'; return
+	}
+	$value = Get-Ps1ShouldProcessGuardValue $value.Child
+	if ($value -ne $Call) {
+		'Use only -not $PSCmdlet.ShouldProcess(...) as the if condition.'; return
 	}
 
 	$body = $if.Clauses[0].Item2
-	if ($if.Clauses.Count -ne 1 -or $body.Statements.Count -ne 1 -or $body.Statements[0] -isnot [Management.Automation.Language.ReturnStatementAst]) {
-		'Return immediately when ShouldProcess is not confirmed: { return }.'; return
+	if ($if.Clauses.Count -ne 1 -or $null -ne $if.ElseClause) {
+		'The ShouldProcess guard cannot have elseif or else branches.'; return
+	}
+	$colStatements = @($body.Statements)
+	$valid = ($null -eq $body.Traps -or $body.Traps.Count -eq 0) -and $colStatements.Count -ge 1 -and $colStatements.Count -le 2 -and
+	$colStatements[-1] -is [Management.Automation.Language.ReturnStatementAst] -and $null -eq $colStatements[-1].Pipeline
+	if ($valid -and $colStatements.Count -eq 2) {
+		$output = Get-Ps1ShouldProcessValue $colStatements[0]
+		$valid = $output -is [Management.Automation.Language.VariableExpressionAst] -and
+		$output.VariablePath.IsUnqualified -and -not $output.Splatted -and
+		$colStatements[0] -is [Management.Automation.Language.PipelineAst] -and
+		$colStatements[0].PipelineElements.Count -eq 1 -and -not $colStatements[0].Background -and
+		$colStatements[0].PipelineElements[0].Redirections.Count -eq 0
+	}
+	if (-not $valid) {
+		'Return immediately when ShouldProcess is not confirmed: use a bare return, optionally preceded by one local variable output.'; return
 	}
 
 	$parent = $if.Parent

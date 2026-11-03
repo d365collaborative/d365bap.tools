@@ -143,7 +143,7 @@ Write-Output 'pin'
 	$plainHash = (Get-FileHash -LiteralPath $plain -Algorithm SHA256).Hash
 	$decoyHash = (Get-FileHash -LiteralPath $decoy -Algorithm SHA256).Hash
 	Assert-True ($plainHash -ceq $decoyHash) 'Formatting must be byte-identical with a newer analyzer version installed.'
-	Assert-True ($analyzerPlain.ExitCode -eq $analyzerDecoy.ExitCode -and $analyzerPlain.Output -ceq $analyzerDecoy.Output) 'Analysis must be identical with a newer analyzer version installed.'
+	Assert-True ($analyzerPlain.ExitCode -eq $analyzerDecoy.ExitCode -and $analyzerPlain.Output -ceq $analyzerDecoy.Output) "Analysis must be identical with a newer analyzer version installed. Plain ($($analyzerPlain.ExitCode)): $($analyzerPlain.Output); Decoy ($($analyzerDecoy.ExitCode)): $($analyzerDecoy.Output)"
 
 	# The shared analysis helpers keep one scope table, cached node
 	# collections, and one diagnostic shape. Their behavior is part of the

@@ -27,7 +27,8 @@ function Assert-ModuleSplatting {
 		[int] $Expected = 0,
 		[string[]] $ExpectedText = @(),
 		[string] $RelativePath = 'd365bap.tools/functions/Get-Fixture.ps1',
-		[hashtable] $ExtraFiles = @{}
+		[hashtable] $ExtraFiles = @{},
+		[switch] $AllRules
 	)
 
 	$script:caseCount++
@@ -43,6 +44,9 @@ function Assert-ModuleSplatting {
 	}
 
 	$result = Invoke-Ps1Analysis -Path $path -Analyzer $analyzer
+	if ($AllRules -and ($result.Failed -or $result.Diagnostics.Count -gt 0)) {
+		throw "${Label}: accepted fixture must pass every owner: $($result.Diagnostics.Message -join '; ')"
+	}
 	$colDiagnostics = @($result.Diagnostics | Where-Object RuleName -eq 'PSAvoidSplattingForModuleCommands')
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
@@ -223,7 +227,7 @@ function Get-Fixture {
     $params = @{ Name = 'x' }
     & $commandName @params
 }
-'@
+'@ -Expected 1 @('Unsupported splatted command target')
 
 Assert-ModuleSplatting 'Build scripts are exempt' @'
 function Get-Fixture {
@@ -245,5 +249,56 @@ function Get-Fixture {
     Get-Target @params
 }
 '@ -RelativePath 'd365bap.tools/internal/tepp/Get-Fixture.ps1'
+
+Assert-ModuleSplatting 'Expandable target' '& "Get-$name" @args' -Expected 1
+Assert-ModuleSplatting 'Computed target' '& (Get-Command az) @args' -Expected 1
+Assert-ModuleSplatting 'Dynamic external target' '& $az @args' -Expected 1
+Assert-ModuleSplatting 'Scriptblock target' '& { param($x) $x } @args' -Expected 1
+Assert-ModuleSplatting 'Multiple dynamic splats' '& $cmd @first @second' -Expected 1
+Assert-ModuleSplatting 'Dynamic without splat' '& $cmd -Name x'
+Assert-ModuleSplatting 'Literal external target' '& az @cliArgs'
+Assert-ModuleSplatting 'Literal module target' "function Get-Target {} `n& 'Get-Target' @args" -Expected 1
+Assert-ModuleSplatting 'Dynamic excluded scope' '& $cmd @args' -RelativePath 'build/scripts/example.ps1'
+
+$standalonePath = Join-Path $fixtureRoot 'no-root/d365bap.tools/functions/Get-Dynamic.ps1'
+$standaloneSource = "# location anchor`n& `$cmd @first @second"
+$standaloneTokens = $null
+$standaloneErrors = $null
+$standaloneAst = [Management.Automation.Language.Parser]::ParseInput($standaloneSource, [ref]$standaloneTokens, [ref]$standaloneErrors)
+if ($standaloneErrors.Count -gt 0) { throw 'Standalone fixture must parse.' }
+$standaloneAnalysis = @{ Path = $standalonePath; Ast = $standaloneAst; Scope = (Get-Ps1AnalysisScope $standalonePath); Nodes = @{} }
+$buildsBefore = $analyzer.Worker.RepositoryIndexBuilds.Count
+$standaloneDiagnostics = @(Get-Ps1ModuleSplattingDiagnostic -Analysis $standaloneAnalysis -Worker $analyzer.Worker)
+if ($standaloneDiagnostics.Count -ne 1 -or $standaloneDiagnostics[0].Line -ne 2 -or $standaloneDiagnostics[0].RuleName -ne 'PSAvoidSplattingForModuleCommands') {
+	throw 'Unresolved splats must report once at their command without a module root.'
+}
+if ($analyzer.Worker.RepositoryIndexBuilds.Count -ne $buildsBefore) { throw 'Unresolved syntax must not load a repository index.' }
+$script:caseCount++
+
+Assert-ModuleSplatting 'Complete explicit call passes every analyzer rule' @'
+function Get-Target {
+    [OutputType([string])]
+    param([string] $Name)
+    $Name
+}
+
+function Get-Fixture {
+<#
+.SYNOPSIS
+    Gets sample text.
+.DESCRIPTION
+    Retrieves a display value from the helper.
+.PARAMETER Name
+    Display value.
+.EXAMPLE
+    Get-Fixture -Name demo
+
+    It selects -Name demo.
+#>
+    [OutputType([string])]
+    param([string] $Name)
+    Get-Target -Name $Name
+}
+'@ -AllRules
 
 Write-Output "Module splatting rule checks passed: $script:caseCount cases."

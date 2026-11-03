@@ -66,7 +66,7 @@ function Get-Ps1DiagnosticRule {
 		[pscustomobject]@{ Id = 'Get-Ps1HelpDiagnostic'; Script = 'Get-Ps1HelpDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1ParameterContractDiagnostic'; Script = 'Get-Ps1ParameterContractDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1ParameterLayoutDiagnostic'; Script = 'Get-Ps1ParameterLayoutDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1StandardOutputDiagnostic'; Script = 'Get-Ps1StandardOutputDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1StandardPublicOutputDiagnostic'; Script = 'Get-Ps1StandardPublicOutputDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1AddMemberDiagnostic'; Script = 'Get-Ps1AddMemberDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1AccessTokenDiagnostic'; Script = 'Get-Ps1AccessTokenDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1EnvironmentLookupDiagnostic'; Script = 'Get-Ps1EnvironmentLookupDiagnostic.ps1'; NeedsWorker = $false }
@@ -76,20 +76,17 @@ function Get-Ps1DiagnosticRule {
 		[pscustomobject]@{ Id = 'Get-Ps1FunctionInterruptDiagnostic'; Script = 'Get-Ps1FunctionInterruptDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1ReturnValueDiagnostic'; Script = 'Get-Ps1ReturnValueDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1ObjectArrayCastDiagnostic'; Script = 'Get-Ps1ObjectArrayCastDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1ValidationAttributeOnMandatoryDiagnostic'; Script = 'Get-Ps1ValidationAttributeOnMandatoryDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1WildcardParameterAsFilterDiagnostic'; Script = 'Get-Ps1WildcardParameterAsFilterDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1WildcardParameterContractDiagnostic'; Script = 'Get-Ps1WildcardParameterContractDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1OrderedPSCustomObjectDiagnostic'; Script = 'Get-Ps1OrderedPSCustomObjectDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1OutNullDiagnostic'; Script = 'Get-Ps1OutNullDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1StandardExcelExportDiagnostic'; Script = 'Get-Ps1StandardExcelExportDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1LoopAppendDiagnostic'; Script = 'Get-Ps1LoopAppendDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1OneParameterPerLineDiagnostic'; Script = 'Get-Ps1OneParameterPerLineDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1NotEqualNullDiagnostic'; Script = 'Get-Ps1NotEqualNullDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1DirectParameterCheckDiagnostic'; Script = 'Get-Ps1DirectParameterCheckDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1ExplicitParameterPresenceDiagnostic'; Script = 'Get-Ps1ExplicitParameterPresenceDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1ReturnAfterStopDiagnostic'; Script = 'Get-Ps1ReturnAfterStopDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1PipelineContinuationDiagnostic'; Script = 'Get-Ps1PipelineContinuationDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1ComplexArrayElementDiagnostic'; Script = 'Get-Ps1ComplexArrayElementDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1SelectObjectPropertyDiagnostic'; Script = 'Get-Ps1SelectObjectPropertyDiagnostic.ps1'; NeedsWorker = $false }
-		[pscustomobject]@{ Id = 'Get-Ps1MultilineSelectObjectPropertyDiagnostic'; Script = 'Get-Ps1MultilineSelectObjectPropertyDiagnostic.ps1'; NeedsWorker = $false }
+		[pscustomobject]@{ Id = 'Get-Ps1StandardSelectObjectDiagnostic'; Script = 'Get-Ps1StandardSelectObjectDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1AliasDiagnostic'; Script = 'Get-Ps1AliasDiagnostic.ps1'; NeedsWorker = $true }
 		[pscustomobject]@{ Id = 'Get-Ps1CentralApiVersionDiagnostic'; Script = 'Get-Ps1CentralApiVersionDiagnostic.ps1'; NeedsWorker = $false }
 		[pscustomobject]@{ Id = 'Get-Ps1FormattedUrlDiagnostic'; Script = 'Get-Ps1FormattedUrlDiagnostic.ps1'; NeedsWorker = $false }

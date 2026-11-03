@@ -25,6 +25,7 @@ function Assert-OutputType {
 	$path = Join-Path $folder $FileName
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
+	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
 	$colDiagnostics = @(Get-Ps1OutputTypeDiagnostic -Analysis $analysis)
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
@@ -224,7 +225,7 @@ function Set-Fixture {
 }
 '@ -Directory 'build'
 
-Assert-OutputType 'Helper functions are ignored' @'
+Assert-OutputType 'Every top-level function is checked' @'
 function Get-Helper {
     param()
     Get-Thing
@@ -234,7 +235,7 @@ function Set-Fixture {
     [OutputType([void])]
     param()
 }
-'@
+'@ 1 @('Get-Helper')
 
 Assert-OutputType 'No parameter block' @'
 function Set-Fixture {
@@ -242,5 +243,11 @@ function Set-Fixture {
 }
 '@ 1 @('must declare [OutputType()]')
 
-$script:caseCount++
+Assert-OutputType 'Filename does not select the checked function' 'function Other { param() }' 1 @('Other')
+Assert-OutputType 'Two missing declarations' 'function First { param() }; function Second { param() }' 2
+Assert-OutputType 'Nested helper does not contaminate outer type' 'function Set-Fixture { [OutputType([void])] param(); function Helper { param(); $x | Select-PSFObject -TypeName "Other.Type" } }'
+Assert-OutputType 'Attached qualified projection type is checked' 'function Set-Fixture { [OutputType([void])] param(); $x | PSFramework\Select-PSFObject -TypeName:"D365Bap.Tools.Example" }' 1 @('does not declare')
+Assert-OutputType 'SDK folder remains outside declaration scope' 'function Other { param() }' -Directory 'd365bap.tools/internal/sdk'
+Assert-OutputType 'Class methods are not module function declarations' 'class LocalFixture { [string] GetValue() { return "sample" } }; function Set-Fixture { [OutputType([void])] param() }'
+
 Write-Output "Output type rule checks passed: $script:caseCount cases."

@@ -252,4 +252,35 @@ function Get-Fixture {
 }
 '@ -FileName 'Get-Fixture.Tests.ps1'
 
+Assert-OutNull 'Void casts' @'
+function Get-Fixture {
+    [void](Get-Thing)
+    [System.Void]$list.Add($item)
+}
+'@ -Expected 2 @('void cast', '<expression> > $null')
+
+Assert-OutNull 'Metadata and text' @'
+function Get-Fixture {
+    [OutputType([void])]
+    param()
+    # [void](Get-Thing)
+    '[void](Get-Thing)'
+}
+'@
+
+Assert-OutNull 'Qualified builtin despite shadow' @'
+function Out-Null { param($InputObject) }
+Get-Thing | Microsoft.PowerShell.Core\Out-Null
+Get-Thing | Out-Null
+Get-Thing | Custom.Module\Out-Null
+'@ -Expected 1
+
+$script:discardSideEffect = 0
+$errors = @(& {
+		& { $script:discardSideEffect++; Write-Output 'discarded'; Write-Error 'retained' -ErrorAction Continue } > $null
+	} 2>&1)
+if ($script:discardSideEffect -ne 1 -or $errors.Count -ne 1 -or $errors[0] -isnot [Management.Automation.ErrorRecord]) {
+	throw 'Canonical discard must preserve side effects and error output.'
+}
+
 Write-Output "Out-Null rule checks passed: $script:caseCount cases."

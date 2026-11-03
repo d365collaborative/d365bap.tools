@@ -1,26 +1,37 @@
 ﻿<#
 .SYNOPSIS
-    Tests the wildcard parameter lint rule.
+    Tests the wildcard parameter contract rule.
 
 .DESCRIPTION
-    Parses fixture scripts and checks that string parameters with wildcard
-    defaults require a SupportsWildcards attribute.
+    Checks wildcard declarations and parameter comparisons, then records filter behavior that declaration changes could alter.
 #>
 [CmdletBinding()]
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterContractDiagnostic')) {
+foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1WildcardParameterContractDiagnostic')) {
 	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
 }
-$fixturePath = Join-Path ([IO.Path]::GetTempPath()) ('wildcard-rule-' + [guid]::NewGuid().ToString('N') + '.ps1')
+$fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('wildcard-rule-' + [guid]::NewGuid().ToString('N'))
+$null = New-Item -ItemType Directory -Path $fixtureRoot -Force
 $script:caseCount = 0
 
 function Assert-Wildcard {
-	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @())
-	[IO.File]::WriteAllText($fixturePath, $Source.Replace("`r`n", "`n"))
-	$analysis = Get-Ps1Analysis -Path $fixturePath
-	$colDiagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSUseSupportsWildcards')
+	param(
+		[string] $Label,
+		[string] $Source,
+		[int] $Expected = 0,
+		[string[]] $ExpectedText = @(),
+		[string] $Directory = 'd365bap.tools/functions',
+		[string] $FileName = 'Get-Fixture.ps1'
+	)
+	$folder = Join-Path $fixtureRoot $Directory
+	$null = New-Item -ItemType Directory -Path $folder -Force
+	$path = Join-Path $folder $FileName
+	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
+	$analysis = Get-Ps1Analysis -Path $path
+	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
+	$colDiagnostics = @(Get-Ps1WildcardParameterContractDiagnostic -Analysis $analysis)
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
@@ -38,7 +49,7 @@ function Get-Fixture {
     )
 }
 '@
-Assert-Wildcard 'Missing attribute' $missing 1 @('PSUseSupportsWildcards', '-Name', '[SupportsWildcards()]')
+Assert-Wildcard 'Missing attribute' $missing 1 @('PSUseWildcardParameterContract', '-Name', '[SupportsWildcards()]')
 
 $present = $missing.Replace('[string] $Name', "[SupportsWildcards()]`n        [string] `$Name")
 Assert-Wildcard 'Attribute present' $present
@@ -66,6 +77,11 @@ Assert-Wildcard 'String array parameter' ($missing.Replace('[string] $Name', '[s
 Assert-Wildcard 'Integer parameter' ($missing.Replace('[string] $Name = "*"', '[int] $Name = 0'))
 
 Assert-Wildcard 'Object parameter' ($missing.Replace('[string] $Name = "*"', '[object] $Name = "*"'))
+
+Assert-Wildcard 'Inline function parameter' @'
+function Get-Fixture ([string] $Name = '*') {
+}
+'@ -Expected 1 -ExpectedText @('-Name')
 
 Assert-Wildcard 'Script-level parameter' @'
 param (
@@ -155,7 +171,7 @@ function Get-Fixture {
         $used = $Name
     }
 }
-'@ -Expected 1 -ExpectedText @('PSBoundParameters', '-Name')
+'@
 
 Assert-Wildcard 'Contains method for a wildcard parameter' @'
 function Get-Fixture {
@@ -168,7 +184,7 @@ function Get-Fixture {
         $used = $Name
     }
 }
-'@ -Expected 1 -ExpectedText @('PSBoundParameters', '-Name')
+'@
 
 Assert-Wildcard 'Bound parameter check outside an if' @'
 function Get-Fixture {
@@ -179,7 +195,7 @@ function Get-Fixture {
 
     $given = $PSBoundParameters.ContainsKey('Name')
 }
-'@ -Expected 1
+'@
 
 Assert-Wildcard 'Bound parameter check for another name' @'
 function Get-Fixture {
@@ -234,5 +250,80 @@ function Get-Fixture {
     }
 }
 '@
+
+Assert-Wildcard 'Combined accepted declaration and use' @'
+function Get-Fixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    if ($PSBoundParameters.ContainsKey('Name')) {
+        $Name
+    }
+    @('alpha') | Where-Object Name -like $Name
+}
+'@
+
+Assert-Wildcard 'Combined declaration and comparison branches' @'
+function Get-Fixture {
+    param (
+        [string] $Name = '*'
+    )
+
+    if ($Name -eq '*') {
+        'all'
+    }
+}
+'@ -Expected 2 -ExpectedText @('has a wildcard default value', 'is a wildcard filter')
+
+Assert-Wildcard 'Internal helper function is in scope' $missing -Expected 1 -Directory 'd365bap.tools/internal/functions'
+
+Assert-Wildcard 'SDK wrappers are out of scope' $missing -Directory 'd365bap.tools/internal/sdk'
+
+Assert-Wildcard 'Internal scripts are out of scope' $missing -Directory 'd365bap.tools/internal/scripts'
+
+Assert-Wildcard 'Build scripts are out of scope' $missing -Directory 'build'
+
+Assert-Wildcard 'Module tests are out of scope' $missing -Directory 'd365bap.tools/tests'
+
+Assert-Wildcard 'Test files are out of scope' $missing -Directory 'd365bap.tools/functions' -FileName 'Get-Fixture.Tests.ps1'
+
+# Runtime semantics: the declared wildcard default is a filter, so omission
+# means "all", an exact value narrows to that value, and no match is empty.
+$runtimeSource = @'
+function Get-WildcardFilterFixture {
+    param (
+        [SupportsWildcards()]
+        [string] $Name = '*'
+    )
+
+    @('alpha', 'beta', 'alphabet') | Where-Object { $_ -like $Name }
+}
+'@
+$runtimeFolder = Join-Path $fixtureRoot 'd365bap.tools/functions'
+$runtimePath = Join-Path $runtimeFolder 'Get-WildcardFilterFixture.ps1'
+[IO.File]::WriteAllText($runtimePath, $runtimeSource.Replace("`r`n", "`n"))
+. $runtimePath
+
+$all = @(Get-WildcardFilterFixture)
+if ($all.Count -ne 3) { throw "Runtime omitted default: expected 3 items, got $($all.Count)." }
+$script:caseCount++
+
+$exact = @(Get-WildcardFilterFixture -Name 'alpha')
+if ($exact.Count -ne 1 -or $exact[0] -ne 'alpha') { throw "Runtime exact value: expected alpha, got $($exact -join ',')." }
+$script:caseCount++
+
+$pattern = @(Get-WildcardFilterFixture -Name 'alph*')
+if ($pattern.Count -ne 2 -or $pattern -notcontains 'alphabet') { throw "Runtime pattern: expected alpha and alphabet, got $($pattern -join ',')." }
+$script:caseCount++
+
+$none = @(Get-WildcardFilterFixture -Name 'zeta*')
+if ($none.Count -ne 0) { throw "Runtime no match: expected no items, got $($none.Count)." }
+$script:caseCount++
+
+$explicitAll = @(Get-WildcardFilterFixture -Name '*')
+if ($explicitAll.Count -ne 3) { throw "Runtime explicit star: expected 3 items, got $($explicitAll.Count)." }
+$script:caseCount++
 
 Write-Output "Wildcard rule checks passed: $script:caseCount cases."

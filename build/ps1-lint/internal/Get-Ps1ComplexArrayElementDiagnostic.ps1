@@ -40,6 +40,11 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 	$colReportedLiterals = [System.Collections.Generic.List[object]]::new()
 
 	foreach ($itemLiteral in @(Get-Ps1AstNode $Analysis ArrayLiteralAst)) {
+		if ($itemLiteral.Parent -is [Management.Automation.Language.CommandAst] -and
+			(Get-Command Get-Ps1SelectObjectProjection -ErrorAction Ignore)) {
+			$projection = Get-Ps1SelectObjectProjection $itemLiteral.Parent
+			if ($null -ne $projection -and $projection.Argument -eq $itemLiteral) { continue }
+		}
 		$tmpElements = @($itemLiteral.Elements)
 		if ($tmpElements.Count -le 1) { continue }
 

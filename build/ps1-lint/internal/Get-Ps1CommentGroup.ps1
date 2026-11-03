@@ -91,6 +91,8 @@
 			})
 		[pscustomobject]@{
 			IsHelp           = $isHelp
+			OwnerStartOffset = $owner.Extent.StartOffset
+			OwnerIsFunction  = $owner -is [Management.Automation.Language.FunctionDefinitionAst]
 			ParameterNames   = $tmpParameterNames
 			ParameterRecords = @($tmpParameterRecords)
 			CommandName      = if ($owner -is [Management.Automation.Language.FunctionDefinitionAst]) { $owner.Name } else { [IO.Path]::GetFileNameWithoutExtension($Analysis.Path) }

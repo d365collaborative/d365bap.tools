@@ -29,6 +29,7 @@ $script:Ps1AnalysisRuleHelperFile = @(
 	'Get-Ps1Analysis.ps1'
 	'Get-Ps1CommentGroup.ps1'
 	'Get-Ps1HelpSection.ps1'
+	'Get-Ps1OutputModel.ps1'
 	'Get-Ps1AliasConfiguration.ps1'
 	'Resolve-Ps1AliasCommand.ps1'
 	'Invoke-Ps1Analysis.ps1'

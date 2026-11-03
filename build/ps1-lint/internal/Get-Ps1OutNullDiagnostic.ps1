@@ -29,13 +29,17 @@ function Get-Ps1OutNullDiagnostic {
 
 	if (-not (Test-Ps1RuleScope $Analysis 'ModuleOrLintTooling')) { return }
 
-	if (-not (Test-Ps1OutNullShadowed -Analysis $Analysis)) {
-		foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
-			$commandName = $itemCommand.GetCommandName()
-			if ($null -eq $commandName) { continue }
-			if (($commandName -split '\\')[-1] -ine 'Out-Null') { continue }
+	$shadowed = Test-Ps1OutNullShadowed -Analysis $Analysis
+	foreach ($itemCommand in @(Get-Ps1AstNode $Analysis CommandAst)) {
+		$commandName = $itemCommand.GetCommandName()
+		if ($null -eq $commandName) { continue }
+		if ($commandName -ine 'Microsoft.PowerShell.Core\Out-Null' -and ($commandName -ine 'Out-Null' -or $shadowed)) { continue }
 
-			New-Ps1Diagnostic $Path 'PSAvoidOutNull' 'Do not discard output with Out-Null. Redirect it to $null instead: <expression> > $null.' $itemCommand.Extent
+		New-Ps1Diagnostic $Path 'PSAvoidOutNull' 'Do not discard output with Out-Null. Redirect it to $null instead: <expression> > $null.' $itemCommand.Extent
+	}
+	foreach ($itemCast in @(Get-Ps1AstNode $Analysis ConvertExpressionAst)) {
+		if ($itemCast.Type.TypeName.FullName -in @('void', 'System.Void')) {
+			New-Ps1Diagnostic $Path 'PSAvoidOutNull' 'Do not discard output with a void cast. Redirect it to $null instead: <expression> > $null.' $itemCast.Extent
 		}
 	}
 

@@ -1,17 +1,16 @@
 ﻿<#
 .SYNOPSIS
-    Tests the validation attribute on mandatory lint rule.
+    Tests optional parameter validation.
 
 .DESCRIPTION
-    Parses fixture cmdlets and checks that [ValidateNotNullOrEmpty()] appears
-    only on a mandatory parameter or one with a default. Parameter-set
-    mandatoriness and every default form stay exempt.
+    Checks that [ValidateNotNullOrEmpty()] remains valid on optional parameters
+    without a default, including runtime binding behavior.
 #>
 [CmdletBinding()]
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterContractDiagnostic', 'Get-Ps1ValidationAttributeOnMandatoryDiagnostic')) {
+foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterContractDiagnostic')) {
 	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
 }
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('validation-attribute-mandatory-rule-' + [guid]::NewGuid().ToString('N'))
@@ -25,7 +24,7 @@ function Assert-ValidationAttribute {
 	$path = Join-Path $folder 'Get-Fixture.ps1'
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
-	$colDiagnostics = @(Get-Ps1ValidationAttributeOnMandatoryDiagnostic -Analysis $analysis)
+	$colDiagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSUseValidationAttributeOnMandatory')
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
 	}
@@ -43,7 +42,7 @@ function Get-Fixture {
         [string] $Name
     )
 }
-'@ -Expected 1 @('PSUseValidationAttributeOnMandatory', '-Name', 'not mandatory')
+'@
 
 Assert-ValidationAttribute 'Mandatory parameter' @'
 function Get-Fixture {
@@ -109,7 +108,7 @@ function Get-Fixture {
         [string] $Name
     )
 }
-'@ -Expected 1
+'@
 
 Assert-ValidationAttribute 'Another validation attribute' @'
 function Get-Fixture {
@@ -134,7 +133,7 @@ function Get-Fixture {
         [string] $Name
     )
 }
-'@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
+'@ -Directory 'd365bap.tools/internal/functions'
 
 Assert-ValidationAttribute 'SDK wrappers are exempt' @'
 function Get-Fixture {
@@ -155,3 +154,13 @@ function Get-Fixture {
 '@ -Directory 'build'
 
 Write-Output "Validation attribute on mandatory rule checks passed: $script:caseCount cases."
+
+function Test-OptionalValidation {
+	param([ValidateNotNullOrEmpty()] [string] $Name)
+	$PSBoundParameters.ContainsKey('Name')
+}
+if (Test-OptionalValidation) { throw 'Omitted optional parameter was bound.' }
+if (-not (Test-OptionalValidation -Name 'value')) { throw 'Explicit value was not bound.' }
+$rejected = $false
+try { Test-OptionalValidation -Name '' } catch [System.Management.Automation.ParameterBindingException] { $rejected = $true }
+if (-not $rejected) { throw 'Explicit empty value was accepted.' }

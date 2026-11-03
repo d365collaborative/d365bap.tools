@@ -1,4 +1,67 @@
-﻿function Get-Ps1NormalizedHelpText {
+﻿function Get-Ps1PublicHelpFunction {
+	param([hashtable] $Analysis)
+	if (-not (Test-Ps1RuleScope $Analysis 'PublicFunction')) { return }
+	foreach ($itemFunction in @(Get-Ps1AstNode $Analysis FunctionDefinitionAst)) {
+		if ($itemFunction.Name -ine $Analysis.Scope.FileNameWithoutExtension) { continue }
+		$parent = $itemFunction.Parent
+		while ($null -ne $parent -and $parent -isnot [Management.Automation.Language.FunctionDefinitionAst]) { $parent = $parent.Parent }
+		if ($null -eq $parent) { $itemFunction; return }
+	}
+}
+
+function Get-Ps1PublicHelpGroupId {
+	param([hashtable] $Analysis, $Function)
+	if ($null -eq $Function) { return }
+	$index = 0
+	foreach ($itemGroup in $Analysis.CommentGroups) {
+		if (-not $itemGroup.IsHelp) { continue }
+		$index++
+		if ($itemGroup.OwnerIsFunction -and $itemGroup.OwnerStartOffset -eq $Function.Extent.StartOffset) { $index }
+	}
+}
+
+function Get-Ps1HelpCompletenessDiagnostic {
+	param([hashtable] $Analysis, $Function, [int[]] $GroupId)
+	if ($null -eq $Function) { return }
+	$sections = @($Analysis.HelpSections | Where-Object { $_.GroupId -in $GroupId })
+	if ($GroupId.Count -eq 0) {
+		New-Ps1Diagnostic $Analysis.Path 'PSHelpStructure' "Public function $($Function.Name) requires comment-based help with SYNOPSIS, DESCRIPTION, EXAMPLE, and its declared parameters." $Function.Extent
+		return
+	}
+	foreach ($itemName in @('SYNOPSIS', 'DESCRIPTION', 'EXAMPLE', 'NOTES')) {
+		$tmpMatches = @($sections | Where-Object Name -eq $itemName)
+		if ($itemName -ne 'NOTES' -and @($tmpMatches | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Text) }).Count -eq 0) {
+			New-Ps1Diagnostic $Analysis.Path 'PSHelpStructure' "Public function $($Function.Name) requires a nonempty $itemName section." $Function.Extent
+		}
+		if ($itemName -ne 'EXAMPLE' -and $tmpMatches.Count -gt 1) {
+			New-Ps1Diagnostic $Analysis.Path 'PSHelpStructure' "Public function $($Function.Name) allows only one $itemName section." $null $tmpMatches[1].Line $tmpMatches[1].Column
+		}
+	}
+	$colGroups = @($Analysis.CommentGroups | Where-Object { $_.IsHelp -and $_.OwnerIsFunction -and $_.OwnerStartOffset -eq $Function.Extent.StartOffset })
+	$records = @($colGroups.ParameterRecords | Sort-Object Name -Unique)
+	$hashDocumented = @{}
+	foreach ($itemSection in @($sections | Where-Object Name -eq 'PARAMETER')) {
+		$itemRecord = Get-Ps1ParameterDefaultRecord $records $itemSection.Argument
+		if ($null -eq $itemRecord) {
+			New-Ps1Diagnostic $Analysis.Path 'PSHelpParameter' "Unknown PARAMETER $($itemSection.Argument) on $($Function.Name). Use a declared parameter name." $null $itemSection.Line $itemSection.Column
+			continue
+		}
+		if ($hashDocumented.ContainsKey($itemRecord.Name)) {
+			New-Ps1Diagnostic $Analysis.Path 'PSHelpParameter' "Document PARAMETER $($itemRecord.Name) exactly once." $null $itemSection.Line $itemSection.Column
+		}
+		$hashDocumented[$itemRecord.Name] = $true
+		if ([string]::IsNullOrWhiteSpace($itemSection.Text)) {
+			New-Ps1Diagnostic $Analysis.Path 'PSHelpParameter' "PARAMETER $($itemRecord.Name) must have nonempty documentation." $null $itemSection.Line $itemSection.Column
+		}
+	}
+	foreach ($itemRecord in $records) {
+		if (-not $hashDocumented.ContainsKey($itemRecord.Name)) {
+			New-Ps1Diagnostic $Analysis.Path 'PSHelpParameter' "Public function $($Function.Name) must document PARAMETER $($itemRecord.Name)." $Function.Extent
+		}
+	}
+}
+
+function Get-Ps1NormalizedHelpText {
 	param([string] $Text)
 	if ([string]::IsNullOrWhiteSpace($Text)) { ''; return }
 	$normalized = $Text.ToLowerInvariant()
@@ -131,6 +194,10 @@ function Get-Ps1HelpDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
+	$publicFunction = Get-Ps1PublicHelpFunction $Analysis
+	$colPublicGroupIds = @(Get-Ps1PublicHelpGroupId $Analysis $publicFunction)
+	Get-Ps1HelpCompletenessDiagnostic $Analysis $publicFunction $colPublicGroupIds
+
 	$hashSynopsisByGroup = @{}
 	foreach ($itemHelpSection in $Analysis.HelpSections) {
 		if ($itemHelpSection.Name -ne 'SYNOPSIS') { continue }
@@ -141,6 +208,9 @@ function Get-Ps1HelpDiagnostic {
 	}
 
 	foreach ($itemSection in $Analysis.HelpSections) {
+		if ($itemSection.GroupId -in $colPublicGroupIds -and
+			$itemSection.Name -in @('SYNOPSIS', 'DESCRIPTION', 'EXAMPLE', 'PARAMETER') -and
+			[string]::IsNullOrWhiteSpace($itemSection.Text)) { continue }
 		$blankLines = @($itemSection.Lines | Where-Object { $_ -eq '' }).Count
 		$message = switch ($itemSection.Name) {
 			'SYNOPSIS' {
@@ -242,7 +312,7 @@ function Get-Ps1HelpDiagnostic {
 				}
 				if ($found) { break }
 			}
-			if ($found) { continue }
+			if ($found -or $groupId -in $colPublicGroupIds) { continue }
 			$tmpAnchor = @($Analysis.HelpSections | Where-Object { $_.GroupId -eq $groupId }) | Sort-Object Line | Select-Object -First 1
 			$anchorLine = if ($null -ne $tmpAnchor) { $tmpAnchor.Line } else { $group.Line }
 			$anchorColumn = if ($null -ne $tmpAnchor) { $tmpAnchor.Column } else { $group.Column }

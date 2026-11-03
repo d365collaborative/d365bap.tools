@@ -25,6 +25,7 @@ function Assert-LoopAppend {
 	$path = Join-Path $folder 'Get-Fixture.ps1'
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
+	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
 	$colDiagnostics = @(Get-Ps1LoopAppendDiagnostic -Analysis $analysis)
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
@@ -46,7 +47,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 @('PSAvoidLoopAppend', 'AddRange')
 
-Assert-LoopAppend 'Copy loop with a pipeline source' @'
+Assert-LoopAppend 'Computed source is outside the bounded copy shape' @'
 function Get-Fixture {
     $colTarget = [System.Collections.Generic.List[object]]::new()
     foreach ($item in @(Get-Thing)) {
@@ -54,9 +55,9 @@ function Get-Fixture {
     }
     $colTarget
 }
-'@ -Expected 1
+'@
 
-Assert-LoopAppend 'Set copy loop still reports' @'
+Assert-LoopAppend 'Set copy loop stays clean' @'
 function Get-Fixture {
     $hashSeen = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($item in $colSource) {
@@ -64,7 +65,7 @@ function Get-Fixture {
     }
     $hashSeen
 }
-'@ -Expected 1 @('UnionWith')
+'@
 
 Assert-LoopAppend 'Property argument' @'
 function Get-Fixture {
@@ -117,7 +118,7 @@ function Get-Fixture {
 }
 '@
 
-Assert-LoopAppend 'Lowercase member name is not the canonical Add' @'
+Assert-LoopAppend 'Lowercase member name is recognized' @'
 function Get-Fixture {
     $colTarget = [System.Collections.Generic.List[object]]::new()
     foreach ($item in $colSource) {
@@ -125,7 +126,7 @@ function Get-Fixture {
     }
     $colTarget
 }
-'@
+'@ -Expected 1
 
 Assert-LoopAppend 'Two arguments' @'
 function Get-Fixture {
@@ -137,7 +138,7 @@ function Get-Fixture {
 }
 '@
 
-Assert-LoopAppend 'Nested loops report the inner copy' @'
+Assert-LoopAppend 'Nested loops without adjacent constructor stay clean' @'
 function Get-Fixture {
     $colTarget = [System.Collections.Generic.List[object]]::new()
     foreach ($itemOuter in $colSource) {
@@ -147,7 +148,7 @@ function Get-Fixture {
     }
     $colTarget
 }
-'@ -Expected 1
+'@
 
 Assert-LoopAppend 'One-line copy loop' @'
 function Get-Fixture {
@@ -201,5 +202,32 @@ function Get-Fixture {
     $colTarget
 }
 '@ -Directory 'd365bap.tools/internal/tepp'
+
+Assert-LoopAppend 'Transformed argument' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($i in $s) { $x.Add($i.ToString()) } }'
+Assert-LoopAppend 'Custom Add' 'function f { $x = [CustomCollection]::new(); foreach ($i in $s) { $x.Add($i) } }'
+Assert-LoopAppend 'Parentheses' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($i in $s) { ($x.Add(($i))) } }' -Expected 1
+Assert-LoopAppend 'ArrayList output' 'function f { $x = [System.Collections.ArrayList]::new(); foreach ($i in $s) { $x.Add($i) } }'
+Assert-LoopAppend 'Custom receiver' 'function f { foreach ($i in $s) { $x.Add($i) } }'
+Assert-LoopAppend 'Reassigned receiver' 'function f { $x = [Collections.Generic.List[object]]::new(); $x = $other; foreach ($i in $s) { $x.Add($i) } }'
+$target = [Collections.Generic.List[object]]::new()
+$target.Add('existing')
+$identity = $target
+$output = @($target.AddRange([object[]]@('a', 'b')))
+if (-not [object]::ReferenceEquals($identity, $target) -or ($target -join ',') -ne 'existing,a,b' -or $output.Count -ne 0) { throw 'AddRange behavior changed' }
+$array = [Collections.ArrayList]::new()
+$output = @(foreach ($item in 'a', 'b') { $array.Add($item) })
+if (($output -join ',') -ne '0,1') { throw 'ArrayList Add output changed' }
+
+Assert-LoopAppend 'Trap is extra work' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($i in $s) { trap { continue }; $x.Add($i) } }'
+Assert-LoopAppend 'Redirect is not transparent' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($i in $s) { ($x.Add($i) > $null) } }'
+Assert-LoopAppend 'Source assignment can replace receiver' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($i in ($x = $other)) { $x.Add($i) } }'
+Assert-LoopAppend 'Loop variable cannot replace receiver' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($x in $s) { $x.Add($x) } }'
+Assert-LoopAppend 'Self-copy can change exception behavior' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($i in $x) { $x.Add($i) } }'
+Assert-LoopAppend 'Parenthesized constructor remains exact' 'function f { $x = ([Collections.Generic.List[object]]::new()); foreach ($i in ($s)) { ($x.add(($i))) } }' -Expected 1
+$original = [Collections.Generic.List[object]]::new()
+$original.Add('existing')
+$source = [object[]]@('a', 'b')
+$originalOutput = @(foreach ($entry in $source) { $original.Add($entry) })
+if ($originalOutput.Count -ne 0 -or ($original -join ',') -ne ($target -join ',')) { throw 'Supported copy loop and AddRange must agree on contents and success output.' }
 
 Write-Output "Loop append rule checks passed: $script:caseCount cases."
