@@ -45,11 +45,14 @@ files = { glob = ["**.ps1", "**.psm1", "**.psd1"] }
 # Generated unit tests are owned by the regen workflow; linting them would flag
 # their template comments on every new command.
 exclude = { glob = ["d365bap.tools/tests/functions/*.Tests.ps1"] }
-# One process formats and analyzes each batch, so a run pays one process start
-# and one PSScriptAnalyzer import instead of one per hook. The hook reads files
-# in smaller chunks internally to keep memory flat; 64 keeps the process count
-# low without a command line large enough to hit the platform limit.
-pass_filenames = 64
+# One process formats and analyzes each batch, so a run pays one process start,
+# one PSScriptAnalyzer import, and one repository index build instead of one per
+# hook. The hook reads files in smaller chunks internally to keep memory flat.
+# Every process also pays the analyzer warm-up again, so the batch size sets the
+# process count directly: 128 halves it against the old 64 for the same work,
+# and a full 128-path batch stays near 6.5K characters, well under the Windows
+# 32K command-line limit.
+pass_filenames = 128
 stages = ["pre-commit", "manual"]
 
 [[repos]]
