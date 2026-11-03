@@ -31,3 +31,5 @@ pwsh -NoProfile -File build/Test-Ps1RuleSuites.ps1
 pwsh -NoProfile -File build/Test-Ps1ExampleHelp.ps1
 pwsh -NoProfile -File build/Test-Ps1LintCorrectness.ps1
 ```
+
+A pull request that only edits files under `build/ps1-lint/` starts the validation-runners workflow and, after #369, selects the example-help and rule-suite jobs.
