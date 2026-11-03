@@ -11,16 +11,28 @@
 #             analyzer settings, the pinned analyzer version, and the path.
 #   custom  - repository rule diagnostics. Keyed like builtin plus the
 #             repository metadata the rules read (parameters, aliases, output
-#             types, command names) and the ps1-lint.json allowlist that
-#             applies to the file. Editing one function's body does not
-#             invalidate another file's custom result; changing a parameter or
-#             an output type does.
+#             types, command names), the ps1-lint.json allowlist that applies
+#             to the file, and a fingerprint of the rule implementation itself.
+#             Editing one function's body does not invalidate another file's
+#             custom result; changing a parameter or an output type does, and so
+#             does editing a rule under build/ps1-lint/internal.
 #
 # The cache never runs in CI and never changes a result. Every read validates
 # the schema, the key, and the entry shape; any problem falls back to the
 # uncached path for the rest of the process.
 $script:Ps1AnalysisCacheSchema = 'ps1-lint-analysis-v1'
 $script:Ps1AnalysisCacheWriteBudget = 20000
+# Shared helpers the repository rules call. Together with every
+# Get-Ps1*Diagnostic.ps1 file, these make up the rule implementation whose
+# fingerprint invalidates custom entries.
+$script:Ps1AnalysisRuleHelperFile = @(
+	'Get-Ps1Analysis.ps1'
+	'Get-Ps1CommentGroup.ps1'
+	'Get-Ps1HelpSection.ps1'
+	'Get-Ps1AliasConfiguration.ps1'
+	'Resolve-Ps1AliasCommand.ps1'
+	'Invoke-Ps1Analysis.ps1'
+)
 
 function Get-Ps1TextHash {
 	param([AllowEmptyString()] [string] $Text)
@@ -89,6 +101,40 @@ function Get-Ps1AnalysisCacheState {
 	}
 }
 
+function Get-Ps1AnalysisCacheRuleCodeFingerprint {
+	# Hashes the rule implementation, not the analyzed file. A local edit to a
+	# rule or to a helper the rules call changes the diagnostics it produces
+	# for unchanged files, so the custom key has to see it. Built-in entries do
+	# not include this fingerprint; PSScriptAnalyzer is pinned and versioned
+	# separately.
+	#
+	# The set is every repository rule file plus the shared helpers they read.
+	# The fingerprint records file names and content, not paths, so moving the
+	# checkout or a copy of the folder keeps the same entries.
+	param([string] $RuleRoot)
+
+	if ([string]::IsNullOrWhiteSpace($RuleRoot)) { $RuleRoot = $PSScriptRoot }
+
+	$colFile = @(Get-ChildItem -LiteralPath $RuleRoot `
+			-File `
+			-Filter '*.ps1' |
+		Where-Object {
+			$_.Name -like 'Get-Ps1*Diagnostic.ps1' -or
+			$_.Name -in $script:Ps1AnalysisRuleHelperFile
+		} |
+		Sort-Object Name)
+
+	# A missing or empty rule set cannot be fingerprinted, so the session must
+	# not cache at all rather than cache with a partial key.
+	if ($colFile.Count -eq 0) { return }
+
+	$colLine = @(foreach ($itemFile in $colFile) {
+			"$($itemFile.Name)|$(Get-Ps1TextHash -Text ([IO.File]::ReadAllText($itemFile.FullName)))"
+		})
+
+	Get-Ps1TextHash -Text ($colLine -join "`n")
+}
+
 function New-Ps1AnalysisCacheSession {
 	# Returns $null when the cache is off: CI, PS1_LINT_CACHE=off, or no
 	# analyzer settings file or version. The session carries the key inputs
@@ -97,6 +143,9 @@ function New-Ps1AnalysisCacheSession {
 		[Parameter(Mandatory = $true)]
 		$Analyzer,
 		[string] $RepositoryRoot,
+		# The folder that holds the rule implementation. Regression tests point
+		# this at a modified copy to prove the custom key follows rule edits.
+		[string] $RuleRoot,
 		[int] $WriteBudget = $script:Ps1AnalysisCacheWriteBudget
 	)
 
@@ -109,20 +158,24 @@ function New-Ps1AnalysisCacheSession {
 		$settingsHash = Get-Ps1AnalysisCacheSettingsHash -SettingsPath $Analyzer.SettingsPath
 		if ($null -eq $settingsHash) { return }
 
+		$ruleCodeFingerprint = Get-Ps1AnalysisCacheRuleCodeFingerprint -RuleRoot $RuleRoot
+		if ($null -eq $ruleCodeFingerprint) { return }
+
 		$objSession = [pscustomobject]@{
-			Enabled         = $true
-			Root            = $root
-			EntryRoot       = Join-Path $root $script:Ps1AnalysisCacheSchema
-			StatePath       = Join-Path $root 'state.json'
-			SettingsHash    = $settingsHash
-			AnalyzerVersion = "$($Analyzer.Version)"
-			WriteBudget     = $WriteBudget
-			Writes          = 0
-			Hits            = 0
-			Misses          = 0
-			ResetCount      = $false
-			Fingerprints    = @{}
-			RuleFingerprint = @{}
+			Enabled             = $true
+			Root                = $root
+			EntryRoot           = Join-Path $root $script:Ps1AnalysisCacheSchema
+			StatePath           = Join-Path $root 'state.json'
+			SettingsHash        = $settingsHash
+			AnalyzerVersion     = "$($Analyzer.Version)"
+			RuleCodeFingerprint = $ruleCodeFingerprint
+			WriteBudget         = $WriteBudget
+			Writes              = 0
+			Hits                = 0
+			Misses              = 0
+			ResetCount          = $false
+			Fingerprints        = @{}
+			RuleFingerprint     = @{}
 		}
 
 		$hashState = Get-Ps1AnalysisCacheState -Root $root
@@ -409,7 +462,7 @@ function Get-Ps1AnalysisCacheCustomFingerprint {
 		-Analyzer $Analyzer `
 		-ModuleRoot (Get-Ps1ModuleRoot -Path $Path)
 
-	"$repositoryFingerprint|$ruleFingerprint"
+	"$($Session.RuleCodeFingerprint)|$repositoryFingerprint|$ruleFingerprint"
 }
 
 function Complete-Ps1AnalysisCacheSession {

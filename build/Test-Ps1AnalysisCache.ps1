@@ -45,13 +45,16 @@ function Invoke-Analysis {
 	param(
 		[string] $Path,
 		[string] $SettingsPath = $realSettings,
+		[string] $RuleRoot,
 		[object] $Version
 	)
 
 	$analyzer = New-Ps1Analyzer -SettingsPath $SettingsPath
 	if ($null -ne $Version) { $analyzer.Version = $Version }
 
-	$session = New-Ps1AnalysisCacheSession -Analyzer $analyzer -RepositoryRoot $root
+	$session = New-Ps1AnalysisCacheSession -Analyzer $analyzer `
+		-RepositoryRoot $root `
+		-RuleRoot $RuleRoot
 	$result = Invoke-Ps1Analysis -Path $Path -Analyzer $analyzer -AnalysisCache $session
 	[pscustomobject]@{
 		Result = $result
@@ -329,6 +332,26 @@ function Get-FixtureBroken {
 	$gitIgnore = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../.gitignore') -Raw
 	Assert-True ($gitIgnore -match '\.ps1-lint-cache/') '.gitignore must keep the cache folder out of git.'
 	Write-Output 'PASS: the cache folder stays out of git'
+
+	# 16. A rule implementation edit invalidates custom entries only; the
+	# built-in entry stays a hit. The rules are hashed from the folder that
+	# owns them, so a copy proves the key without editing the real rule files.
+	$ruleRoot = Join-Path $root 'rule-code'
+	New-Item -ItemType Directory -Path $ruleRoot -Force > $null
+	Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal') -File -Filter '*.ps1' |
+	Copy-Item -Destination $ruleRoot
+	$unchangedRules = Invoke-Analysis -Path $onePath
+	Assert-True ($unchangedRules.Hits -eq 2 -and $unchangedRules.Misses -eq 0) "Unchanged rules must reuse both entries, got $($unchangedRules.Hits) hit(s) and $($unchangedRules.Misses) miss(es)."
+	[IO.File]::AppendAllText((Join-Path $ruleRoot 'Get-Ps1CommentDiagnostic.ps1'), "`n# local rule experiment`n")
+	$ruleEdit = Invoke-Analysis -Path $onePath -RuleRoot $ruleRoot
+	Assert-True ($ruleEdit.Hits -eq 1 -and $ruleEdit.Misses -eq 1) "A rule edit must invalidate only the custom entry, got $($ruleEdit.Hits) hit(s) and $($ruleEdit.Misses) miss(es)."
+	Assert-True ((Get-Signature $ruleEdit.Result) -ceq $outputSignature) 'A rule edit must not change the result of the same rules.'
+	$ruleEditWarm = Invoke-Analysis -Path $onePath -RuleRoot $ruleRoot
+	Assert-True ($ruleEditWarm.Hits -eq 2) "The edited rule set must cache its own custom entry, got $($ruleEditWarm.Hits) hit(s)."
+	$unchangedAgain = Invoke-Analysis -Path $onePath
+	Assert-True ($unchangedAgain.Hits -eq 2 -and $unchangedAgain.Misses -eq 0) "The untouched rule set must keep both entries, got $($unchangedAgain.Hits) hit(s) and $($unchangedAgain.Misses) miss(es)."
+	Remove-Item -LiteralPath $ruleRoot -Recurse -Force
+	Write-Output 'PASS: a rule implementation edit invalidates only the custom entry'
 
 	Write-Output 'Analysis cache regression checks passed.'
 }

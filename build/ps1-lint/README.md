@@ -213,9 +213,14 @@ Repeated local runs reuse the analysis result of an unchanged file.
 - `custom` entries hold the repository rule diagnostics. The key adds a
   fingerprint of the repository metadata the rules read: function parameter
   names and aliases, declared output types, and command names from the shared
-  index, plus the `ps1-lint.json` allowlist that applies to the file. Editing
-  one function's body leaves another file's custom entry valid; changing a
-  parameter or an output type anywhere in the module invalidates it.
+  index, plus the `ps1-lint.json` allowlist that applies to the file, plus a
+  session-level fingerprint of the rule implementation itself (every
+  `Get-Ps1*Diagnostic.ps1` and the shared helpers it calls). Editing one
+  function's body leaves another file's custom entry valid; changing a
+  parameter or an output type anywhere in the module invalidates it, and so
+  does editing a rule under `build/ps1-lint/internal`. The rule-code
+  fingerprint does not touch built-in entries, so a rule edit still reuses the
+  PSScriptAnalyzer result.
 - A complete hit skips the parse, the analyzer, and the rules. A parse failure
   is stored with the entry, so it reproduces the parse-only result.
 - Every read revalidates the schema and the stored key. A missing, damaged, or
