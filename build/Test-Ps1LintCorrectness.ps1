@@ -369,7 +369,8 @@ function Get-IndexTarget {
 
 	# The documented semantics must match the rule messages.
 	$readmeText = Get-Content -LiteralPath $readme -Raw
-	Assert-True ($readmeText -match 'already rejects null and empty values') 'README must describe mandatory string binding accurately.'
+	$parametersContractText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/contracts/Parameters.md') -Raw
+	Assert-True ($parametersContractText -match 'already rejects null and empty values') 'Parameters contract must describe mandatory string binding accurately.'
 	Assert-True ($readmeText -match 'emits one null item into the pipeline') 'README must describe the return $null difference accurately.'
 	$contract = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal/Get-Ps1ParameterContractDiagnostic.ps1') -Raw
 	Assert-True ($contract -match 'state the non-empty contract explicitly') 'The parameter contract message must describe the convention.'
