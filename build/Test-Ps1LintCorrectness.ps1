@@ -8,6 +8,9 @@ $hook = Join-Path $PSScriptRoot 'ps1-lint/psscriptanalyzer/Run.ps1'
 $formatHook = Join-Path $PSScriptRoot 'ps1-lint/ps1-format/Run.ps1'
 $readme = Join-Path $PSScriptRoot 'ps1-lint/README.md'
 $pwsh = (Get-Process -Id $PID).Path
+# Keep the local analysis cache out of the checkout while these fixtures run.
+$previousCache = $env:PS1_LINT_CACHE
+$env:PS1_LINT_CACHE = Join-Path $root 'analysis-cache'
 
 function Assert-True([bool] $Condition, [string] $Message) {
 	if (-not $Condition) { throw $Message }
@@ -215,6 +218,107 @@ Write-Output 'pin'
 	# build counter proves the scan runs once, and a fresh worker proves a
 	# later run sees files edited after the first run.
 	. (Join-Path $PSScriptRoot 'ps1-lint/internal/Invoke-Ps1Analysis.ps1')
+
+	# A built-in-only scan must keep only what the built-in analyzer and the
+	# failure policy read. Comment groups and help sections exist for
+	# repository rules and parse the file once per comment block, so
+	# -SkipCustomRules must not build them.
+	$builtInFixture = New-HelperFixture 'd365bap.tools/functions/Get-SkipFixture.ps1' @'
+function Get-SkipFixture {
+	<#
+	.SYNOPSIS
+		Fixture help.
+	#>
+	[CmdletBinding()]
+	param(
+		[string] $Name = 'x'
+	)
+
+	Write-Host $Name
+}
+'@
+	$fullAnalysis = Get-Ps1Analysis -Path $builtInFixture
+	Assert-True (@($fullAnalysis.CommentGroups).Count -eq 1) 'A full analysis must build comment groups for the fixture.'
+	Assert-True (@($fullAnalysis.HelpSections).Count -eq 1) 'A full analysis must build help sections for the fixture.'
+
+	$builtInAnalysis = Get-Ps1Analysis -Path $builtInFixture -SkipCustomRules
+	Assert-True (-not $builtInAnalysis.ContainsKey('CommentGroups')) 'A built-in-only analysis must not build comment groups.'
+	Assert-True (-not $builtInAnalysis.ContainsKey('HelpSections')) 'A built-in-only analysis must not build help sections.'
+	Assert-True ($null -ne $builtInAnalysis.Ast.Extent) 'A built-in-only analysis must still parse the file.'
+
+	# The entry point must ask for that mode, and a full scan must not.
+	$builtInGet = @(Get-Command -Name Get-Ps1Analysis -CommandType Function)[0].ScriptBlock
+	$script:analysisCall = [System.Collections.Generic.List[object]]::new()
+	function Get-Ps1Analysis {
+		param(
+			[string] $Path,
+			[AllowEmptyString()]
+			[string] $Content,
+			[switch] $SkipCustomRules
+		)
+
+		$script:analysisCall.Add([pscustomobject]@{ Path = $Path; SkipCustomRules = [bool] $SkipCustomRules })
+		$hashParameter = @{ Path = $Path; SkipCustomRules = [bool] $SkipCustomRules }
+		if ($PSBoundParameters.ContainsKey('Content')) { $hashParameter.Content = $Content }
+		& $builtInGet @hashParameter
+	}
+
+	$skipAnalyzer = New-Ps1Analyzer
+	$null = Invoke-Ps1Analysis -Path $builtInFixture -Analyzer $skipAnalyzer -SkipCustomRules
+	Assert-True ($script:analysisCall.Count -eq 1 -and $script:analysisCall[0].SkipCustomRules) 'A built-in-only scan must build the analysis in built-in-only mode.'
+	$script:analysisCall.Clear()
+	$null = Invoke-Ps1Analysis -Path $builtInFixture -Analyzer $skipAnalyzer
+	Assert-True ($script:analysisCall.Count -eq 1 -and -not $script:analysisCall[0].SkipCustomRules) 'A full scan must still build the comment groups and help sections.'
+
+	# Diagnostics and the failure policy must not move. The built-in analyzer
+	# with the shared settings stays the only diagnostic source, module
+	# warnings stay fatal, the default gate stays warning-tolerant, and the
+	# high-signal rules still fail a file the default severity would pass.
+	$builtInResult = Invoke-Ps1Analysis -Path $builtInFixture -Analyzer $skipAnalyzer -SkipCustomRules
+	$colBuiltInExpected = @(Invoke-ScriptAnalyzer -Path $builtInFixture `
+			-Severity $skipAnalyzer.Settings.Severity `
+			-ExcludeRule $skipAnalyzer.Settings.ExcludeRule `
+			-ErrorAction Stop)
+	$colExpectedLine = @($colBuiltInExpected | ForEach-Object {
+			"$($_.RuleName)|$($_.Severity)|$($_.ScriptName)|$($_.Line)|$($_.Column)|$($_.Message)"
+		} | Sort-Object)
+	$colActualLine = @($builtInResult.Diagnostics | ForEach-Object {
+			"$($_.RuleName)|$($_.Severity)|$($_.ScriptName)|$($_.Line)|$($_.Column)|$($_.Message)"
+		} | Sort-Object)
+	Assert-True ($colBuiltInExpected.Count -gt 0) 'The fixture must report at least one built-in diagnostic.'
+	Assert-True (($colExpectedLine -join "`n") -ceq ($colActualLine -join "`n")) 'A built-in-only scan must report exactly the built-in analyzer diagnostics.'
+	Assert-True $builtInResult.Failed 'A warning in a module function file is still fatal for a built-in-only scan.'
+
+	$brokenFixture = New-HelperFixture 'build/Broken-Skip.ps1' "function Broken {`n"
+	$parseResult = Invoke-Ps1Analysis -Path $brokenFixture -Analyzer $skipAnalyzer -SkipCustomRules
+	$colParse = @($parseResult.Diagnostics)
+	Assert-True ($colParse.Count -eq 1 -and $colParse[0].RuleName -eq 'PSParseError') 'A built-in-only scan must still report parse errors.'
+	Assert-True $parseResult.Failed 'A parse error must still fail a built-in-only scan.'
+
+	$warningFixture = New-HelperFixture 'build/Write-Skip.ps1' "Write-Host 'probe'`n"
+	$warningResult = Invoke-Ps1Analysis -Path $warningFixture -Analyzer $skipAnalyzer -SkipCustomRules
+	Assert-True (-not $warningResult.Failed) 'A warning outside a module function file must stay below the default gate.'
+
+	$highSignalFixture = New-HelperFixture 'build/Start-Skip.ps1' "function Start-SkipThing {`n`ttry { 'x' }`n`tcatch {}`n}`n"
+	$highSignalResult = Invoke-Ps1Analysis -Path $highSignalFixture -Analyzer $skipAnalyzer -SkipCustomRules
+	Assert-True (@($highSignalResult.Diagnostics | Where-Object RuleName -eq 'PSAvoidUsingEmptyCatchBlock').Count -eq 1) 'The high-signal warning must still be reported for a built-in-only scan.'
+	Assert-True $highSignalResult.Failed 'The high-signal rule must still fail a built-in-only scan.'
+
+	# The formatted-text path must stay equivalent when custom rules are
+	# skipped, so the combined batch hook cannot drift from the path scan.
+	$contentResult = Invoke-Ps1Analysis -Path $highSignalFixture `
+		-Analyzer $skipAnalyzer `
+		-ContentByPath @{ $highSignalFixture = (Get-Content -LiteralPath $highSignalFixture -Raw) } `
+		-SkipCustomRules
+	$colContentLine = @($contentResult.Diagnostics | ForEach-Object {
+			"$($_.RuleName)|$($_.Severity)|$($_.ScriptName)|$($_.Line)|$($_.Column)|$($_.Message)"
+		} | Sort-Object)
+	$colHighSignalLine = @($highSignalResult.Diagnostics | ForEach-Object {
+			"$($_.RuleName)|$($_.Severity)|$($_.ScriptName)|$($_.Line)|$($_.Column)|$($_.Message)"
+		} | Sort-Object)
+	Assert-True (($colContentLine -join "`n") -ceq ($colHighSignalLine -join "`n")) 'A built-in-only scan of formatted text must report the same diagnostics as the path scan.'
+	Assert-True ($contentResult.Failed -eq $highSignalResult.Failed) 'A built-in-only scan of formatted text must keep the same failure decision.'
+
 	$indexRoot = Join-Path $root 'repository-index'
 	$indexModule = Join-Path $indexRoot 'd365bap.tools'
 	$indexCaller = Join-Path $indexModule 'functions/Get-IndexCaller.ps1'
@@ -275,5 +379,6 @@ function Get-IndexTarget {
 	Write-Host 'Lint correctness regression checks passed.'
 }
 finally {
+	$env:PS1_LINT_CACHE = $previousCache
 	if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
 }

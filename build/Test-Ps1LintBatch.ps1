@@ -7,6 +7,10 @@ $root = Join-Path ([IO.Path]::GetTempPath()) ('ps1-lint-batch-' + [guid]::NewGui
 $runner = Join-Path $PSScriptRoot 'ps1-lint/lint/Run.ps1'
 $formatSettings = Join-Path $PSScriptRoot 'ps1-lint/internal/Ps1FormatSettings.psd1'
 $pwsh = (Get-Process -Id $PID).Path
+# The analysis result cache is a local-run optimization. Point it at the
+# fixture folder so this suite never writes into the repository checkout.
+$previousCache = $env:PS1_LINT_CACHE
+$env:PS1_LINT_CACHE = Join-Path $root 'analysis-cache'
 
 function Assert-True([bool] $Condition, [string] $Message) {
 	if (-not $Condition) { throw $Message }
@@ -195,7 +199,7 @@ function Get-Parity {
 	$prekText = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../prek.toml') -Raw
 	Assert-True ($prekText -match 'id = "ps1-lint"') 'prek.toml must define the combined ps1-lint hook.'
 	Assert-True ($prekText -match 'build/ps1-lint/lint/Run\.ps1') 'The combined hook must call lint/Run.ps1.'
-	Assert-True ($prekText -match 'pass_filenames = 64') 'The combined hook must keep bounded batches.'
+	Assert-True ($prekText -match 'pass_filenames = 128') 'The combined hook must keep bounded batches.'
 	$ciText = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../.github/workflows/validate.yml') -Raw
 	Assert-True ($ciText -match 'PS1_LINT_CHECK_ONLY') 'CI must select check-only mode.'
 	Assert-True ($ciText -match 'prek run ps1-lint') 'CI must run the combined hook.'
@@ -203,5 +207,6 @@ function Get-Parity {
 	Write-Host 'Lint batch regression checks passed.'
 }
 finally {
+	$env:PS1_LINT_CACHE = $previousCache
 	if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
 }

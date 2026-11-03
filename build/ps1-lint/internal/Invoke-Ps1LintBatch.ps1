@@ -80,9 +80,11 @@ function Invoke-Ps1LintBatch {
 	$colFormatFailures = [System.Collections.Generic.List[string]]::new()
 	$colDiagnostics = [System.Collections.Generic.List[object]]::new()
 	$colFailedFiles = [System.Collections.Generic.List[string]]::new()
+	$objCacheSession = $null
 
 	if ($colFiles.Count -gt 0) {
 		$objAnalyzer = New-Ps1Analyzer -SettingsPath $AnalyzerSettingsPath
+		$objCacheSession = New-Ps1AnalysisCacheSession -Analyzer $objAnalyzer
 	}
 
 	for ($offset = 0; $offset -lt $colFiles.Count; $offset += $BatchSize) {
@@ -118,6 +120,7 @@ function Invoke-Ps1LintBatch {
 				$objFileResult = Invoke-Ps1Analysis -Path $itemFile `
 					-Analyzer $objAnalyzer `
 					-ContentByPath $tmpContent `
+					-AnalysisCache $objCacheSession `
 					-SkipCustomRules:($itemFile -notmatch '\.ps1$')
 
 				$colDiagnostics.AddRange(@($objFileResult.Diagnostics))
@@ -142,6 +145,8 @@ function Invoke-Ps1LintBatch {
 		Out-String |
 		Write-Host
 	}
+
+	Complete-Ps1AnalysisCacheSession -Session $objCacheSession
 
 	if ($colFormatFailures.Count -gt 0) {
 		Write-Host "$($colFormatFailures.Count) file(s) could not be formatted."
