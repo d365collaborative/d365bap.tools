@@ -125,6 +125,7 @@
 		, 'Get-PpacEnvironmentAcpPolicy'
 		, 'Get-PpacEnvironmentConnection'
 		, 'Get-PpacEnvironmentConnector'
+		, 'Get-PpacEnvironmentDlpPolicy'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacEnvironmentGroupAcpPolicy'
 		, 'Get-PpacEnvironmentGroupRuleBasedPolicy'
@@ -143,6 +144,7 @@
 		, 'Get-PpacTeam'
 		, 'Get-PpacTenantAcpPolicy'
 		, 'Get-PpacTenantConnector'
+		, 'Get-PpacTenantDlpPolicy'
 		, 'Get-PpacTenantRuleBasedPolicy'
 		, 'Get-PpacUser'
 
@@ -190,8 +192,10 @@
 
 		, 'Invoke-UdeDbQuery'
 
+		, 'New-PpacEnvironmentDlpPolicy'
 		, 'New-PpacSecurityRole'
 		, 'New-PpacTenantAcpPolicy'
+		, 'New-PpacTenantDlpPolicy'
 		, 'New-PpacTenantRuleBasedPolicy'
 
 		, 'New-UnifiedEnvironment'
@@ -199,7 +203,9 @@
 
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
+		, 'Remove-PpacEnvironmentDlpPolicy'
 		, 'Remove-PpacTenantAcpPolicyRuleSet'
+		, 'Remove-PpacTenantDlpPolicy'
 		, 'Remove-PpacTenantRuleBasedPolicyRuleSet'
 		, 'Remove-PpacUser'
 		, 'Remove-PpeSolution'
@@ -220,6 +226,7 @@
 		, 'Set-FscmUserAccess'
 
 		, 'Set-PpacAdminMode'
+		, 'Set-PpacEnvironmentDlpPolicy'
 
 		, 'Set-PpacRbacContext'
 		, 'Add-PpacRbacRoleMember'
@@ -228,6 +235,7 @@
 		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
 		, 'Set-PpacTenantAcpPolicy'
+		, 'Set-PpacTenantDlpPolicy'
 		, 'Set-PpacTenantRuleBasedPolicy'
 
 		, 'Set-UdeConfig'
