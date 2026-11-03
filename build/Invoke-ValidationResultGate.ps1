@@ -3,9 +3,9 @@
     Checks validation job results against the plan.
 
 .DESCRIPTION
-    Accepts only the job-result combinations the change plan can produce, so a
-    skipped or missing infrastructure job fails while the infrastructure flag is
-    true. Test-PRValidationPlan.ps1 covers each accepted and rejected combination.
+    Fails when a required job is skipped, missing, or failed, and when a job
+    runs that the plan did not ask for. Test-PRValidationPlan.ps1 covers every
+    accepted and rejected combination.
 #>
 [CmdletBinding()]
 param(
@@ -17,25 +17,31 @@ param(
 	[string] $ChangeResult,
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
-	[string] $Mode,
-	[Parameter(Mandatory = $true)]
-	[ValidateNotNullOrEmpty()]
-	[string] $InfrastructureChange,
+	[string] $Scope,
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
 	[string] $PlanHash,
-	[Parameter(Mandatory = $true)]
-	[ValidateNotNullOrEmpty()]
+	# The selective and compiled jobs report these only when they run. Their
+	# values are required and compared only when the matching plan flag is true.
 	[string] $SelectiveHash,
-	[Parameter(Mandatory = $true)]
-	[ValidateNotNullOrEmpty()]
 	[string] $CompiledHash,
+	[string] $SelectiveScope,
+	[string] $CompiledScope,
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
-	[string] $SelectiveMode,
+	[string] $ModuleTests,
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
-	[string] $CompiledMode,
+	[string] $AnalyzerScans,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $SelectiveTests,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $CompiledImport,
+	[Parameter(Mandatory = $true)]
+	[ValidateNotNullOrEmpty()]
+	[string] $InfrastructureChange,
 	[Parameter(Mandatory = $true)]
 	[ValidateNotNullOrEmpty()]
 	[string] $General,
@@ -59,29 +65,55 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if ($Lint -ne 'success') { throw 'Lint or source-ownership checks failed.' }
-if ($ChangeResult -ne 'success' -or $Mode -cnotin @('docs', 'selective', 'full')) { throw 'Change detection failed or returned an invalid mode.' }
+if ($ChangeResult -ne 'success') { throw 'Change detection failed.' }
 if ($PlanHash -notmatch '^[0-9A-F]{64}$') { throw 'Missing or invalid central validation plan hash.' }
-foreach ($reportedHash in @($SelectiveHash, $CompiledHash)) {
-	if ($reportedHash -cne $PlanHash) { throw 'Validation jobs produced different change plans.' }
-}
-foreach ($reportedMode in @($SelectiveMode, $CompiledMode)) {
-	if ($reportedMode -cne $Mode) { throw "Validation jobs disagreed on change scope: expected $Mode, got $reportedMode." }
-}
-if ($InfrastructureChange -cnotin @('true', 'false')) { throw "Missing or invalid infrastructure-change flag: '$InfrastructureChange'." }
 
-$expected = switch ("$Mode|$InfrastructureChange") {
-	'docs|false' { @('skipped', 'skipped', 'skipped', 'success', 'success', 'skipped') }
-	'selective|false' { @('skipped', 'skipped', 'skipped', 'success', 'success', 'skipped') }
-	'full|false' { @('success', 'success', 'success', 'success', 'success', 'skipped') }
-	'full|true' { @('success', 'success', 'success', 'success', 'success', 'success') }
-	default { throw "Unsupported validation combination: mode '$Mode', infrastructure change '$InfrastructureChange'." }
+$hashFlag = [ordered]@{
+	ModuleTests          = $ModuleTests
+	AnalyzerScans        = $AnalyzerScans
+	SelectiveTests       = $SelectiveTests
+	CompiledImport       = $CompiledImport
+	InfrastructureChange = $InfrastructureChange
+}
+foreach ($itemName in $hashFlag.Keys) {
+	if ($hashFlag[$itemName] -cnotin @('true', 'false')) { throw "Missing or invalid plan flag $itemName`: '$($hashFlag[$itemName])'." }
+}
+$runModuleTests = $ModuleTests -ceq 'true'
+$runAnalyzerScans = $AnalyzerScans -ceq 'true'
+$runSelectiveTests = $SelectiveTests -ceq 'true'
+$runCompiledImport = $CompiledImport -ceq 'true'
+$runInfrastructure = $InfrastructureChange -ceq 'true'
+
+# The planner never emits a documentation scope with a partial job set: any
+# change that is not documentation-only loads the module. An impossible
+# combination fails closed instead of silently skipping a check.
+if (-not $runCompiledImport -and ($runModuleTests -or $runAnalyzerScans -or $runSelectiveTests -or $runInfrastructure)) {
+	throw "Impossible validation scope '$Scope': no compiled-import job with module, analyzer, selective, or infrastructure work."
 }
 
-$jobName = @('general-unit-tests', 'public-functions-unit-tests', 'internal-functions-unit-tests', 'selective-tests', 'compiled-import', 'infrastructure-tests')
-$actual = @($General, $Public, $Internal, $Selective, $Compiled, $InfrastructureResult)
-for ($i = 0; $i -lt $expected.Count; $i++) {
-	if ($actual[$i] -ne $expected[$i]) {
-		throw "Unexpected result for $($jobName[$i]): expected $($expected[$i]), got $($actual[$i]) (mode $Mode, infrastructure change $InfrastructureChange)."
+# The jobs that recompute the plan must agree with the change-detection job.
+# Their results are cross-checked above, so a skipped job cannot fake agreement.
+if ($runSelectiveTests) {
+	if ($SelectiveHash -cne $PlanHash) { throw 'Validation jobs produced different change plans (selective).' }
+	if ($SelectiveScope -cne $Scope) { throw "Validation jobs disagreed on the scope: expected $Scope, got '$SelectiveScope' (selective)." }
+}
+if ($runCompiledImport) {
+	if ($CompiledHash -cne $PlanHash) { throw 'Validation jobs produced different change plans (compiled).' }
+	if ($CompiledScope -cne $Scope) { throw "Validation jobs disagreed on the scope: expected $Scope, got '$CompiledScope' (compiled)." }
+}
+
+$jobCheck = @(
+	@{ Name = 'general-unit-tests'; Required = $runModuleTests; Actual = $General }
+	@{ Name = 'public-functions-unit-tests'; Required = $runAnalyzerScans; Actual = $Public }
+	@{ Name = 'internal-functions-unit-tests'; Required = $runAnalyzerScans; Actual = $Internal }
+	@{ Name = 'selective-tests'; Required = $runSelectiveTests; Actual = $Selective }
+	@{ Name = 'compiled-import'; Required = $runCompiledImport; Actual = $Compiled }
+	@{ Name = 'infrastructure-tests'; Required = $runInfrastructure; Actual = $InfrastructureResult }
+)
+foreach ($job in $jobCheck) {
+	$expected = if ($job.Required) { 'success' } else { 'skipped' }
+	if ($job.Actual -cne $expected) {
+		throw "Unexpected result for $($job.Name): expected $expected, got '$($job.Actual)' (scope $Scope)."
 	}
 }
-Write-Host "Validation passed ($Mode, infrastructure change: $InfrastructureChange)."
+Write-Host "Validation passed ($Scope)."

@@ -158,6 +158,26 @@ prek run --all-files --stage manual
 pwsh -NoProfile -File ./build/Invoke-Ps1LintScope.ps1 -BaseSha <base> -HeadSha <head> -RunAnalyzer
 ```
 
+### Pull request validation scope
+
+`build/Get-PRValidationPlan.ps1` derives independent decisions from the change
+set instead of one coarse mode, so a pull request runs only the jobs its files
+can affect:
+
+| Change | Jobs |
+| --- | --- |
+| Documentation only | lint and change detection |
+| Formatting only (same tokens and line breaks) | compiled import |
+| Public function source | targeted checks and compiled import |
+| Module test or analyzer harness | the module suites or the full scans, plus compiled import |
+| Shared module code, manifest, or unknown path | full module suites, full scans, compiled import |
+| Validation tooling | the regression suites and compiled import |
+
+Shared module code keeps the full module test set, and anything the plan cannot
+classify falls back to it as well. `build/Invoke-ValidationResultGate.ps1` fails
+a skipped, missing, or failed required job and rejects a scope that no change
+can produce.
+
 Do not edit generated files (`d365bap.tools/tests/functions/*.Tests.ps1`,
 `docs/*.md`, consolidated format XML, or `wiki/Namespaces.md`) in a pull request.
 CI builds current runtime formats for validation and generates documentation and
