@@ -1,9 +1,9 @@
 ﻿name: Warm Module Cache
 
-# Sole cache producer for the PowerShell module sets. Every dependency set is
-# warmed here on trusted main-branch runs so PR jobs (including
-# pull_request_target regen, whose token cannot save caches) can restore them
-# read-only.
+# Sole cache producer for the PowerShell module sets and the pinned CI tools.
+# Every dependency set is warmed here on trusted main-branch runs so PR jobs
+# (including pull_request_target regen, whose token cannot save caches) can
+# restore them read-only.
 on:
   push:
     branches: [main]
@@ -12,6 +12,28 @@ on:
   workflow_dispatch:
 
 jobs:
+  warm-prek:
+    name: Warm pinned prek
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+
+    # Same key and path as the restore step in validate.yml. Install-Prek.ps1
+    # verifies the exact pin before and after an install.
+    - name: Cache pinned prek
+      id: cache-prek
+      uses: actions/cache@v5
+      with:
+        path: ${{ runner.temp }}\prek
+        key: prek-${{ runner.os }}-${{ hashFiles('build/ToolCacheRequirements.json') }}
+
+    - name: Install pinned prek
+      if: steps.cache-prek.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: ./build/Install-Prek.ps1 -TargetPath (Join-Path $env:RUNNER_TEMP 'prek')
+
   warm-lint:
     name: Warm lint module
     runs-on: windows-latest

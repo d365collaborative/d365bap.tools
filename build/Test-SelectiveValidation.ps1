@@ -52,7 +52,7 @@ try {
 	) -Encoding utf8
 	& $pwsh -NoProfile -NonInteractive -File (Join-Path $fixture 'check-snapshot.ps1')
 	Assert-True ($LASTEXITCODE -eq 0) 'Stale snapshot fixture did not demonstrate a signature mismatch.'
-	$plan = @{ Mode = 'selective'; PublicPaths = @(1..21 | ForEach-Object { 'd365bap.tools/functions/Case{0:D2}.ps1' -f $_ }) }
+	$plan = @{ SelectiveTests = $true; PublicPaths = @(1..21 | ForEach-Object { 'd365bap.tools/functions/Case{0:D2}.ps1' -f $_ }) }
 	$run = Run-Plan $plan
 	Assert-True ($run.ExitCode -eq 0) "Valid plan failed: $($run.Output)"
 	foreach ($name in @('ChangedHelp', 'Changed-Manifest', 'Changed-FileIntegrity')) {
@@ -69,8 +69,10 @@ try {
 	Assert-True ((Run-Plan $plan).ExitCode -ne 0) 'Unexported selected command was accepted.'
 	$plan.PublicPaths = @()
 	Assert-True ((Run-Plan $plan).ExitCode -ne 0) 'Empty plan was accepted.'
+	$plan = @{ PublicPaths = @('d365bap.tools/functions/Case01.ps1') }
+	Assert-True ((Run-Plan $plan).ExitCode -ne 0) 'A plan without the selective decision was accepted.'
 	Write-Host 'PASS: missing, unsafe and empty plans fail closed'
-	$plan.PublicPaths = @('d365bap.tools/functions/Case01.ps1')
+	$plan = @{ SelectiveTests = $true; PublicPaths = @('d365bap.tools/functions/Case01.ps1') }
 	Set-Content -LiteralPath (Join-Path $project 'tests/general/Help.Tests.ps1') -Value "throw 'fixture discovery error'" -Encoding utf8
 	Assert-True ((Run-Plan $plan).ExitCode -ne 0) 'Pester discovery error was accepted.'
 	Set-Content -LiteralPath (Join-Path $project 'tests/general/Help.Tests.ps1') -Value '# no tests' -Encoding utf8

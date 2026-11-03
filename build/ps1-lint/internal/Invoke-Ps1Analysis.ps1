@@ -17,11 +17,13 @@ function New-Ps1Analyzer {
 
 	$hashSettings = Get-Ps1AnalyzerSettings -Path $SettingsPath
 
-	Import-Ps1Analyzer -SettingsPath $SettingsPath > $null
+	$objVersion = Import-Ps1Analyzer -SettingsPath $SettingsPath
 
 	[pscustomobject]@{
-		Settings = $hashSettings
-		Worker   = Get-Ps1AnalysisWorker
+		Settings     = $hashSettings
+		SettingsPath = $SettingsPath
+		Version      = $objVersion
+		Worker       = Get-Ps1AnalysisWorker
 	}
 }
 
@@ -137,23 +139,119 @@ function Invoke-Ps1Analysis {
 		[hashtable] $ContentByPath = @{},
 		# Full scans keep the historical built-in-only coverage. Custom rules
 		# are adopted as files change, so their existing debt must not fail a
-		# module-wide run.
-		[switch] $SkipCustomRules
+		# module-wide run. The analysis is built in the same built-in-only
+		# mode, so the comment groups and help sections that only custom rules
+		# read are never built.
+		[switch] $SkipCustomRules,
+		# A session from New-Ps1AnalysisCacheSession. $null keeps the uncached
+		# path. The cache only skips work; every result is validated on read.
+		$AnalysisCache
 	)
 
 	process {
 		foreach ($itemPath in @($Path)) {
 			$hasContent = $ContentByPath.ContainsKey($itemPath)
+			$cacheSession = $AnalysisCache
+			if ($null -ne $cacheSession -and -not $cacheSession.Enabled) { $cacheSession = $null }
+
+			$textHash = $null
+			$builtInKey = $null
+			$builtInPath = $null
+			$customKey = $null
+			$customPath = $null
+			$builtInEntry = $null
+			$customEntry = $null
+
+			if ($null -ne $cacheSession) {
+				$tmpText = if ($hasContent) { $ContentByPath[$itemPath] } else { [IO.File]::ReadAllText($itemPath) }
+				$textHash = Get-Ps1TextHash -Text $tmpText
+
+				$builtInKey = Get-Ps1AnalysisCacheKey -Session $cacheSession `
+					-Kind builtin `
+					-Path $itemPath `
+					-TextHash $textHash
+				$builtInPath = Get-Ps1AnalysisCacheEntryPath -Session $cacheSession `
+					-Key $builtInKey
+				$builtInEntry = Read-Ps1AnalysisCacheEntry -Session $cacheSession `
+					-Key $builtInKey `
+					-EntryPath $builtInPath
+				if ($null -ne $builtInEntry) { $cacheSession.Hits = $cacheSession.Hits + 1 }
+				else { $cacheSession.Misses = $cacheSession.Misses + 1 }
+
+				if (-not $SkipCustomRules) {
+					$tmpFingerprint = Get-Ps1AnalysisCacheCustomFingerprint -Session $cacheSession `
+						-Path $itemPath `
+						-Analyzer $Analyzer
+					if ($null -ne $tmpFingerprint) {
+						$customKey = Get-Ps1AnalysisCacheKey -Session $cacheSession `
+							-Kind custom `
+							-Path $itemPath `
+							-TextHash $textHash `
+							-Fingerprint $tmpFingerprint
+						$customPath = Get-Ps1AnalysisCacheEntryPath -Session $cacheSession `
+							-Key $customKey
+						$customEntry = Read-Ps1AnalysisCacheEntry -Session $cacheSession `
+							-Key $customKey `
+							-EntryPath $customPath
+						if ($null -ne $customEntry) { $cacheSession.Hits = $cacheSession.Hits + 1 }
+						else { $cacheSession.Misses = $cacheSession.Misses + 1 }
+					}
+				}
+			}
+
+			# A complete hit skips the parse, the analyzer, and the rules. A
+			# parse failure is cached with the entry, so it reproduces the
+			# parse-only result without reading the trees again.
+			if ($null -ne $builtInEntry -and ($SkipCustomRules -or $null -ne $customEntry)) {
+				$tmpCached = [System.Collections.Generic.List[object]]::new()
+				$tmpCached.AddRange(@($builtInEntry.Diagnostics))
+				if (-not $builtInEntry.ParseFailed -and $null -ne $customEntry) {
+					$tmpCached.AddRange(@($customEntry.Diagnostics))
+				}
+
+				$result = [pscustomobject]@{
+					Path        = $itemPath
+					Diagnostics = @($tmpCached)
+					Failed      = $false
+				}
+				# A parse failure always fails, exactly like the uncached path.
+				if ($builtInEntry.ParseFailed) {
+					$result.Failed = $true
+				}
+				else {
+					$result.Failed = Test-Ps1AnalysisFailure -Result $result `
+						-Settings $Analyzer.Settings
+				}
+				$result
+				continue
+			}
+
 			$analysis = if ($hasContent) {
 				Get-Ps1Analysis -Path $itemPath `
-					-Content $ContentByPath[$itemPath]
+					-Content $ContentByPath[$itemPath] `
+					-SkipCustomRules:$SkipCustomRules
 			}
 			else {
-				Get-Ps1Analysis -Path $itemPath
+				Get-Ps1Analysis -Path $itemPath `
+					-SkipCustomRules:$SkipCustomRules
 			}
 			$tmpParseDiagnostics = @(Get-Ps1ParseDiagnostic -Analysis $analysis)
 
 			if ($tmpParseDiagnostics.Count -gt 0) {
+				if ($null -ne $builtInKey) {
+					Write-Ps1AnalysisCacheEntry -Session $cacheSession `
+						-Key $builtInKey `
+						-EntryPath $builtInPath `
+						-Diagnostics $tmpParseDiagnostics `
+						-ParseFailed $true
+				}
+				if ($null -ne $customKey) {
+					Write-Ps1AnalysisCacheEntry -Session $cacheSession `
+						-Key $customKey `
+						-EntryPath $customPath `
+						-Diagnostics $tmpParseDiagnostics `
+						-ParseFailed $true
+				}
 				[pscustomobject]@{
 					Path        = $itemPath
 					Diagnostics = $tmpParseDiagnostics
@@ -163,35 +261,59 @@ function Invoke-Ps1Analysis {
 			}
 
 			$tmpDiagnostics = [System.Collections.Generic.List[object]]::new()
-			if ($hasContent) {
-				$tmpBuiltIn = @(Invoke-ScriptAnalyzer -ScriptDefinition $ContentByPath[$itemPath] `
-						-Severity $Analyzer.Settings.Severity `
-						-ExcludeRule $Analyzer.Settings.ExcludeRule `
-						-ErrorAction Stop |
-					ForEach-Object {
-						New-Ps1AnalyzerDiagnostic -Path $itemPath `
-							-Diagnostic $_
-					})
+			if ($null -ne $builtInEntry) {
+				$tmpDiagnostics.AddRange(@($builtInEntry.Diagnostics))
 			}
 			else {
-				$tmpBuiltIn = @(Invoke-ScriptAnalyzer -Path $itemPath `
-						-Recurse `
-						-Severity $Analyzer.Settings.Severity `
-						-ExcludeRule $Analyzer.Settings.ExcludeRule `
-						-ErrorAction Stop)
+				if ($hasContent) {
+					$tmpBuiltIn = @(Invoke-ScriptAnalyzer -ScriptDefinition $ContentByPath[$itemPath] `
+							-Severity $Analyzer.Settings.Severity `
+							-ExcludeRule $Analyzer.Settings.ExcludeRule `
+							-ErrorAction Stop |
+						ForEach-Object {
+							New-Ps1AnalyzerDiagnostic -Path $itemPath `
+								-Diagnostic $_
+						})
+				}
+				else {
+					$tmpBuiltIn = @(Invoke-ScriptAnalyzer -Path $itemPath `
+							-Recurse `
+							-Severity $Analyzer.Settings.Severity `
+							-ExcludeRule $Analyzer.Settings.ExcludeRule `
+							-ErrorAction Stop)
+				}
+				if (($itemPath -replace '\\', '/') -match $Analyzer.Settings.ModulePathPattern) {
+					$tmpBuiltIn = @($tmpBuiltIn | Where-Object RuleName -ne 'PSShouldProcess')
+				}
+				$tmpDiagnostics.AddRange($tmpBuiltIn)
+				if ($null -ne $builtInKey) {
+					Write-Ps1AnalysisCacheEntry -Session $cacheSession `
+						-Key $builtInKey `
+						-EntryPath $builtInPath `
+						-Diagnostics $tmpBuiltIn
+				}
 			}
-			if (($itemPath -replace '\\', '/') -match $Analyzer.Settings.ModulePathPattern) {
-				$tmpBuiltIn = @($tmpBuiltIn | Where-Object RuleName -ne 'PSShouldProcess')
-			}
-			$tmpDiagnostics.AddRange($tmpBuiltIn)
 
 			if (-not $SkipCustomRules) {
-				foreach ($itemRule in Get-Ps1DiagnosticRule) {
-					$tmpRule = @{ Analysis = $analysis }
-					if ($itemRule.NeedsWorker) {
-						$tmpRule.Worker = $Analyzer.Worker
+				if ($null -ne $customEntry) {
+					$tmpDiagnostics.AddRange(@($customEntry.Diagnostics))
+				}
+				else {
+					$tmpRuleDiagnostics = [System.Collections.Generic.List[object]]::new()
+					foreach ($itemRule in Get-Ps1DiagnosticRule) {
+						$tmpRule = @{ Analysis = $analysis }
+						if ($itemRule.NeedsWorker) {
+							$tmpRule.Worker = $Analyzer.Worker
+						}
+						$tmpRuleDiagnostics.AddRange(@(& $itemRule.Id @tmpRule))
 					}
-					$tmpDiagnostics.AddRange(@(& $itemRule.Id @tmpRule))
+					$tmpDiagnostics.AddRange($tmpRuleDiagnostics)
+					if ($null -ne $customKey) {
+						Write-Ps1AnalysisCacheEntry -Session $cacheSession `
+							-Key $customKey `
+							-EntryPath $customPath `
+							-Diagnostics $tmpRuleDiagnostics
+					}
 				}
 			}
 
@@ -216,4 +338,5 @@ foreach ($itemRule in Get-Ps1DiagnosticRule) {
 . "$PSScriptRoot/Get-Ps1CommentGroup.ps1"
 . "$PSScriptRoot/Get-Ps1HelpSection.ps1"
 . "$PSScriptRoot/Get-Ps1Analysis.ps1"
+. "$PSScriptRoot/Get-Ps1AnalysisCache.ps1"
 . "$PSScriptRoot/Import-Ps1Analyzer.ps1"

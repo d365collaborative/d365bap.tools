@@ -170,7 +170,13 @@ function Get-Ps1Analysis {
 		# The combined lint batch passes the formatted text, so analysis sees
 		# what the formatter would write even when -CheckOnly prevents a write.
 		[AllowEmptyString()]
-		[string] $Content
+		[string] $Content,
+		# Built-in-only mode. The comment groups and help sections exist only
+		# for repository rules, so a run that skips those rules must not pay
+		# for them. The hashtable then carries no CommentGroups or
+		# HelpSections key, which keeps the omission visible to a caller that
+		# asks for them anyway.
+		[switch] $SkipCustomRules
 	)
 
 	$tokens = $null
@@ -190,8 +196,10 @@ function Get-Ps1Analysis {
 		Nodes       = @{}
 		TokenCache  = @{}
 	}
-	$hashAnalysis.CommentGroups = @(Get-Ps1CommentGroup -Analysis $hashAnalysis)
-	$hashAnalysis.HelpSections = @(Get-Ps1HelpSection -Analysis $hashAnalysis)
+	if (-not $SkipCustomRules) {
+		$hashAnalysis.CommentGroups = @(Get-Ps1CommentGroup -Analysis $hashAnalysis)
+		$hashAnalysis.HelpSections = @(Get-Ps1HelpSection -Analysis $hashAnalysis)
+	}
 	$hashAnalysis
 }
 

@@ -34,12 +34,16 @@ if ($files.Count -eq 0) { exit 0 }
 
 . "$PSScriptRoot/../internal/Invoke-Ps1Analysis.ps1"
 $analyzer = New-Ps1Analyzer
+$cacheSession = New-Ps1AnalysisCacheSession -Analyzer $analyzer
 
 $results = @()
 $failedFiles = @()
 
 foreach ($p in $files) {
-	$fileResult = Invoke-Ps1Analysis -Path $p -Analyzer $analyzer -SkipCustomRules:($p -notmatch '\.ps1$')
+	$fileResult = Invoke-Ps1Analysis -Path $p `
+		-Analyzer $analyzer `
+		-AnalysisCache $cacheSession `
+		-SkipCustomRules:($p -notmatch '\.ps1$')
 	$results += @($fileResult.Diagnostics)
 
 	if ($fileResult.Failed) {
@@ -47,8 +51,14 @@ foreach ($p in $files) {
 	}
 }
 
+Complete-Ps1AnalysisCacheSession -Session $cacheSession
+
 if ($results.Count -gt 0) {
-	$results | Format-Table -AutoSize -Wrap | Out-String | Write-Host
+	$results |
+	Format-Table -AutoSize `
+		-Wrap |
+	Out-String |
+	Write-Host
 }
 
 if ($failedFiles.Count -gt 0) {
