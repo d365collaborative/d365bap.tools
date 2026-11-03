@@ -1,190 +1,197 @@
 ﻿
 <#
     .SYNOPSIS
-        Query an OData entity from a Power Platform / Dataverse environment.
-        
+        Queries a Dataverse OData entity from Power Platform.
+
     .DESCRIPTION
-        Invokes a GET request against the Dataverse Web API OData endpoint for the specified entity, handling authentication, optional query filters, and automatic pagination via nextLink traversal.
-        
-        Includes built-in retry logic for 429 (Too Many Requests) responses.
-        
+        Sends a GET request to the Dataverse Web API OData endpoint and returns the
+        matching records. Handles authentication, query filters, nextLink pagination,
+        and automatic retries for throttled requests.
+
     .PARAMETER EnvironmentId
-        The ID of the environment to query.
-        
-        Can be either the environment name or the environment GUID (PPAC).
-        
+        Environment name or environment GUID (PPAC).
+
     .PARAMETER Entity
-        The OData entity (plural name) to query, e.g. "accounts" or "systemusers".
-        
+        The OData entity collection name to query, e.g. "accounts" or "systemusers".
+
     .PARAMETER ODataQuery
-        An optional OData query string to append to the request, e.g. "`$filter=statecode eq 0&`$select=name,accountid".
-        
-        Do not include the leading "?".
-        
+        Optional query string without the leading "?", e.g. '$filter=statecode eq 0'.
+
     .PARAMETER TraverseNextLink
-        Instructs the cmdlet to follow "@odata.nextLink" pagination and accumulate all pages into the result.
-        
-        Must be used together with the NextLink parameter set.
-        
+        Follows "@odata.nextLink" pagination and accumulates every page in the result.
+
     .PARAMETER ThrottleSeed
-        When specified, introduces a random delay between 1 and ThrottleSeed seconds after each page request to reduce throttling risk.
-        
-        Only valid when TraverseNextLink is also specified.
-        
+        Random delay in seconds, between 1 and this value, after each page request.
+
     .PARAMETER AsExcelOutput
-        Instructs the cmdlet to export the retrieved records to an Excel file.
-        
+        Exports the retrieved records to an Excel file instead of the pipeline.
+
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts"
-        
-        This command retrieves all records from the accounts entity in the environment "ContosoEnv".
-        
+
+        Retrieves every record from one OData entity.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "accounts" entity set.
+
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "systemusers" -ODataQuery "`$filter=isdisabled eq false&`$select=fullname,systemuserid"
-        
-        This command retrieves all enabled system users, returning only the fullname and systemuserid fields.
-        
+
+        Retrieves only enabled system users with two selected fields.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "systemusers" entity set.
+        It uses -ODataQuery to send the filter and select expressions.
+
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -TraverseNextLink
-        
-        This command retrieves all records from the accounts entity, following pagination links until all pages are returned.
-        
+
+        Follows pagination links until every page is returned.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "accounts" entity set.
+        It uses -TraverseNextLink to request all pages.
+
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -TraverseNextLink -ThrottleSeed 3
-        
-        This command retrieves all pages from the accounts entity, pausing between 1 and 3 seconds between each page request to reduce the risk of throttling.
-        
+
+        Pauses between pages to reduce the risk of throttling.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "accounts" entity set.
+        It uses -TraverseNextLink to request all pages.
+        It uses -ThrottleSeed 3 to wait up to three seconds between pages.
+
     .EXAMPLE
         PS C:\> Get-PpeOdata -EnvironmentId "ContosoEnv" -Entity "accounts" -AsExcelOutput
-        
-        This command retrieves all records from the accounts entity in the environment "ContosoEnv" and exports the results to an Excel file.
-        
+
+        Exports every retrieved record to an Excel file.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "accounts" entity set.
+        It uses -AsExcelOutput to write the records to a workbook.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-PpeOdata {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "OData is the name of the protocol.")]
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
-    [OutputType('System.Object[]')]
-    param (
-        [Parameter (Mandatory = $true)]
-        [string] $EnvironmentId,
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "OData is the name of the protocol.")]
+	[CmdletBinding(DefaultParameterSetName = 'Default')]
+	[OutputType([PSCustomObject])]
+	param (
+		[Parameter (Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "Default")]
-        [Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
-        [string] $Entity,
+		[Parameter(Mandatory = $true, ParameterSetName = "Default")]
+		[Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
+		[ValidateNotNullOrEmpty()]
+		[string] $Entity,
 
-        [string] $ODataQuery,
+		[string] $ODataQuery,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
-        [switch] $TraverseNextLink,
+		[Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
+		[switch] $TraverseNextLink,
 
-        [Parameter(ParameterSetName = "NextLink")]
-        [int] $ThrottleSeed,
+		[Parameter(ParameterSetName = "NextLink")]
+		[int] $ThrottleSeed,
 
-        [switch] $AsExcelOutput
-    )
+		[switch] $AsExcelOutput
+	)
 
-    begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
-            Select-Object -First 1
+	begin {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
-        if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+		$baseUri = $envObj.PpacEnvUri.TrimEnd('/')
 
-        if (Test-PSFFunctionInterrupt) { return }
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenWebApiValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
-        $baseUri = $envObj.PpacEnvUri.TrimEnd('/')
+		$hashHeadersWebApi = @{
+			"Authorization" = "Bearer $($tokenWebApiValue)"
+		}
+	}
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        $headersWebApi = @{
-            "Authorization" = "Bearer $($tokenWebApiValue)"
-        }
-    }
+		[System.UriBuilder] $odataEndpoint = $baseUri
+		$odataEndpoint.Path = "/api/data/v9.2/$Entity"
 
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+		if (-not ([string]::IsNullOrEmpty($ODataQuery))) {
+			$odataEndpoint.Query = "$ODataQuery"
+		}
 
-        [System.UriBuilder] $odataEndpoint = $baseUri
-        $odataEndpoint.Path = "/api/data/v9.2/$Entity"
+		[System.Collections.Generic.List[System.Object]] $resArray = @()
 
-        if (-not ([string]::IsNullOrEmpty($ODataQuery))) {
-            $odataEndpoint.Query = "$ODataQuery"
-        }
+		$localUri = $odataEndpoint.Uri.AbsoluteUri
 
-        [System.Collections.Generic.List[System.Object]] $resArray = @()
+		$429Attempts = 0
+		$maxRetries = 3
 
-        $localUri = $odataEndpoint.Uri.AbsoluteUri
+		do {
+			$429Retry = $false
 
-        $429Attempts = 0
-        $maxRetries = 3
+			try {
+				$resGet = Invoke-RestMethod -Method Get `
+					-Uri $localUri `
+					-Headers $hashHeadersWebApi
 
-        do {
-            $429Retry = $false
+				$429Attempts = 0
+				$resArray.AddRange($resGet.Value)
 
-            try {
-                $resGet = Invoke-RestMethod -Method Get `
-                    -Uri $localUri `
-                    -Headers $headersWebApi
+				if ($resGet.'@odata.nextLink') {
+					$localUri = $resGet.'@odata.nextLink'
+				}
 
-                $429Attempts = 0
-                $resArray.AddRange($resGet.Value)
+				if ($ThrottleSeed) {
+					$tmpThrottleDelay = Get-Random -Minimum 1 `
+						-Maximum $ThrottleSeed
 
-                if ($resGet.'@odata.nextLink') {
-                    $localUri = $resGet.'@odata.nextLink'
-                }
+					Start-Sleep -Seconds $tmpThrottleDelay
+				}
+			}
+			catch [System.Net.WebException] {
+				if ($_.exception.response.statuscode -eq 429) {
+					$429Retry = $true
+					$429Attempts++
 
-                if ($ThrottleSeed) {
-                    Start-Sleep -Seconds $(Get-Random -Minimum 1 -Maximum $ThrottleSeed)
-                }
-            }
-            catch [System.Net.WebException] {
-                if ($_.exception.response.statuscode -eq 429) {
-                    $429Retry = $true
-                    $429Attempts++
+					$retryWaitSec = $_.exception.response.Headers["Retry-After"]
 
-                    $retryWaitSec = $_.exception.response.Headers["Retry-After"]
+					if (-not ($retryWaitSec -gt 0)) {
+						$retryWaitSec = 10
+					}
 
-                    if (-not ($retryWaitSec -gt 0)) {
-                        $retryWaitSec = 10
-                    }
+					Write-PSFMessage -Level Host `
+						-Message "Hit a 429 status code. Will wait for: <c='em'>$retryWaitSec</c> seconds before trying again. Attempt (<c='em'>$429Attempts</c> of <c='em'>$maxRetries</c>)"
 
-                    Write-PSFMessage -Level Host -Message "Hit a 429 status code. Will wait for: <c='em'>$retryWaitSec</c> seconds before trying again. Attempt (<c='em'>$429Attempts</c> of <c='em'>$maxRetries</c>)"
+					if ($429Attempts -ge $maxRetries) {
+						Write-PSFMessage -Level Warning `
+							-Message "Reached maximum of <c='em'>$maxRetries</c> retry attempts due to throttling. Returning <c='em'>$($resArray.Count)</c> collected records."
 
-                    if ($429Attempts -ge $maxRetries) {
-                        Write-PSFMessage -Level Warning -Message "Reached maximum of <c='em'>$maxRetries</c> retry attempts due to throttling. Returning <c='em'>$($resArray.Count)</c> collected records."
-                        break
-                    }
+						break
+					}
 
-                    Start-Sleep -Seconds $retryWaitSec
-                }
-                else {
-                    Throw
-                }
-            }
+					Start-Sleep -Seconds $retryWaitSec
+				}
+				else {
+					Throw
+				}
+			}
 
-        } while ($429Retry -or ($TraverseNextLink -and $resGet.'@odata.nextLink'))
+		} while ($429Retry -or ($TraverseNextLink -and $resGet.'@odata.nextLink'))
 
-        if ($resArray.Count -gt 0) {
-            $res = $resArray.ToArray()
-        }
+		if ($resArray.Count -gt 0) {
+			$res = $resArray.ToArray()
+		}
 
-        if ($AsExcelOutput) {
-            $res | Export-Excel -WorksheetName "Get-PpeOdata"
-            return
-        }
+		if ($AsExcelOutput) {
+			$res |
+			Export-Excel -WorksheetName "Get-PpeOdata"
+			return
+		}
 
-        $res
-    }
+		$res
+	}
 
-    end {
+	end {
 
-    }
+	}
 }

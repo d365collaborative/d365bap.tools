@@ -1,206 +1,215 @@
 ﻿
 <#
     .SYNOPSIS
-        Query an OData entity from a Finance and Operations environment.
-        
+        Queries a Finance and Operations OData entity.
+
     .DESCRIPTION
-        Invokes a GET request against the Finance and Operations OData endpoint for the specified entity, handling authentication, optional query filters, cross-company access, and automatic pagination via nextLink traversal.
-        
-        Includes built-in retry logic for 429 (Too Many Requests) responses.
-        
+        Sends a GET request to the Finance and Operations OData endpoint and returns the
+        matching records. Handles authentication, query filters, cross-company access,
+        nextLink pagination, and automatic retries for throttled requests.
+
     .PARAMETER EnvironmentId
-        The ID of the environment to query.
-        
-        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-        
+        Environment name, environment GUID (PPAC), or LCS environment ID.
+
     .PARAMETER Entity
-        The OData entity name to query, e.g. "SysAADClients" or "SystemUsers".
-        
+        The OData entity collection name to query, e.g. "SysAADClients".
+
     .PARAMETER ODataQuery
-        An optional OData query string to append to the request, e.g. "`$filter=IsActive eq true&`$select=UserId,Name".
-        
-        Do not include the leading "?".
-        
+        Optional query string without the leading "?", e.g. '$filter=IsActive eq true'.
+
     .PARAMETER CrossCompany
-        Instructs the cmdlet to append "cross-company=true" to the request, returning records across all legal entities.
-        
+        Adds "cross-company=true" so records from all legal entities are returned.
+
     .PARAMETER TraverseNextLink
-        Instructs the cmdlet to follow "@odata.nextLink" pagination and accumulate all pages into the result.
-        
-        Must be used together with the NextLink parameter set.
-        
+        Follows "@odata.nextLink" pagination and accumulates every page in the result.
+
     .PARAMETER ThrottleSeed
-        When specified, introduces a random delay between 1 and ThrottleSeed seconds after each page request to reduce throttling risk.
-        
-        Only valid when TraverseNextLink is also specified.
-        
+        Random delay in seconds, between 1 and this value, after each page request.
+
     .PARAMETER AsExcelOutput
-        Instructs the cmdlet to export the retrieved records to an Excel file.
-        
+        Exports the retrieved records to an Excel file instead of the pipeline.
+
     .EXAMPLE
         PS C:\> Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients"
-        
-        This command retrieves all records from the SysAADClients OData entity in the environment "ContosoEnv".
-        
+
+        Retrieves every record from one OData entity.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "SysAADClients" entity set.
+
     .EXAMPLE
         PS C:\> Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SystemUsers" -ODataQuery "`$filter=IsActive eq true"
-        
-        This command retrieves all active system users from the environment "ContosoEnv" using an OData filter.
-        
+
+        Retrieves only active system users through a query filter.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "SystemUsers" entity set.
+        It uses -ODataQuery to send the filter expression.
+
     .EXAMPLE
         PS C:\> Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SystemUsers" -CrossCompany
-        
-        This command retrieves system users across all legal entities in the environment "ContosoEnv".
-        
+
+        Retrieves system users across all legal entities.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "SystemUsers" entity set.
+        It uses -CrossCompany to include every legal entity.
+
     .EXAMPLE
         PS C:\> Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients" -TraverseNextLink
-        
-        This command retrieves all records from the SysAADClients entity, following pagination links until all pages are returned.
-        
+
+        Follows pagination links until every page is returned.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "SysAADClients" entity set.
+        It uses -TraverseNextLink to request all pages.
+
     .EXAMPLE
         PS C:\> Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients" -TraverseNextLink -ThrottleSeed 3
-        
-        This command retrieves all pages from the SysAADClients entity, pausing between 1 and 3 seconds between each page request to reduce the risk of throttling.
-        
+
+        Pauses between pages to reduce the risk of throttling.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "SysAADClients" entity set.
+        It uses -TraverseNextLink to request all pages.
+        It uses -ThrottleSeed 3 to wait up to three seconds between pages.
+
     .EXAMPLE
         PS C:\> Get-FscmOdata -EnvironmentId "ContosoEnv" -Entity "SysAADClients" -AsExcelOutput
-        
-        This command retrieves all records from the SysAADClients entity in the environment "ContosoEnv" and exports the results to an Excel file.
-        
+
+        Exports every retrieved record to an Excel file.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity to select the "SysAADClients" entity set.
+        It uses -AsExcelOutput to write the records to a workbook.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmOdata {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "OData is the name of the protocol.")]
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
-    [OutputType('System.Object[]')]
-    param (
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "", Justification = "OData is the name of the protocol.")]
+	[CmdletBinding(DefaultParameterSetName = 'Default')]
+	[OutputType([PSCustomObject])]
+	param (
 
-        [Parameter (Mandatory = $true)]
-        [string] $EnvironmentId,
+		[Parameter (Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "Default")]
-        [Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
-        [string] $Entity,
+		[Parameter(Mandatory = $true, ParameterSetName = "Default")]
+		[Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
+		[ValidateNotNullOrEmpty()]
+		[string] $Entity,
 
-        [string] $ODataQuery,
+		[string] $ODataQuery,
 
-        [switch] $CrossCompany,
+		[switch] $CrossCompany,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
-        [switch] $TraverseNextLink,
+		[Parameter(Mandatory = $true, ParameterSetName = "NextLink")]
+		[switch] $TraverseNextLink,
 
-        [Parameter(ParameterSetName = "NextLink")]
-        [int] $ThrottleSeed,
+		[Parameter(ParameterSetName = "NextLink")]
+		[int] $ThrottleSeed,
 
-        [switch] $AsExcelOutput
-    )
-    
-    begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
-            Select-Object -First 1
+		[switch] $AsExcelOutput
+	)
 
-        if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+	begin {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
-        if (Test-PSFFunctionInterrupt) { return }
+		$baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$hashHeadersFnO = @{
+			"Authorization" = "Bearer $($tokenFnoOdataValue)"
+		}
+	}
 
-        $headersFnO = @{
-            "Authorization" = "Bearer $($tokenFnoOdataValue)"
-        }
-    }
-    
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        [System.UriBuilder] $odataEndpoint = $baseUri
-        $odataEndpoint.Path = "/data/$Entity"
+		[System.UriBuilder] $odataEndpoint = $baseUri
+		$odataEndpoint.Path = "/data/$Entity"
 
-        if (-not ([string]::IsNullOrEmpty($ODataQuery))) {
-            $odataEndpoint.Query = "$ODataQuery"
-        }
-        
-        if ($CrossCompany) {
-            $odataEndpoint.Query = $($odataEndpoint.Query + "&cross-company=true").Replace("?", "")
-        }
+		if (-not ([string]::IsNullOrEmpty($ODataQuery))) {
+			$odataEndpoint.Query = "$ODataQuery"
+		}
 
-        [System.Collections.Generic.List[System.Object]] $resArray = @()
+		if ($CrossCompany) {
+			$odataEndpoint.Query = $($odataEndpoint.Query + "&cross-company=true").Replace("?", "")
+		}
 
-        $localUri = $odataEndpoint.Uri.AbsoluteUri
+		[System.Collections.Generic.List[System.Object]] $resArray = @()
 
-        $429Attempts = 0
-        $maxRetries = 3
+		$localUri = $odataEndpoint.Uri.AbsoluteUri
 
-        do {
-            $429Retry = $false
+		$429Attempts = 0
+		$maxRetries = 3
 
-            try {
-                $resGet = Invoke-RestMethod -Method Get `
-                    -Uri $localUri `
-                    -Headers $headersFnO
+		do {
+			$429Retry = $false
 
-                $429Attempts = 0
-                $resArray.AddRange($resGet.Value)
+			try {
+				$resGet = Invoke-RestMethod -Method Get `
+					-Uri $localUri `
+					-Headers $hashHeadersFnO
 
-                if ($($resGet.'@odata.nextLink') -match ".*(/data/.*)") {
-                    $localUri = "$baseUri$($Matches[1])"
-                }
+				$429Attempts = 0
+				$resArray.AddRange($resGet.Value)
 
-                if ($ThrottleSeed) {
-                    Start-Sleep -Seconds $(Get-Random -Minimum 1 -Maximum $ThrottleSeed)
-                }
-            }
-            catch [System.Net.WebException] {
-                if ($_.exception.response.statuscode -eq 429) {
-                    $429Retry = $true
-                    $429Attempts++
+				if ($($resGet.'@odata.nextLink') -match ".*(/data/.*)") {
+					$localUri = "$baseUri$($Matches[1])"
+				}
 
-                    $retryWaitSec = $_.exception.response.Headers["Retry-After"]
+				if ($ThrottleSeed) {
+					$tmpThrottleDelay = Get-Random -Minimum 1 `
+						-Maximum $ThrottleSeed
 
-                    if (-not ($retryWaitSec -gt 0)) {
-                        $retryWaitSec = 10
-                    }
+					Start-Sleep -Seconds $tmpThrottleDelay
+				}
+			}
+			catch [System.Net.WebException] {
+				if ($_.exception.response.statuscode -eq 429) {
+					$429Retry = $true
+					$429Attempts++
 
-                    Write-PSFMessage -Level Host -Message "Hit a 429 status code. Will wait for: <c='em'>$retryWaitSec</c> seconds before trying again. Attempt (<c='em'>$429Attempts</c> of <c='em'>$maxRetries</c>)"
+					$retryWaitSec = $_.exception.response.Headers["Retry-After"]
 
-                    if ($429Attempts -ge $maxRetries) {
-                        Write-PSFMessage -Level Warning -Message "Reached maximum of <c='em'>$maxRetries</c> retry attempts due to throttling. Returning <c='em'>$($resArray.Count)</c> collected records."
-                        break
-                    }
+					if (-not ($retryWaitSec -gt 0)) {
+						$retryWaitSec = 10
+					}
 
-                    Start-Sleep -Seconds $retryWaitSec
-                }
-                else {
-                    Throw
-                }
-            }
+					Write-PSFMessage -Level Host `
+						-Message "Hit a 429 status code. Will wait for: <c='em'>$retryWaitSec</c> seconds before trying again. Attempt (<c='em'>$429Attempts</c> of <c='em'>$maxRetries</c>)"
 
-        } while ($429Retry -or ($TraverseNextLink -and $resGet.'@odata.nextLink'))
+					if ($429Attempts -ge $maxRetries) {
+						Write-PSFMessage -Level Warning `
+							-Message "Reached maximum of <c='em'>$maxRetries</c> retry attempts due to throttling. Returning <c='em'>$($resArray.Count)</c> collected records."
 
-        if ($resArray.Count -gt 0) {
-            $res = $resArray.ToArray()
-        }
+						break
+					}
 
-        if ($AsExcelOutput) {
-            $res | Export-Excel -WorksheetName "Get-FscmOdata"
-            return
-        }
+					Start-Sleep -Seconds $retryWaitSec
+				}
+				else {
+					Throw
+				}
+			}
 
-        $res
-        
-    }
-    
-    end {
-        
-    }
+		} while ($429Retry -or ($TraverseNextLink -and $resGet.'@odata.nextLink'))
+
+		if ($resArray.Count -gt 0) {
+			$res = $resArray.ToArray()
+		}
+
+		if ($AsExcelOutput) {
+			$res |
+			Export-Excel -WorksheetName "Get-FscmOdata"
+			return
+		}
+
+		$res
+	}
+
+	end {
+
+	}
 }
