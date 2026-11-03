@@ -355,7 +355,7 @@ function Get-Fixture {
 }
 '@ -Expected 1
 
-Assert-Excel 'Named worksheet exemption' @'
+Assert-Excel 'Legacy short worksheet name is rejected' @'
 function Get-UdeConnection {
     param (
         [switch] $AsExcelOutput
@@ -370,9 +370,9 @@ function Get-UdeConnection {
 
     $resCol
 }
-'@ -FileName 'Get-UdeConnection.ps1'
+'@ -FileName 'Get-UdeConnection.ps1' -Expected 1
 
-Assert-Excel 'Exempted function still needs the right name' @'
+Assert-Excel 'Connection command uses the function name as worksheet' @'
 function Get-UdeConnection {
     param (
         [switch] $AsExcelOutput
@@ -387,7 +387,7 @@ function Get-UdeConnection {
 
     $resCol
 }
-'@ -FileName 'Get-UdeConnection.ps1' -Expected 1
+'@ -FileName 'Get-UdeConnection.ps1'
 
 Assert-Excel 'Function without the switch' @'
 function Get-Fixture {

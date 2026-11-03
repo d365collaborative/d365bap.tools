@@ -1,9 +1,5 @@
 ﻿. "$PSScriptRoot/Get-Ps1OutputModel.ps1"
 
-$script:Ps1PublicOutputWorksheetExemption = @{
-	'Get-UdeConnection' = 'UdeConnection'
-}
-
 function Get-Ps1OutputTableFormatType {
 	param([string] $TableDirectory)
 
@@ -31,15 +27,6 @@ function Get-Ps1OutputTableFormatType {
 	}
 	$script:Ps1TableFormatTypes = @{ Directory = $TableDirectory; Types = $hashTypes }
 	$hashTypes
-}
-
-function Get-Ps1PublicOutputWorksheetName {
-	param($Function)
-
-	if ($script:Ps1PublicOutputWorksheetExemption.ContainsKey($Function.Name)) {
-		$script:Ps1PublicOutputWorksheetExemption[$Function.Name]; return
-	}
-	$Function.Name
 }
 
 function Get-Ps1OutputExcelConditionVariable {
@@ -141,7 +128,7 @@ function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 		}
 	}
 
-	$expectedWorksheet = Get-Ps1PublicOutputWorksheetName -Function $Function
+	$expectedWorksheet = $Function.Name
 	if ($model.IsCollection -and -not $model.HasExcelSwitch) {
 
 		New-Ps1Diagnostic $Path 'PSUseStandardPublicOutput' "Add [switch] `$AsExcelOutput to $($Function.Name) and export the result. When -AsExcelOutput is set, call Export-Excel -WorksheetName '$expectedWorksheet' with a literal worksheet name, then use a bare return." $model.Declaration.CollectionAttribute.Extent

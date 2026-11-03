@@ -79,7 +79,7 @@ function Get-UdeConnection {
 
 		if ($AsExcelOutput) {
 			$resCol |
-			Export-Excel -WorksheetName "UdeConnection"
+			Export-Excel -WorksheetName "Get-UdeConnection"
 			return
 		}
 

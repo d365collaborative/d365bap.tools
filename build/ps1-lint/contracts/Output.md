@@ -62,9 +62,7 @@ Any top-level public function with an AsExcelOutput switch uses one owned
 bare return. The block has no else or elseif branch, result-count guard, or trap block.
 Export runs synchronously before the return; background pipelines are rejected.
 Pass exactly one full `-WorksheetName` parameter with a literal matching the
-function name. The established `Get-UdeConnection` worksheet name is
-`UdeConnection`, and its collection declaration is
-`D365Bap.Tools.UdeConnection[]`. Splatting, duplicate or abbreviated worksheet
+function name. Splatting, duplicate or abbreviated worksheet
 parameters, and computed or variable names are rejected. Extra Export-Excel parameters are
 allowed. Forwarding is not an exemption: a forwarding command cannot prove that
 the receiving function exports, uses the required worksheet, or returns on the
