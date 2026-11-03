@@ -14,7 +14,7 @@
         Default: "*".
 
     .PARAMETER SkipVersionDetails
-        Deprecated; will be removed on 2027-03-31. Skips the per-environment version lookup.
+        Deprecated and ignored; will be removed on 2027-03-31. Version details are always included.
 
     .PARAMETER UdeOnly
         Instructs the function to only return UDE environments.
@@ -39,8 +39,8 @@
     .EXAMPLE
         PS C:\> Get-UnifiedEnvironment -SkipVersionDetails
 
-        It will retrieve all environments without version details.
-        It applies -SkipVersionDetails, which is deprecated.
+        It will retrieve the same output as without the parameter.
+        It applies -SkipVersionDetails, which is deprecated and ignored.
         It will be removed on 2027-03-31.
 
     .EXAMPLE
@@ -129,8 +129,7 @@ function Get-UnifiedEnvironment {
 
 		$hashFinOpsProperties = @{}
 
-		if ((-not $SkipVersionDetails) `
-				-and ($colFilteredEnvs.Count -gt 0)) {
+		if ($colFilteredEnvs.Count -gt 0) {
 			$objSecureTokenPowerApi = Get-BapAccessToken -PowerPlatform
 			$tokenPowerApiValue = ConvertFrom-SecureString -AsPlainText `
 				-SecureString $objSecureTokenPowerApi
@@ -144,11 +143,6 @@ function Get-UnifiedEnvironment {
 
 		$colRes = @(
 			foreach ($itemEnv in $colFilteredEnvs) {
-				if ($SkipVersionDetails) {
-					$itemEnv
-					continue
-				}
-
 				$tmpResponse = $hashFinOpsProperties[$itemEnv.PpacEnvId]
 
 				$provisioningApp = ''
@@ -261,8 +255,7 @@ function Get-UnifiedEnvironment {
 			Where-Object EnvType -eq "USE"
 		}
 
-		if ((-not $SkipVersionDetails) `
-				-and ($colMissedEnvs.Count -gt 0)) {
+		if ($colMissedEnvs.Count -gt 0) {
 			$colAuthCandidates = @(@($colRes) + @($colFilteredEnvs))
 			$colAuthEnv = @(
 				$colAuthCandidates |
