@@ -128,11 +128,12 @@ function Get-UnifiedEnvironment {
 
 		$colRes = @(
 			foreach ($itemEnv in $colFilteredEnvs) {
-				$tmpResponse = $null
-
-				if (-not $SkipVersionDetails) {
-					$tmpResponse = $hashFinOpsProperties[$itemEnv.PpacEnvId]
+				if ($SkipVersionDetails) {
+					$itemEnv
+					continue
 				}
+
+				$tmpResponse = $hashFinOpsProperties[$itemEnv.PpacEnvId]
 
 				$provisioningApp = ''
 				$provisioningPlatform = ''
@@ -155,7 +156,7 @@ function Get-UnifiedEnvironment {
 						}
 					}
 				}
-				elseif (-not $SkipVersionDetails) {
+				else {
 					$messageString = "Could not obtain the <c='em'>FinOps properties</c> for <c='em'>$($itemEnv.PpacEnvName)</c>. It could be due to insufficient permissions or the environment not being fully provisioned. Please try to access the environment details from PowerPlatform Admin Center (PPAC)."
 					Write-PSFMessage -Level Important `
 						-Message $messageString
@@ -169,8 +170,7 @@ function Get-UnifiedEnvironment {
 				$tmpVerInfo = $null
 				$missed = $false
 
-				if ((-not $SkipVersionDetails) `
-						-and (-not [string]::IsNullOrWhiteSpace($provisioningApp.Trim()))) {
+				if (-not [string]::IsNullOrWhiteSpace($provisioningApp.Trim())) {
 					$tmpVerInfo = Resolve-FinOpsVersionFromCache `
 						-Build $provisioningApp.Trim() `
 						-ErrorAction SilentlyContinue
@@ -192,19 +192,15 @@ function Get-UnifiedEnvironment {
 					$platBuild = "$($tmpVerInfo.PlatBuild)"
 				}
 
-				$tmpVersionProperties = @()
-
-				if (-not $SkipVersionDetails) {
-					$tmpVersionProperties = @(
-						@{Name = "AppVersion"; Expression = { $appVersion } }
-						@{Name = "AppBuild"; Expression = { $appBuild } }
-						@{Name = "Track"; Expression = { $appBuild } }
-						@{Name = "Build"; Expression = { $provisioningApp } }
-						@{Name = "PlatVersion"; Expression = { $platVersion } }
-						@{Name = "PlatBuild"; Expression = { $platBuild } }
-						@{Name = "PlatformVersion"; Expression = { $provisioningPlatform } }
-					)
-				}
+				$tmpVersionProperties = @(
+					@{Name = "AppVersion"; Expression = { $appVersion } }
+					@{Name = "AppBuild"; Expression = { $appBuild } }
+					@{Name = "Track"; Expression = { $appBuild } }
+					@{Name = "Build"; Expression = { $provisioningApp } }
+					@{Name = "PlatVersion"; Expression = { $platVersion } }
+					@{Name = "PlatBuild"; Expression = { $platBuild } }
+					@{Name = "PlatformVersion"; Expression = { $provisioningPlatform } }
+				)
 
 				$tmpProjected = $itemEnv |
 				Select-PSFObject -TypeName "D365Bap.Tools.UdeEnvironment" `

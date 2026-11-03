@@ -15,6 +15,7 @@
 				PpacEnvName           = 'Features-Test-10.0.49'
 				PpacEnvUri            = 'https://es-features-test-49.crm4.dynamics.com'
 				FinOpsMetadataEnvType = 'Internal'
+				EnvType               = 'Unified'
 				Properties            = [pscustomobject]@{
 					states = [pscustomobject]@{ runtime = [pscustomobject]@{ id = 'Normal' } }
 				}
@@ -24,6 +25,7 @@
 				PpacEnvName           = 'Features-Uat-10.0.47'
 				PpacEnvUri            = 'https://features-uat-47.crm4.dynamics.com'
 				FinOpsMetadataEnvType = 'Internal'
+				EnvType               = 'Unified'
 				Properties            = [pscustomobject]@{
 					states = [pscustomobject]@{ runtime = [pscustomobject]@{ id = 'Normal' } }
 				}
@@ -33,6 +35,7 @@
 				PpacEnvName           = 'es-ude-motz-01'
 				PpacEnvUri            = 'https://es-ude-motz-01.crm4.dynamics.com'
 				FinOpsMetadataEnvType = 'Internal'
+				EnvType               = 'Unified'
 				Properties            = [pscustomobject]@{
 					states = [pscustomobject]@{ runtime = [pscustomobject]@{ id = 'Normal' } }
 				}
@@ -173,7 +176,7 @@ Describe 'Get-UnifiedEnvironment version details' {
 		$envObj.PlatformVersion | Should -Be '7.0.8199.60'
 	}
 
-	It 'skips the property lookup with -SkipVersionDetails' {
+	It 'skips the property lookup and returns the PPAC environment unchanged' {
 		& (Get-Module UnifiedEnvironmentFixture) { $script:propertyCalls = @() }
 
 		$colEnv = @(UnifiedEnvironmentFixture\Get-UnifiedEnvironment -SkipVersionDetails)
@@ -181,7 +184,9 @@ Describe 'Get-UnifiedEnvironment version details' {
 
 		$colEnv.Count | Should -Be 3
 		$calls.Count | Should -Be 0
+		$colEnv[0].EnvType | Should -Be 'Unified'
 		$colEnv[0].PSObject.Properties.Name | Should -Not -Contain 'AppVersion'
+		$colEnv[0].PSObject.Properties.Name | Should -Not -Contain 'PpacProvApp'
 	}
 }
 
