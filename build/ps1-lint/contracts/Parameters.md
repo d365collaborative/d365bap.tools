@@ -15,9 +15,31 @@ and the supported redundant declaration-order case.
 
 Optional parameters may use ValidateNotNullOrEmpty without a default. Omission is valid, while an explicitly supplied empty value fails binding. Do not make such a parameter mandatory, add a default, or replace its validation merely to silence lint: those changes can alter binding and PSBoundParameters behavior. The old validation rule and its dispatch entry are removed.
 
+## Mandatory string parameters
+
+`PSUseValidateNotNullOrEmpty` requires a mandatory `string` or `string[]`
+parameter without a default value to declare `[ValidateNotNullOrEmpty()]`.
+PowerShell already rejects null and empty values when it binds a mandatory
+string parameter; the attribute states the contract in the signature.
+
+A parameter with any default assignment is exempt. Value types such as `switch`
+and `int` are exempt because `[ValidateNotNullOrEmpty()]` has no effect on them.
+
+`PSAvoidShorthandMandatory` bans `[Parameter(Mandatory)]` and requires the
+explicit `[Parameter(Mandatory = $true)]` form.
+
+```powershell
+param (
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string] $Name
+)
+```
+
 Validation:
 
 ```powershell
 pwsh -NoProfile -File build/Test-Ps1ParameterPositionRule.ps1
 pwsh -NoProfile -File build/Test-Ps1ValidationAttributeOnMandatoryRule.ps1
+pwsh -NoProfile -File build/Test-Ps1MandatoryRule.ps1
 ```
