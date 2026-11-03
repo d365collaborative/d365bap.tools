@@ -10,25 +10,37 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterContractDiagnostic')) {
-	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
+. "$PSScriptRoot/ps1-lint/testing/Assert-Ps1RuleCase.ps1"
+foreach ($itemPath in Get-Ps1RuleAnalysisScriptPath -BuildRoot $PSScriptRoot -ScriptName @(
+		'Get-Ps1CommentGroup'
+		'Get-Ps1HelpSection'
+		'Get-Ps1Analysis'
+		'Get-Ps1ParameterContractDiagnostic'
+	)) {
+	. $itemPath
 }
-$fixturePath = Join-Path ([IO.Path]::GetTempPath()) ('mandatory-rule-' + [guid]::NewGuid().ToString('N') + '.ps1')
+$fixtureRoot = Initialize-Ps1RuleFixtureRoot -NamePrefix 'mandatory-rule'
 $script:caseCount = 0
 
 function Assert-Mandatory {
-	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @(), [string] $Rule = 'PSUseValidateNotNullOrEmpty')
-	[IO.File]::WriteAllText($fixturePath, $Source.Replace("`r`n", "`n"))
-	$analysis = Get-Ps1Analysis -Path $fixturePath
-	$colDiagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object RuleName -eq $Rule)
-	if ($colDiagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
-	}
-	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($itemFragment in $ExpectedText) {
-		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
-	}
-	$script:caseCount++
+	param(
+		[string] $Label,
+		[string] $Source,
+		[int] $Expected = 0,
+		[string[]] $ExpectedText = @(),
+		[string] $Directory = 'd365bap.tools/functions',
+		[string] $FileName = 'Get-Fixture.ps1',
+		[string] $Rule = 'PSUseValidateNotNullOrEmpty'
+	)
+	Assert-Ps1RuleCase -FixtureRoot $fixtureRoot `
+		-DiagnosticCommand 'Get-Ps1ParameterContractDiagnostic' `
+		-Label $Label `
+		-Source $Source `
+		-Expected $Expected `
+		-ExpectedText $ExpectedText `
+		-Directory $Directory `
+		-FileName $FileName `
+		-RuleName $Rule
 }
 
 $mandatory = @'

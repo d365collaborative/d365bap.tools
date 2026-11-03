@@ -10,12 +10,18 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1StandardPublicOutputDiagnostic')) {
-	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
+. "$PSScriptRoot/ps1-lint/testing/Assert-Ps1RuleCase.ps1"
+foreach ($itemPath in Get-Ps1RuleAnalysisScriptPath -BuildRoot $PSScriptRoot -ScriptName @(
+		'Get-Ps1CommentGroup'
+		'Get-Ps1HelpSection'
+		'Get-Ps1Analysis'
+		'Get-Ps1StandardPublicOutputDiagnostic'
+	)) {
+	. $itemPath
 }
-$fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('standard-public-output-rule-' + [guid]::NewGuid().ToString('N'))
+$fixtureRoot = Initialize-Ps1RuleFixtureRoot -NamePrefix 'standard-public-output-rule'
 $tableDirectory = Join-Path $fixtureRoot 'd365bap.tools/xml/formats/table'
-$null = New-Item -ItemType Directory -Path $tableDirectory -Force
+New-Item -ItemType Directory -Path $tableDirectory -Force > $null
 $script:caseCount = 0
 
 function Write-TableFormat {
@@ -34,22 +40,22 @@ function Write-TableFormat {
 }
 
 function Assert-Output {
-	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @(), [string] $Directory = 'd365bap.tools/functions')
-	$folder = Join-Path $fixtureRoot $Directory
-	$null = New-Item -ItemType Directory -Path $folder -Force
-	$path = Join-Path $folder 'Get-Fixture.ps1'
-	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
-	$analysis = Get-Ps1Analysis -Path $path
-	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
-	$colDiagnostics = @(Get-Ps1StandardPublicOutputDiagnostic -Analysis $analysis)
-	if ($colDiagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
-	}
-	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($itemFragment in $ExpectedText) {
-		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
-	}
-	$script:caseCount++
+	param(
+		[string] $Label,
+		[string] $Source,
+		[int] $Expected = 0,
+		[string[]] $ExpectedText = @(),
+		[string] $Directory = 'd365bap.tools/functions',
+		[string] $FileName = 'Get-Fixture.ps1'
+	)
+	Assert-Ps1RuleCase -FixtureRoot $fixtureRoot `
+		-DiagnosticCommand 'Get-Ps1StandardPublicOutputDiagnostic' `
+		-Label $Label `
+		-Source $Source `
+		-Expected $Expected `
+		-ExpectedText $ExpectedText `
+		-Directory $Directory `
+		-FileName $FileName
 }
 
 $standard = @'
