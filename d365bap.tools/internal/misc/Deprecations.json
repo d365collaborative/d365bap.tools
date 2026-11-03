@@ -1,0 +1,7 @@
+{
+  "Get-UnifiedEnvironment.SkipVersionDetails": {
+    "message": "The <c='em'>-SkipVersionDetails</c> parameter is deprecated. Omit it for version details, or use <c='em'>Get-BapEnvironment</c> for the raw environment list.",
+    "removedOn": "2027-03-31",
+    "issue": "https://github.com/d365collaborative/d365bap.tools/issues/367"
+  }
+}

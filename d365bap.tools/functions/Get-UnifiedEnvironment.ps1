@@ -100,10 +100,7 @@ function Get-UnifiedEnvironment {
 			}
 
 			if (-not $isModuleCaller) {
-				Write-PSFMessage -Level Warning `
-					-Tag 'Deprecated' `
-					-Once 'Get-UnifiedEnvironment.SkipVersionDetails' `
-					-Message "The <c='em'>-SkipVersionDetails</c> parameter is deprecated and will be removed on 2027-03-31. Omit it for version details, or use <c='em'>Get-BapEnvironment</c> for the raw environment list. See https://github.com/d365collaborative/d365bap.tools/issues/367"
+				Write-BapDeprecationNotice -Key 'Get-UnifiedEnvironment.SkipVersionDetails'
 			}
 		}
 
