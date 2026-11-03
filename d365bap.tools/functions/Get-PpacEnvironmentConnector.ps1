@@ -1,0 +1,139 @@
+﻿<#
+    .SYNOPSIS
+        List connectors in a Power Platform environment.
+
+    .DESCRIPTION
+        Retrieves the connector catalog for an environment through the Power
+        Platform API and the Power Platform SDK.
+
+        The list contains the connectors available in the environment. The
+        catalog can be expanded to every connector that policy can govern.
+
+    .PARAMETER EnvironmentId
+        Environment name, GUID, or Power Platform environment identifier.
+
+    .PARAMETER Name
+        Connector id, name, or display name filter. Wildcards are accepted.
+
+        Default: *
+
+    .PARAMETER AsExcelOutput
+        Instructs the cmdlet to output the results as an Excel file.
+
+    .EXAMPLE
+        PS C:\> Get-PpacEnvironmentConnector -EnvironmentId "00000000-0000-0000-0000-000000000000"
+
+        Lists the connectors available in the environment.
+        It uses -EnvironmentId to select the environment.
+
+    .EXAMPLE
+        PS C:\> Get-PpacEnvironmentConnector -EnvironmentId "00000000-0000-0000-0000-000000000000" -Name "*sql*"
+
+        Lists connectors that match the filter.
+        It uses -EnvironmentId to select the environment.
+        It uses -Name to filter on connector id, name, or display name.
+
+    .EXAMPLE
+        PS C:\> Get-PpacEnvironmentConnector -EnvironmentId "00000000-0000-0000-0000-000000000000" -AsExcelOutput
+
+        Exports the connector inventory to an Excel workbook.
+        It uses -EnvironmentId to select the environment.
+        It uses -AsExcelOutput to write an Excel file.
+
+    .NOTES
+        Author: d365bap.tools contributors
+#>
+function Get-PpacEnvironmentConnector {
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.PpacEnvironmentConnector[]', [object[]])]
+	param (
+		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+		[Alias('PpacEnvId')]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
+
+		[SupportsWildcards()]
+		[string] $Name = '*',
+
+		[switch] $AsExcelOutput
+	)
+
+	process {
+		$objRoute = Get-PpacConnectivityRoute -EnvironmentId $EnvironmentId
+
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+
+		$apiVersion = $script:BapApiVersions.PowerPlatform
+		$filter = [uri]::EscapeDataString("environment eq '$($objRoute.RouteId -replace "'", "''")'")
+		$requestUri = 'https://api.powerplatform.com/connectivity/environments/{0}/connectors?$filter={1}&api-version={2}' `
+			-f $objRoute.RouteId,
+		$filter,
+		$apiVersion
+
+		try {
+			$result = Invoke-BapSdkRequest `
+				-Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Connectivity.Environments.Item.Connectors.ConnectorsRequestBuilder' } `
+				-Method 'GetAsync' `
+				-EnvironmentId $objRoute.RouteId `
+				-Token $tokenValue `
+				-RequestUrl $requestUri
+		}
+		catch {
+			$messageString = "Failed to retrieve connectors from environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-Exception $_.Exception
+
+			Stop-PSFFunction -Message "Stopping because the connector request failed." `
+				-Exception $_.Exception
+
+			return
+		}
+
+		$colItems = @($result.value)
+		$colItems = @($colItems |
+			Where-Object {
+				(($_.id -like $Name) `
+					-or ($_.id -eq $Name)) `
+					-or (($_.name -like $Name) `
+						-or ($_.name -eq $Name)) `
+					-or (($_.properties.displayName -like $Name) `
+						-or ($_.properties.displayName -eq $Name))
+			})
+		$colItems = @($colItems |
+			Sort-Object -Property @{ Expression = { $_.properties.displayName } },
+			@{ Expression = { $_.name } })
+
+		$colRes = @(
+			$colItems |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironmentConnector' `
+				-Property `
+				'id as ConnectorId',
+			'name as ConnectorName',
+			'properties.displayName as DisplayName',
+			'properties.publisher as Publisher',
+			'properties.tier as Tier',
+			'properties.releaseTag as ReleaseTag',
+			'properties.isCustomApi as IsCustomApi',
+			'properties.apiEnvironment as ApiEnvironment',
+			@{ Name = 'Capabilities'; Expression = { $_.properties.capabilities -join ', ' } },
+			'properties.createdTime as CreatedTime',
+			'properties.changedTime as ChangedTime',
+			'properties.description as Description',
+			@{ Name = 'PpacEnvId'; Expression = { $objRoute.RouteId } },
+			@{ Name = 'PpacEnvName'; Expression = { $objRoute.RouteName } }
+		)
+
+		if ($AsExcelOutput) {
+			$colRes |
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentConnector' `
+				-WarningAction SilentlyContinue
+
+			return
+		}
+
+		$colRes
+	}
+}

@@ -123,6 +123,8 @@
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
 		, 'Get-PpacEnvironmentAcpPolicy'
+		, 'Get-PpacEnvironmentConnection'
+		, 'Get-PpacEnvironmentConnector'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacEnvironmentGroupAcpPolicy'
 		, 'Get-PpacEnvironmentGroupRuleBasedPolicy'
@@ -140,6 +142,7 @@
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
 		, 'Get-PpacTenantAcpPolicy'
+		, 'Get-PpacTenantConnector'
 		, 'Get-PpacTenantRuleBasedPolicy'
 		, 'Get-PpacUser'
 
