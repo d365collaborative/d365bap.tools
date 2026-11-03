@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpacEnvironmentAcpPolicy</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpacEnvironmentAcpPolicy</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader><Width>40</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>16</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>20</Width></TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem><PropertyName>Name</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>AssignmentSource</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>IsEffective</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>AllowedConnectorCount</PropertyName></TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>

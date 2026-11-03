@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpacTenantAcpPolicy</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpacTenantAcpPolicy</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem><PropertyName>PolicyId</PropertyName></ListItem>
+                            <ListItem><PropertyName>Name</PropertyName></ListItem>
+                            <ListItem><PropertyName>LastModified</PropertyName></ListItem>
+                            <ListItem><PropertyName>RuleSetVersion</PropertyName></ListItem>
+                            <ListItem><PropertyName>AllowedConnectorCount</PropertyName></ListItem>
+                            <ListItem><PropertyName>AssignmentSource</PropertyName></ListItem>
+                            <ListItem><PropertyName>IsEffective</PropertyName></ListItem>
+                            <ListItem><PropertyName>TenantId</PropertyName></ListItem>
+                            <ListItem><PropertyName>AllowedConnectors</PropertyName></ListItem>
+                            <ListItem><PropertyName>RuleSets</PropertyName></ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>

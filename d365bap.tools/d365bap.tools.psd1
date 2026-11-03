@@ -61,6 +61,10 @@
 
 		, 'Add-PpacAdminManagementApplication'
 		, 'Add-PpacApplicationUser'
+		, 'Add-PpacEnvironmentAcpPolicyAssignment'
+		, 'Add-PpacEnvironmentGroupAcpPolicyAssignment'
+		, 'Add-PpacEnvironmentGroupRuleBasedPolicyAssignment'
+		, 'Add-PpacEnvironmentRuleBasedPolicyAssignment'
 
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
@@ -118,7 +122,11 @@
 		, 'Get-PpacD365Properties'
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironmentAcpPolicy'
 		, 'Get-PpacEnvironmentGroup'
+		, 'Get-PpacEnvironmentGroupAcpPolicy'
+		, 'Get-PpacEnvironmentGroupRuleBasedPolicy'
+		, 'Get-PpacEnvironmentRuleBasedPolicy'
 		, 'Get-PpacFinOpsAsset'
 		, 'Get-PpacFinOpsBuild'
 		, 'Get-PpacFinOpsPlatform'
@@ -131,6 +139,8 @@
 		, 'Get-PpacSecurityRoleTable'
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
+		, 'Get-PpacTenantAcpPolicy'
+		, 'Get-PpacTenantRuleBasedPolicy'
 		, 'Get-PpacUser'
 
 		, 'Get-PpeOdata'
@@ -178,12 +188,16 @@
 		, 'Invoke-UdeDbQuery'
 
 		, 'New-PpacSecurityRole'
+		, 'New-PpacTenantAcpPolicy'
+		, 'New-PpacTenantRuleBasedPolicy'
 
 		, 'New-UnifiedEnvironment'
 		, 'New-UnifiedEnvironmentV2'
 
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
+		, 'Remove-PpacTenantAcpPolicyRuleSet'
+		, 'Remove-PpacTenantRuleBasedPolicyRuleSet'
 		, 'Remove-PpacUser'
 		, 'Remove-PpeSolution'
 		, 'Remove-UdeEnvironmentModel'
@@ -210,6 +224,8 @@
 		, 'Set-PpacSecurityGroup'
 		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
+		, 'Set-PpacTenantAcpPolicy'
+		, 'Set-PpacTenantRuleBasedPolicy'
 
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'

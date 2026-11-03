@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpacAcpConnector</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpacAcpConnector</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader><Width>28</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>16</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>24</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>40</Width></TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem><PropertyName>ConnectorName</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>AllowedActionsMode</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>AllowedConnectionTypesMode</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>PolicyName</PropertyName></TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>
