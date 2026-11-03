@@ -93,60 +93,52 @@ function Get-PpacFinOpsBuild {
 		$trackAppVersion = $null
 
 		if ([string]::IsNullOrWhiteSpace($AppVersion)) {
-			$colEntry = @(
-				$catalog |
-				Sort-Object -Property { [version]$_.appVersion } |
-				Select-Object -Last 1
-			)
+			$objEntry = $catalog |
+			Sort-Object -Property { [version]$_.appVersion } |
+			Select-Object -Last 1
 
-			if ($null -eq $colEntry) {
+			if ($null -eq $objEntry) {
 				Stop-PSFFunction -Message "Stopping because the version catalog is empty."
 
 				return
 			}
 
-			$track = $colEntry.appBuild
-			$trackAppVersion = $colEntry.appVersion
+			$track = $objEntry.appBuild
+			$trackAppVersion = $objEntry.appVersion
 		}
 		else {
 			$normalized = "$AppVersion".Replace("-", ".").Trim()
 
-			$colAppVersionMatch = @(
-				$catalog |
-				Where-Object { $_.appVersion -eq $normalized } |
-				Select-Object -First 1
-			)
+			$objAppVersionMatch = $catalog |
+			Where-Object { $_.appVersion -eq $normalized } |
+			Select-Object -First 1
 
-			if ($colAppVersionMatch.Count -gt 0) {
-				$track = $colAppVersionMatch[0].appBuild
-				$trackAppVersion = $colAppVersionMatch[0].appVersion
+			if (-Not ($null -eq $objAppVersionMatch)) {
+				$track = $objAppVersionMatch.appBuild
+				$trackAppVersion = $objAppVersionMatch.appVersion
 			}
 			else {
 				$parts = $normalized -split "\."
 
 				if ($parts.Count -eq 4) {
 					$candidate = "$($parts[0]).$($parts[1]).$($parts[2])"
-					$colBuildMatch = @(
-						$catalog |
-						Where-Object { $_.appBuild -eq $candidate } |
-						Select-Object -First 1
-					)
+					$objBuildMatch = $catalog |
+					Where-Object { $_.appBuild -eq $candidate } |
+					Select-Object -First 1
 
-					if ($colBuildMatch.Count -gt 0) {
-						$track = $colBuildMatch[0].appBuild
-						$trackAppVersion = $colBuildMatch[0].appVersion
+					if (-Not ($null -eq $objBuildMatch)) {
+						$track = $objBuildMatch.appBuild
+						$trackAppVersion = $objBuildMatch.appVersion
 					}
 				}
 				elseif ($parts.Count -eq 3) {
-					$colBuildMatch = @(
-						$catalog |
-						Where-Object { $_.appBuild -eq $normalized } |
-						Select-Object -First 1
-					)
+					$objBuildMatch = $catalog |
+					Where-Object { $_.appBuild -eq $normalized } |
+					Select-Object -First 1
 
-					if ($colBuildMatch.Count -gt 0) {
-						$track = $colBuildMatch[0].appBuild
-						$trackAppVersion = $colBuildMatch[0].appVersion
+					if (-Not ($null -eq $objBuildMatch)) {
+						$track = $objBuildMatch.appBuild
+						$trackAppVersion = $objBuildMatch.appVersion
 					}
 				}
 
