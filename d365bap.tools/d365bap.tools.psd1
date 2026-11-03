@@ -61,6 +61,10 @@
 
 		, 'Add-PpacAdminManagementApplication'
 		, 'Add-PpacApplicationUser'
+		, 'Add-PpacEnvironmentAcpPolicyAssignment'
+		, 'Add-PpacEnvironmentGroupAcpPolicyAssignment'
+		, 'Add-PpacEnvironmentGroupRuleBasedPolicyAssignment'
+		, 'Add-PpacEnvironmentRuleBasedPolicyAssignment'
 
 		, 'Add-PpacSecurityRoleMember'
 		, 'Add-PpacTeamOnSecurityGroup'
@@ -118,7 +122,14 @@
 		, 'Get-PpacD365Properties'
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironmentAcpPolicy'
+		, 'Get-PpacEnvironmentConnection'
+		, 'Get-PpacEnvironmentConnector'
+		, 'Get-PpacEnvironmentDlpPolicy'
 		, 'Get-PpacEnvironmentGroup'
+		, 'Get-PpacEnvironmentGroupAcpPolicy'
+		, 'Get-PpacEnvironmentGroupRuleBasedPolicy'
+		, 'Get-PpacEnvironmentRuleBasedPolicy'
 		, 'Get-PpacFinOpsAsset'
 		, 'Get-PpacFinOpsBuild'
 		, 'Get-PpacFinOpsPlatform'
@@ -131,6 +142,10 @@
 		, 'Get-PpacSecurityRoleTable'
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
+		, 'Get-PpacTenantAcpPolicy'
+		, 'Get-PpacTenantConnector'
+		, 'Get-PpacTenantDlpPolicy'
+		, 'Get-PpacTenantRuleBasedPolicy'
 		, 'Get-PpacUser'
 
 		, 'Get-PpeOdata'
@@ -177,13 +192,21 @@
 
 		, 'Invoke-UdeDbQuery'
 
+		, 'New-PpacEnvironmentDlpPolicy'
 		, 'New-PpacSecurityRole'
+		, 'New-PpacTenantAcpPolicy'
+		, 'New-PpacTenantDlpPolicy'
+		, 'New-PpacTenantRuleBasedPolicy'
 
 		, 'New-UnifiedEnvironment'
 		, 'New-UnifiedEnvironmentV2'
 
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
+		, 'Remove-PpacEnvironmentDlpPolicy'
+		, 'Remove-PpacTenantAcpPolicyRuleSet'
+		, 'Remove-PpacTenantDlpPolicy'
+		, 'Remove-PpacTenantRuleBasedPolicyRuleSet'
 		, 'Remove-PpacUser'
 		, 'Remove-PpeSolution'
 		, 'Remove-UdeEnvironmentModel'
@@ -203,6 +226,7 @@
 		, 'Set-FscmUserAccess'
 
 		, 'Set-PpacAdminMode'
+		, 'Set-PpacEnvironmentDlpPolicy'
 
 		, 'Set-PpacRbacContext'
 		, 'Add-PpacRbacRoleMember'
@@ -210,6 +234,9 @@
 		, 'Set-PpacSecurityGroup'
 		, 'Set-PpacSecurityRoleTable'
 		, 'Set-PpacTeamSecurityRole'
+		, 'Set-PpacTenantAcpPolicy'
+		, 'Set-PpacTenantDlpPolicy'
+		, 'Set-PpacTenantRuleBasedPolicy'
 
 		, 'Set-UdeConfig'
 		, 'Set-UdeDbJitCache'

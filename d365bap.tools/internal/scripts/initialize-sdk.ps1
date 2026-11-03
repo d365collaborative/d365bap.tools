@@ -10,15 +10,18 @@ $script:BapApiVersions = [ordered]@{
 	EnvironmentScopes    = '2023-06-01'
 	LifecycleOperations  = '2024-05-01'
 	PowerPlatform        = '2024-10-01'
+	ClassicBap           = '2018-10-01'
 }
 $script:BapSdkEnvironmentCompletionCache = @{}
 
 foreach ($resource in $sdkMapping.Resources) {
-	foreach ($verb in ($resource.Methods.Keys | Sort-Object)) {
+	foreach ($verb in ($resource.Methods.Keys |
+			Sort-Object)) {
 		$commandName = "$verb-$($resource.Noun)"
 		$method = $resource.Methods[$verb]
 		$parameters = @(Get-BapSdkParameter -Resource $resource `
 				-Method $method)
+
 		$script:BapSdkCommands[$commandName] = @{
 			Resource   = $resource
 			Method     = $method
@@ -43,8 +46,9 @@ foreach ($resource in $sdkMapping.Resources) {
 			$description += ' Retrieves all result pages. Filters application names and unique names, then sorts results by application name.'
 		}
 		foreach ($parameter in $parameters) {
-			$values = ($parameter.Values | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ','
-			$type = if ($parameter.Collection) { 'string[]' } else { 'string' }
+			$values = ($parameter.Values |
+				ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ','
+			$type = $parameter.Collection ? 'string[]' : 'string'
 			$parameterDefinitions += '[Parameter()][ValidateNotNullOrEmpty()][ValidateSet(' + $values + ')][' + $type + ']$' + $parameter.Name
 			$parameterHelp += '.PARAMETER ' + $parameter.Name
 			$parameterHelp += 'Allowed values from the SDK: ' + ($parameter.Values -join ', ') + '. If omitted, the current environment value is preserved.'
@@ -53,7 +57,8 @@ foreach ($resource in $sdkMapping.Resources) {
 		$invoke = "Invoke-BapSdkCommand -CommandName '$commandName' -BoundParameters `$PSBoundParameters"
 		if ($verb -ne 'Get') {
 			$binding = '[CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact=''Medium'')]'
-			$names = ($parameters | ForEach-Object { "`$PSBoundParameters.ContainsKey('$($_.Name)')" }) -join ' -or '
+			$names = ($parameters |
+				ForEach-Object { "`$PSBoundParameters.ContainsKey('$($_.Name)')" }) -join ' -or '
 			$invoke = "if (-not ($names)) { throw 'Specify at least one maintenance setting to update.' }; if (`$PSCmdlet.ShouldProcess(`$EnvironmentId, 'Update Finance and Operations maintenance settings')) { $invoke }"
 		}
 		if ($parameters.Count) { $exampleArguments += ' -' + $parameters[0].Name + ' ' + $parameters[0].Values[0] + ' -WhatIf' }
