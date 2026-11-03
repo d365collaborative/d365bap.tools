@@ -74,6 +74,39 @@ function Get-Fixture {
 Write-TableFormat 'D365Bap.Tools.Known'
 Assert-Output 'Table view, Excel switch, and export block' $standard
 
+Write-TableFormat 'D365Bap.Tools.Known'
+Assert-Output 'Anonymous object with the Excel switch needs an array declaration' ($standard.Replace("[OutputType('D365Bap.Tools.Known[]')]", '[OutputType([PSCustomObject])]')) -Expected 1 @('PSUseStandardPublicOutput', 'array output type')
+
+Write-TableFormat 'D365Bap.Tools.Known'
+Assert-Output 'Named type with the Excel switch needs an array declaration' ($standard.Replace("[OutputType('D365Bap.Tools.Known[]')]", "[OutputType('D365Bap.Tools.Known')]")) -Expected 1 @('PSUseStandardPublicOutput', 'array output type')
+
+Write-TableFormat 'D365Bap.Tools.Known'
+Assert-Output 'Scalar with the Excel switch needs an array declaration' ($standard.Replace("[OutputType('D365Bap.Tools.Known[]')]", '[OutputType([string])]')) -Expected 1 @('PSUseStandardPublicOutput', 'array output type')
+
+Write-TableFormat @()
+$scalarArraySource = $standard.Replace("[OutputType('D365Bap.Tools.Known[]')]", '[OutputType([string[]])]')
+$scalarArraySource = $scalarArraySource.Replace('$resCol | Select-PSFObject -TypeName ''D365Bap.Tools.Known'' -Property *', '$resCol')
+Assert-Output 'Scalar array with the Excel switch satisfies the array requirement' $scalarArraySource
+
+Write-TableFormat 'D365Bap.Tools.UdeConnection'
+Assert-Output 'Singular connection with the Excel switch needs an array declaration' @'
+function Get-UdeConnection {
+    [OutputType('D365Bap.Tools.UdeConnection')]
+    param (
+        [switch] $AsExcelOutput
+    )
+
+    $resCol = @()
+
+    if ($AsExcelOutput) {
+        $resCol | Export-Excel -WorksheetName 'UdeConnection'
+        return
+    }
+
+    $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.UdeConnection' -Property *
+}
+'@ -Expected 1 @('array output type', 'Get-UdeConnection')
+
 Write-TableFormat @()
 Assert-Output 'Missing table view' $standard -Expected 1 @('PSUseStandardPublicOutput', "Add a table format view for 'D365Bap.Tools.Known'")
 
@@ -84,7 +117,7 @@ Write-TableFormat @()
 Assert-Output 'Missing view and switch reports both requirements' ($standard.Replace('[switch] $AsExcelOutput', '')) -Expected 2 @('Add a table format view', 'Add [switch] $AsExcelOutput')
 
 Write-TableFormat @()
-Assert-Output 'Single object declaration still checks the emitted custom type' ($standard.Replace("[OutputType('D365Bap.Tools.Known[]')]", "[OutputType('System.Object')]")) -Expected 1 @('D365Bap.Tools.Known')
+Assert-Output 'Single object declaration still checks the emitted custom type' ($standard.Replace("[OutputType('D365Bap.Tools.Known[]')]", "[OutputType('System.Object')]")) -Expected 2 @('D365Bap.Tools.Known', 'array output type')
 
 Write-TableFormat @()
 Assert-Output 'Empty declaration still checks the emitted custom type' ($standard.Replace("[OutputType('D365Bap.Tools.Known[]')]", '[OutputType()]')) -Expected 1 @('D365Bap.Tools.Known')
