@@ -26,6 +26,7 @@ $infrastructureSuite = @(
 	'Test-SelectedStringsHandling'
 	'Test-Ps1LintCorrectness'
 	'Test-Ps1LintBatch'
+	'Test-Ps1AnalysisCache'
 )
 
 $pwsh = (Get-Process -Id $PID).Path

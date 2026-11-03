@@ -77,6 +77,8 @@ What runs on PowerShell files:
   content stays unchanged.
 - `setup/Run.ps1` — installs the pinned PSScriptAnalyzer 1.25.0 (CurrentUser)
   when that version is missing.
+- The local analysis result cache reuses an unchanged file's result on the next
+  local run. CI never uses it. See [Local analysis result cache](#local-analysis-result-cache).
 
 ### One batch process
 
@@ -197,6 +199,42 @@ always sees edits. A running worker does not rebuild the index;
 repository facts must not be cached at script scope, because that would keep
 stale results for the rest of the process. `Test-Ps1LintCorrectness.ps1` checks
 both halves of that contract with the worker's `RepositoryIndexBuilds` counter.
+
+### Local analysis result cache
+
+Repeated local runs reuse the analysis result of an unchanged file.
+`internal/Get-Ps1AnalysisCache.ps1` stores one result per file and kind under
+`.ps1-lint-cache/` at the repository root, which `.gitignore` keeps out of git.
+
+- `builtin` entries hold the PSScriptAnalyzer diagnostics. The key is the
+  analyzed text (the formatted text in a lint batch, the file bytes otherwise),
+  the analyzer settings file content, the pinned PSScriptAnalyzer version, and
+  the file path.
+- `custom` entries hold the repository rule diagnostics. The key adds a
+  fingerprint of the repository metadata the rules read: function parameter
+  names and aliases, declared output types, and command names from the shared
+  index, plus the `ps1-lint.json` allowlist that applies to the file. Editing
+  one function's body leaves another file's custom entry valid; changing a
+  parameter or an output type anywhere in the module invalidates it.
+- A complete hit skips the parse, the analyzer, and the rules. A parse failure
+  is stored with the entry, so it reproduces the parse-only result.
+- Every read revalidates the schema and the stored key. A missing, damaged, or
+  mismatched entry is a miss, and any cache error disables the cache for the
+  rest of the process instead of failing the run.
+- Cache entries never expire; the folder is reset once the recorded write count
+  passes 20000, so it cannot grow without bound.
+
+The cache is local only. It stays off when `CI` or `TF_BUILD` is set, and
+`PS1_LINT_CACHE=off` disables it explicitly; `PS1_LINT_CACHE=<folder>` points it
+elsewhere. CI therefore runs exactly the uncached path. A local run prints one
+line with the reuse count:
+
+```text
+  analysis cache: reused 941 of 941 result(s) (100%), wrote 0 entry(ies).
+```
+
+`build/Test-Ps1AnalysisCache.ps1` covers the reuse, the invalidation inputs, the
+damaged-entry fallback, and the CI and off switches.
 
 ### High-signal built-in warnings
 

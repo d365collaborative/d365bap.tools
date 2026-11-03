@@ -133,7 +133,7 @@ try {
 
 	# Every explicit infrastructure pattern must set the flag on its own. The
 	# flag selects the infrastructure-tests job, so a miss silently drops the
-	# nine regression suites from that pull request.
+	# ten regression suites from that pull request.
 	foreach ($path in @(
 			'build/ps1-lint/internal/Get-Example.ps1',
 			'build/ps1-lint/README.md',
@@ -238,7 +238,7 @@ try {
 	# suite, or a suite that exits non-zero, cannot report success.
 	$runnerFixture = Join-Path ([IO.Path]::GetTempPath()) ('infra-runner-' + [guid]::NewGuid().ToString('N'))
 	$runner = Join-Path $runnerFixture 'Invoke-InfrastructureValidation.ps1'
-	$infrastructureSuites = @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-CiLintPlan', 'Test-PrekInstall', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness', 'Test-Ps1LintBatch')
+	$infrastructureSuites = @('Test-PRValidationPlan', 'Test-Ps1LintScope', 'Test-CiLintPlan', 'Test-PrekInstall', 'Test-Ps1FormatXml', 'Test-SelectiveValidation', 'Test-SelectedStringsHandling', 'Test-Ps1LintCorrectness', 'Test-Ps1LintBatch', 'Test-Ps1AnalysisCache')
 	try {
 		$null = New-Item -ItemType Directory -Path $runnerFixture -Force
 		Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Invoke-InfrastructureValidation.ps1') -Destination $runner
@@ -247,7 +247,7 @@ try {
 
 		foreach ($suite in $infrastructureSuites) { Set-Content -LiteralPath (Join-Path $runnerFixture "$suite.ps1") -Value 'exit 0' -Encoding utf8 }
 		$passOutput = @(& $pwsh -NoProfile -NonInteractive -File $runner 2>&1 | ForEach-Object { "$_" }) -join "`n"
-		Assert-True ($LASTEXITCODE -eq 0 -and $passOutput -match '9 suites') "The runner must execute all nine suites: $passOutput"
+		Assert-True ($LASTEXITCODE -eq 0 -and $passOutput -match '10 suites') "The runner must execute all ten suites: $passOutput"
 
 		Set-Content -LiteralPath (Join-Path $runnerFixture 'Test-Ps1LintBatch.ps1') -Value 'exit 1' -Encoding utf8
 		$skipOutput = @(& $pwsh -NoProfile -NonInteractive -File $runner 2>&1 | ForEach-Object { "$_" }) -join "`n"
