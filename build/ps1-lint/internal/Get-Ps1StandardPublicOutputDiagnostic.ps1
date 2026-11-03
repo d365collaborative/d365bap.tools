@@ -111,6 +111,12 @@ function Get-Ps1StandardPublicOutputDiagnostic {
 	}
 }
 
+function Test-Ps1PublicOutputArrayDeclaration {
+	param($Declaration)
+
+	@($Declaration.Types | Where-Object { $_ -match '\[\]$|^System\.Collections\.' }).Count -gt 0
+}
+
 function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 	param($Analysis, $Function, $TableTypes)
 	$Path = $Analysis.Path
@@ -143,9 +149,23 @@ function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 	}
 	if (-not $model.HasExcelSwitch) { return }
 
+	Get-Ps1StandardPublicOutputArrayDiagnostic -Analysis $Analysis `
+		-Function $Function `
+		-Model $model
+
 	Get-Ps1StandardPublicOutputExportDiagnostic -Analysis $Analysis `
 		-Function $Function `
 		-ExpectedWorksheet $expectedWorksheet
+}
+
+function Get-Ps1StandardPublicOutputArrayDiagnostic {
+	param($Analysis, $Function, $Model)
+	$Path = $Analysis.Path
+
+	if ($Model.Declaration.Types.Count -eq 0) { return }
+	if (Test-Ps1PublicOutputArrayDeclaration -Declaration $Model.Declaration) { return }
+
+	New-Ps1Diagnostic $Path 'PSUseStandardPublicOutput' "Function $($Function.Name) uses -AsExcelOutput but declares no array output type. Declare the element type with [] so callers see the exported collection." $Model.Declaration.Attributes[0].Extent
 }
 
 function Get-Ps1StandardPublicOutputExportDiagnostic {
