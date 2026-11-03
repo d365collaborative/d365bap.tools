@@ -91,15 +91,10 @@ function Get-UnifiedEnvironment {
 			}
 
 			$callerScript = "$($MyInvocation.ScriptName)"
-			$isModuleCaller = $false
 
-			if ((-not [string]::IsNullOrWhiteSpace($callerScript)) `
-					-and (-not [string]::IsNullOrWhiteSpace($moduleBase)) `
-					-and ($callerScript.StartsWith($moduleBase, [StringComparison]::OrdinalIgnoreCase))) {
-				$isModuleCaller = $true
-			}
-
-			if (-not $isModuleCaller) {
+			if (([string]::IsNullOrWhiteSpace($callerScript)) `
+					-or ([string]::IsNullOrWhiteSpace($moduleBase)) `
+					-or (-not $callerScript.StartsWith($moduleBase, [StringComparison]::OrdinalIgnoreCase))) {
 				Write-BapDeprecationNotice -Key 'Get-UnifiedEnvironment.SkipVersionDetails'
 			}
 		}
