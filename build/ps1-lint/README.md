@@ -93,7 +93,7 @@ in the same process:
    `.psd1` files are analyzed from their path because the formatter never
    touches them.
 
-`pass_filenames=64` in `prek.toml` bounds the process. Inside it, files are
+`pass_filenames=128` in `prek.toml` bounds the process. Inside it, files are
 processed in chunks of 32 (`-BatchSize`) so formatted text for a large tree is
 not held in memory at once. Each file has its own `try/catch`: a read-only file,
 a formatter failure, or a rule exception is reported and the rest of the batch
@@ -192,7 +192,7 @@ files are read once, and the index records:
 
 The index is built the first time a rule asks for it and reused by every later
 rule and file in that process. `prek.toml` batches the combined hook with
-`pass_filenames=64`, so a full repository scan pays the build once per batch
+`pass_filenames=128`, so a full repository scan pays the build once per batch
 instead of once per file, and formatting no longer starts a second process that
 would never use the index. Each process starts a new worker, so the next run
 always sees edits. A running worker does not rebuild the index;
