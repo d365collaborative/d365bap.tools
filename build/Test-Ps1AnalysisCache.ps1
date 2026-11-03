@@ -35,6 +35,15 @@ function Write-Fixture([string] $RelativePath, [string] $Content) {
 	$path
 }
 
+function Test-SignatureEqual {
+	param([string[]] $Actual, [string[]] $Expected)
+	if ($Actual.Count -ne $Expected.Count) { $false; return }
+	for ($index = 0; $index -lt $Actual.Count; $index++) {
+		if ($Actual[$index] -cne $Expected[$index]) { $false; return }
+	}
+	$true
+}
+
 function Get-Signature($Result) {
 	@($Result.Diagnostics | ForEach-Object { "$($_.RuleName)|$($_.Severity)|$($_.ScriptName)|$($_.Line)|$($_.Column)|$($_.Message)" } | Sort-Object)
 }
@@ -109,7 +118,7 @@ function Get-FixtureTwo {
 	# 2. An unchanged file reuses both entries and reproduces the result.
 	$warm = Invoke-Analysis -Path $onePath
 	Assert-True ($warm.Hits -eq 2 -and $warm.Misses -eq 0) "An unchanged file must reuse both entries, got $($warm.Hits) hit(s) and $($warm.Misses) miss(es)."
-	Assert-True ((Get-Signature $warm.Result) -ceq $baseline) 'A warm run must report the same diagnostics.'
+	Assert-True (Test-SignatureEqual (Get-Signature $warm.Result) $baseline) 'A warm run must report the same diagnostics.'
 	Write-Output 'PASS: unchanged file reuses the cached result'
 
 	# 3. A file edit invalidates both entries.
@@ -124,7 +133,7 @@ function Get-FixtureOne {
 '@
 	$edited = Invoke-Analysis -Path $onePath
 	Assert-True ($edited.Misses -eq 2) "A file edit must invalidate both entries, got $($edited.Misses) miss(es)."
-	Assert-True ((Get-Signature $edited.Result) -ceq $baseline) 'The edited file must report the same diagnostics.'
+	Assert-True (Test-SignatureEqual (Get-Signature $edited.Result) $baseline) 'The edited file must report the same diagnostics.'
 	Write-Output 'PASS: a file edit invalidates the entries'
 
 	# 4. Another file's body-only edit keeps the custom entry a hit, because
@@ -146,7 +155,7 @@ function Get-FixtureTwo {
 '@
 	$bodyEdit = Invoke-Analysis -Path $onePath
 	Assert-True ($bodyEdit.Hits -eq 2 -and $bodyEdit.Misses -eq 0) "A body-only edit elsewhere must stay a hit, got $($bodyEdit.Hits) hit(s) and $($bodyEdit.Misses) miss(es)."
-	Assert-True ((Get-Signature $bodyEdit.Result) -ceq $baseline) 'A body-only edit elsewhere must not change the result.'
+	Assert-True (Test-SignatureEqual (Get-Signature $bodyEdit.Result) $baseline) 'A body-only edit elsewhere must not change the result.'
 	Write-Output 'PASS: a body-only edit elsewhere stays a hit'
 
 	# 5. Another function's parameter change invalidates the custom entry, and
@@ -199,13 +208,13 @@ function Get-FixtureTwo {
 	[IO.File]::WriteAllText($settingsCopy, $settingsText, [Text.UTF8Encoding]::new($false))
 	$settingsRun = Invoke-Analysis -Path $onePath -SettingsPath $settingsCopy
 	Assert-True ($settingsRun.Misses -eq 2) "A settings change must invalidate every entry, got $($settingsRun.Misses) miss(es)."
-	Assert-True ((Get-Signature $settingsRun.Result) -ceq $outputSignature) 'The extra excluded rule must not change these fixtures.'
+	Assert-True (Test-SignatureEqual (Get-Signature $settingsRun.Result) $outputSignature) 'The extra excluded rule must not change these fixtures.'
 	Write-Output 'PASS: a settings change invalidates the entries'
 
 	# 8. A pinned analyzer version change invalidates every entry.
 	$versionRun = Invoke-Analysis -Path $onePath -Version ([version]'99.0.0')
 	Assert-True ($versionRun.Misses -eq 2) "A pinned version change must invalidate every entry, got $($versionRun.Misses) miss(es)."
-	Assert-True ((Get-Signature $versionRun.Result) -ceq $outputSignature) 'The version change must not change the result of the same analyzer.'
+	Assert-True (Test-SignatureEqual (Get-Signature $versionRun.Result) $outputSignature) 'The version change must not change the result of the same analyzer.'
 	$versionWarm = Invoke-Analysis -Path $onePath -Version ([version]'99.0.0')
 	Assert-True ($versionWarm.Hits -eq 2) 'The new version must cache its own entries.'
 	Write-Output 'PASS: a pinned version change invalidates the entries'
@@ -224,7 +233,7 @@ function Get-FixtureTwo {
 	}
 	$damaged = Invoke-Analysis -Path $onePath
 	Assert-True ($damaged.Result.Diagnostics.Count -gt 0) 'A damaged entry must still produce a result.'
-	Assert-True ((Get-Signature $damaged.Result) -ceq $outputSignature) 'A damaged entry must not change the result.'
+	Assert-True (Test-SignatureEqual (Get-Signature $damaged.Result) $outputSignature) 'A damaged entry must not change the result.'
 	$env:PS1_LINT_CACHE = $cacheRoot
 	Remove-Item -LiteralPath $damageRoot -Recurse -Force
 	Write-Output 'PASS: a damaged entry falls back to the uncached path'
@@ -284,7 +293,7 @@ function Get-FixtureBroken {
 	$brokenWarm = Invoke-Analysis -Path $brokenPath
 	Assert-True ($brokenWarm.Hits -eq 2) "A cached parse failure must be reused, got $($brokenWarm.Hits) hit(s) and $($brokenWarm.Misses) miss(es)."
 	Assert-True ($brokenWarm.Result.Failed) 'A cached parse failure must still fail the file.'
-	Assert-True ((Get-Signature $brokenWarm.Result) -ceq $brokenSignature) 'A cached parse failure must report the same diagnostics only.'
+	Assert-True (Test-SignatureEqual (Get-Signature $brokenWarm.Result) $brokenSignature) 'A cached parse failure must report the same diagnostics only.'
 	Remove-Item -LiteralPath $brokenPath -Force
 	Write-Output 'PASS: a parse failure is cached and reproduced'
 
@@ -345,9 +354,16 @@ function Get-FixtureBroken {
 	[IO.File]::AppendAllText((Join-Path $ruleRoot 'Get-Ps1CommentDiagnostic.ps1'), "`n# local rule experiment`n")
 	$ruleEdit = Invoke-Analysis -Path $onePath -RuleRoot $ruleRoot
 	Assert-True ($ruleEdit.Hits -eq 1 -and $ruleEdit.Misses -eq 1) "A rule edit must invalidate only the custom entry, got $($ruleEdit.Hits) hit(s) and $($ruleEdit.Misses) miss(es)."
-	Assert-True ((Get-Signature $ruleEdit.Result) -ceq $outputSignature) 'A rule edit must not change the result of the same rules.'
+	Assert-True (Test-SignatureEqual (Get-Signature $ruleEdit.Result) $outputSignature) 'A rule edit must not change the result of the same rules.'
 	$ruleEditWarm = Invoke-Analysis -Path $onePath -RuleRoot $ruleRoot
 	Assert-True ($ruleEditWarm.Hits -eq 2) "The edited rule set must cache its own custom entry, got $($ruleEditWarm.Hits) hit(s)."
+	[IO.File]::AppendAllText((Join-Path $ruleRoot 'Get-Ps1OutputModel.ps1'), "`n# shared output model experiment`n")
+	$modelEdit = Invoke-Analysis -Path $onePath -RuleRoot $ruleRoot
+	Assert-True ($modelEdit.Hits -eq 1 -and $modelEdit.Misses -eq 1) 'A shared output-model edit must invalidate the custom entry while retaining the built-in entry.'
+	Assert-True (Test-SignatureEqual (Get-Signature $modelEdit.Result) $outputSignature) 'A fingerprint-only model experiment must keep the same diagnostics.'
+	$modelEditWarm = Invoke-Analysis -Path $onePath -RuleRoot $ruleRoot
+	Assert-True ($modelEditWarm.Hits -eq 2) 'The edited shared model must cache its own result.'
+	Write-Output 'PASS: a shared output model edit invalidates only the custom entry'
 	$unchangedAgain = Invoke-Analysis -Path $onePath
 	Assert-True ($unchangedAgain.Hits -eq 2 -and $unchangedAgain.Misses -eq 0) "The untouched rule set must keep both entries, got $($unchangedAgain.Hits) hit(s) and $($unchangedAgain.Misses) miss(es)."
 	Remove-Item -LiteralPath $ruleRoot -Recurse -Force

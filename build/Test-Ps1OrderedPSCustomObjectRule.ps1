@@ -91,6 +91,17 @@ function Get-Fixture {
 }
 '@
 
+Assert-Ordered 'Hashtable cast bypass' '[pscustomobject][hashtable]@{ Name = 1 }' -Expected 1
+Assert-Ordered 'Hashtable erases ordered proof' '[pscustomobject][hashtable][ordered]@{ Name = 1 }' -Expected 1
+Assert-Ordered 'Parenthesised cast chain' '[PSCustomObject](([hashtable]([ordered]@{ Name = 1 })))' -Expected 1
+Assert-Ordered 'Qualified ordered and parentheses' '[System.Management.Automation.PSCustomObject](([ordered]@{ Name = 1 }))'
+Assert-Ordered 'Nonliteral cast chain' '[pscustomobject][hashtable]$source'
+Assert-Ordered 'String and comment' @'
+# [pscustomobject][hashtable]@{ Name = 1 }
+$text = '[pscustomobject]@{ Name = 1 }'
+'@
+Assert-Ordered 'Nested cast objects' '[pscustomobject][hashtable]@{ Inner = [pscustomobject][hashtable]@{} }' -Expected 2
+
 Assert-Ordered 'Full type name' @'
 function Get-Fixture {
     $objResult = [System.Management.Automation.PSCustomObject]@{

@@ -11,7 +11,7 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ShouldProcessDiagnostic')) {
+foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ShouldProcessDiagnostic', 'Get-Ps1ReturnValueDiagnostic')) {
 	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
 }
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('shouldprocess-rule-' + [guid]::NewGuid().ToString('N'))
@@ -25,6 +25,7 @@ function Assert-ShouldProcess {
 	$path = Join-Path $folder $FileName
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
+	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
 	$colDiagnostics = @(Get-Ps1ShouldProcessDiagnostic -Analysis $analysis)
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
@@ -211,5 +212,46 @@ Assert-ShouldProcess 'Outside the module' $compliant -Directory 'build'
 Assert-ShouldProcess 'Test files are never checked' $compliant -FileName 'Set-Fixture.Tests.ps1'
 Assert-ShouldProcess 'Tepp files are exempt' $compliant -FileName 'set.fixture.tepp.ps1' -Directory 'd365bap.tools/internal/tepp'
 
+function Assert-Combined([string] $Label, [string] $Source, [int] $ShouldCount, [int] $ReturnCount) {
+	$path = Join-Path $fixtureRoot 'd365bap.tools/functions/Set-Combined.ps1'
+	[IO.File]::WriteAllText($path, $Source)
+	$analysis = Get-Ps1Analysis -Path $path
+	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
+	$actualShould = @(Get-Ps1ShouldProcessDiagnostic $analysis).Count
+	$actualReturn = @(Get-Ps1ReturnValueDiagnostic $analysis).Count
+	if ($actualShould -ne $ShouldCount -or $actualReturn -ne $ReturnCount) { throw "$Label : got $actualShould ShouldProcess and $actualReturn return diagnostics" }
+	$script:caseCount++
+}
+Assert-Combined 'Bare return' (Get-Fixture) 0 0
+Assert-Combined 'Preview output' (Get-Fixture -Body '$preview; return') 0 0
+Assert-Combined 'Valued return' (Get-Fixture -Body 'return $preview') 1 1
+Assert-Combined 'Arbitrary work' (Get-Fixture -Body 'Write-Output $preview; return') 1 0
+Assert-Combined 'Compound condition' (Get-Fixture -Call '($PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel) -and $false)') 1 0
+Assert-Combined 'Else branch' ((Get-Fixture).Replace('{ return }', '{ return } else { Write-Output x }')) 1 0
+Assert-Combined 'Transparent parentheses' (Get-Fixture -Call '($PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel))') 0 0
+
+Assert-Combined 'Scoped preview is outside canonical grammar' (Get-Fixture -Body '$script:preview; return') 1 0
+Assert-Combined 'Property access is outside preview grammar' (Get-Fixture -Body '$preview.Name; return') 1 0
+Assert-Combined 'Redirected preview is not output' (Get-Fixture -Body '$preview > $null; return') 1 0
+Assert-Combined 'Declined trap cannot hide work' (Get-Fixture -Body 'trap { Write-Output hidden }; return') 1 0
+Assert-Combined 'Redirected condition is not transparent' (Get-Fixture -Call '($PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel) > $null)') 1 0
+Assert-Combined 'Exactly negated call cannot include alternate escape' (Get-Fixture -Call '$PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel) -or $skip') 1 0
+
+function Set-LocalRuntimeFixture {
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+	param([string] $Path)
+	$preview = 'prepared preview'
+	$shouldAffected = $Path
+	$shouldLabel = 'Write local fixture'
+
+	if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { $preview; return }
+	[IO.File]::WriteAllText($Path, 'mutated')
+}
+$runtimePath = Join-Path $fixtureRoot 'mutation.txt'
+$result = @(Set-LocalRuntimeFixture -Path $runtimePath -WhatIf)
+if ($result.Count -ne 1 -or $result[0] -ne 'prepared preview' -or (Test-Path $runtimePath)) { throw 'WhatIf did not emit preview without mutation' }
+Set-LocalRuntimeFixture -Path $runtimePath -Confirm:$false
+if ([IO.File]::ReadAllText($runtimePath) -ne 'mutated') { throw 'Confirmed invocation did not mutate' }
 $script:caseCount++
+
 Write-Output "ShouldProcess rule checks passed: $script:caseCount cases."

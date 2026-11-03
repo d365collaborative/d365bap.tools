@@ -1,99 +1,26 @@
-﻿function Get-Ps1OutputTypeCommandName {
-	param($Command)
-
-	$name = $Command.GetCommandName()
-	if ($null -eq $name) { $null; return }
-	($name -split '\\')[-1]
-}
-
-function Get-Ps1OutputTypeDeclared {
-	param($Function)
-
-	$paramBlock = $Function.Body.ParamBlock
-	if ($null -eq $paramBlock) {
-		[pscustomobject]@{ HasAttribute = $false; Types = @(); Attributes = @() }; return
-	}
-
-	$colAttributes = @($paramBlock.Attributes | Where-Object {
-			$_ -is [Management.Automation.Language.AttributeAst] -and
-			$_.TypeName.Name -match '^OutputType(Attribute)?$'
-		})
-	$colTypes = [System.Collections.Generic.List[string]]::new()
-	foreach ($itemAttribute in $colAttributes) {
-		foreach ($itemArgument in @($itemAttribute.PositionalArguments)) {
-			$typeName = $null
-			if ($itemArgument -is [Management.Automation.Language.StringConstantExpressionAst]) { $typeName = $itemArgument.Value }
-			elseif ($itemArgument -is [Management.Automation.Language.TypeExpressionAst]) { $typeName = $itemArgument.TypeName.FullName }
-			elseif ($itemArgument -is [Management.Automation.Language.TypeConstraintAst]) { $typeName = $itemArgument.TypeName.FullName }
-
-			if (-not [string]::IsNullOrWhiteSpace($typeName)) { $colTypes.Add($typeName.Trim("'", '"')) }
-		}
-	}
-
-	[pscustomobject]@{
-		HasAttribute = $colAttributes.Count -gt 0
-		Types        = $colTypes.ToArray()
-		Attributes   = $colAttributes
-	}
-}
-
-function Get-Ps1OutputTypePSFName {
-	param($Function)
-
-	$colNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-
-	foreach ($itemCommand in $Function.Body.FindAll({
-				param($Node)
-				$Node -is [Management.Automation.Language.CommandAst] -and
-				(Get-Ps1OutputTypeCommandName $Node) -eq 'Select-PSFObject'
-			}, $true)) {
-		$tmpElements = @($itemCommand.CommandElements)
-		for ($index = 0; $index -lt $tmpElements.Count; $index++) {
-			$tmpElement = $tmpElements[$index]
-			if ($tmpElement -isnot [Management.Automation.Language.CommandParameterAst]) { continue }
-			if ($tmpElement.ParameterName -notin @('TypeName', 'Type')) { continue }
-
-			$tmpArgument = $null
-			if ($null -ne $tmpElement.Argument) { $tmpArgument = $tmpElement.Argument }
-			elseif ($index + 1 -lt $tmpElements.Count) { $tmpArgument = $tmpElements[$index + 1] }
-
-			if ($tmpArgument -is [Management.Automation.Language.StringConstantExpressionAst]) {
-				$colNames.Add($tmpArgument.Value) > $null
-			}
-		}
-	}
-
-	foreach ($itemHashtable in $Function.Body.FindAll({ param($Node) $Node -is [Management.Automation.Language.HashtableAst] }, $true)) {
-		foreach ($itemPair in $itemHashtable.KeyValuePairs) {
-			if ($itemPair.Item1 -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
-			if ($itemPair.Item1.Value -ne 'PSTypeName') { continue }
-
-			$tmpValue = $itemPair.Item2
-			if ($tmpValue -is [Management.Automation.Language.PipelineAst] -and $tmpValue.PipelineElements.Count -eq 1) { $tmpValue = $tmpValue.PipelineElements[0] }
-			if ($tmpValue -is [Management.Automation.Language.CommandExpressionAst]) { $tmpValue = $tmpValue.Expression }
-			if ($tmpValue -is [Management.Automation.Language.StringConstantExpressionAst]) { $colNames.Add($tmpValue.Value) > $null }
-		}
-	}
-
-	$colNames
-}
+﻿. "$PSScriptRoot/Get-Ps1OutputModel.ps1"
 
 function Get-Ps1OutputTypeDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
-	$scope = $Analysis.Scope
 	if (-not (Test-Ps1RuleScope $Analysis 'OutputTypeFile')) { return }
+	foreach ($itemFunction in @(Get-Ps1OutputTopLevelFunction -Analysis $Analysis)) {
+		Get-Ps1OutputTypeFunctionDiagnostic $Analysis $itemFunction
+	}
+}
 
-	$itemFunction = @(Get-Ps1AstNode $Analysis FunctionDefinitionAst | Where-Object { $_.Name -eq $scope.FileNameWithoutExtension })[0]
-	if ($null -eq $itemFunction) { return }
+function Get-Ps1OutputTypeFunctionDiagnostic {
+	param($Analysis, $itemFunction)
+	$Path = $Analysis.Path
 
-	$declaration = Get-Ps1OutputTypeDeclared -Function $itemFunction
-	$colPSFNames = @(Get-Ps1OutputTypePSFName -Function $itemFunction)
+	$model = Get-Ps1OutputFunctionModel -Function $itemFunction `
+		-Analysis $Analysis
+	$declaration = $model.Declaration
 	$colTypes = @($declaration.Types)
 
 	if (-not $declaration.HasAttribute) {
-		New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "Function $($itemFunction.Name) must declare [OutputType()]. Use [OutputType([void])] when it emits no output." $itemFunction.Name.Extent
+		New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "Function $($itemFunction.Name) must declare [OutputType()]. Use [OutputType([void])] when it emits no output." $itemFunction.Extent
 		return
 	}
 
@@ -108,6 +35,7 @@ function Get-Ps1OutputTypeDiagnostic {
 		return
 	}
 
+	$colPSFNames = @($model.CustomTypes | ForEach-Object { $_.Name })
 	if ($colPSFNames.Count -gt 0) {
 		foreach ($itemPSFName in $colPSFNames) {
 			$matching = @($colTypes | Where-Object {
@@ -115,7 +43,7 @@ function Get-Ps1OutputTypeDiagnostic {
 				}).Count -gt 0
 
 			if (-not $matching) {
-				New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "Function $($itemFunction.Name) emits '$itemPSFName' but OutputType does not declare '$itemPSFName' or '$itemPSFName[]'." $itemFunction.Name.Extent
+				New-Ps1Diagnostic $Path 'PSUseDeclaredOutputType' "Function $($itemFunction.Name) emits '$itemPSFName' but OutputType does not declare '$itemPSFName' or '$itemPSFName[]'." $itemFunction.Extent
 			}
 		}
 

@@ -28,6 +28,14 @@ function Get-Ps1OrderedPSCustomObjectDiagnostic {
 		if ($itemConvert.Type.TypeName.FullName -notmatch '(?i)^(system\.management\.automation\.)?pscustomobject$') { continue }
 
 		$child = Get-Ps1OrderedChild -Node $itemConvert.Child
+		if ($child -is [Management.Automation.Language.ConvertExpressionAst] -and
+			$child.Type.TypeName.FullName -ieq 'ordered') {
+			$child = Get-Ps1OrderedChild -Node $child.Child
+			if ($child -is [Management.Automation.Language.HashtableAst]) { continue }
+		}
+		while ($child -is [Management.Automation.Language.ConvertExpressionAst]) {
+			$child = Get-Ps1OrderedChild -Node $child.Child
+		}
 		if ($child -isnot [Management.Automation.Language.HashtableAst]) { continue }
 
 		New-Ps1Diagnostic $Path 'PSUseOrderedPSCustomObject' 'Build the object through [ordered] so property order is explicit: [pscustomobject][ordered]@{ ... }.' $itemConvert.Extent

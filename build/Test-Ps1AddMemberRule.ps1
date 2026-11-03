@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Parses fixture scripts and checks that note properties added inside any
-    iteration construct are read or written inside that loop.
+    iteration construct have a recognized read inside that loop.
 #>
 [CmdletBinding()]
 param()
@@ -24,6 +24,7 @@ function Assert-AddMember {
 	$path = Join-Path $folder 'Get-Fixture.ps1'
 	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
 	$analysis = Get-Ps1Analysis -Path $path
+	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
 	$colDiagnostics = @(Get-Ps1AddMemberDiagnostic -Analysis $analysis)
 	if ($colDiagnostics.Count -ne $Expected) {
 		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
@@ -77,7 +78,7 @@ function Get-Fixture {
         $item.Marker = 2
     }
 }
-'@)
+'@) -Expected 1
 
 Assert-AddMember 'Foreach property used through pipeline variable' (@'
 function Get-Fixture {
@@ -88,7 +89,7 @@ function Get-Fixture {
         $resCol | Where-Object { $_.Marker -eq 1 }
     }
 }
-'@)
+'@) -Expected 1
 
 Assert-AddMember 'Foreach property used only after the loop' (@'
 function Get-Fixture {
@@ -203,7 +204,7 @@ function Get-Fixture {
         $item | Add-Member -NotePropertyName $name -NotePropertyValue 1
     }
 }
-'@)
+'@) -Expected 1
 
 Assert-AddMember 'Non-variable target' (@'
 function Get-Fixture {
@@ -213,7 +214,7 @@ function Get-Fixture {
         $item.Sub | Add-Member -NotePropertyName Marker -NotePropertyValue 1
     }
 }
-'@)
+'@) -Expected 1
 
 Assert-AddMember 'Other member type' (@'
 function Get-Fixture {
@@ -230,5 +231,27 @@ Assert-AddMember 'Outside the module' $unused -Directory 'build'
 Assert-AddMember 'Lint tooling internal scripts are checked' $unused -Directory 'build/ps1-lint/internal' -Expected 1
 
 Assert-AddMember 'Lint tooling format scripts are checked' $unused -Directory 'build/ps1-lint/ps1-format' -Expected 1
+
+Assert-AddMember 'Read after write' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $item.Marker = 2; $x = $item.Marker }'
+Assert-AddMember 'Compound update' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $item.Marker += 1 }'
+Assert-AddMember 'Increment' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $item.Marker++ }'
+Assert-AddMember 'Nested write reads owner' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $item.Marker.X = 1 }'
+Assert-AddMember 'Deferred function' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; function Later { $item.Marker } }' -Expected 1
+Assert-AddMember 'Qualified attached arguments' '$items | Microsoft.PowerShell.Core\ForEach-Object { Microsoft.PowerShell.Utility\Add-Member -InputObject:$_ -NotePropertyName:Marker -NotePropertyValue:1; $_.Marker }'
+Assert-AddMember 'Splat unsupported' 'foreach ($item in $items) { $item | Add-Member @args }' -Expected 1
+
+Assert-AddMember 'Plain write does not consume the property' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $item.Marker = 2 }' -Expected 1
+Assert-AddMember 'Unrelated pipeline item cannot consume named target' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $_.Marker }' -Expected 1
+Assert-AddMember 'Decrement consumes property' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; --$item.Marker }'
+Assert-AddMember 'Function definition inside loop is not an iteration' 'foreach ($item in $items) { function Later { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1 } }'
+Assert-AddMember 'Stored scriptblock inside loop is not an iteration' 'foreach ($item in $items) { $later = { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1 } }'
+Assert-AddMember 'Deferred read does not consume property' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $later = { $item.Marker } }' -Expected 1
+Assert-AddMember 'Abbreviated parameter cannot bypass rule' 'foreach ($item in $items) { $item | Add-Member -NotePropertyN Marker -NotePropertyValue 1 }' -Expected 1 @('Unsupported')
+Assert-AddMember 'Bulk properties require explicit form' 'foreach ($item in $items) { $item | Add-Member -NotePropertyMembers @{ Marker = 1 } }' -Expected 1 @('Unsupported')
+
+Assert-AddMember 'Dynamic member type cannot bypass rule' 'foreach ($item in $items) { $item | Add-Member -MemberType $type -Name Marker -Value 1 }' -Expected 1 @('Unsupported')
+Assert-AddMember 'Positional members require named form' 'foreach ($item in $items) { $item | Add-Member NoteProperty Marker 1 }' -Expected 1 @('Unsupported')
+
+Assert-AddMember 'Destructuring assignment does not consume property' 'foreach ($item in $items) { $item | Add-Member -NotePropertyName Marker -NotePropertyValue 1; $item.Marker, $other = 1, 2 }' -Expected 1
 
 Write-Output "Add-Member rule checks passed: $script:caseCount cases."

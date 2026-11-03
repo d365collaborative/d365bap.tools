@@ -1,30 +1,4 @@
-﻿function Test-Ps1WildcardSupport {
-	param($Parameter)
-	$null -ne (Get-Ps1ParameterWildcardAttribute -Parameter $Parameter)
-}
-
-function Get-Ps1ParameterWildcardAttribute {
-	param($Parameter)
-	@($Parameter.Attributes | Where-Object {
-			$_ -is [Management.Automation.Language.AttributeAst] -and (
-				$_.TypeName.GetReflectionAttributeType() -eq [Management.Automation.SupportsWildcardsAttribute] -or
-				$_.TypeName.FullName -in @('SupportsWildcards', 'SupportsWildcardsAttribute', 'System.Management.Automation.SupportsWildcardsAttribute')
-			)
-		})[0]
-}
-
-function Get-Ps1ParameterOwnerFunction {
-	param($Node)
-
-	$parent = $Node.Parent
-	while ($null -ne $parent) {
-		if ($parent -is [Management.Automation.Language.FunctionDefinitionAst]) { $parent; return }
-		$parent = $parent.Parent
-	}
-	$null
-}
-
-function Test-Ps1MandatoryParameter {
+﻿function Test-Ps1MandatoryParameter {
 	param($Parameter)
 	foreach ($itemAttribute in $Parameter.Attributes) {
 		if ($itemAttribute -isnot [Management.Automation.Language.AttributeAst]) { continue }
@@ -83,28 +57,47 @@ function Test-Ps1SameValue {
 	$Left.Equals($Right)
 }
 
+function Test-Ps1RedundantParameterPosition {
+	param($Parameter)
+	if ($Parameter.Parent -is [Management.Automation.Language.ParamBlockAst]) {
+		$block = $Parameter.Parent
+		$colParameters = @($block.Parameters)
+		$scriptBlock = $block.Parent
+	}
+	elseif ($Parameter.Parent -is [Management.Automation.Language.FunctionDefinitionAst]) {
+		$block = $Parameter.Parent.Body.ParamBlock
+		$colParameters = @($Parameter.Parent.Parameters)
+		$scriptBlock = $Parameter.Parent.Body
+	}
+	else { $false; return }
+	if ($null -ne $scriptBlock.DynamicParamBlock) { $false; return }
+	foreach ($itemAttribute in $block.Attributes) {
+		if ($itemAttribute.TypeName.FullName -notin @('CmdletBinding', 'CmdletBindingAttribute')) { continue }
+		foreach ($itemArgument in $itemAttribute.NamedArguments) {
+			if ($itemArgument.ArgumentName -ieq 'PositionalBinding' -and $itemArgument.Argument.Extent.Text -ine '$true') { $false; return }
+		}
+	}
+	for ($index = 0; $index -lt $colParameters.Count; $index++) {
+		foreach ($itemAttribute in $colParameters[$index].Attributes) {
+			if ($itemAttribute -isnot [Management.Automation.Language.AttributeAst] -or
+				$itemAttribute.TypeName.GetReflectionAttributeType() -ne [Management.Automation.ParameterAttribute]) { continue }
+			foreach ($itemArgument in $itemAttribute.NamedArguments) {
+				if ($itemArgument.ArgumentName -ieq 'ParameterSetName') { $false; return }
+				if ($itemArgument.ArgumentName -ine 'Position') { continue }
+				if ($itemArgument.Argument -isnot [Management.Automation.Language.ConstantExpressionAst] -or $itemArgument.Argument.Value -ne $index) { $false; return }
+			}
+		}
+	}
+	$true
+}
+
 function Get-Ps1ParameterContractDiagnostic {
 	param([hashtable] $Analysis)
 	$Path = $Analysis.Path
 
 	$scope = $Analysis.Scope
 	$positionAllowed = $scope.IsModuleSource -and
-	-not $scope.IsTestsFile -and
-	$scope.FileName -ne 'Get-PpacFinOpsAsset.ps1'
-
-	$colFunctionParameters = [System.Collections.Generic.HashSet[object]]::new()
-	$hashParameterFunctions = [System.Collections.Generic.Dictionary[object, object]]::new()
-	foreach ($itemFunction in @(Get-Ps1AstNode $Analysis FunctionDefinitionAst)) {
-		foreach ($itemParameter in $itemFunction.Parameters) {
-			$colFunctionParameters.Add($itemParameter) > $null
-			if (-not $hashParameterFunctions.ContainsKey($itemParameter)) { $hashParameterFunctions[$itemParameter] = $itemFunction }
-		}
-		if ($null -eq $itemFunction.Body.ParamBlock) { continue }
-		foreach ($itemParameter in $itemFunction.Body.ParamBlock.Parameters) {
-			$colFunctionParameters.Add($itemParameter) > $null
-			if (-not $hashParameterFunctions.ContainsKey($itemParameter)) { $hashParameterFunctions[$itemParameter] = $itemFunction }
-		}
-	}
+	-not $scope.IsTestsFile
 
 	$defaults = Get-Ps1ParameterAttributeDefault
 
@@ -124,8 +117,9 @@ function Get-Ps1ParameterContractDiagnostic {
 					New-Ps1Diagnostic -Path $Path 'PSAvoidShorthandMandatory' "Use the explicit form [Parameter(Mandatory = `$true)] instead of the shorthand Mandatory on -$name." $itemArgument.Argument.Extent
 				}
 
-				if ($positionAllowed -and $itemArgument.ArgumentName -ieq 'Position') {
-					New-Ps1Diagnostic -Path $Path 'PSAvoidExplicitParameterPosition' "Remove the explicit Position = $($itemArgument.Argument.Extent.Text) argument from -$name; declaration order defines parameter positions." $itemArgument.Extent
+				if ($positionAllowed -and $itemArgument.ArgumentName -ieq 'Position' -and
+					(Test-Ps1RedundantParameterPosition $itemParameter)) {
+					New-Ps1Diagnostic -Path $Path 'PSAvoidExplicitParameterPosition' "Remove the explicit Position = $($itemArgument.Argument.Extent.Text) argument from -$name; it repeats the position supplied by declaration order in this block." $itemArgument.Extent
 				}
 
 				$default = $null
@@ -151,58 +145,6 @@ function Get-Ps1ParameterContractDiagnostic {
 				}).Count -gt 0
 			if ($isString -and -not (Test-Ps1ValidateNotNullOrEmpty $itemParameter)) {
 				New-Ps1Diagnostic -Path $Path 'PSUseValidateNotNullOrEmpty' "Parameter -$name is mandatory but does not declare [ValidateNotNullOrEmpty()]. Add the attribute to state the non-empty contract explicitly." $itemParameter.Extent
-			}
-		}
-
-		if ($colFunctionParameters.Contains($itemParameter) -and
-			$null -ne $itemParameter.DefaultValue -and
-			$itemParameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and
-			$itemParameter.DefaultValue.Value.Contains('*')) {
-			$isString = @($itemParameter.Attributes | Where-Object {
-					$_ -is [Management.Automation.Language.TypeConstraintAst] -and
-					$_.TypeName.FullName -in @('string', 'System.String', 'string[]', 'System.String[]')
-				}).Count -gt 0
-			if ($isString -and -not (Test-Ps1WildcardSupport $itemParameter)) {
-				New-Ps1Diagnostic -Path $Path 'PSUseSupportsWildcards' "Parameter -$name has a wildcard default value. Add [SupportsWildcards()] to the parameter." $itemParameter.DefaultValue.Extent
-			}
-		}
-
-		if ($colFunctionParameters.Contains($itemParameter)) {
-			$wildcardAttribute = Get-Ps1ParameterWildcardAttribute $itemParameter
-
-			if ($null -ne $wildcardAttribute) {
-				$hasStarDefault = $null -ne $itemParameter.DefaultValue -and
-				$itemParameter.DefaultValue -is [Management.Automation.Language.StringConstantExpressionAst] -and
-				$itemParameter.DefaultValue.Value -eq '*'
-
-				if (-not $hasStarDefault) {
-					New-Ps1Diagnostic -Path $Path 'PSUseSupportsWildcards' "Parameter -$name declares [SupportsWildcards()] but does not default to '*'. Wildcard parameters always have a value; set the default to '*'." $wildcardAttribute.Extent
-				}
-
-				if ($hashParameterFunctions.ContainsKey($itemParameter)) {
-					$owner = $hashParameterFunctions[$itemParameter]
-					$tmpLookups = @($owner.Body.FindAll({
-								param($node)
-								$node -is [Management.Automation.Language.InvokeMemberExpressionAst] -and
-								$node.Expression -is [Management.Automation.Language.VariableExpressionAst] -and
-								$node.Expression.VariablePath.UserPath -ieq 'PSBoundParameters' -and
-								$node.Member -is [Management.Automation.Language.StringConstantExpressionAst] -and
-								$node.Member.Value -in @('ContainsKey', 'Contains') -and
-								@($node.Arguments).Count -eq 1
-							}, $true))
-
-					foreach ($itemLookup in $tmpLookups) {
-						if ((Get-Ps1ParameterOwnerFunction -Node $itemLookup) -ne $owner) { continue }
-
-						$itemArgument = @($itemLookup.Arguments)[0]
-						$itemKey = $null
-						if ($itemArgument -is [Management.Automation.Language.StringConstantExpressionAst]) { $itemKey = $itemArgument.Value }
-						elseif ($itemArgument -is [Management.Automation.Language.ExpandableStringExpressionAst] -and $itemArgument.NestedExpressions.Count -eq 0) { $itemKey = $itemArgument.Value }
-						if ($null -eq $itemKey -or $itemKey -ine $name) { continue }
-
-						New-Ps1Diagnostic -Path $Path 'PSUseSupportsWildcards' "Parameter -$name is a wildcard parameter and always has a value, so `$PSBoundParameters.$($itemLookup.Member.Value)('$name') is unnecessary. Use -$name directly." $itemLookup.Extent
-					}
-				}
 			}
 		}
 	}

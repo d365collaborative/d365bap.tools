@@ -10,7 +10,7 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1HelpDiagnostic')) {
+foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1HelpDiagnostic', 'Get-Ps1CommentDiagnostic')) {
 	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
 }
 $fixturePath = Join-Path ([IO.Path]::GetTempPath()) ('example-help-' + [guid]::NewGuid().ToString('N') + '.ps1')
@@ -74,7 +74,72 @@ function New-Fixture {
 '@
 $fixture = $fixture.Replace("`r`n", "`n")
 
+$script:completeCaseCount = 0
+function Assert-CompleteHelp {
+	param([string] $Label, [string] $Source, [string[]] $Expected = @())
+	foreach ($itemEnding in @("`n", "`r`n")) {
+		[IO.File]::WriteAllText($fixturePath, $Source.Replace("`r`n", "`n").Replace("`n", $itemEnding))
+		$analysis = Get-Ps1Analysis -Path $fixturePath
+		$analysis.Path = Join-Path ([IO.Path]::GetTempPath()) 'd365bap.tools/functions/Get-Fixture.ps1'
+		$analysis.Scope = Get-Ps1AnalysisScope $analysis.Path
+		$diagnostics = @(Get-Ps1HelpDiagnostic $analysis) + @(Get-Ps1CommentDiagnostic $analysis)
+		if ($Expected.Count -eq 0 -and $diagnostics.Count -gt 0) { throw "${Label}: $($diagnostics.Message -join '; ')" }
+		foreach ($itemFragment in $Expected) {
+			if (($diagnostics.Message -join '; ') -notlike "*$itemFragment*") { throw "${Label}: missing $itemFragment in $($diagnostics.Message -join '; ')" }
+		}
+	}
+	$script:completeCaseCount++
+}
+
+$complete = @'
+function Get-Fixture {
+<#
+.SYNOPSIS
+    Gets a fixture.
+.DESCRIPTION
+    Retrieves a sample object for inspection.
+.PARAMETER Name
+    Display name.
+.EXAMPLE
+    Get-Fixture -Name demo
+
+    It selects -Name demo.
+.NOTES
+    Author: Example
+.LINK
+    https://example.org/reference
+#>
+    param([Alias('Nick')][string] $Name)
+}
+'@
+$complete = $complete.Replace("`r`n", "`n")
+
 try {
+	Assert-CompleteHelp 'Complete public help' $complete
+	Assert-CompleteHelp 'No help' 'function Get-Fixture { param([string] $Name) }' @('requires comment-based help')
+	Assert-CompleteHelp 'Missing synopsis' ($complete.Replace(".SYNOPSIS`n    Gets a fixture.`n", '')) @('requires a nonempty SYNOPSIS')
+	Assert-CompleteHelp 'Missing description' ($complete.Replace(".DESCRIPTION`n    Retrieves a sample object for inspection.`n", '')) @('requires a nonempty DESCRIPTION')
+	Assert-CompleteHelp 'Empty description' ($complete.Replace('    Retrieves a sample object for inspection.', '')) @('requires a nonempty DESCRIPTION')
+	Assert-CompleteHelp 'Missing example' ([regex]::Replace($complete, '(?s)\.EXAMPLE.*?(?=\.NOTES)', '')) @('requires a nonempty EXAMPLE')
+	Assert-CompleteHelp 'Missing optional parameter' ($complete.Replace(".PARAMETER Name`n    Display name.`n", '')) @('must document PARAMETER Name')
+	Assert-CompleteHelp 'Empty parameter' ($complete.Replace('    Display name.', '')) @('must have nonempty documentation')
+	Assert-CompleteHelp 'Unknown parameter' ($complete.Replace('.PARAMETER Name', '.PARAMETER Missing')) @('Unknown PARAMETER Missing')
+	Assert-CompleteHelp 'Duplicate parameter' ($complete.Replace('.EXAMPLE', ".PARAMETER Nick`n    Another description.`n.EXAMPLE")) @('exactly once')
+	Assert-CompleteHelp 'Duplicate synopsis' ($complete.Replace('.DESCRIPTION', ".SYNOPSIS`n    Gets sample data.`n.DESCRIPTION")) @('only one SYNOPSIS')
+	Assert-CompleteHelp 'Alias section' ($complete.Replace('.PARAMETER Name', '.PARAMETER Nick'))
+	Assert-CompleteHelp 'Nested helper has separate ownership' ($complete.Replace("    param([Alias('Nick')][string] `$Name)", "    param([Alias('Nick')][string] `$Name)`n    function Get-Helper { param([string] `$Other) }"))
+	$fullHelp = $fixture.Replace('    Creates a fixture.', "    Creates a fixture.`n.DESCRIPTION`n    Provisions a sample environment for testing.").Replace('#>', ".NOTES`n    Tags: testing, environment`n    Author: Example Author`n.LINK`n    https://example.org/source`n#>")
+	foreach ($case in @(
+			@{ Label = 'Full help with attribution'; Source = $fullHelp; Rule = '' },
+			@{ Label = 'Invalid notes'; Source = $fullHelp.Replace('Tags: testing, environment', 'Source: example'); Rule = 'PSHelpNotes' },
+			@{ Label = 'Ordinary comment'; Source = $fullHelp + "`n# ordinary comment"; Rule = 'PSOnlyCommentBasedHelp' }
+		)) {
+		[IO.File]::WriteAllText($fixturePath, $case.Source)
+		$analysis = Get-Ps1Analysis -Path $fixturePath
+		$diagnostics = @(Get-Ps1HelpDiagnostic -Analysis $analysis) + @(Get-Ps1CommentDiagnostic -Analysis $analysis)
+		if ($case.Rule -eq '' -and $diagnostics.Count -gt 0) { throw "$($case.Label): unexpected diagnostics: $($diagnostics.Message -join '; ')" }
+		if ($case.Rule -ne '' -and $case.Rule -notin $diagnostics.RuleName) { throw "$($case.Label): missing $($case.Rule)" }
+	}
 	Assert-Example 'Separate lines and documented defaults' $fixture
 	Assert-Example 'It and It will are accepted' ($fixture.Replace('It will ', 'It '))
 	Assert-Example 'Summary is optional' ($fixture.Replace("    Creates a fixture environment.`n", ''))
@@ -129,7 +194,7 @@ try {
 	Assert-Example 'Line comment help also works' $lineHelp
 	$other = $fixture.Replace('New-Fixture', 'New-OtherFixture').Replace('Default: tenant currency', 'Currency code.').Replace("    It will use the tenant default for -Currency.`n", '')
 	Assert-Example 'Defaults do not leak between help groups' ($fixture + "`n" + $other)
-	Write-Output "$script:caseCount example-help regression cases passed with both LF and CRLF line endings."
+	Write-Output "$script:caseCount example-help and $script:completeCaseCount public completeness cases passed with LF and CRLF."
 }
 finally {
 	if (Test-Path -LiteralPath $fixturePath) { Remove-Item -LiteralPath $fixturePath -Force }
