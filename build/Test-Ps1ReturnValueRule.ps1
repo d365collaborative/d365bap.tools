@@ -49,6 +49,31 @@ function Set-Fixture {
 }
 '@
 
+Assert-ReturnValue 'Trailing bare return' @'
+function Set-Fixture {
+    Get-Thing
+    return
+}
+'@ 1 @('trailing bare return')
+
+Assert-ReturnValue 'Trailing bare return in a process block' @'
+function Set-Fixture {
+    process {
+        Get-Thing
+        return
+    }
+}
+'@ 1 @('trailing bare return')
+
+Assert-ReturnValue 'Trailing bare return in an end block' @'
+function Set-Fixture {
+    end {
+        Get-Thing
+        return
+    }
+}
+'@ 1 @('trailing bare return')
+
 Assert-ReturnValue 'Return null' @'
 function Set-Fixture {
     return $null

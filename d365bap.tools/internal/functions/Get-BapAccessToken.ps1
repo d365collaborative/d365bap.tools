@@ -32,7 +32,6 @@ function Resolve-BapAccessTokenResource {
 	}
 
 	$value
-	return
 }
 
 function Get-BapAccessTokenCacheKey {
@@ -41,7 +40,6 @@ function Get-BapAccessTokenCacheKey {
 
 	$normalizedResource = "$Resource".Trim().TrimEnd('/').ToLowerInvariant()
 	"$normalizedResource|$("$TenantId".ToLowerInvariant())|$("$AccountId".ToLowerInvariant())"
-	return
 }
 
 function Get-BapAccessTokenContextStamp {
