@@ -222,8 +222,8 @@ function Get-Example {
 	Assert-True ($plan.PublicPaths.Count -eq 1 -and $plan.PublicPaths[0] -ceq 'd365bap.tools/functions/Get-Example.ps1') 'The changed source must be included.'
 	Reset-Base
 
-	# Whitespace inside a line, indentation, and blank lines keep every token and
-	# line break, so a formatting-only change must not run the module tests.
+	# Whitespace inside a line, indentation, and blank lines keep executable
+	# tokens, so formatting-only and help/layout-only changes skip compile work.
 	Write-Fixture 'd365bap.tools/internal/functions/Get-Shared.ps1' @'
 function Get-Shared   {
 
@@ -233,9 +233,9 @@ function Get-Shared   {
 '@
 	$head = Commit 'formatting only shared code'
 	$plan = Get-Plan $base $head
-	Assert-Scope $plan $compileScope 'Formatting-only shared change' -Gate
-	Assert-True ($plan.Mode -ceq 'full') 'A formatting-only change must report the compatibility mode full.'
-	Assert-True (@($plan.Reasons -match 'Formatting-only').Count -gt 0) 'The formatting-only scope must explain itself.'
+	Assert-Scope $plan $docsScope 'Formatting-only shared change' -Gate
+	Assert-True ($plan.Mode -ceq 'docs') 'A formatting-only change must report the compatibility mode docs.'
+	Assert-True (@($plan.Reasons -match 'Formatting-only|Executable-unchanged').Count -gt 0) 'The formatting-only scope must explain itself.'
 
 	Write-Fixture 'd365bap.tools/functions/Get-Example.ps1' @'
 function   Get-Example   {
@@ -243,27 +243,7 @@ function   Get-Example   {
 }
 '@
 	$head = Commit 'formatting only public function'
-	Assert-Scope (Get-Plan $base $head) $compileScope 'Formatting-only public function'
-	Reset-Base
-
-	# Every near miss keeps the full scope: a changed value, a moved line break,
-	# edited comment text, a changed string literal, and whitespace after a line
-	# continuation all change what the module tests or the analyzer can observe.
-	Write-Fixture 'd365bap.tools/internal/functions/Get-Shared.ps1' @'
-function Get-Shared {
-	2
-}
-'@
-	$head = Commit 'shared value change'
-	Assert-Scope (Get-Plan $base $head) $moduleScope 'Shared value change' -Gate
-	Reset-Base
-
-	Write-Fixture 'd365bap.tools/functions/Get-Example.ps1' @'
-function Get-Example {
-	1 }
-'@
-	$head = Commit 'moved line break'
-	Assert-Scope (Get-Plan $base $head) $selectiveScope 'Moved line break'
+	Assert-Scope (Get-Plan $base $head) $docsScope 'Formatting-only public function'
 	Reset-Base
 
 	Write-Fixture 'd365bap.tools/functions/Get-Example.ps1' @'
@@ -273,7 +253,36 @@ function Get-Example {
 }
 '@
 	$head = Commit 'comment change'
-	Assert-Scope (Get-Plan $base $head) $selectiveScope 'Comment change'
+	$plan = Get-Plan $base $head
+	Assert-Scope $plan $docsScope 'Comment change'
+	Assert-True (@($plan.Reasons -match 'Executable-unchanged').Count -gt 0) 'Comment-only edits must explain the executable-unchanged skip.'
+	Reset-Base
+
+	Write-Fixture 'd365bap.tools/functions/Get-Example.ps1' @'
+function Get-Example {
+	1 }
+'@
+	$head = Commit 'moved line break'
+	Assert-Scope (Get-Plan $base $head) $docsScope 'Moved line break'
+	Reset-Base
+
+	Write-Fixture 'd365bap.tools/functions/Get-Continuation.ps1' @'
+function Get-Continuation {
+	Get-ChildItem -Path .
+}
+'@
+	$head = Commit 'backtick layout only'
+	Assert-Scope (Get-Plan $base $head) $docsScope 'Backtick layout that keeps executable tokens'
+	Reset-Base
+
+	# Real executable edits keep selective or full coverage.
+	Write-Fixture 'd365bap.tools/internal/functions/Get-Shared.ps1' @'
+function Get-Shared {
+	2
+}
+'@
+	$head = Commit 'shared value change'
+	Assert-Scope (Get-Plan $base $head) $moduleScope 'Shared value change' -Gate
 	Reset-Base
 
 	Write-Fixture 'd365bap.tools/functions/Get-Sample.ps1' 'function Get-Sample { "a  b" }'
@@ -477,7 +486,7 @@ function Get-Example {
 	$fullGate = @{ Scope = 'module-tests+analyzer-scans+compiled-import+infrastructure'; ModuleTests = 'true'; AnalyzerScans = 'true'; SelectiveTests = 'false'; CompiledImport = 'true'; InfrastructureChange = 'true'; InfrastructureResult = 'success'; CompiledHash = ('A' * 64); CompiledScope = 'module-tests+analyzer-scans+compiled-import+infrastructure'; General = 'success'; Public = 'success'; Internal = 'success'; Selective = 'skipped' }
 
 	Assert-Gate $docsGate $true 'a documentation-only scope'
-	Assert-Gate $compileGate $true 'a formatting-only scope'
+	Assert-Gate $docsGate $true 'a formatting-only scope'
 	Assert-Gate $selectiveGate $true 'a public-function scope'
 	Assert-Gate $moduleTestsGate $true 'a module-test scope'
 	Assert-Gate $analyzerGate $true 'an analyzer-harness scope'
