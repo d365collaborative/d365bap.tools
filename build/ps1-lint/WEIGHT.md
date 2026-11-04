@@ -17,3 +17,4 @@ Prefer the enforcer. Cut duplicated docs, redirect stubs, and paraphrased fixtur
 
 - Keep meta suites path-gated. Leave intentional manual suites (for example `Test-PowerPlatformSdk`) out of CI.
 - Do not pin documentation wording, diagnostic prose, YAML action versions, or cache-key syntax in tests. Keep trust-boundary checks (narrow installs, check-only CI, verified prek install, failure propagation, cache invalidation).
+- Rule suites: discovery (`Test-Ps1*Rule.ps1`) is the inventory. Validation suites: `Get-ValidationSuitePlan` `SuitePattern` keys are the inventory; `Test-ValidationSuites` keeps intentional `$notSuite` exclusions only.

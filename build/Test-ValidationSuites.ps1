@@ -3,9 +3,9 @@
 	Runs the selected validation regression suites.
 
 .DESCRIPTION
-	Discovers validation suites under build, checks the registry, and runs each
-	selected suite in a fresh pwsh process. A missing, unregistered, or failing
-	suite fails the run.
+	Uses Get-ValidationSuitePlan as the suite inventory, verifies every
+	build/Test-*.ps1 is planned, intentionally excluded, or a rule suite, then
+	runs each selected suite in a fresh pwsh process.
 
 .PARAMETER BaseSha
 	Pull request base commit for suite selection.
@@ -31,23 +31,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Keep this list in sync with build/Test-*.ps1. A missing entry fails the run
-# instead of dropping the suite from CI. The Node test is not listed because it
-# runs under node --test in the workflow.
-$expectedSuite = @(
-	'Test-PreloadExitCode.ps1'
-	'Test-ModulePublication.ps1'
-	'Test-Ps1ExampleHelp.ps1'
-	'Test-Ps1RuleSuites.ps1'
-	'Test-RequiredModules.ps1'
-	'Test-PSScriptAnalyzerConsolidation.ps1'
-	'Test-PesterRunners.ps1'
-)
-
-# build/Test-*.ps1 scripts that this runner must not execute. Rule suites are
-# owned by Test-Ps1RuleSuites.ps1. Every other script runs in another workflow
-# or is sourced by a test, so a new build/Test-*.ps1 fails here until it is
-# registered above or listed below.
+# Intentional exclusions only. Suite inventory lives in Get-ValidationSuitePlan
+# (SuitePattern keys). Rule suites are owned by Test-Ps1RuleSuites.ps1.
 $notSuite = [ordered]@{
 	'Test-Behavior.ps1'                = 'Runs in validate.yml and build-v2.yml.'
 	'Test-CiLintPlan.ps1'              = 'Runs in the validate.yml infrastructure-tests job.'
@@ -73,20 +58,6 @@ $discovered = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter 'Test-*.ps1' -F
 	Sort-Object Name |
 	ForEach-Object Name)
 
-$missingSuite = @($expectedSuite | Where-Object { $_ -notin $discovered })
-if ($missingSuite.Count -gt 0) {
-	throw "Missing validation suite(s): $($missingSuite -join ', '). Restore the file or remove it from the registry in $PSCommandPath."
-}
-
-$unregisteredSuite = @($discovered | Where-Object {
-		$_ -notin $expectedSuite -and
-		-not $notSuite.Contains($_) -and
-		$_ -notlike $ruleSuitePattern
-	})
-if ($unregisteredSuite.Count -gt 0) {
-	throw "Unregistered validation suite(s): $($unregisteredSuite -join ', '). Add them to `$expectedSuite in $PSCommandPath or list them in `$notSuite with the workflow that runs them."
-}
-
 $planPath = Join-Path ([IO.Path]::GetTempPath()) ('validation-suite-plan-' + [guid]::NewGuid().ToString('N') + '.json')
 $planArgs = @{
 	RepositoryPath = (Split-Path -Parent $PSScriptRoot)
@@ -103,6 +74,26 @@ try {
 finally {
 	if (Test-Path -LiteralPath $planPath) { Remove-Item -LiteralPath $planPath -Force }
 }
+
+$expectedSuite = @($plan.AllSuites)
+if ($expectedSuite.Count -eq 0) {
+	throw 'Get-ValidationSuitePlan returned no AllSuites inventory.'
+}
+
+$missingSuite = @($expectedSuite | Where-Object { $_ -notin $discovered })
+if ($missingSuite.Count -gt 0) {
+	throw "Missing validation suite(s): $($missingSuite -join ', '). Restore the file or remove it from SuitePattern in Get-ValidationSuitePlan.ps1."
+}
+
+$unregisteredSuite = @($discovered | Where-Object {
+		$_ -notin $expectedSuite -and
+		-not $notSuite.Contains($_) -and
+		$_ -notlike $ruleSuitePattern
+	})
+if ($unregisteredSuite.Count -gt 0) {
+	throw "Unregistered validation suite(s): $($unregisteredSuite -join ', '). Add them to SuitePattern in Get-ValidationSuitePlan.ps1 or list them in `$notSuite with the workflow that runs them."
+}
+
 $selectedSuite = @($plan.Suites)
 foreach ($itemSuite in $selectedSuite) {
 	if ($itemSuite -notin $expectedSuite) {
