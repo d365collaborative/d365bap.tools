@@ -5,7 +5,7 @@
         Compiles and imports the module.
 
     .DESCRIPTION
-        Concatenates the module sources exactly like the release build, then imports the result in a child process. Fails on parser or import errors.
+        Concatenates the module sources exactly like the release build, then imports the result in a child process. Fails on parser or import errors. Staging copies the import surface only and reads function sources from the live module tree.
 #>
 [CmdletBinding()]
 param()
@@ -13,14 +13,17 @@ param()
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path $PSScriptRoot -Parent
+$moduleRoot = Join-Path $root 'd365bap.tools'
 $staging = Join-Path ([IO.Path]::GetTempPath()) ('bap-compile-' + [guid]::NewGuid().ToString('N'))
 try {
 	$destination = New-Item -ItemType Directory -Path (Join-Path $staging 'd365bap.tools') -Force
-	Copy-Item -Path (Join-Path $root 'd365bap.tools\*') -Destination $destination.FullName -Recurse -Force
+	foreach ($name in @('bin', 'en-us', 'internal', 'xml', 'd365bap.tools.psd1', 'd365bap.tools.psm1')) {
+		Copy-Item -LiteralPath (Join-Path $moduleRoot $name) -Destination $destination.FullName -Recurse -Force
+	}
 	& (Join-Path $root 'build/Merge-FormatPs1Xml.ps1') -XmlRoot (Join-Path $destination.FullName 'xml')
 	$text = @()
 	$processed = @()
-	foreach ($filePath in (& (Join-Path $root 'd365bap.tools\internal\scripts\preimport.ps1'))) {
+	foreach ($filePath in (& (Join-Path $moduleRoot 'internal\scripts\preimport.ps1'))) {
 		if ([string]::IsNullOrWhiteSpace($filePath)) { continue }
 		$item = Get-Item -LiteralPath $filePath
 		if ($item.PSIsContainer) { continue }
@@ -28,13 +31,13 @@ try {
 		$text += [IO.File]::ReadAllText($item.FullName)
 		$processed += $item.FullName
 	}
-	Get-ChildItem -LiteralPath (Join-Path $destination.FullName 'internal\functions') -Recurse -File -Filter '*.ps1' | ForEach-Object {
+	Get-ChildItem -LiteralPath (Join-Path $moduleRoot 'internal\functions') -Recurse -File -Filter '*.ps1' | ForEach-Object {
 		$text += [IO.File]::ReadAllText($_.FullName)
 	}
-	Get-ChildItem -LiteralPath (Join-Path $destination.FullName 'functions') -Recurse -File -Filter '*.ps1' | ForEach-Object {
+	Get-ChildItem -LiteralPath (Join-Path $moduleRoot 'functions') -Recurse -File -Filter '*.ps1' | ForEach-Object {
 		$text += [IO.File]::ReadAllText($_.FullName)
 	}
-	foreach ($filePath in (& (Join-Path $root 'd365bap.tools\internal\scripts\postimport.ps1'))) {
+	foreach ($filePath in (& (Join-Path $moduleRoot 'internal\scripts\postimport.ps1'))) {
 		if ([string]::IsNullOrWhiteSpace($filePath)) { continue }
 		$item = Get-Item -LiteralPath $filePath
 		if ($item.PSIsContainer) { continue }
