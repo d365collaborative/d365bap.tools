@@ -1,9 +1,9 @@
 ﻿<#
     .SYNOPSIS
-        Retrieves the UDE connection information.
+        Gets the active UDE connection details from the CRM Developer Toolkit.
 
     .DESCRIPTION
-        Reads the Visual Studio CRM Developer Toolkit config and returns the active User Development Environment (UDE) connection details.
+        Reads the Visual Studio CRM Developer Toolkit config and returns the active User Development Environment connection details for the current toolkit session.
 
     .PARAMETER Path
         The path to the UDE configuration folder.
@@ -16,7 +16,7 @@
     .EXAMPLE
         PS C:\> Get-UdeConnection
 
-        Retrieves the UDE connection information.
+        Gets the active UDE connection details.
         It uses the default -Path $env:APPDATA\Microsoft\CRMDeveloperToolKit.
         It does not use -AsExcelOutput, so results go to the console.
 
