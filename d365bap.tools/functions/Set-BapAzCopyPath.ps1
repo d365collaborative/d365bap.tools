@@ -1,41 +1,52 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
-        Sets the path to the AzCopy executable.
-        
+        Sets the AzCopy executable location used by the module.
+
     .DESCRIPTION
-        This function sets the path to the AzCopy executable, ensuring that it exists and is accessible.
-        
+        Stores the AzCopy executable location after verifying the file exists and is accessible.
+
     .PARAMETER Path
-        The full path to the AzCopy executable.
-        
+        Full filesystem location of the AzCopy executable.
+
     .EXAMPLE
         PS C:\> Set-BapAzCopyPath -Path "C:\temp\d365bap.tools\AzCopy\AzCopy.exe"
-        
-        This will set the path to the AzCopy executable.
-        
+
+        Stores the AzCopy executable location for later module use.
+        It uses -Path C:\temp\d365bap.tools\AzCopy\AzCopy.exe.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Set-BapAzCopyPath {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [CmdletBinding()]
-    [OutputType()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string] $Path
-    )
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+	[CmdletBinding()]
+	[OutputType([void])]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Path
+	)
 
-    if ($null -eq (Get-Item -Path $Path)) {
-        $messageString = "File path doesn't <c='em'>exist</c>. Please make sure that you have specified the correct path '<c='em'>$Path</c>'. You can use the '<c='em'>Invoke-BapInstallAzCopy</c>' function to download and install AzCopy."
+	if ($null -eq (Get-Item -Path $Path)) {
+		$messageString = "File path doesn't <c='em'>exist</c>. Please make sure that you have specified the correct path '<c='em'>$Path</c>'. You can use the '<c='em'>Invoke-BapInstallAzCopy</c>' function to download and install AzCopy."
 
-        Write-PSFMessage -Level Important -Message $messageString
-        Stop-PSFFunction -Message "Stopping because file path doesn't exist." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        return
-    }
+		Write-PSFMessage `
+			-Level Important `
+			-Message $messageString
 
-    Set-PSFConfig -FullName "d365bap.tools.path.azcopy" -Value $Path
-    Register-PSFConfig -FullName "d365bap.tools.path.azcopy"
+		Stop-PSFFunction `
+			-Message "Stopping because file path doesn't exist." `
+			-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 
-    Update-ModuleVariables
+		return
+	}
+
+	Set-PSFConfig `
+		-FullName "d365bap.tools.path.azcopy" `
+		-Value $Path
+
+	Register-PSFConfig `
+		-FullName "d365bap.tools.path.azcopy"
+
+	Update-ModuleVariables
 }
