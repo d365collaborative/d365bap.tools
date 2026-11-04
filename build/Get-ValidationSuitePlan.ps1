@@ -43,16 +43,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$script:AllSuite = @(
-	'Test-PreloadExitCode.ps1'
-	'Test-ModulePublication.ps1'
-	'Test-Ps1ExampleHelp.ps1'
-	'Test-Ps1RuleSuites.ps1'
-	'Test-RequiredModules.ps1'
-	'Test-PSScriptAnalyzerConsolidation.ps1'
-	'Test-PesterRunners.ps1'
-)
-
 # Path patterns that force the full suite list: the runner or its plan changed.
 $script:ForceAllPattern = @(
 	'^\.github/workflows/test-validation-runners\.yml$'
@@ -61,7 +51,8 @@ $script:ForceAllPattern = @(
 	'^build/Test-Ps1RuleSuites\.ps1$'
 )
 
-# Suite -> subject paths. Keep in sync with test-validation-runners.yml paths.
+# Suite -> subject paths. Keys are the suite inventory (single source).
+# Keep patterns aligned with test-validation-runners.yml paths.
 $script:SuitePattern = [ordered]@{
 	'Test-PreloadExitCode.ps1'               = @(
 		'^d365bap\.tools/internal/sdk/token-preload\.ps1$'
@@ -100,6 +91,7 @@ $script:SuitePattern = [ordered]@{
 		'^build/Test-PesterRunners\.ps1$'
 	)
 }
+$script:AllSuite = @($script:SuitePattern.Keys)
 
 function Get-ValidationSuiteChangedPath {
 	param(
@@ -230,6 +222,7 @@ $plan = [pscustomobject]@{
 	MergeBase = $mergeBase
 	Paths     = @($colPath)
 	Suites    = $ordered
+	AllSuites = @($script:AllSuite)
 	Reasons   = @($reason)
 }
 
