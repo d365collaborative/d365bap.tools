@@ -214,8 +214,8 @@ function Get-Ps1HelpDiagnostic {
 		$blankLines = @($itemSection.Lines | Where-Object { $_ -eq '' }).Count
 		$message = switch ($itemSection.Name) {
 			'SYNOPSIS' {
-				if ($itemSection.Lines.Count -ne 1 -or $itemSection.Text.Length -ge 60) {
-					'SYNOPSIS must be one line and fewer than 60 characters.'
+				if ($itemSection.Lines.Count -ne 1 -or $itemSection.Text.Length -ge 100) {
+					'SYNOPSIS must be one line and fewer than 100 characters.'
 				}
 			}
 			'DESCRIPTION' {

@@ -50,7 +50,7 @@ incorrect; NOTES itself permits only the entries below.
 ## Enforced sections
 
 Section content is trimmed line by line; character limits include internal
-newlines. SYNOPSIS is one line and fewer than 60 characters. DESCRIPTION is
+newlines. SYNOPSIS is one line and fewer than 100 characters. DESCRIPTION is
 fewer than 250 characters with at most two blank lines; it must not mention a
 parameter name or dash-prefixed parameter-like word, or contain the normalized
 synopsis (case and whitespace ignored, trailing periods removed).

@@ -126,6 +126,8 @@ try {
 	Assert-CompleteHelp 'Unknown parameter' ($complete.Replace('.PARAMETER Name', '.PARAMETER Missing')) @('Unknown PARAMETER Missing')
 	Assert-CompleteHelp 'Duplicate parameter' ($complete.Replace('.EXAMPLE', ".PARAMETER Nick`n    Another description.`n.EXAMPLE")) @('exactly once')
 	Assert-CompleteHelp 'Duplicate synopsis' ($complete.Replace('.DESCRIPTION', ".SYNOPSIS`n    Gets sample data.`n.DESCRIPTION")) @('only one SYNOPSIS')
+	Assert-CompleteHelp '99-character synopsis passes' ($complete.Replace('Gets a fixture.', 'x' * 99))
+	Assert-CompleteHelp '100-character synopsis fails' ($complete.Replace('Gets a fixture.', 'x' * 100)) @('SYNOPSIS must be one line and fewer than 100')
 	Assert-CompleteHelp 'Alias section' ($complete.Replace('.PARAMETER Name', '.PARAMETER Nick'))
 	Assert-CompleteHelp 'Nested helper has separate ownership' ($complete.Replace("    param([Alias('Nick')][string] `$Name)", "    param([Alias('Nick')][string] `$Name)`n    function Get-Helper { param([string] `$Other) }"))
 	$fullHelp = $fixture.Replace('    Creates a fixture.', "    Creates a fixture.`n.DESCRIPTION`n    Provisions a sample environment for testing.").Replace('#>', ".NOTES`n    Tags: testing, environment`n    Author: Example Author`n.LINK`n    https://example.org/source`n#>")
