@@ -12,6 +12,7 @@ Prefer the enforcer. Cut duplicated docs, redirect stubs, and paraphrased fixtur
 - Prefer [`testing/Assert-Ps1RuleCase.ps1`](testing/Assert-Ps1RuleCase.ps1) for `Test-Ps1*Rule.ps1`.
 - Stay custom only when the harness cannot cover the case (today: Alias allowlist config, ModuleSplatting ExtraFiles/AllRules).
 - Build/Tepp path exemptions belong in `Test-Ps1LintCorrectness` Analysis.Scope. Keep at most one Test-files smoke case per suite; do not rephrase Build/Tepp exemptions in every suite.
+- Simple numeric limits (SYNOPSIS/DESCRIPTION/PARAMETER length, example summary/line length) live in the rule and contract. Do not add N-1/N knife-edge fixtures when changing a limit; the enforcer already gates real code. Keep fixtures that prove shape or semantics (missing sections, parameter coverage, stand-alone prose), and keep clearly-over-limit cases only when they cover a distinct diagnostic path.
 
 ## Infra
 

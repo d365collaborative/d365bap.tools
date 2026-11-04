@@ -143,8 +143,6 @@ try {
 	Assert-Example 'Separate lines and documented defaults' $fixture
 	Assert-Example 'It and It will are accepted' ($fixture.Replace('It will ', 'It '))
 	Assert-Example 'Summary is optional' ($fixture.Replace("    Creates a fixture environment.`n", ''))
-	Assert-Example '124-character summary passes' ($fixture.Replace('Creates a fixture environment.', 'x' * 124))
-	Assert-Example '125-character summary fails' ($fixture.Replace('Creates a fixture environment.', 'x' * 125)) @('summary must be fewer than 125')
 	Assert-Example 'A missing explicit parameter is rejected' ($fixture.Replace("    It will use -Name demo.`n", '')) @('explain -Name')
 	Assert-Example 'A missing signature default is rejected' ($fixture.Replace("    It will use the default -Template Developer.`n", '')) @('explain -Template')
 	Assert-Example 'A missing documented default is rejected' ($fixture.Replace("    It will use the tenant default for -Currency.`n", '')) @('explain -Currency')
@@ -175,11 +173,6 @@ try {
 	foreach ($phrase in @('Same as above.', 'As in the previous example.', 'See example 1.', 'Similar to the first example.', 'It works as before.', 'Unlike the example above, this creates a fixture.', 'As shown in example 1.', 'Same command, but with a new domain.')) {
 		Assert-Example "Dependent prose: $phrase" ($fixture.Replace('Creates a fixture environment.', $phrase)) @('stand alone')
 	}
-	$prefix = 'It uses -Name '
-	$line80 = $prefix + ('x' * (79 - $prefix.Length)) + '.'
-	if ($line80.Length -ne 80) { throw 'Incorrect boundary fixture' }
-	Assert-Example 'Exactly 80 characters passes' ($fixture.Replace('It will use -Name demo.', $line80))
-	Assert-Example '81 characters fails' ($fixture.Replace('It will use -Name demo.', $line80 + '.')) @('80 characters or fewer')
 	Assert-Example 'Aggregate prose can exceed 124 characters' $fixture
 	Assert-Example 'Wrapped details fail' ($fixture.Replace('    It will use -Name demo.', "    It will use -Name`n    demo.")) @('detail lines must each start')
 	Assert-Example 'Blank prose lines fail' ($fixture.Replace('    It will use -Name demo.', "    It will use -Name demo.`n")) @('exactly one blank separator')
