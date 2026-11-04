@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     Derives module test, analyzer scan, selective test, compiled import, and
-    infrastructure decisions from one change set; an unclassifiable change
-    falls back to full module coverage.
+    infrastructure decisions from one change set. Help, comment, and layout-only
+    edits that keep executable tokens skip compile and selective work.
 
 .PARAMETER BaseSha
     The pull request base commit.
@@ -78,11 +78,10 @@ $behaviorSourcePath = @(
 	'd365bap.tools/functions/Get-PpacFinOpsBuild.ps1'
 )
 
-# A formatting-only change keeps the tokens of every changed module file and
-# the token/line-break layout. Nothing the module tests or the analyzer scans
-# read has changed, so only the compiled-import check runs. The detection is
-# deliberately strict: any token, comment, string, line-break, or backtick
-# continuation change disqualifies it.
+# A formatting-only change keeps every token and line-break layout. An
+# executable-unchanged change allows comment/help edits and layout moves
+# (including backtick continuations) when Kind|Text tokens still match. Both
+# skip module tests, analyzer scans, selective tests, and compiled-import.
 $modulePowerShellPattern = '^d365bap\.tools/.+\.(ps1|psm1|psd1)$'
 
 function Test-Documentation([string] $Path) {
@@ -145,6 +144,21 @@ function Get-TokenSignature([string] $Text) {
 	$colSignature -join "`n"
 }
 
+function Get-ExecutableTokenSignature([string] $Text) {
+	if ([string]::IsNullOrEmpty($Text)) { return }
+	$normalizedText = $Text.Replace("`r`n", "`n")
+	$colTokens = $null
+	$parseErrors = $null
+	$null = [Management.Automation.Language.Parser]::ParseInput($normalizedText, [ref]$colTokens, [ref]$parseErrors)
+	if ($null -eq $colTokens -or @($parseErrors).Count -gt 0) { return }
+	$colSignature = [System.Collections.Generic.List[string]]::new()
+	foreach ($itemToken in $colTokens) {
+		if ($itemToken.Kind -in @('Comment', 'NewLine', 'LineContinuation', 'EndOfInput')) { continue }
+		$colSignature.Add("$($itemToken.Kind)|$($itemToken.Text)")
+	}
+	$colSignature -join "`n"
+}
+
 function Test-FormattingOnlyChange($Entry) {
 	if ($Entry.Status -cne 'M' -or $null -ne $Entry.OldPath) { $false; return }
 	$path = $Entry.Path -replace '\\', '/'
@@ -164,6 +178,25 @@ function Test-FormattingOnlyChange($Entry) {
 	$baseSignature -ceq $headSignature
 }
 
+function Test-ExecutableUnchangedChange($Entry) {
+	if ($Entry.Status -cne 'M' -or $null -ne $Entry.OldPath) { $false; return }
+	$path = $Entry.Path -replace '\\', '/'
+	if ($path -notmatch $modulePowerShellPattern) { $false; return }
+	$headPath = Join-Path $repository $path
+	if (-not (Test-Path -LiteralPath $headPath -PathType Leaf)) { $false; return }
+	$baseText = Get-ChangedText -Revision $mergeBase -Path $path
+	if ([string]::IsNullOrEmpty($baseText)) { $false; return }
+	$headText = [IO.File]::ReadAllText($headPath).TrimStart([char]0xFEFF)
+	if ([string]::IsNullOrEmpty($headText) -or $baseText -ceq $headText) { $false; return }
+	# A backtick must be the last character to continue a line. Whitespace after
+	# it escapes that whitespace instead, so treat it as an executable change.
+	if ($baseText -match '(?m)`[ \t]+$' -or $headText -match '(?m)`[ \t]+$') { $false; return }
+	$baseSignature = Get-ExecutableTokenSignature -Text $baseText
+	$headSignature = Get-ExecutableTokenSignature -Text $headText
+	if ([string]::IsNullOrEmpty($baseSignature) -or [string]::IsNullOrEmpty($headSignature)) { $false; return }
+	$baseSignature -ceq $headSignature
+}
+
 $colReasons = [System.Collections.Generic.List[string]]::new()
 $colPublicPaths = [System.Collections.Generic.List[string]]::new()
 $colInfrastructurePaths = [System.Collections.Generic.List[string]]::new()
@@ -174,6 +207,7 @@ $isCompiledImport = $false
 $isBehaviorTests = $false
 $fallback = $false
 $formattingOnly = $true
+$executableUnchanged = $true
 $nonDocumentationCount = 0
 if ($entries.Count -eq 0) {
 	$fallback = $true
@@ -202,6 +236,9 @@ foreach ($entry in $entries) {
 
 	if ($formattingOnly) {
 		if (-not (Test-FormattingOnlyChange $entry)) { $formattingOnly = $false }
+	}
+	if ($executableUnchanged) {
+		if (-not (Test-ExecutableUnchangedChange $entry)) { $executableUnchanged = $false }
 	}
 
 	if ($pathInfrastructure) { continue }
@@ -262,8 +299,19 @@ if ($formattingOnly -and -not $fallback -and $nonDocumentationCount -gt 0 -and -
 	$isAnalyzerScans = $false
 	$isSelectiveTests = $false
 	$isBehaviorTests = $false
+	$isCompiledImport = $false
 	$colPublicPaths.Clear()
 	$colReasons.Add('Formatting-only change: the changed module files keep every token and line break.')
+}
+
+if ($executableUnchanged -and -not $fallback -and $nonDocumentationCount -gt 0 -and -not $infrastructureChange) {
+	$isModuleTests = $false
+	$isAnalyzerScans = $false
+	$isSelectiveTests = $false
+	$isBehaviorTests = $false
+	$isCompiledImport = $false
+	$colPublicPaths.Clear()
+	$colReasons.Add('Executable-unchanged: comments, help, or layout differ; executable tokens match.')
 }
 
 $colScope = [System.Collections.Generic.List[string]]::new()
