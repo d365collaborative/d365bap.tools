@@ -17,9 +17,9 @@ const { approvalTests } = require('./maintainer-approval.tests.cjs');
 
 approvalTests({
   run, CHECK, ACCEPT, compareOption: 'compareSignatures',
-  pendingTitle: 'Signature changes need maintainer acceptance',
+  pendingTitle: 'Breaking signature changes need maintainer acceptance',
   failureTitle: 'Signature comparison failed',
-  countLabel: 'Total declaration changes', reportPrefix: 'Signature',
+  countLabel: 'Total breaking declaration changes', reportPrefix: 'Signature',
 });
 
 test('declarations are compared from Git objects without executing source', () => {
@@ -56,13 +56,18 @@ test('declarations are compared from Git objects without executing source', () =
       '[Parameter(Mandatory, Position=0, ValueFromPipeline, ParameterSetName="New")][string]$Name = "hello"',
     ]) {
       write(source, `function Get-Example { [CmdletBinding()] param(${declaration}) }`);
-      commit(); assert.equal(compare().length, 1, declaration);
+      commit(); assert.deepEqual(compare(), [], `compatible declaration change: ${declaration}`);
     }
 
+    write(source, 'function Get-Example { [CmdletBinding()] param([string]$NewName = "hello") }');
+    commit(); assert.equal(compare().length, 1, 'parameter rename requires acceptance');
+    write(source, 'function Get-Example { [CmdletBinding()] param() }');
+    commit(); assert.equal(compare().length, 1, 'parameter removal requires acceptance');
+
     write(source, original.replace('[CmdletBinding()]', '[CmdletBinding(SupportsShouldProcess)]'));
-    commit(); assert.equal(compare().length, 1, 'binding attributes are tracked');
+    commit(); assert.deepEqual(compare(), [], 'binding attributes are compatible');
     write(source, original.replace('process { $Name }', 'dynamicparam { throw "never run" } process { $Name }'));
-    commit(); assert.equal(compare().length, 1, 'dynamic parameters are tracked without executing them');
+    commit(); assert.deepEqual(compare(), [], 'dynamic parameters are compatible without executing them');
 
     write(source, original);
     write(manifest, '@{ FunctionsToExport = @(); AliasesToExport = @(); ModuleVersion = "1.0" }');
@@ -70,7 +75,7 @@ test('declarations are compared from Git objects without executing source', () =
 
     write(manifest, '@{ FunctionsToExport = @("Get-Example"); AliasesToExport = @(); ModuleVersion = "2.0" }');
     write('d365bap.tools/functions/Get-New.ps1', 'function Get-New { param() }');
-    commit(); assert.equal(compare()[0].before, null, 'new commands require acceptance');
+    commit(); assert.deepEqual(compare(), [], 'new commands are compatible');
     fs.unlinkSync(path.join(directory, 'd365bap.tools/functions/Get-New.ps1'));
     fs.unlinkSync(path.join(directory, source));
     commit(); assert.equal(compare()[0].after, null, 'removed commands require acceptance');

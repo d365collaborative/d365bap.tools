@@ -3,15 +3,9 @@
     Compares public declarations without executing PR code.
 
 .DESCRIPTION
-    Parses Git objects without importing PR code. Ignores ordinary function
-    bodies and formatting. Tracks SDK generation inputs conservatively and
-    returns a JSON change report.
-
-.PARAMETER BaseRef
-    Baseline Git revision.
-
-.PARAMETER HeadRef
-    Proposed Git revision.
+    Parses Git objects without importing PR code. Ignores bodies and formatting.
+    Requires maintainer acceptance only for removed or renamed public parameters,
+    or for dropped public cmdlets or exports.
 #>
 [CmdletBinding()]
 param(
@@ -41,12 +35,116 @@ function ConvertTo-SignatureText {
 	(@($tokens | Where-Object { $_.Kind -notin @('Comment', 'NewLine', 'LineContinuation', 'EndOfInput') } | ForEach-Object Text) -join ' ')
 }
 
+function Get-DeclarationRecord {
+	param(
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Fingerprint,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[ValidateSet('function', 'export', 'other')]
+		[string] $Kind,
+		[string[]] $Names = @()
+	)
+	[pscustomobject]@{
+		Fingerprint = $Fingerprint
+		Kind        = $Kind
+		Names       = @($Names)
+	}
+}
+
+function Get-FunctionParameterName {
+	param($Function)
+
+	$colName = [Collections.Generic.List[string]]::new()
+	foreach ($itemParameter in @($Function.Parameters)) {
+		$colName.Add($itemParameter.Name.VariablePath.UserPath)
+	}
+	if ($null -ne $Function.Body.ParamBlock) {
+		foreach ($itemParameter in @($Function.Body.ParamBlock.Parameters)) {
+			$colName.Add($itemParameter.Name.VariablePath.UserPath)
+		}
+	}
+	@($colName | Select-Object -Unique)
+}
+
+function Get-AstStringConstant {
+	param($Ast)
+
+	if ($null -eq $Ast) {
+		@()
+		return
+	}
+	@($Ast.FindAll({
+				param($Node)
+				$Node -is [System.Management.Automation.Language.StringConstantExpressionAst]
+			}, $true) | ForEach-Object Value)
+}
+
+function Test-RemovedName {
+	param([string[]] $BeforeNames, [string[]] $AfterNames)
+
+	$colAfter = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+	foreach ($itemName in @($AfterNames)) {
+		if (-not [string]::IsNullOrEmpty($itemName)) { [void]$colAfter.Add($itemName) }
+	}
+	foreach ($itemName in @($BeforeNames)) {
+		if ([string]::IsNullOrEmpty($itemName)) { continue }
+		if (-not $colAfter.Contains($itemName)) {
+			$true
+			return
+		}
+	}
+	$false
+}
+
+function Test-SignatureAcceptanceRequired {
+	param(
+		$Before,
+		$After
+	)
+
+	if ($null -eq $Before -and $null -eq $After) {
+		$false
+		return
+	}
+	if ($null -eq $After) {
+		if ($null -eq $Before) {
+			$false
+			return
+		}
+		$Before.Kind -in @('function', 'export')
+		return
+	}
+	if ($null -eq $Before) {
+		$false
+		return
+	}
+	if ($Before.Fingerprint -ceq $After.Fingerprint) {
+		$false
+		return
+	}
+
+	if ($Before.Kind -eq 'function' -or $After.Kind -eq 'function') {
+		Test-RemovedName -BeforeNames $Before.Names -AfterNames $After.Names
+		return
+	}
+	if ($Before.Kind -eq 'export' -or $After.Kind -eq 'export') {
+		Test-RemovedName -BeforeNames $Before.Names -AfterNames $After.Names
+		return
+	}
+	$false
+}
+
 $script:GitBatch = $null
 $script:ParsedBlobs = @{}
 
 function Get-ParsedBlob {
 	param([string] $ObjectId, [string] $Path, [string] $Revision)
-	if ($script:ParsedBlobs.ContainsKey($ObjectId)) { return $script:ParsedBlobs[$ObjectId] }
+	if ($script:ParsedBlobs.ContainsKey($ObjectId)) {
+		$script:ParsedBlobs[$ObjectId]
+		return
+	}
 	if (-not $script:GitBatch) {
 		$start = [System.Diagnostics.ProcessStartInfo]::new()
 		$start.FileName = 'git'
@@ -89,7 +187,7 @@ function Get-ParsedBlob {
 	if ($parseErrors.Count -gt 0) { throw "Cannot parse ${Revision}:$Path" }
 	$objParsed = [pscustomobject]@{ SourceText = $sourceText; Ast = $ast }
 	$script:ParsedBlobs[$ObjectId] = $objParsed
-	return $objParsed
+	$objParsed
 }
 
 function Get-PublicDeclaration {
@@ -105,6 +203,7 @@ function Get-PublicDeclaration {
 	$sdkBridge = 'library/PowerPlatformSdk/SdkClient.cs'
 	$sdkBridgeBinary = 'd365bap.tools/bin/PowerPlatformSdk/D365Bap.Tools.PowerPlatformSdk.dll'
 	$colLoaderPaths = @('d365bap.tools/d365bap.tools.psm1', 'd365bap.tools/internal/scripts/preimport.ps1', 'd365bap.tools/internal/scripts/postimport.ps1')
+	$colExportKey = @('FunctionsToExport', 'CmdletsToExport', 'AliasesToExport', 'VariablesToExport')
 	$colTree = @(Invoke-GitRead (@('-c', 'core.quotePath=true', 'ls-tree', '-r', $Revision, '--', 'd365bap.tools/functions', $manifestPath, $sdkMapping, $sdkGenerator, $sdkRuntime, 'library/PowerPlatformSdk', 'd365bap.tools/bin/PowerPlatformSdk') + $colLoaderPaths))
 	$hashObjects = [ordered]@{}
 	foreach ($itemEntry in $colTree) {
@@ -125,7 +224,7 @@ function Get-PublicDeclaration {
 	}
 	foreach ($itemPath in $colPaths) {
 		if ($itemPath -clike 'library/PowerPlatformSdk/*' -or ($itemPath -clike 'd365bap.tools/bin/PowerPlatformSdk/*' -and $itemPath -match '\.dll$')) {
-			$hashDeclarations["sdk/$itemPath"] = $hashObjects[$itemPath]
+			$hashDeclarations["sdk/$itemPath"] = Get-DeclarationRecord -Fingerprint $hashObjects[$itemPath] -Kind other
 			continue
 		}
 		if ($itemPath -notmatch '\.(ps1|psd1|psm1)$') { continue }
@@ -134,11 +233,11 @@ function Get-PublicDeclaration {
 		$ast = $parsed.Ast
 
 		if ($itemPath -cin $colLoaderPaths) {
-			$hashDeclarations["loader/$itemPath"] = ConvertTo-SignatureText $sourceText
+			$hashDeclarations["loader/$itemPath"] = Get-DeclarationRecord -Fingerprint (ConvertTo-SignatureText $sourceText) -Kind other
 			continue
 		}
 		if ($itemPath -eq $sdkMapping -or $itemPath -eq $sdkGenerator) {
-			$hashDeclarations["sdk/$itemPath"] = ConvertTo-SignatureText $sourceText
+			$hashDeclarations["sdk/$itemPath"] = Get-DeclarationRecord -Fingerprint (ConvertTo-SignatureText $sourceText) -Kind other
 			continue
 		}
 		if ($itemPath -eq $sdkRuntime) {
@@ -147,7 +246,7 @@ function Get-PublicDeclaration {
 						$_ -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq $itemFunctionName
 					})
 				if ($tmpGenerators.Count -ne 1) { throw "Expected one SDK parameter generator or importer ($itemFunctionName): ${Revision}:$itemPath" }
-				$hashDeclarations["sdk/$itemPath/$itemFunctionName"] = ConvertTo-SignatureText $tmpGenerators[0].Extent.Text
+				$hashDeclarations["sdk/$itemPath/$itemFunctionName"] = Get-DeclarationRecord -Fingerprint (ConvertTo-SignatureText $tmpGenerators[0].Extent.Text) -Kind other
 			}
 			continue
 		}
@@ -162,7 +261,13 @@ function Get-PublicDeclaration {
 				$key = $itemPair.Item1.Extent.Text.Trim("'", '"')
 				if ($key -in @('FunctionsToExport', 'CmdletsToExport', 'AliasesToExport', 'VariablesToExport', 'RootModule', 'ModuleToProcess', 'NestedModules', 'RequiredAssemblies', 'ScriptsToProcess')) {
 					if ($hashDeclarations.Contains("manifest/$key")) { throw "Duplicate manifest export key: ${Revision}:$key" }
-					$hashDeclarations["manifest/$key"] = ConvertTo-SignatureText $itemPair.Item2.Extent.Text
+					$fingerprint = ConvertTo-SignatureText $itemPair.Item2.Extent.Text
+					if ($key -in $colExportKey) {
+						$hashDeclarations["manifest/$key"] = Get-DeclarationRecord -Fingerprint $fingerprint -Kind export -Names (Get-AstStringConstant $itemPair.Item2)
+					}
+					else {
+						$hashDeclarations["manifest/$key"] = Get-DeclarationRecord -Fingerprint $fingerprint -Kind other
+					}
 				}
 			}
 			continue
@@ -180,7 +285,7 @@ function Get-PublicDeclaration {
 			$ast.EndBlock.Statements | Where-Object { $_ -isnot [System.Management.Automation.Language.FunctionDefinitionAst] } | ForEach-Object { $_.Extent.Text }
 		)
 		if ($tmpTopLevelStatements.Count -gt 0) {
-			$hashDeclarations["$itemPath/<top-level>"] = ConvertTo-SignatureText ($tmpTopLevelStatements -join "`n")
+			$hashDeclarations["$itemPath/<top-level>"] = Get-DeclarationRecord -Fingerprint (ConvertTo-SignatureText ($tmpTopLevelStatements -join "`n")) -Kind other
 		}
 		foreach ($itemFunction in $tmpFunctions) {
 			$tmpParts = @(
@@ -191,7 +296,10 @@ function Get-PublicDeclaration {
 				$itemFunction.Body.ParamBlock.Extent.Text
 				$itemFunction.Body.DynamicParamBlock.Extent.Text
 			)
-			$hashDeclarations["$itemPath/$($itemFunction.Name)"] = ConvertTo-SignatureText ($tmpParts -join "`n")
+			$hashDeclarations["$itemPath/$($itemFunction.Name)"] = Get-DeclarationRecord `
+				-Fingerprint (ConvertTo-SignatureText ($tmpParts -join "`n")) `
+				-Kind function `
+				-Names (Get-FunctionParameterName $itemFunction)
 		}
 	}
 	$hashDeclarations
@@ -220,8 +328,14 @@ finally {
 $names = @(@($before.Keys) + @($after.Keys) | Sort-Object -Unique)
 $changes = @(
 	foreach ($name in $names) {
-		if ($before[$name] -ceq $after[$name]) { continue }
-		[ordered]@{ name = $name; before = $before[$name]; after = $after[$name] }
+		$itemBefore = $before[$name]
+		$itemAfter = $after[$name]
+		if (-not (Test-SignatureAcceptanceRequired -Before $itemBefore -After $itemAfter)) { continue }
+		[ordered]@{
+			name   = $name
+			before = if ($null -eq $itemBefore) { $null } else { $itemBefore.Fingerprint }
+			after  = if ($null -eq $itemAfter) { $null } else { $itemAfter.Fingerprint }
+		}
 	}
 )
 ConvertTo-Json -Depth 10 -InputObject @{ changes = $changes }
