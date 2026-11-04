@@ -1,3 +1,3 @@
-﻿# Build & validation
+# Build & validation
 
-Run Pester and PSScriptAnalyzer under PowerShell 7.6+ (`pwsh`), matching the module's minimum supported version.
+Run under PowerShell 7.6+ (`pwsh`). Lint weight: [ps1-lint/WEIGHT.md](ps1-lint/WEIGHT.md). Hook layout: [ps1-lint/README.md](ps1-lint/README.md).

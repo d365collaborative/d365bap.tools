@@ -1,12 +1,6 @@
-# Unit Tests for Public Functions
+# Generated function tests
 
-Do not hand-edit `*.Tests.ps1` files here. They are generated signature
-snapshots and are regenerated in the post-merge validation checkout.
+Do not hand-edit `*.Tests.ps1` here. Push function sources only; CI regenerates after merge. Gate: [README](../../../README.md#accepting-public-signature-changes). Authored tests: `../behavior`.
 
-After adding or changing a public function, push only the function source.
-PRs reject changes to these snapshots. The separate public signature gate
-reports interface changes for maintainer acceptance. Write independently
-authored regression tests in `../behavior`, where the PR gate executes them.
-
-Local preview only (never commit the result):
+Local preview only (never commit):
 `pwsh -NoProfile -File ./build/generate-parameterunittests.ps1`

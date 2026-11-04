@@ -1,12 +1,6 @@
-# Module Documentation
+# Module documentation
 
-Do not hand-edit generated `*.md` files here. This directory is a historical
-snapshot; CI generates current documentation after merge and publishes it to
-the repository wiki.
+Do not hand-edit generated `*.md` here. Push function sources only; CI publishes docs after merge. Details: [README](../README.md#accepting-public-signature-changes).
 
-After adding or changing a public function, push only the function source.
-PRs reject generated documentation changes. No regeneration commit is pushed
-back to the PR branch.
-
-Local preview only (never commit the result):
+Local preview only (never commit):
 `pwsh -NoProfile -File ./build/update-docs.ps1`

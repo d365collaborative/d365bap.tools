@@ -23,6 +23,7 @@ The main README owns architecture, setup, caching, and rules not yet contracted.
 For the families listed above, update their contract rather than adding a second
 policy description to the main README. The index maps ownership; each contract
 states accepted forms, exclusions, diagnostic behavior, and focused commands.
+Keep suite and docs weight lean: [WEIGHT.md](../WEIGHT.md).
 
 Broader verification from the repository root:
 
