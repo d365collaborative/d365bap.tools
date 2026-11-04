@@ -36,45 +36,59 @@ test('compares public and SDK signature inputs as data', () => {
     commit();
     const base = git('rev-parse', 'HEAD');
     const compare = (baseRef = base) => JSON.parse(execFileSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', path.join(__dirname, 'Get-SignatureDelta.ps1'), '-BaseRef', baseRef, '-HeadRef', 'HEAD'], { cwd: directory, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })).changes;
-    const changed = (file, content, expected) => {
+    const reset = () => {
       for (const [name, original] of Object.entries(files)) write(name, original);
+    };
+    const ignored = (file, content, label) => {
+      reset();
+      write(file, content); commit();
+      assert.deepEqual(compare(), [], label);
+    };
+    const gated = (file, content, expected, label) => {
+      reset();
       write(file, content); commit();
       const result = compare();
-      assert.equal(result.length, 1, `${file}: ${JSON.stringify(result)}`);
-      assert.match(result[0].name, expected);
+      assert.equal(result.length, 1, `${label}: ${JSON.stringify(result)}`);
+      assert.match(result[0].name, expected, label);
     };
     const command = 'd365bap.tools/functions/Get-Example.ps1';
-    changed(command, files[command].replace('DefaultParameterSetName="One"', 'DefaultParameterSetName="Two"'), /Get-Example/);
-    changed(command, files[command].replace('Alias("Old")', 'Alias("New")'), /Get-Example/);
-    changed(command, files[command].replace('"default"', '"changed"'), /Get-Example/);
-    changed(command, files[command].replace('process {', 'dynamicparam { throw "must not execute" } process {'), /Get-Example/);
-    changed(command, `${files[command]}\nSet-Alias ExampleAlias Get-Example`, /<top-level>/);
-    changed(command, `param([int]$ScriptOption)\n${files[command]}`, /<top-level>/);
+    ignored(command, files[command].replace('DefaultParameterSetName="One"', 'DefaultParameterSetName="Two"'), 'parameter-set rename is compatible');
+    ignored(command, files[command].replace('Alias("Old")', 'Alias("New")'), 'alias rename keeping the parameter is compatible');
+    ignored(command, files[command].replace('"default"', '"changed"'), 'default change is compatible');
+    ignored(command, files[command].replace('process {', 'dynamicparam { throw "must not execute" } process {'), 'dynamicparam addition is compatible');
+    ignored(command, `${files[command]}\nSet-Alias ExampleAlias Get-Example`, 'top-level alias is compatible');
+    ignored(command, `param([int]$ScriptOption)\n${files[command]}`, 'script-level param is compatible');
+    ignored(command, files[command].replace('[string]$Name = "default"', '[string]$Name = "default", [switch]$AsExcelOutput'), 'added optional parameter is compatible');
+    ignored(command, files[command].replace('[string]$Name = "default"', '[int]$Name = 1'), 'type change is compatible');
+    gated(command, files[command].replace('[Alias("Old")][string]$Name = "default"', '[Alias("Old")][string]$NewName = "default"'), /Get-Example/, 'parameter rename requires acceptance');
+    gated(command, files[command].replace('[Alias("Old")][string]$Name = "default"', ''), /Get-Example/, 'parameter removal requires acceptance');
     const manifest = 'd365bap.tools/d365bap.tools.psd1';
-    changed(manifest, files[manifest].replace('VariablesToExport = @()', 'VariablesToExport = @("Public")'), /manifest\/VariablesToExport/);
-    changed(manifest, files[manifest].replace('RootModule = "main.psm1"', 'RootModule = "other.psm1"'), /manifest\/RootModule/);
+    ignored(manifest, files[manifest].replace('VariablesToExport = @()', 'VariablesToExport = @("Public")'), 'added variable export is compatible');
+    ignored(manifest, files[manifest].replace('RootModule = "main.psm1"', 'RootModule = "other.psm1"'), 'RootModule change is compatible');
+    gated(manifest, files[manifest].replace('FunctionsToExport = @("Get-Example")', 'FunctionsToExport = @()'), /manifest\/FunctionsToExport/, 'dropped function export requires acceptance');
+    ignored(manifest, files[manifest].replace('VariablesToExport = @()', 'VariablesToExport = @("Public")'), 'added variable export remains compatible');
     for (const loader of ['d365bap.tools/d365bap.tools.psm1', 'd365bap.tools/internal/scripts/preimport.ps1', 'd365bap.tools/internal/scripts/postimport.ps1']) {
-      changed(loader, `${files[loader]}\n"other.ps1"`, /loader\//);
+      ignored(loader, `${files[loader]}\n"other.ps1"`, `${loader} change is compatible`);
     }
     const mapping = 'd365bap.tools/internal/sdk/commands.psd1';
-    changed(mapping, files[mapping].replace('Builder = "A"', 'Builder = "B"'), /sdk\/.*commands\.psd1/);
-    changed(mapping, files[mapping].replace('GetAsync', 'OtherAsync'), /sdk\/.*commands\.psd1/);
+    ignored(mapping, files[mapping].replace('Builder = "A"', 'Builder = "B"'), 'SDK mapping change is compatible');
+    ignored(mapping, files[mapping].replace('GetAsync', 'OtherAsync'), 'SDK method rename is compatible');
     const generator = 'd365bap.tools/internal/scripts/initialize-sdk.ps1';
-    changed(generator, files[generator].replace('[string]$Name', '[switch]$Name'), /sdk\/.*initialize-sdk/);
-    changed(generator, files['d365bap.tools/internal/scripts/preimport.ps1'], /sdk\/.*initialize-sdk/);
+    ignored(generator, files[generator].replace('[string]$Name', '[switch]$Name'), 'SDK generator change is compatible');
+    ignored(generator, files['d365bap.tools/internal/scripts/preimport.ps1'], 'SDK generator rewrite is compatible');
     const runtime = 'd365bap.tools/internal/sdk/runtime.ps1';
-    changed(runtime, files[runtime].replace('$Resource.ParameterPrefix', '$Resource.OtherPrefix'), /sdk\/.*Get-BapSdkParameter/);
-    changed(runtime, files[runtime].replace('Sdk.dll', 'Other.dll'), /sdk\/.*Import-BapSdk/);
+    ignored(runtime, files[runtime].replace('$Resource.ParameterPrefix', '$Resource.OtherPrefix'), 'SDK parameter generator body change is compatible');
+    ignored(runtime, files[runtime].replace('Sdk.dll', 'Other.dll'), 'SDK importer change is compatible');
     const project = 'library/PowerPlatformSdk/PowerPlatformSdk.csproj';
-    changed(project, files[project].replace('Version="1"', 'Version="2"'), /sdk\/.*csproj/);
+    ignored(project, files[project].replace('Version="1"', 'Version="2"'), 'SDK project change is compatible');
     const binary = 'd365bap.tools/bin/PowerPlatformSdk/Microsoft.PowerPlatform.Management.dll';
-    changed(binary, Buffer.from([0, 1, 3, 255]), /sdk\/.*\.dll/);
+    ignored(binary, Buffer.from([0, 1, 3, 255]), 'SDK binary change is compatible');
     const bridge = 'library/PowerPlatformSdk/SdkClient.cs';
-    changed(bridge, files[bridge].replace('SdkClient', 'OtherClient'), /sdk\/.*SdkClient\.cs/);
+    ignored(bridge, files[bridge].replace('SdkClient', 'OtherClient'), 'SDK bridge change is compatible');
     const bridgeBinary = 'd365bap.tools/bin/PowerPlatformSdk/D365Bap.Tools.PowerPlatformSdk.dll';
-    changed(bridgeBinary, Buffer.from([0, 1, 3, 255]), /sdk\/.*PowerPlatformSdk\.dll/);
+    ignored(bridgeBinary, Buffer.from([0, 1, 3, 255]), 'SDK bridge binary change is compatible');
 
-    for (const [name, original] of Object.entries(files)) write(name, original);
+    reset();
     write(runtime, files[runtime].replace('function Invoke-Other { "body" }', 'function Invoke-Other { "changed" }'));
     commit(); assert.deepEqual(compare(), [], 'unrelated runtime body is ignored');
     write(runtime, files[runtime]);
@@ -83,9 +97,9 @@ test('compares public and SDK signature inputs as data', () => {
     const renamed = 'd365bap.tools/functions/Get-Renamed.ps1';
     fs.renameSync(path.join(directory, command), path.join(directory, renamed)); commit();
     const renameChanges = compare();
-    assert.equal(renameChanges.length, 2, 'rename records both removal and addition');
+    assert.equal(renameChanges.length, 1, 'cmdlet file rename gates the removed declaration only');
     assert.ok(renameChanges.some(change => change.name.includes('Get-Example.ps1') && change.after === null));
-    assert.ok(renameChanges.some(change => change.name.includes('Get-Renamed.ps1') && change.before === null));
+    assert.ok(!renameChanges.some(change => change.before === null), 'added renamed cmdlet does not require acceptance');
     fs.renameSync(path.join(directory, renamed), path.join(directory, command));
     fs.unlinkSync(path.join(directory, command)); commit();
     assert.equal(compare()[0].after, null, 'deletion is recorded');
