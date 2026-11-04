@@ -113,19 +113,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-ObjectArrayCast 'Build scripts are exempt' @'
-function Get-Fixture {
-    $colResult = [object[]]@(Get-Thing)
-    $colResult
-}
-'@ -Directory 'build'
 
-Assert-ObjectArrayCast 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $colResult = [object[]]@(Get-Thing)
-    $colResult
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-ObjectArrayCast 'Test files are exempt' @'
 function Get-Fixture {

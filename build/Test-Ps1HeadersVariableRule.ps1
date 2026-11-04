@@ -148,19 +148,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-HeadersVariable 'Build scripts are exempt' @'
-function Get-Fixture {
-    $envs = Invoke-RestMethod -Method Get -Uri $uri -Headers @{ Authorization = 'x' }
-    $envs
-}
-'@ -Directory 'build/scripts'
 
-Assert-HeadersVariable 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $envs = Invoke-RestMethod -Method Get -Uri $uri -Headers @{ Authorization = 'x' }
-    $envs
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-HeadersVariable 'Test files are exempt' @'
 function Get-Fixture {

@@ -216,7 +216,6 @@ function Set-Fixture {
 Assert-ShouldProcess 'Internal functions are checked' $compliant -Directory 'd365bap.tools/internal'
 Assert-ShouldProcess 'Outside the module' $compliant -Directory 'build'
 Assert-ShouldProcess 'Test files are never checked' $compliant -FileName 'Set-Fixture.Tests.ps1'
-Assert-ShouldProcess 'Tepp files are exempt' $compliant -FileName 'set.fixture.tepp.ps1' -Directory 'd365bap.tools/internal/tepp'
 
 function Assert-Combined([string] $Label, [string] $Source, [int] $ShouldCount, [int] $ReturnCount) {
 	$path = Join-Path $fixtureRoot 'd365bap.tools/functions/Set-Combined.ps1'

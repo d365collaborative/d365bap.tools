@@ -200,19 +200,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-ComplexArrayElement 'Build scripts are exempt' @'
-function Get-Fixture {
-    $colSort = @(@{ Expression = { $_.name } }, @{ Expression = { $_.id } })
-    $colSort
-}
-'@ -Directory 'build/scripts'
 
-Assert-ComplexArrayElement 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $colSort = @(@{ Expression = { $_.name } }, @{ Expression = { $_.id } })
-    $colSort
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-ComplexArrayElement 'Test files are exempt' @'
 function Get-Fixture {

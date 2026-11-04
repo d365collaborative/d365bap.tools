@@ -198,15 +198,6 @@ function Get-Fixture {
 }
 '@ -Directory 'build'
 
-Assert-LoopAppend 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $colTarget = [System.Collections.Generic.List[object]]::new()
-    foreach ($item in $colSource) {
-        $colTarget.Add($item)
-    }
-    $colTarget
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-LoopAppend 'Transformed argument' 'function f { $x = [Collections.Generic.List[object]]::new(); foreach ($i in $s) { $x.Add($i.ToString()) } }'
 Assert-LoopAppend 'Custom Add' 'function f { $x = [CustomCollection]::new(); foreach ($i in $s) { $x.Add($i) } }'

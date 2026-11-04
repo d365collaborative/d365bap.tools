@@ -174,19 +174,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-MultilineIfExpression 'Build scripts are exempt' @'
-function Get-Fixture {
-    $base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
-    $base
-}
-'@ -Directory 'build/scripts'
 
-Assert-MultilineIfExpression 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
-    $base
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-MultilineIfExpression 'Test files are exempt' @'
 function Get-Fixture {

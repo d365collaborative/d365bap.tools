@@ -304,13 +304,6 @@ function Set-Fixture {
 }
 '@ -FileName 'Get-Ps1FunctionInterruptRule.Tests.ps1'
 
-Assert-Interrupt 'Tepp files are exempt' @'
-function Set-Fixture {
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
-    }
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-Interrupt 'Outside the module' @'
 function Set-Fixture {

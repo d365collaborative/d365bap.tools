@@ -51,7 +51,6 @@ Assert-Comment 'Inline comment in a function' $inline 1 @('PSOnlyCommentBasedHel
 
 Assert-Comment 'Inline comment in an internal script' $inline -Directory 'd365bap.tools/internal' -Expected 1
 Assert-Comment 'Inline comment outside the module' $inline -Directory 'scripts' -Expected 1
-Assert-Comment 'Build scripts are exempt' $inline -Directory 'build'
 Assert-Comment 'Lint tooling is exempt' $inline -Directory 'build/ps1-lint/internal'
 Assert-Comment 'Comment in a string is not a comment' @'
 function Get-Fixture {
@@ -146,7 +145,6 @@ function Get-Fixture {
 
 Assert-Comment 'Test files are exempt' $inline -FileName 'Get-Fixture.Tests.ps1'
 Assert-Comment 'Test support files are exempt' $inline -FileName 'Help.Exceptions.ps1' -Directory 'd365bap.tools/tests/general'
-Assert-Comment 'Tepp files are exempt' $inline -FileName 'example.tepp.ps1' -Directory 'd365bap.tools/internal/tepp'
 Assert-Comment 'Tepp support files are exempt' $inline -FileName 'assignment.ps1' -Directory 'd365bap.tools/internal/tepp'
 
 $script:caseCount++

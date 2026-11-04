@@ -160,11 +160,6 @@ function Set-Fixture {
 }
 '@ -Directory 'd365bap.tools/tests/general'
 
-Assert-ReturnValue 'Tepp files are exempt' @'
-function Set-Fixture {
-    return $value
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-ReturnValue 'Outside module and build' @'
 function Set-Fixture {

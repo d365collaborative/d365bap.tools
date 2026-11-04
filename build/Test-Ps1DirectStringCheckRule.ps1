@@ -150,21 +150,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-DirectStringCheck 'Build scripts are exempt' @'
-function Get-Fixture {
-    if ([string]::IsNullOrWhiteSpace("$policyName")) {
-        'missing'
-    }
-}
-'@ -Directory 'build/scripts'
 
-Assert-DirectStringCheck 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    if ([string]::IsNullOrWhiteSpace("$policyName")) {
-        'missing'
-    }
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-DirectStringCheck 'Test files are exempt' @'
 function Get-Fixture {

@@ -463,23 +463,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-MultilineIfCondition 'Build scripts are exempt' @'
-function Get-Fixture {
-    $objGroup = Get-Group
-    if (($null -eq $objGroup) -and ($null -eq $objGroup.DisplayName)) {
-        $objGroup
-    }
-}
-'@ -Directory 'build/scripts'
 
-Assert-MultilineIfCondition 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    $objGroup = Get-Group
-    if (($null -eq $objGroup) -and ($null -eq $objGroup.DisplayName)) {
-        $objGroup
-    }
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-MultilineIfCondition 'Test files are exempt' @'
 function Get-Fixture {

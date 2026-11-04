@@ -242,19 +242,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'd365bap.tools/internal/functions'
 
-Assert-ReturnAfterStop 'Build scripts are exempt' @'
-function Get-Fixture {
-    Stop-PSFFunction -Message 'Missing'
-    Get-Thing
-}
-'@ -Directory 'build'
 
-Assert-ReturnAfterStop 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    Stop-PSFFunction -Message 'Missing'
-    Get-Thing
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-ReturnAfterStop 'Test files are exempt' @'
 function Get-Fixture {

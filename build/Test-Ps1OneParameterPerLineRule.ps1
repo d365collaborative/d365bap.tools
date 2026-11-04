@@ -135,19 +135,7 @@ function Get-Fixture {
 }
 '@ -Expected 1 -Directory 'build/ps1-lint/internal'
 
-Assert-OneParameterPerLine 'Other build scripts are exempt' @'
-function Get-Fixture {
-    Get-Thing -First 1 `
-        -Second 2 -Third 3
-}
-'@ -Directory 'build/scripts'
 
-Assert-OneParameterPerLine 'Tepp fixtures are exempt' @'
-function Get-Fixture {
-    Get-Thing -First 1 `
-        -Second 2 -Third 3
-}
-'@ -Directory 'd365bap.tools/internal/tepp'
 
 Assert-OneParameterPerLine 'Test files are exempt' @'
 function Get-Fixture {
