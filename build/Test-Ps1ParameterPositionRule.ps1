@@ -10,30 +10,36 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-foreach ($script in @('Get-Ps1CommentGroup', 'Get-Ps1HelpSection', 'Get-Ps1Analysis', 'Get-Ps1ParameterContractDiagnostic')) {
-	. "$PSScriptRoot/ps1-lint/internal/$script.ps1"
+. "$PSScriptRoot/ps1-lint/testing/Assert-Ps1RuleCase.ps1"
+foreach ($itemPath in Get-Ps1RuleAnalysisScriptPath -BuildRoot $PSScriptRoot -ScriptName @(
+		'Get-Ps1CommentGroup'
+		'Get-Ps1HelpSection'
+		'Get-Ps1Analysis'
+		'Get-Ps1ParameterContractDiagnostic'
+	)) {
+	. $itemPath
 }
-$fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('parameter-position-rule-' + [guid]::NewGuid().ToString('N'))
-$null = New-Item -ItemType Directory -Path $fixtureRoot -Force
+$fixtureRoot = Initialize-Ps1RuleFixtureRoot -NamePrefix 'parameter-position-rule'
 $script:caseCount = 0
 
 function Assert-Position {
-	param([string] $Label, [string] $Source, [int] $Expected = 0, [string[]] $ExpectedText = @(), [string] $FileName = 'Fixture.ps1', [string] $Directory = 'd365bap.tools/functions')
-	$folder = Join-Path $fixtureRoot $Directory
-	$null = New-Item -ItemType Directory -Path $folder -Force
-	$path = Join-Path $folder $FileName
-	[IO.File]::WriteAllText($path, $Source.Replace("`r`n", "`n"))
-	$analysis = Get-Ps1Analysis -Path $path
-	if ($analysis.ParseErrors.Count -gt 0) { throw "Invalid fixture ${Label}: $($analysis.ParseErrors.Message -join '; ')" }
-	$colDiagnostics = @(Get-Ps1ParameterContractDiagnostic -Analysis $analysis | Where-Object RuleName -eq 'PSAvoidExplicitParameterPosition')
-	if ($colDiagnostics.Count -ne $Expected) {
-		throw "${Label}: expected $Expected diagnostics, got $($colDiagnostics.Count): $($colDiagnostics.Message -join ' ')"
-	}
-	$message = @($colDiagnostics | ForEach-Object { "$($_.RuleName) $($_.Message)" }) -join ' '
-	foreach ($itemFragment in $ExpectedText) {
-		if (-not $message.Contains($itemFragment)) { throw "${Label}: missing '$itemFragment' in '$message'" }
-	}
-	$script:caseCount++
+	param(
+		[string] $Label,
+		[string] $Source,
+		[int] $Expected = 0,
+		[string[]] $ExpectedText = @(),
+		[string] $Directory = 'd365bap.tools/functions',
+		[string] $FileName = 'Fixture.ps1'
+	)
+	Assert-Ps1RuleCase -FixtureRoot $fixtureRoot `
+		-DiagnosticCommand 'Get-Ps1ParameterContractDiagnostic' `
+		-Label $Label `
+		-Source $Source `
+		-Expected $Expected `
+		-ExpectedText $ExpectedText `
+		-Directory $Directory `
+		-FileName $FileName `
+		-RuleName 'PSAvoidExplicitParameterPosition'
 }
 
 $positional = @'
