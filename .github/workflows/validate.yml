@@ -115,7 +115,9 @@ jobs:
 
   changes:
     name: Determine validation scope
-    runs-on: windows-latest
+    # Ubuntu checkout of full history is much cheaper than windows-latest for
+    # this git-only planning job (~50s on Windows vs a few seconds on Ubuntu).
+    runs-on: ubuntu-latest
     outputs:
       scope: ${{ steps.scope.outputs.scope }}
       module_tests: ${{ steps.scope.outputs.module_tests }}
@@ -151,6 +153,11 @@ jobs:
         }
         "scope=$($plan.Scope)" >> $env:GITHUB_OUTPUT
         "plan_hash=$((Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash)" >> $env:GITHUB_OUTPUT
+    - uses: actions/upload-artifact@v7
+      with:
+        name: validation-plan
+        path: validation-plan.json
+        if-no-files-found: error
   general-unit-tests:
     name: Validate General Unit Tests
     needs: changes
@@ -247,20 +254,19 @@ jobs:
       plan_hash: ${{ steps.scope.outputs.plan_hash }}
     steps:
     - uses: actions/checkout@v5
+    - uses: actions/download-artifact@v8
       with:
-        fetch-depth: 0
-    - name: Determine changes against PR base
+        name: validation-plan
+    - name: Load shared validation plan
       id: scope
       shell: pwsh
-      env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.sha }}
       run: |
-        ./build/Get-PRValidationPlan.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -OutputPath validation-plan.json
         $plan = Get-Content -Raw validation-plan.json | ConvertFrom-Json
         if ($plan.SelectiveTests -isnot [bool] -or -not $plan.SelectiveTests) { throw 'This job only runs a selective-tests plan' }
+        $hash = (Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash
+        if ($hash -cne '${{ needs.changes.outputs.plan_hash }}') { throw "Plan artifact hash $hash does not match changes job." }
         "scope=$($plan.Scope)" >> $env:GITHUB_OUTPUT
-        "plan_hash=$((Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash)" >> $env:GITHUB_OUTPUT
+        "plan_hash=$hash" >> $env:GITHUB_OUTPUT
     - name: Restore PowerShell modules
       uses: actions/cache/restore@v5
       with:
@@ -285,20 +291,19 @@ jobs:
       plan_hash: ${{ steps.scope.outputs.plan_hash }}
     steps:
     - uses: actions/checkout@v5
+    - uses: actions/download-artifact@v8
       with:
-        fetch-depth: 0
-    - name: Determine changes against PR base
+        name: validation-plan
+    - name: Load shared validation plan
       id: scope
       shell: pwsh
-      env:
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.sha }}
       run: |
-        ./build/Get-PRValidationPlan.ps1 -BaseSha $env:BASE_SHA -HeadSha $env:HEAD_SHA -OutputPath validation-plan.json
         $plan = Get-Content -Raw validation-plan.json | ConvertFrom-Json
         if ($plan.CompiledImport -isnot [bool] -or -not $plan.CompiledImport) { throw 'This job only runs a compiled-import plan' }
+        $hash = (Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash
+        if ($hash -cne '${{ needs.changes.outputs.plan_hash }}') { throw "Plan artifact hash $hash does not match changes job." }
         "scope=$($plan.Scope)" >> $env:GITHUB_OUTPUT
-        "plan_hash=$((Get-FileHash -LiteralPath validation-plan.json -Algorithm SHA256).Hash)" >> $env:GITHUB_OUTPUT
+        "plan_hash=$hash" >> $env:GITHUB_OUTPUT
     - name: Restore PowerShell modules
       uses: actions/cache/restore@v5
       with:
