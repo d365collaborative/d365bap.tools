@@ -196,10 +196,10 @@ function Get-Parity {
 	Assert-True (($batchKeys -join ';') -ceq ($pathKeys -join ';')) "Text and path analysis must report the same diagnostics: [$($batchKeys -join ', ')] vs [$($pathKeys -join ', ')]."
 
 	# prek and CI must keep the combined entry point and the write-free CI mode.
+	# Do not pin batch size or other hook-shape knobs here.
 	$prekText = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../prek.toml') -Raw
 	Assert-True ($prekText -match 'id = "ps1-lint"') 'prek.toml must define the combined ps1-lint hook.'
 	Assert-True ($prekText -match 'build/ps1-lint/lint/Run\.ps1') 'The combined hook must call lint/Run.ps1.'
-	Assert-True ($prekText -match 'pass_filenames = 128') 'The combined hook must keep bounded batches.'
 	$ciText = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../.github/workflows/validate.yml') -Raw
 	Assert-True ($ciText -match 'PS1_LINT_CHECK_ONLY') 'CI must select check-only mode.'
 	Assert-True ($ciText -match 'prek run ps1-lint') 'CI must run the combined hook.'

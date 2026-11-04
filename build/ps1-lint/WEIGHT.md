@@ -16,3 +16,4 @@ Prefer the enforcer. Cut duplicated docs, redirect stubs, and paraphrased fixtur
 ## Infra
 
 - Keep meta suites path-gated. Leave intentional manual suites (for example `Test-PowerPlatformSdk`) out of CI.
+- Do not pin documentation wording, diagnostic prose, YAML action versions, or cache-key syntax in tests. Keep trust-boundary checks (narrow installs, check-only CI, verified prek install, failure propagation, cache invalidation).
