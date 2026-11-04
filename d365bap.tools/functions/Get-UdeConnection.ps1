@@ -3,7 +3,7 @@
         Retrieves the UDE connection information.
 
     .DESCRIPTION
-        This function retrieves the connection information that is currently used by Visual Studio for the User Development Environment (UDE).
+        Reads the Visual Studio CRM Developer Toolkit config and returns the active User Development Environment (UDE) connection details.
 
     .PARAMETER Path
         The path to the UDE configuration folder.
