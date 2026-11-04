@@ -91,8 +91,8 @@ if (-not $runCompiledImport -and ($runModuleTests -or $runAnalyzerScans -or $run
 	throw "Impossible validation scope '$Scope': no compiled-import job with module, analyzer, selective, or infrastructure work."
 }
 
-# The jobs that recompute the plan must agree with the change-detection job.
-# Their results are cross-checked above, so a skipped job cannot fake agreement.
+# Selective/compiled jobs must report the same plan hash and scope as the
+# change-detection job (shared plan artifact). A skipped job cannot fake agreement.
 if ($runSelectiveTests) {
 	if ($SelectiveHash -cne $PlanHash) { throw 'Validation jobs produced different change plans (selective).' }
 	if ($SelectiveScope -cne $Scope) { throw "Validation jobs disagreed on the scope: expected $Scope, got '$SelectiveScope' (selective)." }
