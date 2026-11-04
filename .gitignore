@@ -22,6 +22,8 @@ TestResults/*
 publish/*
 library/PowerPlatformSdk/bin/
 library/PowerPlatformSdk/obj/
+library/SqlClient/bin/
+library/SqlClient/obj/
 # local ps1-lint analysis result cache (build/ps1-lint/internal/Get-Ps1AnalysisCache.ps1)
 .ps1-lint-cache/
 agent-tools

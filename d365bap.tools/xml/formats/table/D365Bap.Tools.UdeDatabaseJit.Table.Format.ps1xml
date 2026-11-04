@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>D365Bap.Tools.UdeDatabaseJit</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.UdeDatabaseJit</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Server</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Database</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Username</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Role</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Expiration</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>Server</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Database</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Username</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Role</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Expiration</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>

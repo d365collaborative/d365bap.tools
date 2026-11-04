@@ -1,200 +1,153 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
-        Gets UDE database JIT access information for a specified environment.
-        
+        Requests temporary SQL credentials for one unified environment.
+
     .DESCRIPTION
-        This function retrieves UDE database JIT access information for a specified environment.
-        
+        Requests JIT SQL access from Dataverse and waits for backend propagation.
+        Credentials are returned in memory. Nothing is stored in CredentialManager or the SSMS cache.
+
     .PARAMETER EnvironmentId
-        The ID of the environment that you want to work against.
-        
-        Supports wildcard patterns.
-        
-        Can be either the environment name or the environment GUID.
-        
+        Environment name or GUID. Wildcards must match exactly one unified environment.
+
     .PARAMETER WhitelistIp
-        Ip address to whitelist for JIT database access.
-        
-        Defaults to 127.0.0.1 - which will cause the function to determine the public IP address of the machine running the command.
-        
-        Supports single, range and CIDR notation.
-        
-        10.0.0.7 - single IP
-        10.0.0.7-10.0.0.20 - range
-        10.0.0.0/24 - CIDR notation
-        
+        SQL firewall IP, range, or CIDR. Loopback discovers the public IP.
+
+        Default: 127.0.0.1.
+
     .PARAMETER Role
-        The role to assign for JIT database access.
-        
-        Can be either "Reader" or "Writer".
-        
-        Defaults to "Reader".
-        
+        SQL access role. Writer permits data changes.
+
+        Default: Reader.
+
     .PARAMETER Reason
-        The reason for requesting JIT database access.
-        
-        Defaults to "Administrative access via d365bap.tools".
-        
+        Audit reason for requesting SQL access.
+
+        Default: Administrative access via d365bap.tools.
+
     .PARAMETER WaitSeconds
-        The time in seconds to wait after obtaining the JIT credentials, to allow them to propagate
-        on the backend before the credentials are returned.
-        
-        Newly issued JIT credentials need up to 60 seconds to propagate before the SQL login accepts connections.
-        
-        Defaults to 60.
-        
+        Propagation wait in seconds before returning credentials. Zero skips the wait.
+
+        Default: 60.
+
     .PARAMETER AsExcelOutput
-        Instruct the cmdlet to output all details directly to an Excel file.
-        
-        Will include all properties, including those not shown by default in the console output.
-        
+        Exports credentials, including the password, to Excel instead of returning them in memory.
+
     .EXAMPLE
-        PS C:\> Get-UdeDbJit -EnvironmentId "env-123"
-        
-        This will retrieve the JIT database access information for the specified environment ID.
-        It will whitelist the public IP address of the machine running the command.
-        It will assign the "Reader" role.
-        It will use the default reason.
-        
+        PS C:\> $jit = Get-UdeDbJit -EnvironmentId "dev-environment"
+
+        Requests temporary read access without caching credentials.
+        It uses -EnvironmentId to select exactly one environment.
+        It uses the default -WhitelistIp to discover the public IP.
+        It uses the default -Role Reader.
+        It uses the default -Reason Administrative access via d365bap.tools.
+        It uses the default -WaitSeconds 60 for backend propagation.
+        It leaves -AsExcelOutput disabled by default and returns credentials in memory.
+
     .EXAMPLE
-        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -WhitelistIp "85.168.174.10"
-        
-        This will retrieve the JIT database access information for the specified environment ID.
-        It will whitelist the specified IP address "85.168.174.10".
-        It will assign the "Reader" role.
-        It will use the default reason.
-        
-    .EXAMPLE
-        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -Role "Writer"
-        
-        This will retrieve the JIT database access information for the specified environment ID.
-        It will whitelist the public IP address of the machine running the command.
-        It will assign the "Writer" role.
-        It will use the default reason.
-        
-    .EXAMPLE
-        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -Reason "Needed for data migration"
-        
-        This will retrieve the JIT database access information for the specified environment ID.
-        It will whitelist the public IP address of the machine running the command.
-        It will assign the "Reader" role.
-        It will use the specified reason "Needed for data migration".
-        
-    .EXAMPLE
-        PS C:\> Get-UdeDbJit -EnvironmentId "env-123" -WaitSeconds 60
-        
-        This will retrieve the JIT database access information for the specified environment ID.
-        It will wait 60 seconds for the credentials to propagate on the backend before returning them.
-        This is the sane default and ensures that piped consumers like Set-UdeDbJitCache receive credentials that are ready to use.
-        
-    .EXAMPLE
-        PS C:\> Get-UnifiedEnvironment -EnvironmentId "env-123" | Get-UdeDbJit
-        
-        This will retrieve the JIT database access information for the specified environment ID.
-        It will whitelist the public IP address of the machine running the command.
-        It will assign the "Reader" role.
-        It will use the default reason.
-        It will output all details directly to an Excel file.
-        
+        PS C:\> Get-UdeDbJit -EnvironmentId "dev-environment" -Role Writer -WhitelistIp "203.0.113.10" -Reason "Approved migration" -WaitSeconds 0
+
+        Requests write access with explicit firewall and audit settings.
+        It uses -EnvironmentId to select exactly one environment.
+        It uses -Role Writer to allow data changes.
+        It uses -WhitelistIp to allow the specified IP.
+        It uses -Reason for the access audit record.
+        It uses -WaitSeconds 0; the caller must allow propagation before connecting.
+        It leaves -AsExcelOutput disabled by default and returns credentials in memory.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-UdeDbJit {
-    [CmdletBinding()]
-    param (
-        [Parameter (Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
-        [Alias("PpacEnvId")]
-        [string] $EnvironmentId,
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.UdeDatabaseJit[]')]
+	param (
+		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+		[Alias('PpacEnvId')]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [string] $WhitelistIp = "127.0.0.1",
+		[ValidateNotNullOrEmpty()]
+		[string] $WhitelistIp = '127.0.0.1',
 
-        [ValidateSet("Reader", "Writer")]
-        [string] $Role = "Reader",
+		[ValidateSet('Reader', 'Writer')]
+		[string] $Role = 'Reader',
 
-        [string] $Reason = "Administrative access via d365bap.tools",
+		[ValidateNotNullOrEmpty()]
+		[string] $Reason = 'Administrative access via d365bap.tools',
 
-        [int] $WaitSeconds = 60,
+		[ValidateRange(0, [int]::MaxValue)]
+		[int] $WaitSeconds = 60,
 
-        [switch] $AsExcelOutput
-    )
-    
-    begin {
-        if ($WhitelistIp -eq "127.0.0.1") {
-            $WhitelistIp = (Invoke-RestMethod -Uri "https://icanhazip.com" -UseBasicParsing).Trim()
-        }
-    }
-    
-    process {
-        $envObj = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId `
-            -SkipVersionDetails | Select-Object -First 1
+		[switch] $AsExcelOutput
+	)
 
-        if ($null -eq $envObj) {
-            $messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
+	process {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId
+		$colEnvironments = @($envObj |
+			Where-Object FinOpsMetadataEnvType -EQ 'Internal')
 
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
-                -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
+		if ($colEnvironments.Count -ne 1) {
+			throw "Expected exactly one unified environment for '$EnvironmentId'; found $($colEnvironments.Count). Use a specific name or GUID."
+		}
 
-        if ($WhitelistIp -eq "127.0.0.1") {
-            $messageString = "Could not determine public IP address for JIT database access. Please specify the IP address using the <c='em'>-WhitelistIp</c> parameter."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because public IP address could not be determined."
-            return
-        }
+		if ($WhitelistIp -eq '127.0.0.1') {
+			$WhitelistIp = ([string](Invoke-RestMethod -Uri 'https://icanhazip.com')).Trim()
+			$publicIp = $null
+			if ((-not [Net.IPAddress]::TryParse($WhitelistIp, [ref]$publicIp)) `
+					-or ([Net.IPAddress]::IsLoopback($publicIp))) {
+				throw 'Could not determine a public IP address. Specify -WhitelistIp explicitly.'
+			}
+		}
 
-        $baseUri = $envObj.PpacEnvUri + "/" #! Very important to have the trailing slash
+		$baseUri = $colEnvironments[0].PpacEnvUri.TrimEnd('/') + '/'
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenWebApiValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenWebApiValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$hashHeaders = @{
+			Authorization  = "Bearer $tokenWebApiValue"
+			Accept         = 'application/json'
+			'Content-Type' = 'application/json; charset=utf-8'
+		}
+		$localUri = $baseUri + 'api/data/v9.2/msprov_getfinopssqljitaccessasync'
+		$payload = @{
+			sqljitclientipaddress = $WhitelistIp
+			sqljitreason          = $Reason
+			sqljitrole            = $Role
+		} | ConvertTo-Json -Depth 3
 
-        $headers = @{
-            "Authorization" = "Bearer $($tokenWebApiValue)"
-            "Accept"        = "application/json"
-            "Content-Type"  = "application/json; charset=utf-8"
-        }
+		$objResponse = Invoke-RestMethod -Method Post `
+			-Uri $localUri `
+			-Headers $hashHeaders `
+			-Body $payload
 
-        $localUri = $baseUri + 'api/data/v9.2/msprov_getfinopssqljitaccessasync'
+		$expiration = [DateTimeOffset]$objResponse.sqljitexpiration
+		if ($WaitSeconds -gt 0) {
+			Write-PSFMessage -Level Verbose `
+				-Message "Waiting $WaitSeconds seconds for the JIT credentials to propagate."
 
-        $payload = @{
-            "sqljitclientipaddress" = $WhitelistIp
-            "sqljitreason"          = $Reason
-            "sqljitrole"            = $Role
-        } | ConvertTo-Json -Depth 3
+			Start-Sleep -Seconds $WaitSeconds
+		}
 
+		$colResults = @($objResponse |
+			Select-PSFObject -TypeName 'D365Bap.Tools.UdeDatabaseJit' `
+				-ExcludeProperty '@odata.context' `
+				-Property 'servername as Server',
+			'databasename as Database',
+			'sqljitusername as Username',
+			'sqljitpassword as Password',
+			@{ Name = 'Expiration'; Expression = { $expiration.UtcDateTime } },
+			@{ Name = 'ExpirationIso'; Expression = { $expiration.ToString('o') } },
+			'sqljitrole as Role',
+			@{ Name = 'EnvironmentId'; Expression = { $colEnvironments[0].PpacEnvId } },
+			*)
 
-        $resRequest = Invoke-RestMethod -Method Post `
-            -Uri $localUri `
-            -Headers $headers `
-            -Body $payload
+		if ($AsExcelOutput) {
+			$colResults |
+			Export-Excel -WorksheetName 'Get-UdeDbJit'
+			return
+		}
 
-        if ($WaitSeconds -gt 0) {
-            Write-PSFMessage -Level Verbose -Message "Waiting $WaitSeconds seconds for the JIT credentials to propagate on the backend before returning them."
-            Start-Sleep -Seconds $WaitSeconds
-        }
-
-        $resObj = $resRequest | Select-PSFObject -TypeName "D365Bap.Tools.UdeDatabaseJit" `
-            -ExcludeProperty "@odata.context" `
-            -Property "servername as Server",
-        "databasename as Database",
-        "sqljitusername as Username",
-        "sqljitpassword as Password",
-        "sqljitexpiration as Expiration",
-        @{ Name = "ExpirationIso"; Expression = { $_.sqljitexpiration.ToString("o") } },
-        "sqljitrole as Role",
-        @{ Name = "EnvironmentId"; Expression = { $envObj.PpacEnvId } },
-        *
-        
-        if ($AsExcelOutput) {
-            $resObj | Export-Excel -WorksheetName "Get-UdeDbJit"
-            return
-        }
-
-        $resObj
-    }
-
-    end {
-    }
+		$colResults
+	}
 }
