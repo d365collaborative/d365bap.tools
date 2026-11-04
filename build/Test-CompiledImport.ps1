@@ -5,7 +5,7 @@
         Compiles and imports the module.
 
     .DESCRIPTION
-        Concatenates the module sources exactly like the release build, then imports the result in a child process. Fails on parser or import errors. Staging copies the import surface only and reads function sources from the live module tree.
+        Concatenates sources like the release build, then smoke-imports in a child process. Staging copies the import surface only. Smoke softens RequiredModules to skip Az.Accounts while asserting the source manifest still requires it for users.
 #>
 [CmdletBinding()]
 param()
@@ -50,11 +50,44 @@ try {
 	$fileData = $fileData.Replace('"<compile code into here>"', ($text -join "`n`n"))
 	[IO.File]::WriteAllText((Join-Path $destination.FullName 'd365bap.tools.psm1'), $fileData, [Text.Encoding]::UTF8)
 	$compiledManifest = Join-Path $destination.FullName 'd365bap.tools.psd1'
+
+	# Users still require Az.Accounts via the source manifest. Smoke drops it from
+	# the staged RequiredModules so Import-Module does not pay Az.Accounts load
+	# cost; postimport Get-AzContext must not auto-load it either.
+	$sourcePsd1 = Get-Content -LiteralPath (Join-Path $moduleRoot 'd365bap.tools.psd1') -Raw
+	foreach ($needed in @('PSFramework', 'ImportExcel', 'Az.Accounts')) {
+		if ($sourcePsd1 -notmatch [regex]::Escape($needed)) {
+			throw "Source manifest must list $needed in RequiredModules for users."
+		}
+	}
+	$azAvailable = Get-Module -ListAvailable -Name Az.Accounts |
+	Where-Object { $_.Version -ge [version]'2.17.0' } |
+	Select-Object -First 1
+	if (-not $azAvailable) {
+		throw 'Az.Accounts 2.17.0 or newer must be installed for users (RequiredModules); CI cache/install did not provide it.'
+	}
+
+	$psd1Text = Get-Content -LiteralPath $compiledManifest -Raw
+	$softText = [regex]::Replace(
+		$psd1Text,
+		'(?s)RequiredModules\s*=\s*@\((?:[^()]|\([^)]*\))*\)',
+		"RequiredModules   = (@{ ModuleName = 'PSFramework'; ModuleVersion = '1.9.310' }, @{ ModuleName = 'ImportExcel'; ModuleVersion = '7.8.6' })"
+	)
+	if ($softText -eq $psd1Text) {
+		throw 'Failed to soften staged RequiredModules for compiled-import smoke.'
+	}
+	$softManifest = Join-Path $destination.FullName 'd365bap.tools.smoke.psd1'
+	[IO.File]::WriteAllText($softManifest, $softText, [Text.Encoding]::UTF8)
+
 	$smokeScript = Join-Path $staging 'smoke.ps1'
 	@'
 param([string] $Manifest)
 $ErrorActionPreference = 'Stop'
+# -NoProfile children do not preload Utility/Management; load them before ModuleQualified.
+Import-Module Microsoft.PowerShell.Management, Microsoft.PowerShell.Utility, Microsoft.PowerShell.Security -ErrorAction Stop
 $expectedPath = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $Manifest) 'd365bap.tools.psm1')).ProviderPath
+# Block unqualified Get-AzContext from auto-loading Az.Accounts during import.
+$PSModuleAutoLoadingPreference = 'ModuleQualified'
 $imported = @(Import-Module -Name $Manifest -Force -PassThru -ErrorAction Stop)
 $PSModuleAutoLoadingPreference = 'None'
 $loaded = @($imported | Where-Object { $_.Path -eq $expectedPath })
@@ -65,9 +98,12 @@ foreach ($name in @('Get-UdeNuget', 'Get-BapEnvironment', 'Get-FscmEnvironmentVe
         throw "Command $name did not resolve to the staged compiled module: $($command.Source)"
     }
 }
+if (Get-Module -Name Az.Accounts -ErrorAction SilentlyContinue) {
+    throw 'Smoke import loaded Az.Accounts; soft RequiredModules path failed.'
+}
 Write-Host 'Compiled module and formats import.'
 '@ | Set-Content -LiteralPath $smokeScript -Encoding utf8
-	& pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $smokeScript -Manifest $compiledManifest
+	& pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $smokeScript -Manifest $softManifest
 	$importExit = $LASTEXITCODE
 	if ($importExit -ne 0) { throw 'Compiled module import failed.' }
 }
