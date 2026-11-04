@@ -1,0 +1,190 @@
+# Contributing and PR gates
+
+Want to contribute? Start with [contributing.md](https://github.com/d365collaborative/d365bap.tools/blob/master/contributing.md). Agent short guide: [AGENTS.md](AGENTS.md). Lint weight: [build/ps1-lint/WEIGHT.md](build/ps1-lint/WEIGHT.md).
+
+## Local feedback (optional)
+
+Pull the repo and work as usual — local checks are opt-in. Pull requests run
+lint, signature review, and checks selected for the affected files. Broader
+repository checks run after merge and must pass before publishing a release.
+
+```powershell
+# one-time: PowerShell 7.6+, prek, and the lint prerequisite
+pip install "prek==0.5.7"
+prek install
+prek run setup --stage manual
+
+# fast loop: lint changed files + offline behavior tests
+prek run
+pwsh -NoProfile -File ./build/Test-Behavior.ps1
+```
+
+Pull request lint uses the same shared change scope as local runs
+(`build/Get-Ps1LintScope.ps1`). It offers every changed file to the cheap hooks
+(`check-merge-conflict`, `trailing-whitespace`, `end-of-file-fixer`,
+`check-json`, `check-yaml`), runs the combined `ps1-lint` hook only on changed
+`.ps1`, `.psm1`, and `.psd1` files, and runs `actionlint` only on touched
+workflow files. Untouched files never fail a pull request. The CI lint step sets
+`PS1_LINT_CHECK_ONLY=1`, so the hook reports formatting drift and analyzes the
+formatted text without writing to the checkout.
+
+The lint job installs only what the hooks it is about to run need: prek when any
+hook runs, the pinned PSScriptAnalyzer when PowerShell files change (see
+`build/ModuleCacheRequirements.json`, `lint` set), and a cached pinned
+`actionlint` binary when workflow files change. The formatter and the analyzer
+share one PSScriptAnalyzer version, so local and CI formatting cannot drift
+because a newer module version is installed.
+
+Full-tree and dependency-aware lint are not pull request gates. Run them locally
+before a broad change:
+
+```powershell
+prek run --all-files --stage manual
+pwsh -NoProfile -File ./build/Invoke-Ps1LintScope.ps1 -BaseSha <base> -HeadSha <head> -RunAnalyzer
+```
+
+### Pull request validation scope
+
+`build/Get-PRValidationPlan.ps1` derives independent decisions from the change
+set instead of one coarse mode, so a pull request runs only the jobs its files
+can affect:
+
+| Change | Jobs |
+| --- | --- |
+| Documentation only | lint and change detection |
+| Formatting only (same tokens and line breaks) | compiled import |
+| Public function source | targeted checks and compiled import |
+| Module test or analyzer harness | the module suites or the full scans, plus compiled import |
+| Shared module code, manifest, or unknown path | full module suites, full scans, compiled import |
+| Validation tooling | the regression suites and compiled import |
+
+Shared module code keeps the full module test set, and anything the plan cannot
+classify falls back to it as well. `build/Invoke-ValidationResultGate.ps1` fails
+a skipped, missing, or failed required job and rejects a scope that no change
+can produce.
+
+Do not edit generated files (`d365bap.tools/tests/functions/*.Tests.ps1`,
+`docs/*.md`, consolidated format XML, or `wiki/Namespaces.md`) in a pull request.
+CI builds current runtime formats for validation and generates documentation and
+test snapshots after merge.
+
+### Accepting public signature changes
+
+`Public signature approval` compares public function declarations against the
+PR's merge base. Adding or removing commands or parameters, or changing types,
+defaults, aliases, parameter sets, binding attributes, dynamic parameters or
+manifest exports requires explicit acceptance. Changes to implementation bodies,
+help, formatting and generated tests do not satisfy or trigger acceptance.
+This is a declaration review gate, not a complete behavioral compatibility test.
+
+A separate **red check** remains until a maintainer with repository write access
+reviews its before/after report and posts this exact text as a new PR comment:
+
+```text
+/accept-signature-change
+```
+
+The comment applies only to the PR head and base recorded by the visible check.
+The gate also publishes a commit status with the same name for branch
+protection. The check run retains the detailed report and acceptance metadata,
+and is the only red result while acceptance is outstanding. The commit status
+stays pending until the gate is accepted, then flips to success, so one gate
+shows one red check. Rerunning a gate resets the status to pending before
+revalidating it. Wait for that check before commenting. Every new push requires fresh acceptance. Ordinary PR
+approval and rerunning workflows do not accept signature changes. Editing or
+deleting the acceptance comment revokes it; post a new comment to accept again.
+Bot accounts cannot accept. Agents must leave acceptance to the human maintainer;
+GitHub cannot distinguish an agent using a person's credentials from that person.
+
+**Repository setup:** merge the workflow onto the default branch, then require
+the **Public signature approval**, **Internal hook approval**,
+**Test file approval**, and
+**PS1 lint (vendored prek hooks, changed files)** checks in the `main` branch
+ruleset or protection. Keep the existing
+four required validation checks: **Validate Individual Unit Tests** now acts
+as the fail-closed aggregate for the fast PR validation. Checks only block
+merging when required. Require the PR branch to be up to date with `main` as
+well; signature refresh after a base push is best-effort and asynchronous.
+Existing PRs need a new push, reopen, or comment to run the new workflow. The
+workflow reads tooling from the default branch and parses PR Git blobs without
+executing them, so a PR cannot accept itself by editing its tests or gate code.
+
+Gate regression tests: `node --test build/signature-approval.test.cjs`.
+
+### Accepting internal hook changes
+
+`Internal hook approval` replaces the unconditional lint-hook ownership
+failure. Changes to protected lint internals or approval infrastructure stay
+red until a human maintainer with repository write access reviews the report
+and posts exactly this text as a new PR comment:
+
+```text
+/accept-intenal-hook
+```
+
+The command intentionally uses the spelling above. Wait until the current
+revision's failing report is visible before posting it. Acceptance is bound
+to that PR's head, base commit, and base branch. New pushes, base advances,
+or retargeting require fresh acceptance. Edited or deleted comments, bots,
+application comments, and users without write access cannot authorize changes.
+Ordinary PR approval, signature acceptance, and workflow reruns do not accept
+internal-hook changes. Agents must leave the comment to the human maintainer.
+
+The report includes commits that touched protected files, even when a later
+commit reverted the change. It covers lint internals, hook entry points,
+`prek.toml`, validation wiring, and both approval gates. The protected paths
+are declared in `build/internal-hook-approval.cjs`. Code from the PR is read
+from Git objects, never checked out or executed by the write-capable gate.
+Accepting this check does not accept signature changes or bypass formatting,
+lint, or tests; those checks run independently.
+
+### Accepting hand-written test files
+
+`Test file approval` fails a pull request that adds or edits a `*Tests.ps1`
+file outside the generated `d365bap.tools/tests/functions` directory. Deleting
+an existing test file needs no acceptance. Generated parameter tests are exempt
+from both additions and edits; `Test-GeneratedTouch.ps1` already rejects hand
+edits to that directory.
+
+A separate **red check** remains until a maintainer with repository write access
+reviews the changed files and posts this exact text as a new PR comment:
+
+```text
+/accept-test-file
+```
+
+The comment applies only to the PR head and base recorded by the visible check.
+Every new push, new edit, or base advance requires fresh acceptance.
+Editing or deleting the comment revokes it. Bots, application comments, and
+users without write access cannot accept. Agents must leave acceptance to the
+human maintainer, who decides whether the new test earns its maintenance cost.
+
+All approval workflows need `checks: write` for their reports and
+`statuses: write` for branch-protection status reporting. A successful workflow
+or check run alone is not proof that merging is allowed. Check GitHub's merge
+box as well: no approval name should remain "Expected" after its commit
+status is published. A reporting failure blocks acceptance rather than
+publishing success.
+
+**Installation:** merge the setup PR first, then require **Internal hook
+approval** in the `main` branch ruleset alongside the existing required checks.
+Require branches to be up to date with their base. The old unconditional
+ownership step is removed, so the new check must be required before merging
+subsequent PRs. Do not treat an absent check as success.
+
+For an existing PR such as #229, update its branch from `main` after setup,
+keep the removal of `build/Test-HookTouch.ps1` if Git reports a delete/modify
+conflict, and push. Wait for the new report, then have a maintainer post the
+command. A comment event only updates the acceptance check; no lint or test
+rerun is needed to accept it. The setup PR cannot safely use its own new
+workflow for acceptance because privileged workflows load default-branch code.
+
+Approval gate regression tests:
+
+```sh
+node --test build/signature-approval.test.cjs build/internal-hook-approval.test.cjs build/test-file-approval.test.cjs
+```
+
+## Dependencies
+
+This module depends on other modules. The dependencies are documented in the [dependency graph](https://github.com/d365collaborative/d365bap.tools/network/dependencies) and the Dependencies section of the Package Details of the [package listing](https://www.powershellgallery.com/packages/d365bap.tools) in the PowerShell Gallery.
