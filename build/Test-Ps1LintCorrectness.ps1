@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 $root = Join-Path ([IO.Path]::GetTempPath()) ('ps1-lint-correctness-' + [guid]::NewGuid().ToString('N'))
 $hook = Join-Path $PSScriptRoot 'ps1-lint/psscriptanalyzer/Run.ps1'
 $formatHook = Join-Path $PSScriptRoot 'ps1-lint/ps1-format/Run.ps1'
-$readme = Join-Path $PSScriptRoot 'ps1-lint/README.md'
+$hooksDoc = Join-Path $PSScriptRoot 'ps1-lint/HOOKS.md'
 $pwsh = (Get-Process -Id $PID).Path
 # Keep the local analysis cache out of the checkout while these fixtures run.
 $previousCache = $env:PS1_LINT_CACHE
@@ -368,10 +368,10 @@ function Get-IndexTarget {
 	Assert-True ($scopeAnalyzer.Worker.RepositoryIndexBuilds.Count -eq 0) 'A build script must not build an index for an enclosing checkout folder.'
 
 	# The documented semantics must match the rule messages.
-	$readmeText = Get-Content -LiteralPath $readme -Raw
+	$hooksText = Get-Content -LiteralPath $hooksDoc -Raw
 	$parametersContractText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/contracts/Parameters.md') -Raw
 	Assert-True ($parametersContractText -match 'already rejects null and empty values') 'Parameters contract must describe mandatory string binding accurately.'
-	Assert-True ($readmeText -match 'emits one null item into the pipeline') 'README must describe the return $null difference accurately.'
+	Assert-True ($hooksText -match 'emits one null item into the pipeline') 'HOOKS.md must describe the return $null difference accurately.'
 	$contract = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal/Get-Ps1ParameterContractDiagnostic.ps1') -Raw
 	Assert-True ($contract -match 'state the non-empty contract explicitly') 'The parameter contract message must describe the convention.'
 	$returnRule = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ps1-lint/internal/Get-Ps1ReturnValueDiagnostic.ps1') -Raw
