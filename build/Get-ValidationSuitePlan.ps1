@@ -78,6 +78,7 @@ $script:SuitePattern = [ordered]@{
 		'^build/Install-Prek\.ps1$'
 		'^build/ModuleCacheRequirements\.json$'
 		'^build/ToolCacheRequirements\.json$'
+		'^build/ci-stubs(/|$)'
 		'^build/Test-RequiredModules\.ps1$'
 	)
 	'Test-PSScriptAnalyzerConsolidation.ps1' = @(

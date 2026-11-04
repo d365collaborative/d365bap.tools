@@ -397,6 +397,7 @@ exit   0
 			'build/Install-Prek.ps1',
 			'build/ModuleCacheRequirements.json',
 			'build/ToolCacheRequirements.json',
+			'build/ci-stubs/Az.Accounts/99.0.0/Az.Accounts.psd1',
 			'prek.toml',
 			'.github/workflows/validate.yml'
 		)) {

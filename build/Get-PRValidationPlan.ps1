@@ -55,6 +55,7 @@ $infrastructurePattern = @(
 	'^build/Install-Prek\.ps1$'
 	'^build/ModuleCacheRequirements\.json$'
 	'^build/ToolCacheRequirements\.json$'
+	'^build/ci-stubs(/|$)'
 	'^prek\.toml$'
 	'^\.github/workflows/validate\.yml$'
 )

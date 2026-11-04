@@ -5,7 +5,7 @@
         Compiles and imports the module.
 
     .DESCRIPTION
-        Concatenates sources like the release build, then smoke-imports in a child process. Staging copies the import surface only. Smoke softens RequiredModules to skip Az.Accounts while asserting the source manifest still requires it for users.
+        Concatenates sources like the release build, then smoke-imports in a child process. Staging copies the import surface only. Uses the CI Az.Accounts stub so import does not load the real Azure module.
 #>
 [CmdletBinding()]
 param()
@@ -51,43 +51,28 @@ try {
 	[IO.File]::WriteAllText((Join-Path $destination.FullName 'd365bap.tools.psm1'), $fileData, [Text.Encoding]::UTF8)
 	$compiledManifest = Join-Path $destination.FullName 'd365bap.tools.psd1'
 
-	# Users still require Az.Accounts via the source manifest. Smoke drops it from
-	# the staged RequiredModules so Import-Module does not pay Az.Accounts load
-	# cost; postimport Get-AzContext must not auto-load it either.
 	$sourcePsd1 = Get-Content -LiteralPath (Join-Path $moduleRoot 'd365bap.tools.psd1') -Raw
 	foreach ($needed in @('PSFramework', 'ImportExcel', 'Az.Accounts')) {
 		if ($sourcePsd1 -notmatch [regex]::Escape($needed)) {
 			throw "Source manifest must list $needed in RequiredModules for users."
 		}
 	}
-	$azAvailable = Get-Module -ListAvailable -Name Az.Accounts |
-	Where-Object { $_.Version -ge [version]'2.17.0' } |
-	Select-Object -First 1
-	if (-not $azAvailable) {
-		throw 'Az.Accounts 2.17.0 or newer must be installed for users (RequiredModules); CI cache/install did not provide it.'
-	}
 
-	$psd1Text = Get-Content -LiteralPath $compiledManifest -Raw
-	$softText = [regex]::Replace(
-		$psd1Text,
-		'(?s)RequiredModules\s*=\s*@\((?:[^()]|\([^)]*\))*\)',
-		"RequiredModules   = (@{ ModuleName = 'PSFramework'; ModuleVersion = '1.9.310' }, @{ ModuleName = 'ImportExcel'; ModuleVersion = '7.8.6' })"
-	)
-	if ($softText -eq $psd1Text) {
-		throw 'Failed to soften staged RequiredModules for compiled-import smoke.'
+	$stubRoot = Join-Path $PSScriptRoot 'ci-stubs'
+	$stubManifest = Join-Path $stubRoot 'Az.Accounts/99.0.0/Az.Accounts.psd1'
+	if (-not (Test-Path -LiteralPath $stubManifest)) {
+		throw "CI Az.Accounts stub missing at $stubManifest"
 	}
-	$softManifest = Join-Path $destination.FullName 'd365bap.tools.smoke.psd1'
-	[IO.File]::WriteAllText($softManifest, $softText, [Text.Encoding]::UTF8)
+	$parts = @($env:PSModulePath -split [IO.Path]::PathSeparator | Where-Object { $_ -and $_ -ne $stubRoot })
+	$env:PSModulePath = (@($stubRoot) + $parts) -join [IO.Path]::PathSeparator
 
 	$smokeScript = Join-Path $staging 'smoke.ps1'
 	@'
-param([string] $Manifest)
+param([string] $Manifest, [string] $StubRoot)
 $ErrorActionPreference = 'Stop'
-# -NoProfile children do not preload Utility/Management; load them before ModuleQualified.
-Import-Module Microsoft.PowerShell.Management, Microsoft.PowerShell.Utility, Microsoft.PowerShell.Security -ErrorAction Stop
+$parts = @($env:PSModulePath -split [IO.Path]::PathSeparator | Where-Object { $_ -and $_ -ne $StubRoot })
+$env:PSModulePath = (@($StubRoot) + $parts) -join [IO.Path]::PathSeparator
 $expectedPath = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $Manifest) 'd365bap.tools.psm1')).ProviderPath
-# Block unqualified Get-AzContext from auto-loading Az.Accounts during import.
-$PSModuleAutoLoadingPreference = 'ModuleQualified'
 $imported = @(Import-Module -Name $Manifest -Force -PassThru -ErrorAction Stop)
 $PSModuleAutoLoadingPreference = 'None'
 $loaded = @($imported | Where-Object { $_.Path -eq $expectedPath })
@@ -98,12 +83,17 @@ foreach ($name in @('Get-UdeNuget', 'Get-BapEnvironment', 'Get-FscmEnvironmentVe
         throw "Command $name did not resolve to the staged compiled module: $($command.Source)"
     }
 }
-if (Get-Module -Name Az.Accounts -ErrorAction SilentlyContinue) {
-    throw 'Smoke import loaded Az.Accounts; soft RequiredModules path failed.'
+$az = Get-Module -Name Az.Accounts -ErrorAction Stop
+$stubMarker = Join-Path 'ci-stubs' 'Az.Accounts'
+if ($az.Path -notmatch [regex]::Escape($stubMarker)) {
+    throw "Expected CI Az.Accounts stub under ci-stubs; loaded $($az.Path) version $($az.Version)"
+}
+if ($az.Version -lt [version]'99.0.0') {
+    throw "Expected CI Az.Accounts stub 99.0.0 or newer; loaded $($az.Version)"
 }
 Write-Host 'Compiled module and formats import.'
 '@ | Set-Content -LiteralPath $smokeScript -Encoding utf8
-	& pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $smokeScript -Manifest $softManifest
+	& pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $smokeScript -Manifest $compiledManifest -StubRoot $stubRoot
 	$importExit = $LASTEXITCODE
 	if ($importExit -ne 0) { throw 'Compiled module import failed.' }
 }
