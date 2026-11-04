@@ -141,4 +141,41 @@ foreach ($failure in @('GetModule', 'GetRepository', 'RegisterRepository', 'SetR
 	Write-Output "PASS: $failure failure propagates"
 }
 
+# Az.Accounts stays in the published RequiredModules for users, but CI uses a
+# stub instead of caching/installing the real Azure module.
+foreach ($set in @('base', 'generated', 'lint')) {
+	$azPins = @($requirements.$set | Where-Object Name -EQ 'Az.Accounts')
+	Assert-True ($azPins.Count -eq 0) "Module cache set '$set' must not pin Az.Accounts; CI registers build/ci-stubs instead."
+}
+
+$stubManifest = Join-Path $PSScriptRoot 'ci-stubs/Az.Accounts/99.0.0/Az.Accounts.psd1'
+Assert-True (Test-Path -LiteralPath $stubManifest) 'The CI Az.Accounts stub manifest must exist.'
+
+# Child process: this file mocks Get-Module/Install-Module in-process for installer
+# scenarios, so stub discovery must run outside those doubles.
+$stubProbe = Join-Path ([IO.Path]::GetTempPath()) ('bap-az-stub-' + [guid]::NewGuid().ToString('N') + '.ps1')
+@'
+param([string] $Installer, [string] $StubRoot)
+$ErrorActionPreference = 'Stop'
+& $Installer -Set base
+if (-not ($env:PSModulePath.StartsWith($StubRoot + [IO.Path]::PathSeparator) -or $env:PSModulePath -eq $StubRoot)) {
+	throw 'Install-RequiredModules -Set base must prepend the CI stub root to PSModulePath.'
+}
+$loaded = Get-Module -ListAvailable -Name Az.Accounts | Sort-Object Version -Descending | Select-Object -First 1
+if ($null -eq $loaded -or $loaded.Version -lt [version]'99.0.0') {
+	throw 'The CI Az.Accounts stub must be discoverable at version 99.0.0 or newer.'
+}
+if ($loaded.Path -notmatch [regex]::Escape((Join-Path 'ci-stubs' 'Az.Accounts'))) {
+	throw "ListAvailable must resolve the CI stub under build/ci-stubs; got $($loaded.Path)"
+}
+Write-Output 'PASS: CI Az.Accounts stub registered for base set'
+'@ | Set-Content -LiteralPath $stubProbe -Encoding utf8
+try {
+	& pwsh -NoProfile -NonInteractive -File $stubProbe -Installer $installer -StubRoot (Join-Path $PSScriptRoot 'ci-stubs')
+	if ($LASTEXITCODE -ne 0) { throw 'CI Az.Accounts stub registration probe failed.' }
+}
+finally {
+	Remove-Item -LiteralPath $stubProbe -Force -ErrorAction SilentlyContinue
+}
+
 Write-Output 'Required module regression checks passed.'

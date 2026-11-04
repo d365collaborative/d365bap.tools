@@ -18,13 +18,14 @@ $fixture = Join-Path ([IO.Path]::GetTempPath()) ('bap-format-test-' + [guid]::Ne
 function Invoke-CompiledImport {
 	$scriptPath = Join-Path $fixture 'build/Test-CompiledImport.ps1'
 	$output = & pwsh -NoProfile -NonInteractive -File $scriptPath 2>&1 | Out-String
-	return @{ ExitCode = $LASTEXITCODE; Output = $output }
+	@{ ExitCode = $LASTEXITCODE; Output = $output }
 }
 
 try {
 	New-Item -ItemType Directory -Path (Join-Path $fixture 'build') -Force | Out-Null
 	Copy-Item -LiteralPath (Join-Path $root 'd365bap.tools') -Destination $fixture -Recurse
 	Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Test-CompiledImport.ps1'), (Join-Path $PSScriptRoot 'Merge-FormatPs1Xml.ps1') -Destination (Join-Path $fixture 'build')
+	Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ci-stubs') -Destination (Join-Path $fixture 'build') -Recurse
 	$xmlRoot = Join-Path $fixture 'd365bap.tools/xml'
 	$poison = '<broken'
 	$consolidated = @('Table', 'List') | ForEach-Object { Join-Path $xmlRoot "d365bap.tools.$_.Format.ps1xml" }

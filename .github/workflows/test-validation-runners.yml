@@ -33,6 +33,7 @@ on:
       - 'build/Install-Prek.ps1'
       - 'build/ModuleCacheRequirements.json'
       - 'build/ToolCacheRequirements.json'
+      - 'build/ci-stubs/**'
 
       # Pester runner / analyzer consolidation
       - 'd365bap.tools/tests/pester.ps1'
