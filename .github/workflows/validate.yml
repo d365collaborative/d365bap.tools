@@ -18,9 +18,13 @@ jobs:
       # Pinned once: the cache key and go install below must resolve the same tag.
       ACTIONLINT_VERSION: v1.7.7
     steps:
+    # pull_request github.sha is the temporary merge commit. Depth 2 fetches that
+    # commit plus both parents (base tip and PR head), which is enough for
+    # merge-base and the generated-touch / lint-plan diffs. Full history was the
+    # old Windows scope-planning cost; that job now runs on Ubuntu.
     - uses: actions/checkout@v5
       with:
-        fetch-depth: 0
+        fetch-depth: 2
     - name: Check generated-file ownership
       shell: pwsh
       run: ./build/Test-GeneratedTouch.ps1 -BaseRef $env:BASE_SHA
