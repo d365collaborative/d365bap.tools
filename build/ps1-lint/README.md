@@ -250,10 +250,14 @@ Tepp files, tests, and the root installer stay outside this gate until their
 existing debt is addressed. The rules are still reported there; they just do
 not fail the hook.
 
-## Wildcard parameters
+## Convention contracts
 
-See the [wildcard contract](contracts/Wildcards.md) for the merged declaration,
-default-value and parameter-use convention, its function-file scope, and tests.
+Completed convention families live under [contracts/](contracts/README.md). That
+index maps each contract to its diagnostic owner and fixture suite. Update the
+contract when the convention changes; do not restate those families here.
+
+This README keeps architecture, setup, caching, and rules that are not yet
+contracted.
 
 ## Redundant parameter attributes
 
@@ -289,38 +293,6 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1EmptyAttributeRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterArgumentRule.ps1
 ```
-
-## Mandatory parameters
-
-`PSUseValidateNotNullOrEmpty` requires a mandatory `string` or `string[]`
-parameter without a default value to declare `[ValidateNotNullOrEmpty()]`.
-PowerShell already rejects null and empty values when it binds a mandatory
-string parameter; the attribute is a repository convention that states the
-contract in the signature and keeps it visible to reviewers.
-
-```powershell
-param (
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string] $Name
-)
-```
-
-A parameter with any default assignment is exempt, because the default supplies
-the value when the caller omits it. Value types such as `switch` and `int` are
-exempt because `[ValidateNotNullOrEmpty()]` has no effect on them.
-
-`PSAvoidShorthandMandatory` bans the shorthand `[Parameter(Mandatory)]` and
-requires the explicit `[Parameter(Mandatory = $true)]` form used throughout the
-codebase.
-
-See the [parameter contract](contracts/Parameters.md) for explicit positions and their binding scope.
-
-Run the mandatory-parameter regression checks with `pwsh -NoProfile -File build/Test-Ps1MandatoryRule.ps1`.
-
-## Collection output
-
-See the [output contract](contracts/Output.md) for public collection declarations, table views, and Excel switch scope.
 
 ## Access token endpoints
 
@@ -384,14 +356,6 @@ Run its regression checks under PowerShell 7.6 or later:
 ```powershell
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ParameterLayoutRule.ps1
 ```
-
-## Note properties
-
-See the [Add-Member contract](contracts/AddMember.md) for note-property additions in loops.
-
-## Internal comments
-
-See the [help contract](contracts/Help.md) for comment placement and its distinct scope exclusions.
 
 ## Environment lookups
 
@@ -502,14 +466,6 @@ many items.
 The rule runs on module code and build scripts under `build/`. Test files and
 tepp scripts are exempt. It runs on changed files only, so the existing names
 are reshaped as their files are touched.
-
-## Declared output types
-
-See the [output contract](contracts/Output.md) for declarations, accepted type forms, table views, and collection requirements.
-
-## ShouldProcess
-
-See the [ShouldProcess contract](contracts/ShouldProcess.md) for confirmation arguments, length estimates, guard structure, preview output, and combined validation.
 
 ## Function interrupts
 
@@ -640,33 +596,6 @@ $colResult = @($response.value)
 and a parameter type is a type constraint rather than a cast. Scope: module code
 (public and internal); build scripts, test files, and tepp fixtures are out of
 scope.
-
-## Optional parameter validation
-
-See the [parameter contract](contracts/Parameters.md) for optional validation and binding behavior.
-
-
-## Ordered PSCustomObject
-
-See the [ordered object contract](contracts/OrderedObject.md) for PSCustomObject literal construction.
-
-## Output discards
-
-See the [discard output contract](contracts/DiscardOutput.md) for success-stream discard syntax and scope.
-
-## Splatting module commands
-
-See the [module-splatting contract](contracts/ModuleSplatting.md) for explicit
-module parameters, unresolved-target diagnostics, static external calls, and
-repository-index boundaries.
-
-## Excel export blocks
-
-See the [output contract](contracts/Output.md) for the public Excel export block and worksheet convention.
-
-## Generic-list copy loops
-
-See the [loop append contract](contracts/LoopAppend.md) for the recognized generic-list copy shape.
 
 ## One parameter per line
 
@@ -814,10 +743,6 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ComplexArrayElementRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1SelectObjectPropertyRule.ps1
 ```
-
-## Select-Object projections
-
-See the [Select-Object contract](contracts/SelectObject.md) for projection syntax and ownership.
 
 ## Multiline if expressions
 
@@ -1169,10 +1094,6 @@ multi-line expression that ends with a visible delimiter, such as `)` or `}`, is
 not reported. Test files and tepp fixtures are exempt. The rule runs on module
 code (public and internal).
 
-## Parameter presence checks
-
-See the [parameter-check contract](contracts/ParameterChecks.md) for value, presence, and parameter-set checks.
-
 ## Return after Stop-PSFFunction
 
 `PSUseReturnAfterStopPSFFunction` requires a plain `Stop-PSFFunction` to be
@@ -1275,7 +1196,3 @@ Run its regression checks under PowerShell 7.6 or later:
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1ReturnAfterStopRule.ps1
 pwsh -NoProfile -NonInteractive -File build/Test-Ps1PipelineContinuationRule.ps1
 ```
-
-## Example prose
-
-See the [help contract](contracts/Help.md) for help sections and example prose. Reviewers must still check semantic accuracy.
