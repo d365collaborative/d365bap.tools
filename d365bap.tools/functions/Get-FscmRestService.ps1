@@ -1,248 +1,260 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
         Get REST service metadata from a Finance and Operations environment.
-        
+
     .DESCRIPTION
-        Retrieves service metadata from the Finance and Operations /api/services endpoint.
-        
-        Services are organized in a four-level hierarchy: service groups → services → operations → operation parameters.
-        
-        The TraverseTo parameter controls how deep into the hierarchy the results are expanded. Each returned object represents a single node at the requested level, with all higher-level identifier fields always populated.
-        
-        Supports wildcard and exact matching against the ServiceGroupName, ServiceName, OperationName, and ParameterName fields — any match on a populated field will include the record.
-        
+        Reads the /api/services endpoint and returns one object per node at the
+        requested depth. Higher-level identifiers stay populated, and each row
+        carries an error message when a request fails.
+
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve REST service metadata from.
-        
-        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-        
+        Environment name, environment GUID (PPAC), or LCS environment ID.
+
     .PARAMETER Name
-        The value to filter the results by.
-        
-        Filters against ServiceGroupName, ServiceName, OperationName, and ParameterName — any match on a populated field at the current traversal level will include the record.
-        
-        Supports wildcard characters for flexible matching.
-        
-        Default value is "*", which returns all items at the requested traversal level.
-        
+        Filter on service group, service, operation, or parameter name.
+
+        Default: *
+
     .PARAMETER TraverseTo
-        Controls how deep into the service hierarchy the results are expanded.
-        
-        ServiceGroup: Returns one object per service group. This is the default.
-        Service: Returns one object per service within each group.
-        Operation: Returns one object per operation within each service, including a joined list of parameter names and the return type.
-        Detail: Returns one object per parameter within each operation, including the parameter type.
-        
+        Controls how deep the service hierarchy is expanded.
+
+        Default: ServiceGroup
+
     .PARAMETER AsExcelOutput
-        Instructs the cmdlet to export the retrieved service metadata to an Excel file.
-        
+        Exports the retrieved metadata to an Excel workbook.
+
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv"
-        
-        This command retrieves all service groups from the environment "ContosoEnv".
-        
+
+        Lists every service group in the environment.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses the default -TraverseTo ServiceGroup.
+
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Service
-        
-        This command retrieves all services within every service group from the environment "ContosoEnv".
-        
+
+        Lists every service within each service group.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -TraverseTo Service to expand one level deeper.
+
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Operation -Name "*Sales*"
-        
-        This command retrieves all operations whose service group name, service name, or operation name contains "Sales" from the environment "ContosoEnv".
-        
+
+        Finds operations whose group, service, or operation name contains "Sales".
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -TraverseTo Operation to return one row per operation.
+        It uses -Name "*Sales*" to filter the hierarchy by wildcard.
+
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Detail -Name "SalesOrderService"
-        
-        This command retrieves all operation parameter details within the "SalesOrderService" service group from the environment "ContosoEnv".
-        
-        The filter matches against ServiceGroupName, ServiceName, OperationName, and ParameterName.
-        
+
+        Returns one row per operation parameter for matching names.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -TraverseTo Detail to return the parameter level.
+        It uses -Name "SalesOrderService" to filter the hierarchy.
+
     .EXAMPLE
         PS C:\> Get-FscmRestService -EnvironmentId "ContosoEnv" -TraverseTo Detail -AsExcelOutput
-        
-        This command retrieves full parameter details for all REST services in the environment "ContosoEnv" and exports the results to an Excel file.
-        
+
+        Exports full parameter details to an Excel workbook.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -TraverseTo Detail to return the parameter level.
+        It uses -AsExcelOutput to write the rows to a workbook.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmRestService {
-    [CmdletBinding()]
-    [OutputType('System.Object[]')]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string] $EnvironmentId,
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.FscmRestService[]')]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [string] $Name = "*",
+		[SupportsWildcards()]
+		[string] $Name = "*",
 
-        [string] $TraverseTo = "ServiceGroup",
+		[string] $TraverseTo = "ServiceGroup",
 
-        [switch] $AsExcelOutput
-    )
+		[switch] $AsExcelOutput
+	)
 
-    begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
-            Select-Object -First 1
+	begin {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
-        if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+		$baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        if (Test-PSFFunctionInterrupt) { return }
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
-        $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
+		$hashHeadersFnO = @{
+			"Authorization" = "Bearer $($tokenFnoOdataValue)"
+		}
+	}
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        $headersFnO = @{
-            "Authorization" = "Bearer $($tokenFnoOdataValue)"
-        }
-    }
+		$localUri = '{0}/api/services' `
+			-f $baseUri
 
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+		$resStatusCode = $null
+		$responseRoot = Invoke-RestMethod -Method Get `
+			-Uri $localUri `
+			-Headers $hashHeadersFnO `
+			-StatusCodeVariable 'resStatusCode' `
+			-SkipHttpErrorCheck
 
-        $localUri = $baseUri + '/api/services'
-        $resStatusCode = $null
-        $responseRoot = Invoke-RestMethod -Method Get `
-            -Uri $localUri `
-            -Headers $headersFnO `
-            -StatusCodeVariable 'resStatusCode' `
-            -SkipHttpErrorCheck
+		if ($resStatusCode -ne 200) {
+			[PSCustomObject][ordered]@{
+				PSTypeName    = "D365Bap.Tools.FscmRestService"
+				ServiceGroup  = $null
+				Service       = $null
+				Operation     = $null
+				Parameter     = $null
+				ParameterType = $null
+				ReturnType    = $null
+				ErrorMessage  = $responseRoot |
+				ConvertTo-Json -Depth 10
+			}
+			return
+		}
 
-        if ($resStatusCode -ne 200) {
-            [PSCustomObject]@{
-                PSTypeName    = "D365Bap.Tools.FscmRestService"
-                ServiceGroup  = $null
-                Service       = $null
-                Operation     = $null
-                Parameter     = $null
-                ParameterType = $null
-                ReturnType    = $null
-                ErrorMessage  = $responseRoot | ConvertTo-Json -Depth 10
-            }
-            return
-        }
+		$resColRaw = $responseRoot |
+		Select-Object -ExpandProperty ServiceGroups |
+		Where-Object {
+			$_.Name -like $Name
+		} | ForEach-Object -Parallel {
+			$serviceGroup = $_
+			$baseUri = $using:baseUri
+			$hashHeadersFnO = $using:hashHeadersFnO
+			$TraverseTo = $using:TraverseTo
 
-        $resColRaw = $responseRoot | Select-Object -ExpandProperty ServiceGroups | Where-Object {
-            $_.Name -like $Name
-        } | ForEach-Object -Parallel {
-            $serviceGroup = $_
-            $baseUri = $using:baseUri
-            $headersFnO = $using:headersFnO
-            $TraverseTo = $using:TraverseTo
+			$tmpObjHash = [Ordered]@{
+				ServiceGroup = $serviceGroup.Name
+				Endpoint     = ''
+				ErrorMessage = ''
+			}
 
-            $objHash = [Ordered]@{
-                ServiceGroup = $serviceGroup.Name
-                Endpoint     = ''
-                ErrorMessage = ''
-            }
+			if ($TraverseTo -eq "ServiceGroup") {
+				[PSCustomObject]$tmpObjHash
+				return
+			}
 
-            if ($TraverseTo -eq "ServiceGroup") {
-                [PSCustomObject]$objHash
-                return
-            }
+			$localUri = '{0}/api/services/{1}' `
+				-f $baseUri,
+			$serviceGroup.Name
+			$resStatusCode = $null
+			$responseGroup = Invoke-RestMethod -Method Get `
+				-Uri $localUri `
+				-Headers $hashHeadersFnO `
+				-StatusCodeVariable 'resStatusCode' `
+				-SkipHttpErrorCheck
 
-            $localUri = $baseUri + "/api/services/$($serviceGroup.Name)"
-            $resStatusCode = $null
-            $responseGroup = Invoke-RestMethod -Method Get `
-                -Uri $localUri `
-                -Headers $headersFnO `
-                -StatusCodeVariable 'resStatusCode' `
-                -SkipHttpErrorCheck
+			if ($resStatusCode -ne 200) {
+				$tmpObjHash.ErrorMessage = $responseGroup |
+				ConvertTo-Json -Depth 10
 
-            if ($resStatusCode -ne 200) {
-                $objHash.ErrorMessage = $responseGroup | ConvertTo-Json -Depth 10
+				[PSCustomObject]$tmpObjHash
+				return
+			}
 
-                [PSCustomObject]$objHash
-                return
-            }
+			foreach ($itemService in ($responseGroup |
+					Select-Object -ExpandProperty Services)) {
+				$tmpObjHash.Service = $itemService.Name
 
-            foreach ($service in ($responseGroup | Select-Object -ExpandProperty Services)) {
-                $objHash.Service = $service.Name
+				if ($TraverseTo -eq "Service") {
+					[PSCustomObject]$tmpObjHash
+					continue
+				}
 
-                if ($TraverseTo -eq "Service") {
-                    [PSCustomObject]$objHash
-                    continue
-                }
+				$localUri = '{0}/api/services/{1}/{2}' `
+					-f $baseUri,
+				$serviceGroup.Name,
+				$itemService.Name
+				$resStatusCode = $null
+				$responseService = Invoke-RestMethod -Method Get `
+					-Uri $localUri `
+					-Headers $hashHeadersFnO `
+					-StatusCodeVariable 'resStatusCode' `
+					-SkipHttpErrorCheck
 
-                $localUri = $baseUri + "/api/services/$($serviceGroup.Name)/$($service.Name)"
-                $resStatusCode = $null
-                $responseService = Invoke-RestMethod -Method Get `
-                    -Uri $localUri `
-                    -Headers $headersFnO `
-                    -StatusCodeVariable 'resStatusCode' `
-                    -SkipHttpErrorCheck
+				if ($resStatusCode -ne 200) {
+					$tmpObjHash.ErrorMessage = $responseService |
+					ConvertTo-Json -Depth 10
 
-                if ($resStatusCode -ne 200) {
-                    $objHash.ErrorMessage = $responseService | ConvertTo-Json -Depth 10
+					[PSCustomObject]$tmpObjHash
+					continue
+				}
 
-                    [PSCustomObject]$objHash
-                    continue
-                }
+				foreach ($itemOperation in ($responseService |
+						Select-Object -ExpandProperty Operations)) {
+					$tmpObjHash.Operation = $itemOperation.Name
+					$tmpObjHash.Endpoint = "$($serviceGroup.Name)/$($itemService.Name)/$($itemOperation.Name)"
+					$tmpObjHash.ReturnType = $itemOperation.ReturnType
 
-                foreach ($operation in ($responseService | Select-Object -ExpandProperty Operations)) {
-                    $objHash.Operation = $operation.Name
-                    $objHash.Endpoint  = "$($serviceGroup.Name)/$($service.Name)/$($operation.Name)"
-                    $objHash.ReturnType = $operation.ReturnType
-                        
-                    if ($TraverseTo -eq "Operation") {
-                        [PSCustomObject]$objHash
-                        continue
-                    }
+					if ($TraverseTo -eq "Operation") {
+						[PSCustomObject]$tmpObjHash
+						continue
+					}
 
-                    $localUri = $baseUri + "/api/services/$($serviceGroup.Name)/$($service.Name)/$($operation.Name)"
-                    $resStatusCode = $null
-                    $responseOperation = Invoke-RestMethod -Method Get `
-                        -Uri $localUri `
-                        -Headers $headersFnO `
-                        -StatusCodeVariable 'resStatusCode' `
-                        -SkipHttpErrorCheck
+					$localUri = '{0}/api/services/{1}/{2}/{3}' `
+						-f $baseUri,
+					$serviceGroup.Name,
+					$itemService.Name,
+					$itemOperation.Name
+					$resStatusCode = $null
+					$responseOperation = Invoke-RestMethod -Method Get `
+						-Uri $localUri `
+						-Headers $hashHeadersFnO `
+						-StatusCodeVariable 'resStatusCode' `
+						-SkipHttpErrorCheck
 
-                    if ($resStatusCode -ne 200) {
-                        $objHash.ErrorMessage = $responseOperation | ConvertTo-Json -Depth 10
+					if ($resStatusCode -ne 200) {
+						$tmpObjHash.ErrorMessage = $responseOperation |
+						ConvertTo-Json -Depth 10
 
-                        [PSCustomObject]$objHash
-                        continue
-                    }
-                        
-                    foreach ($parameter in $responseOperation.Parameters) {
-                        $objHash.Parameter = $parameter.Name
-                        $objHash.ParameterType = $parameter.Type
-                    
-                        [PSCustomObject]$objHash
-                        continue
-                    }
-                }
-            }
-        } -ThrottleLimit 10
+						[PSCustomObject]$tmpObjHash
+						continue
+					}
 
-        $resCol = $resColRaw | Select-PSFObject `
-            -TypeName "D365Bap.Tools.FscmRestService" `
-            -Property ServiceGroup `
-            , Service `
-            , Operation `
-            , Endpoint `
-            , ReturnType `
-            , Parameter `
-            , ParameterType `
-            , ErrorMessage | Sort-Object -Property 'ServiceGroup', 'Service', 'Operation', 'Parameter'
+					foreach ($itemParameter in $responseOperation.Parameters) {
+						$tmpObjHash.Parameter = $itemParameter.Name
+						$tmpObjHash.ParameterType = $itemParameter.Type
 
-        if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-FscmRestService"
-            return
-        }
+						[PSCustomObject]$tmpObjHash
+						continue
+					}
+				}
+			}
+		} -ThrottleLimit 10
 
-        $resCol
-    }
+		$resCol = $resColRaw |
+		Select-PSFObject -TypeName "D365Bap.Tools.FscmRestService" `
+			-Property `
+			ServiceGroup,
+		Service,
+		Operation,
+		Endpoint,
+		ReturnType,
+		Parameter,
+		ParameterType,
+		ErrorMessage |
+		Sort-Object -Property 'ServiceGroup', 'Service', 'Operation', 'Parameter'
 
-    end {
+		if ($AsExcelOutput) {
+			$resCol |
+			Export-Excel -WorksheetName 'Get-FscmRestService'
+			return
+		}
 
-    }
+		$resCol
+	}
+
+	end {
+
+	}
 }
