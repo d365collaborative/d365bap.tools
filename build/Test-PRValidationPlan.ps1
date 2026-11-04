@@ -316,10 +316,32 @@ exit   0
 		)) {
 		Write-Fixture $case.Path 'changed harness'
 		$head = Commit 'test harness change'
-		Assert-Scope (Get-Plan $base $head) $case.Scope "Test harness change ($($case.Path))" -Gate
+		$plan = Get-Plan $base $head
+		Assert-Scope $plan $case.Scope "Test harness change ($($case.Path))" -Gate
+		if ($case.Path -match '/behavior/') {
+			Assert-True ($plan.BehaviorTests -eq $true) "Behavior harness change must set BehaviorTests: $($case.Path)"
+		}
+		else {
+			Assert-True ($plan.BehaviorTests -eq $false) "Non-behavior harness change must leave BehaviorTests false: $($case.Path)"
+		}
 		if ($case.Path -ceq 'd365bap.tools/tests/functions/Get-Example.Tests.ps1') { Assert-GeneratedRejected $base $head }
 		Reset-Base
 	}
+
+	# Behavior suites only run when their fixtures or covered FinOps sources change.
+	Write-Fixture 'd365bap.tools/functions/Get-PpacFinOpsAsset.ps1' 'function Get-PpacFinOpsAsset { 1 }'
+	$head = Commit 'behavior-covered public function'
+	$plan = Get-Plan $base $head
+	Assert-Scope $plan $selectiveScope 'FinOps asset function change'
+	Assert-True ($plan.BehaviorTests -eq $true) 'Get-PpacFinOpsAsset must enable BehaviorTests.'
+	Reset-Base
+
+	Write-Fixture 'd365bap.tools/functions/Get-Example.ps1' 'function Get-Example { 2 }'
+	$head = Commit 'unrelated public function'
+	$plan = Get-Plan $base $head
+	Assert-Scope $plan $selectiveScope 'Unrelated public function change'
+	Assert-True ($plan.BehaviorTests -eq $false) 'Unrelated public functions must leave BehaviorTests false.'
+	Reset-Base
 
 	# Shared module code keeps the full module coverage and both full scans.
 	foreach ($path in @(

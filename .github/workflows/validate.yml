@@ -124,6 +124,7 @@ jobs:
       analyzer_scans: ${{ steps.scope.outputs.analyzer_scans }}
       selective_tests: ${{ steps.scope.outputs.selective_tests }}
       compiled_import: ${{ steps.scope.outputs.compiled_import }}
+      behavior_tests: ${{ steps.scope.outputs.behavior_tests }}
       infrastructure: ${{ steps.scope.outputs.infrastructure }}
       plan_hash: ${{ steps.scope.outputs.plan_hash }}
     steps:
@@ -145,6 +146,7 @@ jobs:
           analyzer_scans = $plan.AnalyzerScans
           selective_tests = $plan.SelectiveTests
           compiled_import = $plan.CompiledImport
+          behavior_tests = $plan.BehaviorTests
           infrastructure = $plan.InfrastructureChange
         }
         foreach ($itemName in $flag.Keys) {
@@ -318,6 +320,7 @@ jobs:
       shell: pwsh
       run: ./build/Test-CompiledImport.ps1
     - name: Validate behavioral tests
+      if: needs.changes.outputs.behavior_tests == 'true'
       shell: pwsh
       run: ./build/Test-Behavior.ps1
 

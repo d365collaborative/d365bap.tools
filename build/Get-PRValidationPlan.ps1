@@ -69,8 +69,14 @@ $analyzerHarnessPath = @(
 )
 
 # A module test change runs the General job, which excludes the analyzer
-# harness. Behavior tests run in the compiled-import job instead.
+# harness. Behavior tests run as an optional step in the compiled-import job
+# only when these paths change (not on every compiled-import PR).
 $behaviorTestPattern = '^d365bap\.tools/tests/behavior/'
+$behaviorSourcePath = @(
+	'd365bap.tools/functions/Get-PpacFinOpsAsset.ps1'
+	'd365bap.tools/functions/Get-PpacFinOpsVersion.ps1'
+	'd365bap.tools/functions/Get-PpacFinOpsBuild.ps1'
+)
 
 # A formatting-only change keeps the tokens of every changed module file and
 # the token/line-break layout. Nothing the module tests or the analyzer scans
@@ -165,6 +171,7 @@ $isModuleTests = $false
 $isAnalyzerScans = $false
 $isSelectiveTests = $false
 $isCompiledImport = $false
+$isBehaviorTests = $false
 $fallback = $false
 $formattingOnly = $true
 $nonDocumentationCount = 0
@@ -209,8 +216,12 @@ foreach ($entry in $entries) {
 	}
 	if ($path -match '^d365bap\.tools/tests/') {
 		if ($analyzerHarnessPath -contains $path) { $isAnalyzerScans = $true; continue }
-		# Behavior tests run inside the compiled-import job.
-		if ($path -match $behaviorTestPattern) { $isCompiledImport = $true; continue }
+		# Behavior suites run as an optional step on the compiled-import job.
+		if ($path -match $behaviorTestPattern) {
+			$isBehaviorTests = $true
+			$isCompiledImport = $true
+			continue
+		}
 		$isModuleTests = $true
 		continue
 	}
@@ -222,6 +233,7 @@ foreach ($entry in $entries) {
 		if ($isPublic) {
 			$isSelectiveTests = $true
 			$colPublicPaths.Add($path)
+			if ($behaviorSourcePath -contains $path) { $isBehaviorTests = $true }
 			continue
 		}
 		# Shared or deleted module code: the full module coverage stays until
@@ -249,6 +261,7 @@ if ($formattingOnly -and -not $fallback -and $nonDocumentationCount -gt 0 -and -
 	$isModuleTests = $false
 	$isAnalyzerScans = $false
 	$isSelectiveTests = $false
+	$isBehaviorTests = $false
 	$colPublicPaths.Clear()
 	$colReasons.Add('Formatting-only change: the changed module files keep every token and line break.')
 }
@@ -283,6 +296,7 @@ $plan = [ordered]@{
 	AnalyzerScans        = $isAnalyzerScans
 	SelectiveTests       = $isSelectiveTests
 	CompiledImport       = $isCompiledImport
+	BehaviorTests        = $isBehaviorTests
 	InfrastructureChange = $infrastructureChange
 	InfrastructurePaths  = @($colInfrastructurePaths | Sort-Object -Unique)
 	PublicPaths          = @($colPublicPaths | Sort-Object -Unique)
@@ -293,5 +307,5 @@ $plan = [ordered]@{
 $plan | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputPath -Encoding utf8
 Write-Host "Validation scope: $scope ($($entries.Count) changed file(s))."
 Write-Host "Compatibility mode: $mode."
-Write-Host "Module tests: $isModuleTests; analyzer scans: $isAnalyzerScans; selective tests: $isSelectiveTests; compiled import: $isCompiledImport; infrastructure: $infrastructureChange."
+Write-Host "Module tests: $isModuleTests; analyzer scans: $isAnalyzerScans; selective tests: $isSelectiveTests; compiled import: $isCompiledImport; behavior tests: $isBehaviorTests; infrastructure: $infrastructureChange."
 foreach ($reason in $colReasons) { Write-Host "  $reason" }
