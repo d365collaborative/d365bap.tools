@@ -130,7 +130,7 @@ $finOpsAssetKindCompleter = {
 		}
 	}
 	catch {
-		Write-Verbose "FinOps Asset completion could not parse committed -Asset values: $($_.Exception.Message)"
+		$committedAssets = @()
 	}
 
 	foreach ($boundValue in @($fakeBoundParameters['Asset'])) {
