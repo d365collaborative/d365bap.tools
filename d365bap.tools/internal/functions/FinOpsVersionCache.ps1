@@ -461,7 +461,7 @@ function Resolve-FinOpsVersionFromCache {
             Maps a build to its catalog versions from cache.
 
         .DESCRIPTION
-            Returns the cached catalog entry for a track, without any network calls.
+            Returns cached catalog metadata with an exact platform revision when available, without network calls.
 
         .PARAMETER Build
             Full build (10.0.2790.46), track (10.0.2790) or application version (10.0.49).
@@ -527,11 +527,17 @@ function Resolve-FinOpsVersionFromCache {
 	}
 
 	$e = $colEntry[0]
+	$platBuild = (-not ($null -eq $e.PlatBuild)) ? "$($e.PlatBuild)" : "$($e.platBuild)"
+
+	if ((-not ($null -eq $objCached.platforms)) `
+			-and (-not ($null -eq $objCached.platforms.PSObject.Properties[$normalized]))) {
+		$platBuild = "$($objCached.platforms.PSObject.Properties[$normalized].Value)"
+	}
 
 	@{
 		AppVersion  = (-not ($null -eq $e.AppVersion)) ? "$($e.AppVersion)" : "$($e.appVersion)"
 		AppBuild    = (-not ($null -eq $e.AppBuild)) ? "$($e.AppBuild)" : "$($e.appBuild)"
 		PlatVersion = (-not ($null -eq $e.PlatVersion)) ? "$($e.PlatVersion)" : "$($e.platVersion)"
-		PlatBuild   = (-not ($null -eq $e.PlatBuild)) ? "$($e.PlatBuild)" : "$($e.platBuild)"
+		PlatBuild   = $platBuild
 	}
 }
