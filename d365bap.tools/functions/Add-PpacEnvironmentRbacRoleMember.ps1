@@ -113,11 +113,13 @@ function Add-PpacEnvironmentRbacRoleMember {
 			}
 		}
 
-		$colMatched = @($colDefinitions |
+		$colMatched = @(
+			$colDefinitions |
 			Where-Object {
 				($_.roleDefinitionName -eq $Role) `
 					-or ($_.roleDefinitionId -eq $Role)
-			})
+			}
+		)
 
 		if ($colMatched.Count -eq 0) {
 			$messageString = "The specified role: <c='em'>$Role</c> was not found. Please provide a valid role name. Try running the command <c='em'>Get-PpacRbacRole</c> to see the list of valid role names."

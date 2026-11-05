@@ -115,11 +115,13 @@ function Get-PpacEnvironmentRbacRoleMember {
 			}
 		}
 
-		$colMatched = @($colDefinitions |
+		$colMatched = @(
+			$colDefinitions |
 			Where-Object {
 				($_.roleDefinitionName -like $Role) `
 					-or ($_.roleDefinitionId -like $Role)
-			})
+			}
+		)
 
 		if ($colMatched.Count -eq 0) {
 			$messageString = "The specified role: <c='em'>$Role</c> was not found. Please provide a valid role name. Try running the command <c='em'>Get-PpacRbacRole</c> to see the list of valid role names."
@@ -166,13 +168,16 @@ function Get-PpacEnvironmentRbacRoleMember {
 			return
 		}
 
-		$colFiltered = @($colRaw |
+		$colFiltered = @(
+			$colRaw |
 			Where-Object {
 				($_.principalObjectId -like $ServicePrincipalId) `
 					-and ($_.roleDefinitionId -in $colRoleIds)
-			})
+			}
+		)
 
-		$colRes = @($colFiltered |
+		$colRes = @(
+			$colFiltered |
 			Select-PSFObject -TypeName 'D365Bap.Tools.PpacRbacRoleAssignment' `
 				-Property `
 				'principalObjectId as ServicePrincipalId',
@@ -180,7 +185,8 @@ function Get-PpacEnvironmentRbacRoleMember {
 			@{ Name = 'Role'; Expression = { $hashRoleNames[$_.roleDefinitionId] } },
 			'principalType as PrincipalType',
 			'id as RoleAssignmentId',
-			'scope as Scope')
+			'scope as Scope'
+		)
 
 		if ($AsExcelOutput) {
 			$colRes |
