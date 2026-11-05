@@ -1,11 +1,14 @@
 ﻿<#
 	.SYNOPSIS
-		Search tenant RBAC role assignments through the Power Platform API.
+		Search environment RBAC role assignments through the Power Platform API.
 
 	.DESCRIPTION
-		Searches tenant role assignments through the Power Platform API.
+		Searches environment role assignments through the Power Platform API.
 
 		Only supplied filters are sent and matching assignments are returned.
+
+	.PARAMETER EnvironmentId
+		The unique identifier of the environment to search within.
 
 	.PARAMETER Scope
 		The scope to search, such as a tenant or environment scope path.
@@ -44,33 +47,37 @@
 		Instructs the cmdlet to output the results as an Excel file.
 
 	.EXAMPLE
-		PS C:\> Search-PpacRbacRoleMember -Scope "/tenants/00000000-0000-0000-0000-000000000000"
+		PS C:\> Get-PpacEnvironmentRbacRoleAssignment -EnvironmentId "00000000-0000-0000-0000-000000000000" -Scope "/tenants/00000000-0000-0000-0000-000000000000"
 
-		Searches assignments within the tenant scope.
+		Searches assignments within the environment.
+		It uses -EnvironmentId to select the environment.
 		It uses -Scope to select the search scope.
 
 	.EXAMPLE
-		PS C:\> Search-PpacRbacRoleMember -Scope "/tenants/00000000-0000-0000-0000-000000000000" -ServicePrincipalId "11111111-1111-1111-1111-111111111111" -PrincipalType "ApplicationUser" -Permission "Read"
+		PS C:\> Get-PpacEnvironmentRbacRoleAssignment -EnvironmentId "00000000-0000-0000-0000-000000000000" -Scope "/tenants/00000000-0000-0000-0000-000000000000" -ServicePrincipalId "11111111-1111-1111-1111-111111111111" -PrincipalType "ApplicationUser" -Permission "Read"
 
 		Searches assignments for a principal with a permission filter.
+		It uses -EnvironmentId to select the environment.
 		It uses -Scope to select the search scope.
 		It uses -ServicePrincipalId to select the principal.
 		It uses -PrincipalType to select the principal type.
 		It uses -Permission to select the permission filter.
 
 	.EXAMPLE
-		PS C:\> Search-PpacRbacRoleMember -Scope "/tenants/00000000-0000-0000-0000-000000000000" -IncludeParentScopes -IncludeNestedScopes -AsExcelOutput
+		PS C:\> Get-PpacEnvironmentRbacRoleAssignment -EnvironmentId "00000000-0000-0000-0000-000000000000" -Scope "/tenants/00000000-0000-0000-0000-000000000000" -IncludeParentScopes -IncludeNestedScopes -AsExcelOutput
 
 		Exports assignments including parent and nested scopes.
+		It uses -EnvironmentId to select the environment.
 		It uses -Scope to select the search scope.
 		It uses -IncludeParentScopes to include parent scopes.
 		It uses -IncludeNestedScopes to include nested scopes.
 		It uses -AsExcelOutput to write an Excel file.
 
 	.EXAMPLE
-		PS C:\> Search-PpacRbacRoleMember -Scope "/tenants/00000000-0000-0000-0000-000000000000" -ExpandEnvironmentGroups -ExpandEnvironmentClusters -ExpandSecurityGroups -IncludeVirtualEntraRoleAssignments -ContinuationToken "abc"
+		PS C:\> Get-PpacEnvironmentRbacRoleAssignment -EnvironmentId "00000000-0000-0000-0000-000000000000" -Scope "/tenants/00000000-0000-0000-0000-000000000000" -ExpandEnvironmentGroups -ExpandEnvironmentClusters -ExpandSecurityGroups -IncludeVirtualEntraRoleAssignments -ContinuationToken "abc"
 
 		Searches assignments with expanded memberships and paging.
+		It uses -EnvironmentId to select the environment.
 		It uses -Scope to select the search scope.
 		It uses -ExpandEnvironmentGroups to expand group memberships.
 		It uses -ExpandEnvironmentClusters to expand cluster memberships.
@@ -87,10 +94,14 @@
 	.LINK
 		https://learn.microsoft.com/en-us/power-platform/admin/programmability-authentication-v2
 #>
-function Search-PpacRbacRoleMember {
+function Get-PpacEnvironmentRbacRoleAssignment {
 	[CmdletBinding()]
 	[OutputType('D365Bap.Tools.PpacRbacRoleAssignment[]', [object[]])]
 	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
+
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string] $Scope,
@@ -141,8 +152,9 @@ function Search-PpacRbacRoleMember {
 		}
 
 		$apiVersion = $script:BapApiVersions.PowerPlatform
-		$uri = 'https://api.powerplatform.com/authorization/roleAssignments/search?api-version={0}' `
-			-f $apiVersion
+		$uri = 'https://api.powerplatform.com/authorization/environments/{0}/roleAssignments/search?api-version={1}' `
+			-f $EnvironmentId,
+		$apiVersion
 
 		$hashBody = [ordered]@{
 			scope = $Scope
@@ -171,7 +183,7 @@ function Search-PpacRbacRoleMember {
 				-ErrorAction Stop
 		}
 		catch {
-			$messageString = "Failed to search tenant role assignments in scope <c='em'>$Scope</c>. $($_.Exception.Message)"
+			$messageString = "Failed to search environment role assignments in environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
 				-Exception $_.Exception
@@ -195,7 +207,7 @@ function Search-PpacRbacRoleMember {
 
 		if ($AsExcelOutput) {
 			$colRes |
-			Export-Excel -WorksheetName 'Search-PpacRbacRoleMember' `
+			Export-Excel -WorksheetName 'Get-PpacEnvironmentRbacRoleAssignment' `
 				-WarningAction SilentlyContinue
 
 			return

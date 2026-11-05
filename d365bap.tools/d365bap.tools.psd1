@@ -132,6 +132,7 @@
 		, 'Get-PpacEnvironmentGroupAcpPolicy'
 		, 'Get-PpacEnvironmentGroupRbacRoleMember'
 		, 'Get-PpacEnvironmentGroupRuleBasedPolicy'
+		, 'Get-PpacEnvironmentRbacRoleAssignment'
 		, 'Get-PpacEnvironmentRbacRoleMember'
 		, 'Get-PpacEnvironmentRuleBasedPolicy'
 		, 'Get-PpacFinOpsAsset'
@@ -139,6 +140,7 @@
 		, 'Get-PpacFinOpsPlatform'
 		, 'Get-PpacFinOpsVersion'
 		, 'Get-PpacRbacRole'
+		, 'Get-PpacRbacRoleAssignment'
 		, 'Get-PpacRbacRoleMember'
 
 		, 'Get-PpacSecurityRole'
@@ -222,9 +224,6 @@
 		, 'Remove-UnifiedEnvironmentPackage'
 
 		, 'Remove-UnifiedEnvironment'
-
-		, 'Search-PpacEnvironmentRbacRoleMember'
-		, 'Search-PpacRbacRoleMember'
 
 		, 'Set-BapAzCopyPath'
 
