@@ -63,6 +63,7 @@
 		, 'Add-PpacApplicationUser'
 		, 'Add-PpacEnvironmentAcpPolicyAssignment'
 		, 'Add-PpacEnvironmentGroupAcpPolicyAssignment'
+		, 'Add-PpacEnvironmentGroupRbacRoleMember'
 		, 'Add-PpacEnvironmentGroupRuleBasedPolicyAssignment'
 		, 'Add-PpacEnvironmentRuleBasedPolicyAssignment'
 
@@ -128,6 +129,7 @@
 		, 'Get-PpacEnvironmentDlpPolicy'
 		, 'Get-PpacEnvironmentGroup'
 		, 'Get-PpacEnvironmentGroupAcpPolicy'
+		, 'Get-PpacEnvironmentGroupRbacRoleMember'
 		, 'Get-PpacEnvironmentGroupRuleBasedPolicy'
 		, 'Get-PpacEnvironmentRuleBasedPolicy'
 		, 'Get-PpacFinOpsAsset'
@@ -204,6 +206,7 @@
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
 		, 'Remove-PpacEnvironmentDlpPolicy'
+		, 'Remove-PpacEnvironmentGroupRbacRoleMember'
 		, 'Remove-PpacRbacRoleMember'
 		, 'Remove-PpacTenantAcpPolicyRuleSet'
 		, 'Remove-PpacTenantDlpPolicy'
