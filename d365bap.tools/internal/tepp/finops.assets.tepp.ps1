@@ -15,6 +15,7 @@ $finOpsAssetKindCompleter = {
 	$assetTips = [ordered]@{
 		"CompilerPackage"  = "NuGet: X++ compiler tools"
 		"Platform"         = "NuGet: platform build reference"
+		"Application"      = "NuGet: Application build reference"
 		"ApplicationSuite" = "NuGet: ApplicationSuite build reference"
 		"Application1"     = "NuGet: Application 1 build reference"
 		"Application2"     = "NuGet: Application 2 build reference"
@@ -28,6 +29,7 @@ $finOpsAssetKindCompleter = {
 	$assetKinds = @{
 		"CompilerPackage"  = "NuGet"
 		"Platform"         = "NuGet"
+		"Application"      = "NuGet"
 		"ApplicationSuite" = "NuGet"
 		"Application1"     = "NuGet"
 		"Application2"     = "NuGet"
@@ -39,7 +41,7 @@ $finOpsAssetKindCompleter = {
 	}
 
 	$kindTips = [ordered]@{
-		"NuGet"         = "The 5 NuGet packages: compiler, platform and application references"
+		"NuGet"         = "The 6 NuGet packages: compiler, platform and application references"
 		"DeveloperFile" = "The 4 UDE developer files: metadata, VSIX, TraceParser, cross-reference"
 		"Vhd"           = "The VHD image parts (only with -Asset Vhd)"
 	}
