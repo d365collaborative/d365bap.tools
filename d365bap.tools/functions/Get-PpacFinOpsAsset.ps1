@@ -121,7 +121,7 @@ function Get-PpacFinOpsAsset {
 		[string] $Build,
 
 		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 2)]
-		[ValidateSet('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
+		[ValidateSet('*', 'CompilerPackage', 'Platform', 'Application', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
 		[SupportsWildcards()]
 		[string[]] $Asset = '*',
 
@@ -156,6 +156,7 @@ function Get-PpacFinOpsAsset {
 		$hashNugetMap = [ordered]@{
 			"CompilerPackage"  = "Microsoft.Dynamics.AX.Platform.CompilerPackage"
 			"Platform"         = "Microsoft.Dynamics.AX.Platform.DevALM.BuildXpp"
+			"Application"      = "Microsoft.Dynamics.AX.Application.DevALM.BuildXpp"
 			"ApplicationSuite" = "Microsoft.Dynamics.AX.ApplicationSuite.DevALM.BuildXpp"
 			"Application1"     = "Microsoft.Dynamics.AX.Application1.DevALM.BuildXpp"
 			"Application2"     = "Microsoft.Dynamics.AX.Application2.DevALM.BuildXpp"
