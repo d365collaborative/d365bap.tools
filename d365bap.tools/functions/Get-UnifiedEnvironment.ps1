@@ -85,16 +85,11 @@ function Get-UnifiedEnvironment {
 
 	begin {
 		if ($PSBoundParameters.ContainsKey('SkipVersionDetails')) {
-			$moduleBase = ''
-			if (-not ($null -eq $MyInvocation.MyCommand.Module)) {
-				$moduleBase = "$($MyInvocation.MyCommand.Module.ModuleBase)"
-			}
+			$objCaller = @(Get-PSCallStack)[1]
+			$objModule = $MyInvocation.MyCommand.Module
 
-			$callerScript = "$($MyInvocation.ScriptName)"
-
-			if (([string]::IsNullOrWhiteSpace($callerScript)) `
-					-or ([string]::IsNullOrWhiteSpace($moduleBase)) `
-					-or (-not $callerScript.StartsWith($moduleBase, [StringComparison]::OrdinalIgnoreCase))) {
+			if (($null -eq $objModule) `
+					-or (-not [object]::ReferenceEquals($objModule, $objCaller.InvocationInfo.MyCommand.Module))) {
 				Write-BapDeprecationNotice -Key 'Get-UnifiedEnvironment.SkipVersionDetails'
 			}
 		}
