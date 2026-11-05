@@ -37,20 +37,26 @@ function New-Fixture {
 <#
 .SYNOPSIS
     Creates a fixture.
+
 .PARAMETER Name
     Display name.
+
 .PARAMETER Template
     Provisioning template.
 
     Default: Developer
+
 .PARAMETER Language
     When omitted, the tenant default language is used.
+
 .PARAMETER Currency
     Default: tenant currency
+
 .PARAMETER Filter
     Search filter.
 
     Default: *
+
 .EXAMPLE
     PS C:\> New-Fixture -Name demo
 
@@ -96,16 +102,21 @@ function Get-Fixture {
 <#
 .SYNOPSIS
     Gets a fixture.
+
 .DESCRIPTION
     Retrieves a sample object for inspection.
+
 .PARAMETER Name
     Display name.
+
 .EXAMPLE
     Get-Fixture -Name demo
 
     It selects -Name demo.
+
 .NOTES
     Author: Example
+
 .LINK
     https://example.org/reference
 #>
@@ -124,11 +135,12 @@ try {
 	Assert-CompleteHelp 'Missing optional parameter' ($complete.Replace(".PARAMETER Name`n    Display name.`n", '')) @('must document PARAMETER Name')
 	Assert-CompleteHelp 'Empty parameter' ($complete.Replace('    Display name.', '')) @('must have nonempty documentation')
 	Assert-CompleteHelp 'Unknown parameter' ($complete.Replace('.PARAMETER Name', '.PARAMETER Missing')) @('Unknown PARAMETER Missing')
-	Assert-CompleteHelp 'Duplicate parameter' ($complete.Replace('.EXAMPLE', ".PARAMETER Nick`n    Another description.`n.EXAMPLE")) @('exactly once')
-	Assert-CompleteHelp 'Duplicate synopsis' ($complete.Replace('.DESCRIPTION', ".SYNOPSIS`n    Gets sample data.`n.DESCRIPTION")) @('only one SYNOPSIS')
+	Assert-CompleteHelp 'Duplicate parameter' ($complete.Replace('.EXAMPLE', ".PARAMETER Nick`n    Another description.`n`n.EXAMPLE")) @('exactly once')
+	Assert-CompleteHelp 'Duplicate synopsis' ($complete.Replace('.DESCRIPTION', ".SYNOPSIS`n    Gets sample data.`n`n.DESCRIPTION")) @('only one SYNOPSIS')
 	Assert-CompleteHelp 'Alias section' ($complete.Replace('.PARAMETER Name', '.PARAMETER Nick'))
+	Assert-CompleteHelp 'Section spacing is required' ($complete.Replace("`n`n.DESCRIPTION", "`n.DESCRIPTION")) @('Add an empty line before .DESCRIPTION')
 	Assert-CompleteHelp 'Nested helper has separate ownership' ($complete.Replace("    param([Alias('Nick')][string] `$Name)", "    param([Alias('Nick')][string] `$Name)`n    function Get-Helper { param([string] `$Other) }"))
-	$fullHelp = $fixture.Replace('    Creates a fixture.', "    Creates a fixture.`n.DESCRIPTION`n    Provisions a sample environment for testing.").Replace('#>', ".NOTES`n    Tags: testing, environment`n    Author: Example Author`n.LINK`n    https://example.org/source`n#>")
+	$fullHelp = $fixture.Replace('    Creates a fixture.', "    Creates a fixture.`n`n.DESCRIPTION`n    Provisions a sample environment for testing.").Replace('#>', "`n.NOTES`n    Tags: testing, environment`n    Author: Example Author`n`n.LINK`n    https://example.org/source`n#>")
 	foreach ($case in @(
 			@{ Label = 'Full help with attribution'; Source = $fullHelp; Rule = '' },
 			@{ Label = 'Invalid notes'; Source = $fullHelp.Replace('Tags: testing, environment', 'Source: example'); Rule = 'PSHelpNotes' },

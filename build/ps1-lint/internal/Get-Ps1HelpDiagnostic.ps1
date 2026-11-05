@@ -297,6 +297,21 @@ function Get-Ps1HelpDiagnostic {
 		}
 	}
 
+	$colSpacingGroups = @($Analysis.CommentGroups | Where-Object { $_.IsHelp })
+	for ($spacingIndex = 0; $spacingIndex -lt $colSpacingGroups.Count; $spacingIndex++) {
+		$spacingGroup = $colSpacingGroups[$spacingIndex]
+		$colSpacingSections = @($Analysis.HelpSections | Where-Object { $_.GroupId -eq ($spacingIndex + 1) }) | Sort-Object Line
+		if ($colSpacingSections.Count -le 1) { continue }
+		$colSpacingLines = $spacingGroup.Text -split '\r\n|\n|\r'
+		foreach ($itemSpacingSection in @($colSpacingSections | Select-Object -Skip 1)) {
+			$spacingOffset = $itemSpacingSection.Line - $spacingGroup.Line - 1
+			$spacingPrevious = if ($spacingOffset -ge 0 -and $spacingOffset -lt $colSpacingLines.Count) { $colSpacingLines[$spacingOffset] } else { '' }
+			if ($spacingPrevious -notmatch '^\s*(#\s*)?$') {
+				New-Ps1Diagnostic $Path 'PSHelpStructure' "Add an empty line before .$($itemSpacingSection.Name)." $null $itemSpacingSection.Line $itemSpacingSection.Column
+			}
+		}
+	}
+
 	$colHelpGroups = @($Analysis.CommentGroups | Where-Object { $_.IsHelp })
 	for ($groupIndex = 0; $groupIndex -lt $colHelpGroups.Count; $groupIndex++) {
 		$groupId = $groupIndex + 1
