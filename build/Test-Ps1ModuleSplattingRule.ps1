@@ -274,10 +274,13 @@ function Get-Fixture {
 <#
 .SYNOPSIS
     Gets sample text.
+
 .DESCRIPTION
     Retrieves a display value from the helper.
+
 .PARAMETER Name
     Display value.
+
 .EXAMPLE
     Get-Fixture -Name demo
 

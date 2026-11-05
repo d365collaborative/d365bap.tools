@@ -19,23 +19,29 @@ function New-Fixture {
 <#
 .SYNOPSIS
     Creates a fixture.
+
 .DESCRIPTION
     Provisions a sample environment for testing.
+
 .PARAMETER Name
     Display name.
+
 .PARAMETER Template
     Provisioning template.
 
     Default: Developer
+
 .EXAMPLE
     PS C:\> New-Fixture -Name demo
 
     Creates a sample environment.
     It uses -Name demo.
     It uses the default -Template Developer.
+
 .NOTES
     Tags: testing, environment
     Author: Example Author
+
 .LINK
     https://example.org/source
 #>
@@ -91,8 +97,9 @@ may repeat. NOTES and LINK are optional.
 
 Help groups carry the owning function's source offset, so a nested helper's help
 cannot satisfy the public function's requirements. Missing help is anchored at
-the public function name. `PSHelpStructure` owns missing required sections and
-duplicate singleton sections; `PSHelpParameter` owns parameter coverage. Existing
+the public function name. `PSHelpStructure` owns missing required sections,
+duplicate singleton sections, and section spacing: every section after the first
+in a help block is preceded by an empty line. `PSHelpParameter` owns parameter coverage. Existing
 section-specific rules still validate content. Internal and build help retains
 its previous completeness policy. Public files without a matching top-level
 function remain outside this completeness check.
