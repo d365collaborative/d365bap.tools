@@ -187,8 +187,7 @@ function Invoke-UdeDbQuery {
 			return
 		}
 
-		$objSqlClientFactory = Get-SqlClientFactory
-		$connectionStringBuilder = $objSqlClientFactory.CreateConnectionStringBuilder()
+		$connectionStringBuilder = $script:SqlClientFactory.CreateConnectionStringBuilder()
 		$connectionStringBuilder['Server'] = $jit.Server
 		$connectionStringBuilder['Initial Catalog'] = $jit.Database
 		$connectionStringBuilder['User ID'] = $jit.Username
@@ -198,7 +197,7 @@ function Invoke-UdeDbQuery {
 		$connectionStringBuilder['Connect Timeout'] = 30
 		$connectionStringBuilder['Application Name'] = 'd365bap.tools'
 
-		$sqlConnection = $objSqlClientFactory.CreateConnection()
+		$sqlConnection = $script:SqlClientFactory.CreateConnection()
 		$sqlConnection.ConnectionString = $connectionStringBuilder.ConnectionString
 		$sqlCommand = $sqlConnection.CreateCommand()
 		$sqlCommand.CommandText = $Query

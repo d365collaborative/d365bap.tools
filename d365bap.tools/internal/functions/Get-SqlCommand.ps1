@@ -4,7 +4,7 @@
         Gets a configured SqlCommand object for local SQL Server LocalDB access.
 
     .DESCRIPTION
-        This function creates and configures a SqlCommand object for use with a local SQL Server LocalDB instance.
+        Creates a command for SQL Server LocalDB using encryption and trusting the local instance's certificate.
 
     .EXAMPLE
         PS C:\> $sqlCommand = Get-SqlCommand
@@ -21,12 +21,11 @@ function Get-SqlCommand {
 
 	)
 	end {
-		$objSqlClientFactory = Get-SqlClientFactory
-		$sqlConnection = $objSqlClientFactory.CreateConnection()
+		$sqlConnection = $script:SqlClientFactory.CreateConnection()
 		$sqlCommand = $sqlConnection.CreateCommand()
 
 		try {
-			$sqlConnection.ConnectionString = "Server='(LocalDB)\MSSQLLocalDB';Database='master';Integrated Security='SSPI';Application Name='d365bap.tools';Encrypt=False"
+			$sqlConnection.ConnectionString = "Server='(LocalDB)\MSSQLLocalDB';Database='master';Integrated Security='SSPI';Application Name='d365bap.tools';Encrypt=True;TrustServerCertificate=True"
 
 			$sqlCommand.Connection = $sqlConnection
 			$sqlCommand.CommandTimeout = 0

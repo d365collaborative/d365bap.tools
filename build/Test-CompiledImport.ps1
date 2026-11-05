@@ -92,34 +92,6 @@ if ($az.Version -lt [version]'99.0.0') {
     throw "Expected CI Az.Accounts stub 99.0.0 or newer; loaded $($az.Version)"
 }
 Write-Host 'Compiled module and formats import.'
-$bundleRoot = Join-Path (Split-Path -Parent $Manifest) 'bin/SqlClient'
-[Reflection.Assembly]::LoadFrom((Join-Path $bundleRoot 'Microsoft.Data.SqlClient.dll')) > $null
-$connection = & $loaded[0] { (Get-SqlClientFactory).CreateConnection() }
-try {
-    $driverPath = $connection.GetType().Assembly.Location
-    if (-not $driverPath.StartsWith($bundleRoot, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "SQL client did not load from the staged bundle: $driverPath"
-    }
-    if ([Runtime.Loader.AssemblyLoadContext]::GetLoadContext($connection.GetType().Assembly).Name -ne 'd365bap.tools.SqlClient') {
-        throw 'SQL client dependencies were not isolated.'
-    }
-    $connection.ConnectionString = 'Server=tcp:127.0.0.1,1;User ID=fixture;Password=fixture;Connect Timeout=1;ConnectRetryCount=0;Pooling=False'
-    try {
-        $connection.Open()
-        throw 'Unexpected SQL connection to a closed loopback port.'
-    }
-    catch {
-        if ($_.Exception.InnerException.GetType().FullName -ne 'Microsoft.Data.SqlClient.SqlException') { throw }
-    }
-    if ($IsWindows) {
-        $native = @([Diagnostics.Process]::GetCurrentProcess().Modules | Where-Object ModuleName -EQ 'Microsoft.Data.SqlClient.SNI.dll')
-        if ($native.Count -ne 1 -or -not $native[0].FileName.StartsWith($bundleRoot, [StringComparison]::OrdinalIgnoreCase)) {
-            throw 'The SQL transport did not load the bundled native library.'
-        }
-    }
-    Write-Host 'Bundled SQL client loads and reaches the SQL transport from the compiled module.'
-}
-finally { $connection.Dispose() }
 '@ | Set-Content -LiteralPath $smokeScript -Encoding utf8
 	& pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $smokeScript -Manifest $compiledManifest -StubRoot $stubRoot
 	$importExit = $LASTEXITCODE

@@ -40,7 +40,7 @@ System.Diagnostics.EventLog/9.0.18 | © Microsoft Corporation. All rights reserv
 
 System.IdentityModel.Tokens.Jwt/8.16.0 | © Microsoft Corporation. All rights reserved. | MIT | https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt/8.16.0
 
-System.Security.Cryptography.Pkcs/9.0.21 | © Microsoft Corporation. All rights reserved. | MIT | https://www.nuget.org/packages/System.Security.Cryptography.Pkcs/9.0.21
+System.Security.Cryptography.Pkcs/10.0.14 | © Microsoft Corporation. All rights reserved. | MIT | https://www.nuget.org/packages/System.Security.Cryptography.Pkcs/10.0.14
 
 System.Security.Cryptography.ProtectedData/9.0.18 | © Microsoft Corporation. All rights reserved. | MIT | https://www.nuget.org/packages/System.Security.Cryptography.ProtectedData/9.0.18
 
