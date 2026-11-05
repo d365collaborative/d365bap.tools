@@ -2,17 +2,22 @@
 <#
     .SYNOPSIS
         Remove a PPAC RBAC role assignment from the tenant.
+
     .DESCRIPTION
         Deletes a PPAC RBAC role assignment in the tenant. This revokes permissions previously granted to a service principal in Power Platform.
+
     .PARAMETER RoleAssignmentId
         The id of the role assignment to remove. Use Get-PpacRbacRoleMember to find it.
+
     .EXAMPLE
         PS C:\> Remove-PpacRbacRoleMember -RoleAssignmentId "00000000-0000-0000-0000-000000000000"
 
         Removes the role assignment.
         It uses -RoleAssignmentId to select the assignment.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
+
     .LINK
         https://learn.microsoft.com/en-us/rest/api/power-platform/authorization/role-based-access-control/delete-role-assignment
 #>
