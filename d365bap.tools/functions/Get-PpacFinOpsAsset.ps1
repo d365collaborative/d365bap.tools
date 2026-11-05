@@ -121,12 +121,24 @@ function Get-PpacFinOpsAsset {
 		[string] $Build,
 
 		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 2)]
-		[ValidateSet('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')]
+		[ValidateScript({
+				if ($_ -notin @('*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd')) {
+					throw "Cannot validate argument '$($_)' on parameter 'Asset'. Specify one of: '*', 'CompilerPackage', 'Platform', 'ApplicationSuite', 'Application1', 'Application2', 'SystemMetadata', 'FinOpsVsix22', 'TraceParser', 'CrossReference', 'Vhd'."
+				}
+
+				$true
+			})]
 		[SupportsWildcards()]
 		[string[]] $Asset = '*',
 
 		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 3)]
-		[ValidateSet('*', 'NuGet', 'DeveloperFile', 'Vhd')]
+		[ValidateScript({
+				if ($_ -notin @('*', 'NuGet', 'DeveloperFile', 'Vhd')) {
+					throw "Cannot validate argument '$($_)' on parameter 'Kind'. Specify one of: '*', 'NuGet', 'DeveloperFile', 'Vhd'."
+				}
+
+				$true
+			})]
 		[SupportsWildcards()]
 		[string] $Kind = '*',
 
