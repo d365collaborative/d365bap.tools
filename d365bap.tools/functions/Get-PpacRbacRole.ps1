@@ -1,102 +1,119 @@
-﻿
-<#
-    .SYNOPSIS
-        Get PPAC RBAC roles available in the tenant.
+﻿<#
+	.SYNOPSIS
+		List Power Platform RBAC role definitions in the tenant.
 
-    .DESCRIPTION
-        Gets PPAC RBAC roles available in the tenant. This command is used to retrieve the list of available PPAC RBAC roles, which can then be used for role assignments in Power Platform.
+	.DESCRIPTION
+		Retrieves the Power Platform RBAC definitions through the Power
+		Platform API.
 
-    .PARAMETER Role
-        The name, id or description of the PPAC RBAC role to retrieve.
+		Each row identifies the definition, the scopes it can be assigned
+		at, and the permissions it grants.
 
-        Use wildcards (*) for partial matches. If not specified, all roles will be returned.
+	.PARAMETER Role
+		Role id, name, or description filter.
 
-    .PARAMETER AsExcelOutput
-        Instructs the command to output the results to an Excel file instead of the console.
+		Wildcards are accepted.
 
-    .EXAMPLE
-        PS C:\> Get-PpacRbacRole -Role "Power Platform *"
+		Default: *
 
-        This command retrieves all PPAC RBAC roles with names starting with "Power Platform".
+	.PARAMETER AsExcelOutput
+		Instructs the cmdlet to output the results as an Excel file.
 
-    .EXAMPLE
-        PS C:\> Get-PpacRbacRole -Role "*admin*" -AsExcelOutput
+	.EXAMPLE
+		PS C:\> Get-PpacRbacRole -Role "Power Platform *"
 
-        This command retrieves all PPAC RBAC roles with names or descriptions containing "admin".
-        The results will be exported to an Excel file instead of being displayed in the console.
+		Lists roles with a matching name.
+		It uses -Role to filter on role id, name, or description and defaults to *.
 
-    .NOTES
-        Author: Mötz Jensen (@Splaxi)
+	.EXAMPLE
+		PS C:\> Get-PpacRbacRole -Role "*admin*" -AsExcelOutput
 
-        Based on:
-        https://learn.microsoft.com/en-us/power-platform/admin/programmability-tutorial-rbac-role-assignment?tabs=PowerShell
-        https://learn.microsoft.com/en-us/power-platform/admin/programmability-authentication-v2?tabs=powershell%2Cpowershell-interactive%2Cpowershell-confidential
+		Exports matching roles to an Excel workbook.
+		It uses -Role to filter on role id, name, or description and defaults to *.
+		It uses -AsExcelOutput to write an Excel file.
+
+	.NOTES
+		Author: d365bap.tools contributors
 #>
 function Get-PpacRbacRole {
-    [CmdletBinding()]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
-    param (
-        [string] $Role = "*",
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.PpacRbacRole[]', [object[]])]
+	param (
+		[SupportsWildcards()]
+		[string] $Role = '*',
 
-        [switch] $AsExcelOutput
-    )
+		[switch] $AsExcelOutput
+	)
 
-    begin {
-        $token = Get-PSFConfigValue -FullName "d365bap.tools.internal.ppac.rbac.token"
+	begin {
+		$token = Get-PSFConfigValue -FullName 'd365bap.tools.internal.ppac.rbac.token'
 
-        if ($null -eq $token) {
-            Write-PSFMessage -Level Warning -Message "No authentication token found for PPAC RBAC operations. Please run <c='em'>Set-PpacRbacContext</c> to authenticate first."
-            Stop-PSFFunction -Message "Stopping because of missing authentication token." -Exception $([System.Exception]::new("Missing authentication token for PPAC RBAC operations."))
-            return
-        }
+		if ($null -eq $token) {
+			Write-PSFMessage -Level Warning `
+				-Message "No authentication token found for PPAC RBAC operations. Please run <c='em'>Set-PpacRbacContext</c> to authenticate first."
 
-        $headersPowerApi = @{ 'Content-Type' = 'application/json' }
-        $headersPowerApi.Add('Authorization', $token)
-    }
+			Stop-PSFFunction -Message 'Stopping because of missing authentication token.' `
+				-Exception $([System.Exception]::new('Missing authentication token for PPAC RBAC operations.'))
 
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+			return
+		}
 
-        $resColRaw = Invoke-RestMethod `
-            -Method Get `
-            -Uri "https://api.powerplatform.com/authorization/roleDefinitions?api-version=2024-10-01" `
-            -Headers $headersPowerApi 4> $null | `
-            Select-Object -ExpandProperty value
+		$hashHeaders = @{
+			'Content-Type' = 'application/json'
+			Authorization  = $token
+		}
+	}
 
-        #Saving the latest role definitions to a json file for later use in other cmdlets (like Get-PpacRbacRoleMember and Add-PpacRbacRoleMember)
-        $pathMisc = Get-PSFConfigValue -FullName "d365bap.tools.internal.misc.path"
-        $resColRaw | ConvertTo-Json -Depth 10 | `
-            Set-Content -Path "$pathMisc\Ppac.Rbac.Roles.json" `
-            -Force `
-            -ErrorAction SilentlyContinue
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        $resCol = $resColRaw | Where-Object {
-            ($_.roleDefinitionId -like $Role) -or
-            ($_.roleDefinitionName -like $Role) -or
-            ($_.description -like $Role)
-        } | Select-PSFObject -TypeName "D365Bap.Tools.PpacRbacRole" `
-            -ExcludeProperty "@odata.etag", "description", "assignableScopes", "restrictedScopes", "permissions" `
-            -Property "roleDefinitionId as RoleId",
-        "roleDefinitionName as Role",
-        "description as Description",
-        "assignableScopes as AssignableScopes",
-        "restrictedScopes as RestrictedScopes",
-        "permissions as Permissions",
-        @{Name = "PermissionList"; Expression = { $_.permissions -join "," } },
-        @{Name = "RestrictedScopeList"; Expression = { $_.restrictedScopes -join "," } },
-        @{Name = "AssignableScopeList"; Expression = { $_.assignableScopes -join "," } },
-        *
+		$requestUri = 'https://api.powerplatform.com/authorization/roleDefinitions?api-version={0}' `
+			-f $script:BapApiVersions.PowerPlatform
 
-        if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-PpacRbacRole"
-            return
-        }
+		$resColRaw = Invoke-RestMethod `
+			-Method Get `
+			-Uri $requestUri `
+			-Headers $hashHeaders 4> $null |
+		Select-Object -ExpandProperty value
 
-        $resCol
-    }
+		$pathMisc = Get-PSFConfigValue -FullName 'd365bap.tools.internal.misc.path'
+		$resColRaw |
+		ConvertTo-Json -Depth 10 |
+		Set-Content -Path "$pathMisc\Ppac.Rbac.Roles.json" `
+			-Force `
+			-ErrorAction SilentlyContinue
 
-    end {
+		$resCol = $resColRaw |
+		Where-Object {
+			($_.roleDefinitionId -like $Role) `
+				-or ($_.roleDefinitionName -like $Role) `
+				-or ($_.description -like $Role)
+		} | Select-PSFObject -TypeName 'D365Bap.Tools.PpacRbacRole' `
+			-ExcludeProperty '@odata.etag', 'description', 'assignableScopes', 'restrictedScopes', 'permissions' `
+			-Property `
+			'roleDefinitionId as RoleId',
+		'roleDefinitionName as Role',
+		'description as Description',
+		'assignableScopes as AssignableScopes',
+		'restrictedScopes as RestrictedScopes',
+		'permissions as Permissions',
+		@{ Name = 'PermissionList'; Expression = { $_.permissions -join ',' } },
+		@{ Name = 'RestrictedScopeList'; Expression = { $_.restrictedScopes -join ',' } },
+		@{ Name = 'AssignableScopeList'; Expression = { $_.assignableScopes -join ',' } },
+		*
 
-    }
+		if ($AsExcelOutput) {
+			$resCol |
+			Export-Excel -WorksheetName 'Get-PpacRbacRole' `
+				-WarningAction SilentlyContinue
 
+			return
+		}
+
+		$resCol
+	}
+
+	end {
+
+	}
 }
