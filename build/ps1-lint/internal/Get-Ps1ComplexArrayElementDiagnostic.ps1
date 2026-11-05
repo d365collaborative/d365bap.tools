@@ -35,7 +35,7 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 
 	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	$message = 'Put each complex array element on its own line. A hashtable or scriptblock element makes a crowded line hard to read.'
+	$message = 'Put each complex array element on its own line. When @(...) holds a hashtable or scriptblock, start the content on the line after @('
 
 	$colReportedLiterals = [System.Collections.Generic.List[object]]::new()
 
@@ -61,8 +61,6 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 	}
 
 	foreach ($itemSub in @(Get-Ps1AstNode $Analysis ArrayExpressionAst)) {
-		if ($itemSub.Extent.StartLineNumber -ne $itemSub.Extent.EndLineNumber) { continue }
-
 		$hasReportedLiteral = $false
 		foreach ($itemNested in @(Get-Ps1AstNode $Analysis ArrayLiteralAst $itemSub)) {
 			if (-not $colReportedLiterals.Contains($itemNested)) { continue }
@@ -78,6 +76,14 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 			$tmpComplex += $itemStatement
 		}
 		if ($tmpComplex.Count -eq 0) { continue }
+
+		$contentSharesOpenLine = $false
+		foreach ($itemStatement in @($itemSub.SubExpression.Statements)) {
+			if ($itemStatement.Extent.StartLineNumber -ne $itemSub.Extent.StartLineNumber) { continue }
+			$contentSharesOpenLine = $true
+			break
+		}
+		if (-not $contentSharesOpenLine) { continue }
 
 		New-Ps1Diagnostic $Path 'PSUseOneComplexArrayElementPerLine' $message $itemSub.Extent
 	}
