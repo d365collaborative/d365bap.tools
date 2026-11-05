@@ -237,7 +237,6 @@
 		, 'Set-PpacAdminMode'
 		, 'Set-PpacEnvironmentDlpPolicy'
 
-		, 'Set-PpacRbacContext'
 		, 'Add-PpacRbacRoleMember'
 
 		, 'Set-PpacSecurityGroup'

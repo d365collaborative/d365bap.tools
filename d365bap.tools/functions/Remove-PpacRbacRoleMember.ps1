@@ -33,20 +33,12 @@ function Remove-PpacRbacRoleMember {
 	)
 
 	begin {
-		$token = Get-PSFConfigValue -FullName "d365bap.tools.internal.ppac.rbac.token"
-
-		if ($null -eq $token) {
-			Write-PSFMessage -Level Warning `
-				-Message "No authentication token found for PPAC RBAC operations. Please run <c='em'>Set-PpacRbacContext</c> to authenticate first."
-
-			Stop-PSFFunction -Message "Stopping because of missing authentication token." `
-				-Exception $([System.Exception]::new("Missing authentication token for PPAC RBAC operations."))
-
-			return
-		}
+		$objSecureToken = Get-BapAccessToken -PowerPlatform
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
 		$hashHeaders = @{ 'Content-Type' = 'application/json' }
-		$hashHeaders.Add('Authorization', $token)
+		$hashHeaders.Add('Authorization', "Bearer $tokenValue")
 	}
 
 	process {
