@@ -204,6 +204,7 @@
 		, 'Remove-BapTenantDetail'
 		, 'Remove-FscmUser'
 		, 'Remove-PpacEnvironmentDlpPolicy'
+		, 'Remove-PpacRbacRoleMember'
 		, 'Remove-PpacTenantAcpPolicyRuleSet'
 		, 'Remove-PpacTenantDlpPolicy'
 		, 'Remove-PpacTenantRuleBasedPolicyRuleSet'
