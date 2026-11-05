@@ -3,9 +3,8 @@
     Tests the complex array element lint rule.
 
 .DESCRIPTION
-    Parses fixture scripts and checks that a hashtable or scriptblock array
-    element starts on its own line, while simple strings and a single complex
-    element stay allowed on one line.
+    Checks that hashtable and scriptblock array elements start on their own
+    line, and that complex @(...) content starts on the line after @(.
 #>
 [CmdletBinding()]
 param()
@@ -85,13 +84,25 @@ function Get-Fixture {
 
 Assert-ComplexArrayElement 'Trailing comma split' @'
 function Get-Fixture {
+    $colPolicies = @(
+        $colPolicies |
+        Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
+        @{ Expression = { $_.name } },
+        @{ Expression = { $_.id } }
+    )
+    $colPolicies
+}
+'@
+
+Assert-ComplexArrayElement 'Trailing comma split shares open line' @'
+function Get-Fixture {
     $colPolicies = @($colPolicies |
         Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
         @{ Expression = { $_.name } },
         @{ Expression = { $_.id } })
     $colPolicies
 }
-'@
+'@ -Expected 1 @('PSUseOneComplexArrayElementPerLine', 'line after')
 
 Assert-ComplexArrayElement 'Pre-built array' @'
 function Get-Fixture {
@@ -107,11 +118,21 @@ function Get-Fixture {
 
 Assert-ComplexArrayElement 'Simplified sort keys' @'
 function Get-Fixture {
+    $colPolicies = @(
+        $colPolicies |
+        Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, 'name', 'id'
+    )
+    $colPolicies
+}
+'@
+
+Assert-ComplexArrayElement 'Simplified sort keys share open line' @'
+function Get-Fixture {
     $colPolicies = @($colPolicies |
         Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, 'name', 'id')
     $colPolicies
 }
-'@
+'@ -Expected 1 @('PSUseOneComplexArrayElementPerLine', 'line after')
 
 Assert-ComplexArrayElement 'Simple string list' @'
 function Get-Fixture {
@@ -148,6 +169,30 @@ function Get-Fixture {
         $item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }
     ) | Select-Object -First 1
     $tmpConnectorManagement
+}
+'@
+
+Assert-ComplexArrayElement 'Scriptblock pipeline shares open line' @'
+function Get-Fixture {
+    $colFiltered = @($colRaw |
+        Where-Object {
+            ($_.principalObjectId -like $ServicePrincipalId) `
+                -and ($_.roleDefinitionId -in $colRoleIds)
+        })
+    $colFiltered
+}
+'@ -Expected 1 @('PSUseOneComplexArrayElementPerLine', 'line after')
+
+Assert-ComplexArrayElement 'Scriptblock pipeline opens alone' @'
+function Get-Fixture {
+    $colMatchingIds = @(
+        $colRbacRoles |
+        Where-Object {
+            ($_.roleDefinitionName -like $Role) `
+                -or ($_.roleDefinitionId -like $Role)
+        } | Select-Object -ExpandProperty roleDefinitionId
+    )
+    $colMatchingIds
 }
 '@
 

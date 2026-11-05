@@ -697,11 +697,13 @@ keeps the complex elements apart:
 # Fails
 $colPolicies = @($colPolicies | Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, @{ Expression = { $_.name } }, @{ Expression = { $_.id } })
 
-# Passes: trailing comma
-$colPolicies = @($colPolicies |
+# Passes: trailing comma, open @( alone
+$colPolicies = @(
+    $colPolicies |
     Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
     @{ Expression = { $_.name } },
-    @{ Expression = { $_.id } })
+    @{ Expression = { $_.id } }
+)
 
 # Passes: array variable
 $colSort = @(
@@ -712,15 +714,33 @@ $colSort = @(
 $colPolicies = @($colPolicies | Sort-Object -Property $colSort)
 
 # Passes: simple property names after the one expression
-$colPolicies = @($colPolicies |
-    Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, 'name', 'id')
+$colPolicies = @(
+    $colPolicies |
+    Sort-Object -Property @{ Expression = { -not $_.IsEffective } }, 'name', 'id'
+)
 ```
 
-A one-line `@( ... )` subexpression that contains a hashtable or scriptblock is
-reported too, so the element moves onto its own line inside the array:
+When `@( ... )` holds a hashtable or scriptblock, the content starts on the line
+after `@(`:
 
 ```powershell
-# Fails
+# Fails: content shares the @( line
+$colFiltered = @($colRaw |
+    Where-Object {
+        ($_.principalObjectId -like $ServicePrincipalId) `
+            -and ($_.roleDefinitionId -in $colRoleIds)
+    })
+
+# Passes: @( opens alone
+$colMatchingIds = @(
+    $colRbacRoles |
+    Where-Object {
+        ($_.roleDefinitionName -like $Role) `
+            -or ($_.roleDefinitionId -like $Role)
+    } | Select-Object -ExpandProperty roleDefinitionId
+)
+
+# Fails: one-line @( ... ) with a scriptblock
 $tmpConnectorManagement = @($item.RuleSets | Where-Object { "$($_.id)" -eq 'ConnectorManagement' }) | Select-Object -First 1
 
 # Passes
@@ -732,9 +752,13 @@ $tmpConnectorManagement = @(
 $objItem = @($items | Select-Object -First 1)
 ```
 
-A `[pscustomobject]@{ ... }` element counts as complex. A single complex element
-may stay on the command line. Test files, tepp fixtures, and `build/` scripts are
-exempt. The rule runs on module code (public and internal).
+Complex means a hashtable or scriptblock AST node inside the array statement.
+`Where-Object { ... }` and `ForEach-Object { ... }` count; simplified
+`Where-Object Name -eq 'x'` and a plain `@($items | Select-Object -First 1)` do
+not. A `[pscustomobject]@{ ... }` element counts as complex. A single complex
+element may stay on a command line outside `@(...)`. Test files, tepp fixtures,
+and `build/` scripts are exempt. The rule runs on module code (public and
+internal).
 
 Run its regression checks under PowerShell 7.6 or later:
 
