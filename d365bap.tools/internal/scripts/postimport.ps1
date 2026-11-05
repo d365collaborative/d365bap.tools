@@ -10,6 +10,8 @@ param()
 
 $moduleRoot = Split-Path (Split-Path $PSScriptRoot)
 
+"$moduleRoot\internal\scripts\initialize-sqlclient.ps1"
+
 (Get-ChildItem "$moduleRoot\internal\configurations\*.ps1" -ErrorAction Ignore).FullName
 
 (Get-ChildItem "$moduleRoot\internal\scriptblocks\*.ps1" -ErrorAction Ignore).FullName

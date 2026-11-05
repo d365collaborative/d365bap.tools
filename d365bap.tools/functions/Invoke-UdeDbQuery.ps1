@@ -1,198 +1,288 @@
 ﻿
 <#
     .SYNOPSIS
-        Invokes a SQL query against a UDE database using cached JIT access credentials.
-        
+        Invokes a SQL query against a UDE database using JIT access credentials.
+
     .DESCRIPTION
-        This function executes a SQL query against the database of a specified environment.
-        
-        It uses JIT access credentials from the local cache (see Get-UdeDbJitCache) and never
-        obtains credentials itself.
-        
+        Executes SQL with the bundled client using fresh, supplied, or cached JIT credentials.
+        Fresh and supplied credentials stay in memory and need no CredentialManager or SSMS.
+
     .PARAMETER Id
-        The unique identifier of the cached JIT access credentials to use.
-        
-        Supports wildcard patterns. If multiple cached credentials match, the cmdlet stops and asks
-        you to be specific.
-        
+        Cached JIT credential ID. Wildcards must match exactly one entry.
+
+    .PARAMETER EnvironmentId
+        Environment name or GUID for fresh JIT access, without caching credentials. Supports wildcards.
+
+    .PARAMETER Role
+        JIT access role for fresh credentials. Writer permits data changes.
+
+        Default: Reader.
+
+    .PARAMETER JitCredential
+        Credential object from Get-UdeDbJit. Used in memory without CredentialManager.
+
     .PARAMETER Query
         The SQL query to execute against the environment database.
-        
+
     .PARAMETER QueryTimeout
         The time in seconds to wait for the query to execute before timing out.
-        
+
         Defaults to 60.
-        
+
     .PARAMETER AsExcelOutput
-        Instruct the cmdlet to output all details directly to an Excel file.
-        
-        Will include all properties, including those not shown by default in the console output.
-        
+        Exports all result properties to an Excel file instead of returning rows.
+
     .EXAMPLE
-        PS C:\> Get-UdeDbJit -EnvironmentId "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" -Role Reader | Set-UdeDbJitCache -Id "motz01-reader"
-        PS C:\> Invoke-UdeDbQuery -Id "motz01-reader" -Query "SELECT TOP (10) name FROM sys.tables ORDER BY name"
-        
-        This will cache Reader JIT access credentials for the environment "eec2c11a-a4c7-4e1d-b8ed-f62acc9c74c6" (waiting 60 seconds
-        for backend propagation) and then execute the query using the cached credentials.
-        It will return one object per row.
-        
+        PS C:\> Invoke-UdeDbQuery -EnvironmentId "dev-environment" -Query "SELECT DB_NAME() AS DatabaseName"
+
+        Requests temporary Reader access and queries the environment.
+        It uses -EnvironmentId to request fresh JIT credentials without caching them.
+        It uses the default -Role Reader.
+        It executes the SQL in -Query after the JIT propagation wait.
+        It uses the default -QueryTimeout of 60 seconds.
+        It leaves -AsExcelOutput disabled by default and returns rows.
+
     .EXAMPLE
-        PS C:\> Invoke-UdeDbQuery -Id "motz01-writer" -Query "UPDATE dbo.MyTable SET MyColumn = 1 WHERE Id = 42"
-        
-        This will execute the data modifying statement using the cached Writer JIT access credentials
-        for the ID "motz01-writer" and return the number of affected rows.
-        
+        PS C:\> $jit = Get-UdeDbJit -EnvironmentId "dev-environment"
+        PS C:\> Invoke-UdeDbQuery -JitCredential $jit -Query "SELECT DB_NAME() AS DatabaseName"
+
+        Reuses temporary credentials without storing them in the SSMS cache.
+        It uses -EnvironmentId to request the credentials.
+        It passes -JitCredential directly from Get-UdeDbJit.
+        It uses the default -Role Reader when requesting the credentials.
+        It executes the SQL in -Query.
+        It uses the default -QueryTimeout of 60 seconds.
+        It leaves -AsExcelOutput disabled by default and returns rows.
+
     .EXAMPLE
-        PS C:\> Get-UdeDbJitCache -Id "motz01-reader" | Invoke-UdeDbQuery -Query "SELECT * FROM dbo.MyTable" -AsExcelOutput
-        
-        This will execute the query using the cached JIT access credentials piped in from Get-UdeDbJitCache.
-        It will output all details directly to an Excel file.
-        
+        PS C:\> Invoke-UdeDbQuery -Id "dev-reader" -Query "SELECT TOP (10) name FROM sys.tables ORDER BY name"
+
+        Runs a query with cached Reader credentials.
+        It uses -Id to select the cached credentials.
+        It uses the cached role; -Role defaults to Reader for fresh access.
+        It executes the SQL in -Query and returns one object per row.
+        It uses the default -QueryTimeout of 60 seconds.
+        It leaves -AsExcelOutput disabled by default and returns rows.
+
+    .EXAMPLE
+        PS C:\> Invoke-UdeDbQuery -Id "dev-writer" -Query "UPDATE dbo.MyTable SET MyColumn = 1 WHERE Id = 42"
+
+        Updates rows with cached Writer credentials.
+        It uses -Id to select the cached credentials.
+        It uses the cached role; -Role defaults to Reader for fresh access.
+        It executes -Query and returns RowsAffected when no rows are returned.
+        It uses the default -QueryTimeout of 60 seconds.
+        It leaves -AsExcelOutput disabled by default and returns the result.
+
+    .EXAMPLE
+        PS C:\> Get-UdeDbJitCache -Id "dev-reader" | Invoke-UdeDbQuery -Query "SELECT * FROM dbo.MyTable" -AsExcelOutput
+
+        Exports query results to Excel.
+        It uses -Id from the piped cache entry to select credentials.
+        It uses the cached role; -Role defaults to Reader for fresh access.
+        It executes the SQL in -Query.
+        It uses the default -QueryTimeout of 60 seconds.
+        It enables -AsExcelOutput to write all result properties to Excel.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Invoke-UdeDbQuery {
-    [CmdletBinding()]
-    [OutputType('System.Object[]')]
-    param (
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
-        [string] $Id,
+	[CmdletBinding(DefaultParameterSetName = 'Cached', PositionalBinding = $false)]
+	[OutputType([PSCustomObject[]])]
+	param (
+		[Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ParameterSetName = 'Cached', Position = 0)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Id,
 
-        [Parameter(Mandatory = $true)]
-        [string] $Query,
+		[Parameter(Mandatory = $true, ParameterSetName = 'Environment')]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [int] $QueryTimeout = 60,
+		[Parameter(ParameterSetName = 'Environment')]
+		[ValidateSet('Reader', 'Writer')]
+		[string] $Role = 'Reader',
 
-        [switch] $AsExcelOutput
-    )
+		[Parameter(Mandatory = $true, ParameterSetName = 'Credential')]
+		[ValidateNotNull()]
+		[psobject] $JitCredential,
 
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+		[Parameter(Mandatory = $true, Position = 1)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Query,
 
-        $cacheHits = @(Get-UdeDbJitCache -Id $Id -ShowPassword)
+		[Parameter(Position = 2)]
+		[int] $QueryTimeout = 60,
 
-        if ($cacheHits.Count -eq 0) {
-            $messageString = "No cached JIT database access credentials found for Id <c='em'>$Id</c>. Obtain them first using <c='em'>Get-UdeDbJit</c> and store them using <c='em'>Set-UdeDbJitCache -Id `"$Id`"</c>, then try again. List cached credentials using <c='em'>Get-UdeDbJitCache</c>."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because no cached JIT credentials were found." `
-                -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
+		[switch] $AsExcelOutput
+	)
 
-        if ($cacheHits.Count -gt 1) {
-            $messageString = "Multiple cached JIT database access credentials match Id <c='em'>$Id</c>. Please be specific and try again. List cached credentials using <c='em'>Get-UdeDbJitCache</c>."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because multiple cached JIT credentials matched." `
-                -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
+	process {
+		if ($PSCmdlet.ParameterSetName -eq 'Environment') {
+			$colJitCredentials = @(Get-UdeDbJit -EnvironmentId $EnvironmentId `
+					-Role $Role)
 
-        $jit = $cacheHits[0]
+			if (Test-PSFFunctionInterrupt) { return }
 
-        if ($jit.Expiration -is [datetime] -and $jit.Expiration -lt (Get-Date)) {
-            $messageString = "The cached JIT database access credentials for Id <c='em'>$Id</c> expired at <c='em'>$($jit.ExpirationIso)</c>. Obtain fresh credentials using <c='em'>Get-UdeDbJit</c> and store them using <c='em'>Set-UdeDbJitCache -Id `"$Id`"</c>, then try again."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because the cached JIT credentials expired." `
-                -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
+			if ($colJitCredentials.Count -ne 1) {
+				throw "Expected one JIT credential for '$EnvironmentId'; found $($colJitCredentials.Count)."
+			}
 
-        if ([string]::IsNullOrEmpty($jit.Password)) {
-            $messageString = "The password for the cached JIT database access credentials for Id <c='em'>$Id</c> could not be resolved. Store the credentials again using <c='em'>Get-UdeDbJit</c> piped into <c='em'>Set-UdeDbJitCache -Id `"$Id`"</c>, then try again."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because the cached password could not be resolved." `
-                -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-            return
-        }
+			$jit = $colJitCredentials[0]
+			$credentialLabel = "environment '$EnvironmentId'"
+		}
+		elseif ($PSCmdlet.ParameterSetName -eq 'Credential') {
+			$jit = $JitCredential
+			$credentialLabel = 'supplied JIT credentials'
+		}
+		else {
+			$colCacheHits = @(Get-UdeDbJitCache -Id $Id `
+					-ShowPassword)
 
-        $connectionStringBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder
-        $connectionStringBuilder['Server'] = $jit.Server
-        $connectionStringBuilder['Initial Catalog'] = $jit.Database
-        $connectionStringBuilder['User ID'] = $jit.Username
-        $connectionStringBuilder['Password'] = $jit.Password
-        $connectionStringBuilder['Encrypt'] = $true
-        $connectionStringBuilder['TrustServerCertificate'] = $false
-        $connectionStringBuilder['Connect Timeout'] = 30
-        $connectionStringBuilder['Application Name'] = 'd365bap.tools'
+			if (Test-PSFFunctionInterrupt) { return }
 
-        $sqlConnection = New-Object System.Data.SqlClient.SqlConnection($connectionStringBuilder.ConnectionString)
-        $sqlCommand = $sqlConnection.CreateCommand()
-        $sqlCommand.CommandText = $Query
-        $sqlCommand.CommandTimeout = $QueryTimeout
+			if ($colCacheHits.Count -eq 0) {
+				$messageString = "No cached JIT database access credentials found for Id <c='em'>$Id</c>. Obtain them first using <c='em'>Get-UdeDbJit</c> and store them using <c='em'>Set-UdeDbJitCache -Id `"$Id`"</c>, then try again. List cached credentials using <c='em'>Get-UdeDbJitCache</c>."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
 
-        $resCol = @()
+				Stop-PSFFunction -Message "Stopping because no cached JIT credentials were found." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 
-        try {
-            $sqlConnection.Open()
+				return
+			}
 
-            $reader = $sqlCommand.ExecuteReader()
+			if ($colCacheHits.Count -gt 1) {
+				$messageString = "Multiple cached JIT database access credentials match Id <c='em'>$Id</c>. Please be specific and try again. List cached credentials using <c='em'>Get-UdeDbJitCache</c>."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
 
-            try {
-                $emitted = 0
+				Stop-PSFFunction -Message "Stopping because multiple cached JIT credentials matched." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 
-                do {
-                    while ($reader.Read() -eq $true) {
-                        $properties = [ordered]@{}
+				return
+			}
 
-                        for ($i = 0; $i -lt $reader.FieldCount; $i++) {
-                            $columnName = $reader.GetName($i)
+			$jit = $colCacheHits[0]
+			$credentialLabel = "cached ID '$Id'"
+		}
 
-                            if ([string]::IsNullOrEmpty($columnName)) {
-                                $columnName = "Column$($i + 1)"
-                            }
+		foreach ($itemField in @('Server', 'Database', 'Username', 'Password', 'Expiration')) {
+			if ([string]::IsNullOrWhiteSpace([string]$jit.$itemField)) {
+				throw "The JIT credentials for $credentialLabel are missing $itemField. Obtain fresh credentials using Get-UdeDbJit."
+			}
+		}
 
-                            $uniqueName = $columnName
-                            $suffix = 1
+		try { $expiration = [DateTimeOffset]$jit.Expiration }
+		catch { throw "The JIT credentials for $credentialLabel have an invalid expiration. Obtain fresh credentials using Get-UdeDbJit." }
 
-                            while ($properties.Keys -contains $uniqueName) {
-                                $suffix++
-                                $uniqueName = "$($columnName)_$($suffix)"
-                            }
+		if ($expiration -lt [DateTimeOffset]::UtcNow) {
+			$messageString = "The JIT database access credentials for $credentialLabel expired at $($expiration.ToString('o')). Obtain fresh credentials using Get-UdeDbJit and try again."
+			Write-PSFMessage -Level Important `
+				-Message $messageString
 
-                            $value = $reader.GetValue($i)
+			Stop-PSFFunction -Message "Stopping because the JIT credentials expired." `
+				-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 
-                            if ($value -is [System.DBNull]) {
-                                $value = $null
-                            }
+			return
+		}
 
-                            $properties[$uniqueName] = $value
-                        }
+		$connectionStringBuilder = $script:SqlClientFactory.CreateConnectionStringBuilder()
+		$connectionStringBuilder['Server'] = $jit.Server
+		$connectionStringBuilder['Initial Catalog'] = $jit.Database
+		$connectionStringBuilder['User ID'] = $jit.Username
+		$connectionStringBuilder['Password'] = $jit.Password
+		$connectionStringBuilder['Encrypt'] = $true
+		$connectionStringBuilder['TrustServerCertificate'] = $false
+		$connectionStringBuilder['Connect Timeout'] = 30
+		$connectionStringBuilder['Application Name'] = 'd365bap.tools'
 
-                        $emitted++
-                        $resCol += [PSCustomObject]$properties
-                    }
-                } while ($reader.NextResult() -eq $true)
+		$sqlConnection = $script:SqlClientFactory.CreateConnection()
+		$sqlConnection.ConnectionString = $connectionStringBuilder.ConnectionString
+		$sqlCommand = $sqlConnection.CreateCommand()
+		$sqlCommand.CommandText = $Query
+		$sqlCommand.CommandTimeout = $QueryTimeout
 
-                if ($emitted -eq 0 -and $reader.RecordsAffected -ge 0) {
-                    $resCol += [PSCustomObject]@{
-                        RowsAffected = $reader.RecordsAffected
-                    }
-                }
-            }
-            finally {
-                $reader.Close()
-                $reader.Dispose()
-            }
-        }
-        catch {
-            Write-PSFMessage -Level Important -Message "Something went wrong while working against the database using the cached credentials for Id <c='em'>$Id</c>" -Exception $PSItem.Exception
-            Stop-PSFFunction -Message "Stopping because of errors" -Exception $PSItem.Exception
-            return
-        }
-        finally {
-            if ($sqlConnection.State -ne [System.Data.ConnectionState]::Closed) {
-                $sqlConnection.Close()
-            }
+		$colResults = [Collections.Generic.List[object]]::new()
 
-            $sqlCommand.Dispose()
-            $sqlConnection.Dispose()
-        }
+		try {
+			$sqlConnection.Open()
 
-        if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Invoke-UdeDbQuery"
-            return
-        }
+			$reader = $sqlCommand.ExecuteReader()
 
-        $resCol
-    }
+			try {
+				$emitted = 0
+
+				do {
+					while ($reader.Read() -eq $true) {
+						$tmpProperties = [ordered]@{}
+
+						for ($i = 0; $i -lt $reader.FieldCount; $i++) {
+							$columnName = $reader.GetName($i)
+
+							if ([string]::IsNullOrEmpty($columnName)) {
+								$columnName = "Column$($i + 1)"
+							}
+
+							$uniqueName = $columnName
+							$suffix = 1
+
+							while ($tmpProperties.Keys -contains $uniqueName) {
+								$suffix++
+								$uniqueName = "$($columnName)_$($suffix)"
+							}
+
+							$value = $reader.GetValue($i)
+
+							if ($value -is [System.DBNull]) {
+								$value = $null
+							}
+
+							$tmpProperties[$uniqueName] = $value
+						}
+
+						$emitted++
+						$colResults.Add([PSCustomObject]$tmpProperties)
+					}
+				} while ($reader.NextResult() -eq $true)
+
+				if (($emitted -eq 0) `
+						-and ($reader.RecordsAffected -ge 0)) {
+					$colResults.Add([PSCustomObject][ordered]@{
+							RowsAffected = $reader.RecordsAffected
+						})
+				}
+			}
+			finally {
+				$reader.Close()
+				$reader.Dispose()
+			}
+		}
+		catch {
+			Write-PSFMessage -Level Important `
+				-Message "Something went wrong while working against the database using JIT access for $credentialLabel" `
+				-Exception $PSItem.Exception
+
+			Stop-PSFFunction -Message "Stopping because of errors" `
+				-Exception $PSItem.Exception
+
+			return
+		}
+		finally {
+			if ($sqlConnection.State -ne [System.Data.ConnectionState]::Closed) {
+				$sqlConnection.Close()
+			}
+
+			$sqlCommand.Dispose()
+			$sqlConnection.Dispose()
+		}
+
+		if ($AsExcelOutput) {
+			$colResults |
+			Export-Excel -WorksheetName "Invoke-UdeDbQuery"
+			return
+		}
+
+		$colResults
+	}
 }
