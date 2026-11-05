@@ -129,7 +129,8 @@ function Get-UdeDbJit {
 			Start-Sleep -Seconds $WaitSeconds
 		}
 
-		$colResults = @($objResponse |
+		$colResults = @(
+			$objResponse |
 			Select-PSFObject -TypeName 'D365Bap.Tools.UdeDatabaseJit' `
 				-ExcludeProperty '@odata.context' `
 				-Property 'servername as Server',
@@ -140,7 +141,8 @@ function Get-UdeDbJit {
 			@{ Name = 'ExpirationIso'; Expression = { $expiration.ToString('o') } },
 			'sqljitrole as Role',
 			@{ Name = 'EnvironmentId'; Expression = { $colEnvironments[0].PpacEnvId } },
-			*)
+			*
+		)
 
 		if ($AsExcelOutput) {
 			$colResults |
