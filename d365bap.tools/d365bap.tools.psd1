@@ -223,6 +223,9 @@
 
 		, 'Remove-UnifiedEnvironment'
 
+		, 'Search-PpacEnvironmentRbacRoleMember'
+		, 'Search-PpacRbacRoleMember'
+
 		, 'Set-BapAzCopyPath'
 
 		, 'Set-BapEnvironmentLinkEnterprisePolicy'
