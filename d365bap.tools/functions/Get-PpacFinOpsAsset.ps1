@@ -112,7 +112,7 @@
 #>
 function Get-PpacFinOpsAsset {
 	[CmdletBinding(DefaultParameterSetName = 'ByBuild')]
-	[OutputType('System.Object[]')]
+	[OutputType('D365Bap.Tools.PpacFinOpsAsset[]')]
 	param (
 		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipelineByPropertyName = $true, Position = 0)]
 		[string] $AppVersion,
@@ -153,7 +153,7 @@ function Get-PpacFinOpsAsset {
 
 		$executable = Get-PSFConfigValue -FullName "d365bap.tools.path.azcopy"
 
-		$nugetMap = [ordered]@{
+		$hashNugetMap = [ordered]@{
 			"CompilerPackage"  = "Microsoft.Dynamics.AX.Platform.CompilerPackage"
 			"Platform"         = "Microsoft.Dynamics.AX.Platform.DevALM.BuildXpp"
 			"ApplicationSuite" = "Microsoft.Dynamics.AX.ApplicationSuite.DevALM.BuildXpp"
@@ -161,7 +161,7 @@ function Get-PpacFinOpsAsset {
 			"Application2"     = "Microsoft.Dynamics.AX.Application2.DevALM.BuildXpp"
 		}
 
-		$fileEndpoints = [ordered]@{
+		$hashFileEndpoints = [ordered]@{
 			"SystemMetadata" = "systemmetadata"
 			"FinOpsVsix22"   = "finopsvsix22"
 			"TraceParser"    = "traceparser"
@@ -175,18 +175,18 @@ function Get-PpacFinOpsAsset {
 		$isByEnvironment = $PSCmdlet.ParameterSetName -eq 'ByEnvironment'
 
 		if ($isByEnvironment) {
-			$ctx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
+			$hashCtx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
 		}
 		else {
-			$ctx = Get-DevToolsAuthContext
+			$hashCtx = Get-DevToolsAuthContext
 		}
 
-		if ($null -eq $ctx) { return }
+		if ($null -eq $hashCtx) { return }
 
-		$headers = @{
+		$hashHeaders = @{
 			"Correlationid"           = [guid]::NewGuid().ToString()
-			"Dataverseenvironmenturi" = $ctx.Env.PpacEnvUri
-			"Authorization"           = "Bearer $($ctx.Token)"
+			"Dataverseenvironmenturi" = $hashCtx.Env.PpacEnvUri
+			"Authorization"           = "Bearer $($hashCtx.Token)"
 			"Odata-Maxversion"        = "4.0"
 			"Odata-Version"           = "4.0"
 			"Accept"                  = "application/json"
@@ -195,23 +195,29 @@ function Get-PpacFinOpsAsset {
 		try {
 			$catalog = Invoke-RestMethod -Method Get `
 				-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsversions" `
-				-Headers $headers
+				-Headers $hashHeaders
 		}
 		catch {
 			$messageString = "Failed retrieving the FinOps version catalog from the developer tools service."
-			Write-PSFMessage -Level Important -Message $messageString -ErrorRecord $_
-			Stop-PSFFunction -Message "Stopping because the finopsversions request failed." -ErrorRecord $_
+			Write-PSFMessage -Level Important `
+				-Message $messageString `
+				-ErrorRecord $_
+
+			Stop-PSFFunction -Message "Stopping because the finopsversions request failed." `
+				-ErrorRecord $_
+
 			return
 		}
 
-		$fullBuild = $null
+		$objFullBuild = $null
 		$track = $null
 		$trackAppVersion = $null
 
 		$buildGiven = $PSBoundParameters.ContainsKey('Build') -and -not [string]::IsNullOrWhiteSpace($Build)
 		$appGiven = $PSBoundParameters.ContainsKey('AppVersion') -and -not [string]::IsNullOrWhiteSpace($AppVersion)
 
-		if ($buildGiven -and "$Build" -like '@{*}') {
+		if (($buildGiven) `
+				-and ("$Build" -like '@{*}')) {
 			$Build = ''
 			$buildGiven = $false
 		}
@@ -219,30 +225,30 @@ function Get-PpacFinOpsAsset {
 		if ($isByEnvironment) {
 			$envBuild = $null
 
-			if ($null -ne $ctx.Env -and $null -ne $ctx.Env.PSObject.Properties['PpacProvApp'] -and -not [string]::IsNullOrWhiteSpace("$($ctx.Env.PpacProvApp)")) {
-				$envBuild = "$($ctx.Env.PpacProvApp)"
+			if (((-not ($null -eq $hashCtx.Env))) `
+					-and ((-not ($null -eq $hashCtx.Env.PSObject.Properties['PpacProvApp']))) `
+					-and (-not [string]::IsNullOrWhiteSpace($hashCtx.Env.PpacProvApp))) {
+				$envBuild = "$($hashCtx.Env.PpacProvApp)"
 			}
 			else {
-				$envDetail = Get-UnifiedEnvironment -EnvironmentId $EnvironmentId | Select-Object -First 1
+				$envObj = Get-Environment -EnvironmentId $EnvironmentId `
+					-Unified `
+					-VersionDetails |
+				Select-Object -First 1
 
-				if ($null -eq $envDetail) {
-					$messageString = "Could not find environment with Id <c='em'>$EnvironmentId</c>. Please verify the Id and try again, or list available environments using <c='em'>Get-UnifiedEnvironment</c>. Consider using wildcards if needed."
-					Write-PSFMessage -Level Important -Message $messageString
-					Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." `
-						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-					return
-				}
-
-				if ($null -ne $envDetail.PSObject.Properties['PpacProvApp']) {
-					$envBuild = "$($envDetail.PpacProvApp)"
+				if ((-not ($null -eq $envObj.PSObject.Properties['PpacProvApp']))) {
+					$envBuild = "$($envObj.PpacProvApp)"
 				}
 			}
 
 			if ([string]::IsNullOrWhiteSpace($envBuild)) {
 				$messageString = "Could not determine the provisioned application build for environment <c='em'>$EnvironmentId</c>. Use <c='em'>-Build</c> or <c='em'>-AppVersion</c> instead (without <c='em'>-EnvironmentId</c>)."
-				Write-PSFMessage -Level Important -Message $messageString
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
 				Stop-PSFFunction -Message "Stopping because the environment version is unknown." `
 					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 				return
 			}
 
@@ -250,218 +256,294 @@ function Get-PpacFinOpsAsset {
 			$buildGiven = $true
 			$appGiven = $false
 
-			Write-PSFMessage -Level Verbose -Message "Using provisioned build <c='em'>$Build</c> from environment <c='em'>$EnvironmentId</c>."
+			Write-PSFMessage -Level Verbose `
+				-Message "Using provisioned build <c='em'>$Build</c> from environment <c='em'>$EnvironmentId</c>."
 		}
 
 		$appTrack = $null
 
 		if ($appGiven) {
-			$appTrack = Get-FinOpsTrackForAppVersion -Catalog $catalog -AppVersion $AppVersion
+			$appTrack = Get-FinOpsTrackForAppVersion -Catalog $catalog `
+				-AppVersion $AppVersion
 
 			if ($null -eq $appTrack) {
-				$valid = ($catalog | Sort-Object -Property { [version]$_.appVersion } | ForEach-Object { $_.appVersion }) -join ", "
+				$valid = ($catalog |
+					Sort-Object -Property { [version]$_.appVersion } |
+					ForEach-Object { $_.appVersion }) -join ", "
 				$messageString = "Unknown application track <c='em'>$AppVersion</c>. Valid application versions are: $valid."
-				Write-PSFMessage -Level Important -Message $messageString
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
 				Stop-PSFFunction -Message "Stopping because the application track was not recognized." `
 					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 				return
 			}
 		}
 
 		if ([string]::IsNullOrWhiteSpace($Build)) {
-			$candidates = @($catalog | Sort-Object -Property { [version]$_.appVersion })
+			$colCandidates = @(
+				$catalog |
+				Sort-Object -Property { [version]$_.appVersion }
+			)
 
 			if ($appGiven) {
-				$candidates = @($candidates | Where-Object { $_.appBuild -eq $appTrack })
+				$colCandidates = @(
+					$colCandidates |
+					Where-Object { $_.appBuild -eq $appTrack }
+				)
 			}
 
-			$entry = @($candidates | Select-Object -Last 1)
+			$colEntry = @($colCandidates |
+				Select-Object -Last 1)
 
-			if ($null -eq $entry -or $entry.Count -eq 0) {
+			if (($null -eq $colEntry) `
+					-or ($colEntry.Count -eq 0)) {
 				Stop-PSFFunction -Message "Stopping because the version catalog is empty."
 				return
 			}
 
-			$track = $entry[0].appBuild
-			$trackAppVersion = $entry[0].appVersion
+			$track = $colEntry[0].appBuild
+			$trackAppVersion = $colEntry[0].appVersion
 
 			try {
 				$trackBuilds = Invoke-RestMethod -Method Get `
-					-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version=$($track.Replace('.', '-'))" `
-					-Headers $headers
+					-Uri ("https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version={0}" `
+						-f $track.Replace('.', '-')) `
+					-Headers $hashHeaders
 			}
 			catch {
 				$messageString = "Failed retrieving FinOps builds for track <c='em'>$track</c> from the developer tools service."
-				Write-PSFMessage -Level Important -Message $messageString -ErrorRecord $_
-				Stop-PSFFunction -Message "Stopping because the finopsbuilds request failed." -ErrorRecord $_
+				Write-PSFMessage -Level Important `
+					-Message $messageString `
+					-ErrorRecord $_
+
+				Stop-PSFFunction -Message "Stopping because the finopsbuilds request failed." `
+					-ErrorRecord $_
+
 				return
 			}
 
-			$fullBuild = @($trackBuilds | Sort-Object -Property { [version]$_ } -Descending | Select-Object -First 1)
+			$objFullBuild = $trackBuilds |
+			Sort-Object -Property { [version]$_ } `
+				-Descending |
+			Select-Object -First 1
 
-			if ([string]::IsNullOrWhiteSpace("$fullBuild")) {
+			if ([string]::IsNullOrWhiteSpace($objFullBuild)) {
 				Stop-PSFFunction -Message "Stopping because no builds were found for track $track."
 				return
 			}
 
-			$fullBuild = "$fullBuild"
+			$objFullBuild = "$objFullBuild"
 		}
 		else {
 			$normalized = "$Build".Replace("-", ".").Trim()
-			$parts = @($normalized -split "\.")
+			$colParts = @($normalized -split "\.")
 
-			if ($parts.Count -eq 4) {
-				$fullBuild = $normalized
-				$track = "$($parts[0]).$($parts[1]).$($parts[2])"
-				$byBuild = @($catalog | Where-Object { $_.appBuild -eq $track } | Select-Object -First 1)
+			if ($colParts.Count -eq 4) {
+				$objFullBuild = $normalized
+				$track = "$($colParts[0]).$($colParts[1]).$($colParts[2])"
+				$colByBuild = @(
+					$catalog |
+					Where-Object { $_.appBuild -eq $track } |
+					Select-Object -First 1
+				)
 
-				if ($byBuild.Count -gt 0) {
-					$trackAppVersion = $byBuild[0].appVersion
+				if ($colByBuild.Count -gt 0) {
+					$trackAppVersion = $colByBuild[0].appVersion
 				}
 
-				if ($appGiven -and $track -ne $appTrack) {
+				if (($appGiven) `
+						-and ($track -ne $appTrack)) {
 					$messageString = "Build <c='em'>$Build</c> is not on the <c='em'>$AppVersion</c> track. Specify a matching build or omit <c='em'>-AppVersion</c>."
-					Write-PSFMessage -Level Important -Message $messageString
+					Write-PSFMessage -Level Important `
+						-Message $messageString
+
 					Stop-PSFFunction -Message "Stopping because the build does not match the application track." `
 						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 					return
 				}
 			}
 			else {
-				$byAppVersion = @($catalog | Where-Object { $_.appVersion -eq $normalized } | Select-Object -First 1)
+				$colByAppVersion = @(
+					$catalog |
+					Where-Object { $_.appVersion -eq $normalized } |
+					Select-Object -First 1
+				)
 
-				if ($byAppVersion.Count -gt 0) {
-					$track = $byAppVersion[0].appBuild
-					$trackAppVersion = $byAppVersion[0].appVersion
+				if ($colByAppVersion.Count -gt 0) {
+					$track = $colByAppVersion[0].appBuild
+					$trackAppVersion = $colByAppVersion[0].appVersion
 				}
 				else {
-					$byBuild = @($catalog | Where-Object { $_.appBuild -eq $normalized } | Select-Object -First 1)
+					$colByBuild = @(
+						$catalog |
+						Where-Object { $_.appBuild -eq $normalized } |
+						Select-Object -First 1
+					)
 
-					if ($byBuild.Count -gt 0) {
-						$track = $byBuild[0].appBuild
-						$trackAppVersion = $byBuild[0].appVersion
+					if ($colByBuild.Count -gt 0) {
+						$track = $colByBuild[0].appBuild
+						$trackAppVersion = $colByBuild[0].appVersion
 					}
 				}
 
 				if ([string]::IsNullOrWhiteSpace($track)) {
-					$valid = ($catalog | Sort-Object -Property { [version]$_.appVersion } | ForEach-Object { $_.appVersion }) -join ", "
+					$valid = ($catalog |
+						Sort-Object -Property { [version]$_.appVersion } |
+						ForEach-Object { $_.appVersion }) -join ", "
 					$messageString = "Unknown build or track <c='em'>$Build</c>. Valid application versions are: $valid."
-					Write-PSFMessage -Level Important -Message $messageString
+					Write-PSFMessage -Level Important `
+						-Message $messageString
+
 					Stop-PSFFunction -Message "Stopping because the build was not recognized." `
 						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 					return
 				}
 
-				if ($appGiven -and $track -ne $appTrack) {
+				if (($appGiven) `
+						-and ($track -ne $appTrack)) {
 					$messageString = "Build <c='em'>$Build</c> is not on the <c='em'>$AppVersion</c> track. Specify a matching build or omit <c='em'>-AppVersion</c>."
-					Write-PSFMessage -Level Important -Message $messageString
+					Write-PSFMessage -Level Important `
+						-Message $messageString
+
 					Stop-PSFFunction -Message "Stopping because the build does not match the application track." `
 						-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 					return
 				}
 
 				try {
 					$trackBuilds = Invoke-RestMethod -Method Get `
-						-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version=$($track.Replace('.', '-'))" `
-						-Headers $headers
+						-Uri ("https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version={0}" `
+							-f $track.Replace('.', '-')) `
+						-Headers $hashHeaders
 				}
 				catch {
 					$messageString = "Failed retrieving FinOps builds for track <c='em'>$track</c> from the developer tools service."
-					Write-PSFMessage -Level Important -Message $messageString -ErrorRecord $_
-					Stop-PSFFunction -Message "Stopping because the finopsbuilds request failed." -ErrorRecord $_
+					Write-PSFMessage -Level Important `
+						-Message $messageString `
+						-ErrorRecord $_
+
+					Stop-PSFFunction -Message "Stopping because the finopsbuilds request failed." `
+						-ErrorRecord $_
+
 					return
 				}
 
-				$fullBuild = @($trackBuilds | Sort-Object -Property { [version]$_ } -Descending | Select-Object -First 1)
+				$objFullBuild = $trackBuilds |
+				Sort-Object -Property { [version]$_ } `
+					-Descending |
+				Select-Object -First 1
 
-				if ([string]::IsNullOrWhiteSpace("$fullBuild")) {
+				if ([string]::IsNullOrWhiteSpace($objFullBuild)) {
 					Stop-PSFFunction -Message "Stopping because no builds were found for track $track."
 					return
 				}
 
-				$fullBuild = "$fullBuild"
+				$objFullBuild = "$objFullBuild"
 			}
 		}
 
-		$wanted = @()
 		$assetExplicit = $PSBoundParameters.ContainsKey('Asset')
-
-		if (-not $assetExplicit) {
-			$wanted = @($nugetMap.Keys) + @($fileEndpoints.Keys)
-		}
-		else {
-			foreach ($name in @($Asset)) {
-				if ($name -eq '*') {
-					$wanted += @($nugetMap.Keys) + @($fileEndpoints.Keys) + @('Vhd')
-				}
-				else {
-					$wanted += $name
+		$colWanted = @(
+			if (-not $assetExplicit) {
+				@($hashNugetMap.Keys) + @($hashFileEndpoints.Keys)
+			}
+			else {
+				foreach ($itemName in @($Asset)) {
+					if ($itemName -eq '*') {
+						@($hashNugetMap.Keys) + @($hashFileEndpoints.Keys) + @('Vhd')
+					}
+					else {
+						$itemName
+					}
 				}
 			}
+		)
 
-			$wanted = @($wanted | Sort-Object -Unique)
+		if ($assetExplicit) {
+			$colWanted = @($colWanted |
+				Sort-Object -Unique)
 		}
 
-		if (-not $assetExplicit -and $PSBoundParameters.ContainsKey('Kind') -and $Kind -ne '*' -and ('Vhd' -like $Kind) -and 'Vhd' -notin $wanted) {
-			$wanted += 'Vhd'
+		if ((-not $assetExplicit) `
+				-and ($PSBoundParameters.ContainsKey('Kind')) `
+				-and (('Vhd' -like $Kind)) `
+				-and (('NuGet' -notlike $Kind)) `
+				-and ('Vhd' -notin $colWanted)) {
+			$colWanted += 'Vhd'
 		}
 
-		if ($Kind -ne '*') {
+		if ($PSBoundParameters.ContainsKey('Kind')) {
 			$kindOf = {
 				param ([string] $Name)
 
-				if ($Name -eq 'Vhd') { return 'Vhd' }
-				if ($nugetMap.Contains($Name)) { return 'NuGet' }
+				if ($Name -eq 'Vhd') { 'Vhd'; return }
+				if ($hashNugetMap.Contains($Name)) { 'NuGet'; return }
 
-				return 'DeveloperFile'
+				'DeveloperFile'
 			}
 
-			$wanted = @($wanted | Where-Object { (& $kindOf $_) -like $Kind })
+			$colWanted = @(
+				$colWanted |
+				Where-Object { (& $kindOf $_) -like $Kind }
+			)
 
-			if ($wanted.Count -eq 0) {
-				Write-PSFMessage -Level Important -Message "No assets match <c='em'>$($Asset -join ', ')</c> filtered by kind <c='em'>$Kind</c>. Note that VHD is only included when explicitly requested via <c='em'>-Asset Vhd</c>."
+			if ($colWanted.Count -eq 0) {
+				Write-PSFMessage -Level Important `
+					-Message "No assets match <c='em'>$($Asset -join ', ')</c> filtered by kind <c='em'>$Kind</c>. Note that VHD is only included when explicitly requested via <c='em'>-Asset Vhd</c>."
+
 				return
 			}
 		}
 
-		$buildDashed = $fullBuild.Replace(".", "-")
+		$buildDashed = $objFullBuild.Replace(".", "-")
 
 		if ($Download) {
-			$downloadDir = Join-Path $Path $fullBuild
+			$downloadDir = Join-Path $Path $objFullBuild
 
-			$null = New-Item -Path $downloadDir `
+			New-Item -Path $downloadDir `
 				-ItemType Directory `
 				-Force `
-				-WarningAction SilentlyContinue
+				-WarningAction SilentlyContinue > $null
 		}
 
 		$colAssets = @(
-			foreach ($name in $wanted) {
-				if ($name -eq 'Vhd') {
+			foreach ($itemName in $colWanted) {
+				if ($itemName -eq 'Vhd') {
 					if ([string]::IsNullOrWhiteSpace($trackAppVersion)) {
-						Write-PSFMessage -Level Important -Message "Skipping <c='em'>Vhd</c>: the application version for build <c='em'>$fullBuild</c> is unknown."
+						Write-PSFMessage -Level Important `
+							-Message "Skipping <c='em'>Vhd</c>: the application version for build <c='em'>$objFullBuild</c> is unknown."
+
 						continue
 					}
 
 					try {
 						$vhdUris = Invoke-RestMethod -Method Get `
-							-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/vhd?version=$($trackAppVersion.Replace('.', '-'))" `
-							-Headers $headers
+							-Uri ("https://developertools.powerplatform.microsoft.com/api/clientmetadata/vhd?version={0}" `
+								-f $trackAppVersion.Replace('.', '-')) `
+							-Headers $hashHeaders
 					}
 					catch {
-						Write-PSFMessage -Level Important -Message "Skipping <c='em'>Vhd</c> for <c='em'>$trackAppVersion</c>: $($_.Exception.Message)" -ErrorRecord $_
+						Write-PSFMessage -Level Important `
+							-Message "Skipping <c='em'>Vhd</c> for <c='em'>$trackAppVersion</c>: $($_.Exception.Message)" `
+							-ErrorRecord $_
+
 						continue
 					}
 
-					foreach ($vhdUri in @($vhdUris)) {
-						$vhdFileName = (Split-Path "$vhdUri" -Leaf).Split("?")[0]
+					foreach ($itemVhdUri in @($vhdUris)) {
+						$vhdFileName = (Split-Path "$itemVhdUri" -Leaf).Split("?")[0]
 
 						[PsCustomObject][Ordered]@{
 							"Asset"    = "Vhd"
 							"Kind"     = "Vhd"
 							"FileName" = $vhdFileName
-							"Build"    = $fullBuild
-							"Uri"      = "$vhdUri"
+							"Uri"      = "$itemVhdUri"
+							"Build"    = $objFullBuild
 						}
 					}
 
@@ -469,73 +551,100 @@ function Get-PpacFinOpsAsset {
 				}
 
 				try {
-					if ($nugetMap.Contains($name)) {
-						$packageId = $nugetMap[$name]
+					if ($hashNugetMap.Contains($itemName)) {
+						$packageId = $hashNugetMap[$itemName]
 						$assetUri = Invoke-RestMethod -Method Get `
-							-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/nugetpackage?packageName=$([uri]::EscapeDataString($packageId))&version=$buildDashed" `
-							-Headers $headers
+							-Uri ("https://developertools.powerplatform.microsoft.com/api/clientmetadata/nugetpackage?packageName={0}&version={1}" `
+								-f [uri]::EscapeDataString($packageId),
+							$buildDashed) `
+							-Headers $hashHeaders
 					}
 					else {
 						$assetUri = Invoke-RestMethod -Method Get `
-							-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/$($fileEndpoints[$name])?version=$buildDashed" `
-							-Headers $headers
+							-Uri ("https://developertools.powerplatform.microsoft.com/api/clientmetadata/{0}?version={1}" `
+								-f $hashFileEndpoints[$itemName],
+							$buildDashed) `
+							-Headers $hashHeaders
 					}
 				}
 				catch {
-					Write-PSFMessage -Level Important -Message "Skipping <c='em'>$name</c> for build <c='em'>$fullBuild</c>: not published for this build." -ErrorRecord $_
+					Write-PSFMessage -Level Important `
+						-Message "Skipping <c='em'>$itemName</c> for build <c='em'>$objFullBuild</c>: not published for this build." `
+						-ErrorRecord $_
+
 					continue
 				}
 
 				$assetFileName = (Split-Path "$assetUri" -Leaf).Split("?")[0]
 
-				$assetKind = if ($nugetMap.Contains($name)) { "NuGet" } else { "DeveloperFile" }
+				$assetKind = $hashNugetMap.Contains($itemName) ? "NuGet" : "DeveloperFile"
 
 				[PsCustomObject][Ordered]@{
-					"Asset"    = $name
+					"Asset"    = $itemName
 					"Kind"     = $assetKind
 					"FileName" = $assetFileName
-					"Build"    = $fullBuild
 					"Uri"      = "$assetUri"
+					"Build"    = $objFullBuild
 				}
 			}
 		)
 
-		$versionInfo = Resolve-FinOpsVersionFromCache -Build $fullBuild
-		$mapAppVersion = if ($null -ne $versionInfo) { $versionInfo.AppVersion } else { '' }
-		$mapAppBuild = if ($null -ne $versionInfo) { $versionInfo.AppBuild } else { '' }
-		$mapPlatVersion = if ($null -ne $versionInfo) { $versionInfo.PlatVersion } else { '' }
-		$mapPlatBuild = if ($null -ne $versionInfo) { $versionInfo.PlatBuild } else { '' }
+		Write-FinOpsVersionCache -Versions $catalog
+		$hashVersionInfo = Resolve-FinOpsVersionFromCache -Build $objFullBuild
+		$mapAppVersion = (-not ($null -eq $hashVersionInfo)) ? $hashVersionInfo.AppVersion : ''
+		$mapAppBuild = (-not ($null -eq $hashVersionInfo)) ? $hashVersionInfo.AppBuild : ''
+		$mapPlatVersion = (-not ($null -eq $hashVersionInfo)) ? $hashVersionInfo.PlatVersion : ''
+		$mapPlatBuild = (-not ($null -eq $hashVersionInfo)) ? $hashVersionInfo.PlatBuild : ''
 
-		$versionProperties = @(
-			@{Name = "AppVersion"; Expression = { $mapAppVersion } }
-			@{Name = "AppBuild"; Expression = { $mapAppBuild } }
-			@{Name = "Track"; Expression = { $mapAppBuild } }
-			@{Name = "PlatVersion"; Expression = { $mapPlatVersion } }
+		try {
+			$platformVersion = Invoke-RestMethod -Method Get `
+				-Uri ("https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}" `
+					-f $buildDashed) `
+				-Headers $hashHeaders
+
+			$mapPlatBuild = "$platformVersion"
+			Write-FinOpsVersionCache -Platforms @{ "$objFullBuild" = "$platformVersion" }
+		}
+		catch {
+			Write-PSFMessage -Level Warning `
+				-Message "Failed retrieving the platform version for build <c='em'>$objFullBuild</c>. Using cached version metadata." `
+				-ErrorRecord $_
+		}
+
+		$colAssets = @(
+			$colAssets |
+			Select-Object -Property *,
+			@{Name = "AppVersion"; Expression = { $mapAppVersion } },
+			@{Name = "AppBuild"; Expression = { $mapAppBuild } },
+			@{Name = "Track"; Expression = { $mapAppBuild } },
+			@{Name = "PlatVersion"; Expression = { $mapPlatVersion } },
 			@{Name = "PlatBuild"; Expression = { $mapPlatBuild } }
 		)
 
-		$colAssets = @($colAssets | Select-Object -Property (@('*') + $versionProperties))
-
 		if ($Download) {
-			$downloadProperties = @(
-				@{Name = "Path"; Expression = { Join-Path $downloadDir $_.FileName } }
-				@{Name = "Status"; Expression = { "" } }
+			$colAssets = @(
+				$colAssets |
+				Select-Object -Property *,
+				@{Name = "Path"; Expression = { Join-Path $downloadDir $_.FileName } },
+				@{Name = "Status"; Expression = { "" } },
 				@{Name = "ExtractedPath"; Expression = { $null } }
 			)
-
-			$colAssets = @($colAssets | Select-Object -Property (@('*') + $downloadProperties))
 		}
 
-		$colAssets = @($colAssets | Sort-Object -Property Kind, Asset, FileName)
+		$colAssets = @($colAssets |
+			Sort-Object -Property Kind, Asset, FileName)
 
 		if (-not $Download) {
-			$output = $colAssets | Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
+			$output = $colAssets |
+			Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
 				-Property *, `
 			@{Name = "Status"; Expression = { "Available" } }
 
 			if ($AsExcelOutput) {
-				$output | Export-Excel -WorksheetName "Get-PpacFinOpsAsset" `
+				$output |
+				Export-Excel -WorksheetName "Get-PpacFinOpsAsset" `
 					-NoNumberConversion AppVersion, AppBuild, Track, Build, PlatVersion, PlatBuild
+
 				return
 			}
 
@@ -545,19 +654,24 @@ function Get-PpacFinOpsAsset {
 
 		if (-not [System.IO.File]::Exists($executable)) {
 			$messageString = "AzCopy executable not found at <c='em'>$executable</c>. Please install AzCopy using <c='em'>Invoke-BapInstallAzCopy</c> or configure the path using <c='em'>Set-BapAzCopyPath</c>."
-			Write-PSFMessage -Level Important -Message $messageString
-			Stop-PSFFunction -Message "Stopping because AzCopy executable was not found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+			Write-PSFMessage -Level Important `
+				-Message $messageString
+
+			Stop-PSFFunction -Message "Stopping because AzCopy executable was not found." `
+				-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 			return
 		}
 
-		if ($PSBoundParameters.ContainsKey('OutputPath') -and -not [string]::IsNullOrWhiteSpace($OutputPath)) {
-			$baseRoot = Join-Path $OutputPath $fullBuild
+		if (($PSBoundParameters.ContainsKey('OutputPath')) `
+				-and (-not [string]::IsNullOrWhiteSpace($OutputPath))) {
+			$baseRoot = Join-Path $OutputPath $objFullBuild
 			$pathNugetsRoot = Join-Path $baseRoot "NuGets"
 			$pathPackagesLocalDirectory = Join-Path $baseRoot "PackagesLocalDirectory"
 		}
 		else {
-			$pathNugetsRoot = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\NuGets"
-			$pathPackagesLocalDirectory = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$fullBuild\PackagesLocalDirectory"
+			$pathNugetsRoot = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$objFullBuild\NuGets"
+			$pathPackagesLocalDirectory = "$env:LOCALAPPDATA\Microsoft\Dynamics365\$objFullBuild\PackagesLocalDirectory"
 		}
 
 		$retryCount = 0
@@ -566,88 +680,112 @@ function Get-PpacFinOpsAsset {
 		do {
 			$retryCount++
 
-			foreach ($assetObj in $colAssets) {
-				$outputPath = $assetObj.Path
+			foreach ($itemAsset in $colAssets) {
+				$outputPath = $itemAsset.Path
 
-				if ([System.IO.File]::Exists($outputPath) -and -not $Force) {
-					Write-PSFMessage -Level Verbose -Message "Skipping $($assetObj.FileName), already on disk. Use -Force to re-download."
-					$assetObj.Status = "Skipped"
+				if (([System.IO.File]::Exists($outputPath)) `
+						-and (-not $Force)) {
+					Write-PSFMessage -Level Verbose `
+						-Message "Skipping $($itemAsset.FileName), already on disk. Use -Force to re-download."
+
+					$itemAsset.Status = "Skipped"
 					continue
 				}
 
-				Write-PSFMessage -Level Important -Message "Downloading <c='em'>$($assetObj.FileName)</c>..."
+				Write-PSFMessage -Level Important `
+					-Message "Downloading <c='em'>$($itemAsset.FileName)</c>..."
 
 				try {
-					$azCopyOut = & $executable copy "$($assetObj.Uri)" "$outputPath" --overwrite=true 2>&1
-					Write-PSFMessage -Level Verbose -Message ($azCopyOut -join [Environment]::NewLine)
+					$azCopyOut = & $executable copy "$($itemAsset.Uri)" "$outputPath" --overwrite=true 2>&1
+					Write-PSFMessage -Level Verbose `
+						-Message ($azCopyOut -join [Environment]::NewLine)
 				}
 				catch {
-					Write-PSFMessage -Level Important -Message "Download of <c='em'>$($assetObj.FileName)</c> failed: $($_.Exception.Message)" -ErrorRecord $_
+					Write-PSFMessage -Level Important `
+						-Message "Download of <c='em'>$($itemAsset.FileName)</c> failed: $($_.Exception.Message)" `
+						-ErrorRecord $_
 				}
 
 				if ([System.IO.File]::Exists($outputPath)) {
 					Unblock-File -Path $outputPath
-					$assetObj.Status = "Downloaded"
+					$itemAsset.Status = "Downloaded"
 				}
 				else {
-					$assetObj.Status = "Failed"
+					$itemAsset.Status = "Failed"
 				}
 			}
 		} while (
-			($colAssets | `
-				Where-Object { $_.Status -ne "Downloaded" -and $_.Status -ne "Skipped" }) `
+			($colAssets |
+			Where-Object { ($_.Status -ne "Downloaded") `
+					-and ($_.Status -ne "Skipped") }) `
 				-and $retryCount -lt $maxRetries
 		)
 
-		foreach ($assetObj in $colAssets) {
-			if ($assetObj.Status -ne "Downloaded" -and -not ([System.IO.File]::Exists($assetObj.Path))) {
+		foreach ($itemAsset in $colAssets) {
+			if (($itemAsset.Status -ne "Downloaded") `
+					-and (-not ([System.IO.File]::Exists($itemAsset.Path)))) {
 				continue
 			}
 
-			if ($assetObj.Asset -in @($nugetMap.Keys)) {
-				$null = New-Item -Path $pathNugetsRoot `
+			if ($itemAsset.Asset -in @($hashNugetMap.Keys)) {
+				New-Item -Path $pathNugetsRoot `
 					-ItemType Directory `
 					-Force `
-					-WarningAction SilentlyContinue
+					-WarningAction SilentlyContinue > $null
 
-				$extractDirName = [System.IO.Path]::GetFileNameWithoutExtension($assetObj.Path)
+				$extractDirName = [System.IO.Path]::GetFileNameWithoutExtension($itemAsset.Path)
 				$extractPath = Join-Path $pathNugetsRoot $extractDirName
-				$assetObj.ExtractedPath = $extractPath
+				$itemAsset.ExtractedPath = $extractPath
 
-				if ([System.IO.Path]::Exists($extractPath) -and -not $Force) {
-					Write-PSFMessage -Level Verbose -Message "Extraction of $extractDirName already in place. Use -Force to re-extract."
+				if (([System.IO.Path]::Exists($extractPath)) `
+						-and (-not $Force)) {
+					Write-PSFMessage -Level Verbose `
+						-Message "Extraction of $extractDirName already in place. Use -Force to re-extract."
+
 					continue
 				}
 
 				if ([System.IO.Path]::Exists($extractPath)) {
-					Remove-Item -Path $extractPath -Recurse -Force
+					Remove-Item -Path $extractPath `
+						-Recurse `
+						-Force
 				}
 
-				Write-PSFMessage -Level Important -Message "Extracting <c='em'>$extractDirName</c>..."
-				[IO.Compression.ZipFile]::ExtractToDirectory($assetObj.Path, $extractPath, $true)
-			}
-			elseif ($assetObj.Asset -eq "SystemMetadata") {
-				$assetObj.ExtractedPath = $pathPackagesLocalDirectory
+				Write-PSFMessage -Level Important `
+					-Message "Extracting <c='em'>$extractDirName</c>..."
 
-				if ([System.IO.Path]::Exists($pathPackagesLocalDirectory) -and -not $Force) {
-					Write-PSFMessage -Level Verbose -Message "PackagesLocalDirectory already in place. Use -Force to re-extract."
+				[IO.Compression.ZipFile]::ExtractToDirectory($itemAsset.Path, $extractPath, $true)
+			}
+			elseif ($itemAsset.Asset -eq "SystemMetadata") {
+				$itemAsset.ExtractedPath = $pathPackagesLocalDirectory
+
+				if (([System.IO.Path]::Exists($pathPackagesLocalDirectory)) `
+						-and (-not $Force)) {
+					Write-PSFMessage -Level Verbose `
+						-Message "PackagesLocalDirectory already in place. Use -Force to re-extract."
+
 					continue
 				}
 
-				Write-PSFMessage -Level Important -Message "Extracting <c='em'>PackagesLocalDirectory</c> for build <c='em'>$fullBuild</c>..."
-				[IO.Compression.ZipFile]::ExtractToDirectory($assetObj.Path, $pathPackagesLocalDirectory, $true)
+				Write-PSFMessage -Level Important `
+					-Message "Extracting <c='em'>PackagesLocalDirectory</c> for build <c='em'>$objFullBuild</c>..."
+
+				[IO.Compression.ZipFile]::ExtractToDirectory($itemAsset.Path, $pathPackagesLocalDirectory, $true)
 			}
 		}
 
 		[GC]::Collect()
 		[GC]::WaitForPendingFinalizers()
 
-		$output = $colAssets | Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
+		$output = $colAssets |
+		Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsAsset" `
 			-Property *
 
 		if ($AsExcelOutput) {
-			$output | Export-Excel -WorksheetName "Get-PpacFinOpsAsset" `
+			$output |
+			Export-Excel -WorksheetName "Get-PpacFinOpsAsset" `
 				-NoNumberConversion AppVersion, AppBuild, Track, Build, PlatVersion, PlatBuild
+
 			return
 		}
 
