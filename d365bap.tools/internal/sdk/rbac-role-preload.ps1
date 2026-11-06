@@ -76,7 +76,7 @@
 
 				Save-BapRbacRoleCatalog -Roles @($response.value)
 			}
-			catch { Write-Verbose -Message 'Role catalog refresh unavailable.' }
+			catch { $_.Exception.Message > $null }
 		} > $null
 	}
 	catch {
