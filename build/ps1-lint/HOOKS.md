@@ -721,7 +721,7 @@ $colPolicies = @(
 ```
 
 When `@( ... )` holds a hashtable or scriptblock, the content starts on the line
-after `@(`:
+after `@(` and the closing `)` is on its own line:
 
 ```powershell
 # Fails: content shares the @( line
@@ -731,7 +731,13 @@ $colFiltered = @($colRaw |
             -and ($_.roleDefinitionId -in $colRoleIds)
     })
 
-# Passes: @( opens alone
+# Fails: closing ) shares the last content line
+$colEnvironments = @(
+    $colEnvironments |
+    Where-Object { $_.id -like $EnvironmentId } |
+    Select-PSFObject -TypeName 'D365Bap.Tools.PpacEnvironment' -Property *)
+
+# Passes: @( opens alone and ) closes alone
 $colMatchingIds = @(
     $colRbacRoles |
     Where-Object {
@@ -756,9 +762,10 @@ Complex means a hashtable or scriptblock AST node inside the array statement.
 `Where-Object { ... }` and `ForEach-Object { ... }` count; simplified
 `Where-Object Name -eq 'x'` and a plain `@($items | Select-Object -First 1)` do
 not. A `[pscustomobject]@{ ... }` element counts as complex. A single complex
-element may stay on a command line outside `@(...)`. Test files, tepp fixtures,
-and `build/` scripts are exempt. The rule runs on module code (public and
-internal).
+element may stay on a command line outside `@(...)`. `Select-PSFObject`
+property-list layout is owned by `PSUseStandardSelectObject`, same as
+`Select-Object`. Test files, tepp fixtures, and `build/` scripts are exempt. The
+rule runs on module code (public and internal).
 
 Run its regression checks under PowerShell 7.6 or later:
 
