@@ -194,7 +194,7 @@ function Get-PpacEnvironmentRbacRoleAssignment {
 			'roleDefinitionId as RoleId',
 			'principalType as PrincipalType',
 			'scope as Scope',
-			'id as RoleAssignmentId'
+			'roleAssignmentId as RoleAssignmentId'
 		)
 
 		if ($AsExcelOutput) {

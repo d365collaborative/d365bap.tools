@@ -112,7 +112,11 @@ function Add-PpacRbacRoleMember {
 
 		$colRoleMembers = Get-PpacRbacRoleMember `
 			-ServicePrincipalId $ServicePrincipalId `
-			-Role $objRole.roleDefinitionName
+			-Role $objRole.roleDefinitionName |
+		Where-Object {
+			($_.Scope.TrimEnd('/') -eq $tmpScope.TrimEnd('/')) `
+				-and ($_.PrincipalType -eq $PrincipalType)
+		}
 
 		if (-not ($null -eq $colRoleMembers)) {
 			$colRoleMembers
@@ -150,7 +154,11 @@ function Add-PpacRbacRoleMember {
 
 		Get-PpacRbacRoleMember `
 			-ServicePrincipalId $ServicePrincipalId `
-			-Role $objRole.roleDefinitionName
+			-Role $objRole.roleDefinitionName |
+		Where-Object {
+			($_.Scope.TrimEnd('/') -eq $tmpScope.TrimEnd('/')) `
+				-and ($_.PrincipalType -eq $PrincipalType)
+		}
 	}
 
 	end {
