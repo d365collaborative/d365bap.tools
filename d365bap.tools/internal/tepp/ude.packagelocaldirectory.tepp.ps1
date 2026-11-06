@@ -10,8 +10,9 @@
 	"AppVersion (PackagesVersion)", sorted by AppVersion ascending.
 	Builds newer than every known catalog track show as
 	"Prerelease (PackagesVersion)" and sort last.
-	The inserted value stays the plain PackagesVersion so -Version filtering
-	keeps working. Quoting mirrors the word being completed.
+	The Version parameter inserts the displayed label, quoted when needed.
+	Set-UdeConfig keeps the plain PackagesVersion for its path lookup.
+	Quoting mirrors the word being completed.
 #>
 
 $udePackageLocalDirectoryCompleter = {
@@ -19,7 +20,7 @@ $udePackageLocalDirectoryCompleter = {
 
 	# The native completer contract supplies these parameters even when this
 	# completer only needs the word being completed.
-	$null = $commandName, $parameterName, $commandAst, $fakeBoundParameters
+	$null = $commandName, $commandAst, $fakeBoundParameters
 
 	try {
 		$rawWord = "$wordToComplete"
@@ -98,8 +99,15 @@ $udePackageLocalDirectoryCompleter = {
 		foreach ($item in $found) {
 			$completionText = $item.PackagesVersion
 
+			if ($parameterName -eq 'Version') {
+				$completionText = $item.Display
+			}
+
 			if ($quoteChar -ne '') {
-				$completionText = "$quoteChar$($item.PackagesVersion)$quoteChar"
+				$completionText = "$quoteChar$completionText$quoteChar"
+			}
+			elseif ($completionText -match '\s') {
+				$completionText = "'$completionText'"
 			}
 
 			[System.Management.Automation.CompletionResult]::new($completionText, $item.Display, 'ParameterValue', $item.Path)

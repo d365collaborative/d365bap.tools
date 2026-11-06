@@ -6,7 +6,7 @@
         Finds installed package folders under the local Dynamics 365 developer folder. Returns each PackagesLocalDirectory path, sorted ascending, with AppVersion from the cached FinOps catalog. Newer unknown builds show Prerelease.
 
     .PARAMETER Version
-        Packages version to include. Supports wildcards.
+        Packages version or AppVersion (PackagesVersion) label. Supports wildcards.
 
         Default: '*'.
 
@@ -53,12 +53,18 @@ function Get-UdePackageLocalDirectory {
 	}
 
 	process {
+		$filterVersion = $Version
+
+		if ($filterVersion -match '\(([^()]+)\)\s*$') {
+			$filterVersion = $Matches[1].Trim()
+		}
+
 		$colRes = @(
 			Get-ChildItem -LiteralPath $pathPackagesRoot `
 				-Directory |
 			Where-Object {
 				($_.Name -match '^\d+(\.\d+)+$') `
-					-and ($_.Name -like $Version)
+					-and ($_.Name -like $filterVersion)
 			} | ForEach-Object {
 				$pathPackagesLocal = Join-Path -Path $_.FullName `
 					-ChildPath 'PackagesLocalDirectory'
