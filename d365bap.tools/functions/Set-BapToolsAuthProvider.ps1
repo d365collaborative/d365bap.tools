@@ -15,13 +15,14 @@
     .EXAMPLE
         PS C:\> Set-BapToolsAuthProvider -AzAccount
 
-        This will set the token minting provider to AzAccount.
+        Selects Az.Accounts for token acquisition.
+        It uses -AzAccount.
 
     .EXAMPLE
         PS C:\> Set-BapToolsAuthProvider -AzCli
 
-        This will validate the Azure CLI installation and its login
-        state, then set the token minting provider to AzCli.
+        Validates the Azure CLI installation and account context, then selects Azure CLI.
+        It uses -AzCli.
 
     .NOTES
         Author: Mötz Jensen (@Splaxi)
@@ -29,7 +30,7 @@
 function Set-BapToolsAuthProvider {
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding(DefaultParameterSetName = 'AzAccount')]
-	[OutputType()]
+	[OutputType([void])]
 	param (
 		[Parameter(Mandatory = $true, ParameterSetName = 'AzCli')]
 		[switch] $AzCli,
@@ -39,38 +40,50 @@ function Set-BapToolsAuthProvider {
 	)
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		if ($AzCli) {
 			if ($null -eq (Get-Command az -ErrorAction SilentlyContinue)) {
 				$messageString = "Azure CLI (<c='em'>az</c>) was not found on the path. Please install it with '<c='em'>Invoke-BapInstallAzCli</c>' before switching the auth provider to AzCli."
 
-				Write-PSFMessage -Level Important -Message $messageString
-				Stop-PSFFunction -Message "Stopping because the Azure CLI was not found." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
+				Stop-PSFFunction -Message "Stopping because the Azure CLI was not found." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 				return
 			}
 
 			try {
-				$null = & az account get-access-token --resource 'https://service.powerapps.com/' -o json 2>&1
+				$tenantId = & az account show --query tenantId -o tsv 2>$null
 				if ($LASTEXITCODE -ne 0) {
-					throw "az account get-access-token exited with code $LASTEXITCODE."
+					throw "az account show exited with code $LASTEXITCODE."
+				}
+				if ([string]::IsNullOrWhiteSpace($tenantId)) {
+					throw "az account show returned no tenant for the current account."
 				}
 			}
 			catch {
-				$messageString = "Azure CLI token probe failed: $($_.Exception.Message) Make sure you are logged in (e.g. '<c='em'>az login</c>') before switching the auth provider to AzCli."
+				$messageString = "Azure CLI context probe failed: $($_.Exception.Message) Make sure you are logged in (e.g. '<c='em'>az login</c>') before switching the auth provider to AzCli."
 
-				Write-PSFMessage -Level Important -Message $messageString
-				Stop-PSFFunction -Message "Stopping because the Azure CLI could not mint a token." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
+				Stop-PSFFunction -Message "Stopping because the Azure CLI account context could not be read." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
 				return
 			}
 
-			Set-PSFConfig -FullName 'd365bap.tools.auth.provider' -Value 'AzCli'
+			Set-PSFConfig -FullName 'd365bap.tools.auth.provider' `
+				-Value 'AzCli'
 		}
 		elseif ($AzAccount) {
-			Set-PSFConfig -FullName 'd365bap.tools.auth.provider' -Value 'AzAccount'
+			Set-PSFConfig -FullName 'd365bap.tools.auth.provider' `
+				-Value 'AzAccount'
 		}
 
-		Register-PSFConfig -FullName 'd365bap.tools.auth.provider' -Scope UserDefault
+		Register-PSFConfig -FullName 'd365bap.tools.auth.provider' `
+			-Scope UserDefault
 
 		if (Get-Command Clear-BapTokenCache -ErrorAction SilentlyContinue) { Clear-BapTokenCache }
 		else { $script:BapTokenCache = @{} }
