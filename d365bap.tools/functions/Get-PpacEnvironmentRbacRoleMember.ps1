@@ -184,7 +184,7 @@ function Get-PpacEnvironmentRbacRoleMember {
 			'roleDefinitionId as RoleId',
 			@{ Name = 'Role'; Expression = { $hashRoleNames[$_.roleDefinitionId] } },
 			'principalType as PrincipalType',
-			'id as RoleAssignmentId',
+			'roleAssignmentId as RoleAssignmentId',
 			'scope as Scope'
 		)
 

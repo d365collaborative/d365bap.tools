@@ -184,7 +184,7 @@ function Add-PpacEnvironmentRbacRoleMember {
 		'roleDefinitionId as RoleId',
 		@{ Name = 'Role'; Expression = { $definitionName } },
 		'principalType as PrincipalType',
-		'id as RoleAssignmentId',
+		'roleAssignmentId as RoleAssignmentId',
 		'scope as Scope'
 	}
 }
