@@ -25,6 +25,8 @@ $moduleRoot = Split-Path (Split-Path $PSScriptRoot)
 
 "$moduleRoot\internal\sdk\finopsversion-preload.ps1"
 
+"$moduleRoot\internal\sdk\rbac-role-preload.ps1"
+
 (Get-ChildItem "$moduleRoot\internal\tepp\*.tepp.ps1" -ErrorAction Ignore).FullName
 
 "$moduleRoot\internal\tepp\assignment.ps1"
