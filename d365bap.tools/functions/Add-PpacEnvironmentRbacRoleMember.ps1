@@ -101,6 +101,7 @@ function Add-PpacEnvironmentRbacRoleMember {
 					Select-Object -ExpandProperty value)
 			}
 			catch {
+				if ($ErrorActionPreference -eq 'Stop') { throw }
 				$messageString = "Failed to retrieve role definitions for environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 				Write-PSFMessage -Level Important `
 					-Message $messageString `
@@ -166,6 +167,7 @@ function Add-PpacEnvironmentRbacRoleMember {
 				-ErrorAction Stop
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to assign the member <c='em'>$ServicePrincipalId</c> in environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `

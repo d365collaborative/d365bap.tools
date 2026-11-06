@@ -152,6 +152,7 @@ function Add-PpacEnvironmentGroupRbacRoleMember {
 				-ErrorAction Stop > $null
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to assign the role to the service principal. Verify that the service principal exists and the scope is correct. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `

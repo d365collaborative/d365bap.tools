@@ -69,6 +69,7 @@ function Remove-PpacEnvironmentGroupRbacRoleMember {
 				-ErrorAction Stop > $null
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to delete the group RBAC assignment <c='em'>$RoleAssignmentId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `

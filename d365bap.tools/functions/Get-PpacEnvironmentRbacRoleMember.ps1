@@ -103,6 +103,7 @@ function Get-PpacEnvironmentRbacRoleMember {
 					Select-Object -ExpandProperty value)
 			}
 			catch {
+				if ($ErrorActionPreference -eq 'Stop') { throw }
 				$messageString = "Failed to retrieve role definitions for environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 				Write-PSFMessage -Level Important `
 					-Message $messageString `
@@ -157,6 +158,7 @@ function Get-PpacEnvironmentRbacRoleMember {
 				Select-Object -ExpandProperty value)
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to retrieve role assignments for environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `

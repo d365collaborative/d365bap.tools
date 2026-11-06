@@ -73,6 +73,7 @@ function Remove-PpacEnvironmentRbacRoleMember {
 				-ErrorAction Stop > $null
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to remove the assignment <c='em'>$RoleAssignmentId</c> from environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `

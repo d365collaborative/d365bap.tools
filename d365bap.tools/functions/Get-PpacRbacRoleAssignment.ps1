@@ -163,6 +163,7 @@ function Get-PpacRbacRoleAssignment {
 				-ErrorAction Stop
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to search tenant role assignments in scope <c='em'>$Scope</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `

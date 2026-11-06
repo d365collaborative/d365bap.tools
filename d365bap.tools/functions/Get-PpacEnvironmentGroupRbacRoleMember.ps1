@@ -111,6 +111,7 @@ function Get-PpacEnvironmentGroupRbacRoleMember {
 				-ErrorAction Stop
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to retrieve group RBAC assignments for <c='em'>$EnvironmentGroupId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `

@@ -175,6 +175,7 @@ function Get-PpacEnvironmentRbacRoleAssignment {
 				-ErrorAction Stop
 		}
 		catch {
+			if ($ErrorActionPreference -eq 'Stop') { throw }
 			$messageString = "Failed to search environment role assignments in environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
