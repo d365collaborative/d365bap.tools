@@ -64,13 +64,17 @@ function Get-UdeConnection {
 
 		$resCol = [PSCustomObject]$hashProps |
 		Select-PSFObject -TypeName 'D365Bap.Tools.UdeConnection' `
-			"UserId as Upn",
-		@{Name = "ConnectionUri"; Expression = {
+			-Property "UserId as Upn",
+		@{
+			Name       = "ConnectionUri"
+			Expression = {
 				$temp = [uri]$_.DirectConnectionUri;
 				$temp.Scheme + "://" + $temp.Host
 			}
 		},
-		@{Name = "PpacEnvUri"; Expression = {
+		@{
+			Name       = "PpacEnvUri"
+			Expression = {
 				$temp = [uri]$_.DirectConnectionUri;
 				($temp.Scheme + "://" + $temp.Host).Replace("api.", "")
 			}
