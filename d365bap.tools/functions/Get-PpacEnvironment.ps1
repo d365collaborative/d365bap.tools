@@ -3,9 +3,10 @@
         Retrieves environments through the Power Platform API.
 
     .DESCRIPTION
-        Retrieves environments using the Power Platform SDK and current identity.
-        GUIDs use direct requests; name filters use paged discovery. Returns API
-        fields with identifier and display name aliases without legacy BAP lookup.
+        Lists environments by GUID or wildcard through paged discovery.
+        Discovery needs the Power Platform Administrator role and a token
+        covering that API area, else it warns and yields nothing. See
+        Get-BapEnvironment.
 
     .PARAMETER EnvironmentId
         Environment GUID or display name wildcard. GUIDs use a direct request.
@@ -38,6 +39,9 @@
 
     .LINK
         https://learn.microsoft.com/en-us/rest/api/power-platform/environmentmanagement/environments/list-environments-for-user
+
+    .LINK
+        https://learn.microsoft.com/en-us/power-platform/admin/programmability-authentication-v2
 #>
 function Get-PpacEnvironment {
 	[CmdletBinding()]
@@ -94,7 +98,7 @@ function Get-PpacEnvironment {
 			$errorText = "$($_.Exception.Message) $($_.Exception.InnerException.Message)"
 
 			if ($errorText -match '403|Forbidden') {
-				$messageString = "The current identity is not permitted to use the Power Platform environment management API (HTTP 403). Use <c='em'>Get-BapEnvironment</c> to discover environments instead."
+				$messageString = "The Power Platform environment management API denied access (HTTP 403). Discovery needs the Power Platform Administrator tenant role, a license covering administration, and a login whose token carries that API area (details: Get-Help Get-PpacEnvironment -Full). Use <c='em'>Get-BapEnvironment</c> to discover environments instead."
 				Write-PSFMessage -Level Warning `
 					-Message $messageString
 
