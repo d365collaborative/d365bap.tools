@@ -275,5 +275,50 @@ Assert-SelectObjectProperty 'Abbreviated parameter still checks layout' '$item |
 Assert-SelectObjectProperty 'Simple property after calculated property' '$item | Select-Object -Property @{ Name = "N"; Expression = { 1 } }, Name' -Expected 1
 Assert-SelectObjectProperty 'Other qualified command ignored' '$item | Other.Module\Select-Object -Property *, @{ Name = "N"; Expression = { 1 } }'
 
+Assert-SelectObjectProperty 'Select-PSFObject crowded calculated properties' @'
+function Get-Fixture {
+    $item | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" -Property *, @{ Name = "Managed"; Expression = { $_.protectionLevel -eq "Standard" } }, @{ Name = "Sku"; Expression = { $_.type } }
+}
+'@ -Expected 1 @('PSUseStandardSelectObject', 'Select-PSFObject', 'own line')
+
+Assert-SelectObjectProperty 'Select-PSFObject calculated properties on separate lines' @'
+function Get-Fixture {
+    $item | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" -Property *,
+        @{ Name = "Managed"; Expression = { $_.protectionLevel -eq "Standard" } },
+        @{ Name = "Sku"; Expression = { $_.type } }
+}
+'@
+
+Assert-SelectObjectProperty 'Select-PSFObject without -Property' @'
+function Get-Fixture {
+    $item | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" *, @{ Name = "Managed"; Expression = { $_.protectionLevel -eq "Standard" } }
+}
+'@ -Expected 1 @('PSUseStandardSelectObject', '-Property')
+
+Assert-SelectObjectProperty 'Select-PSFObject type name only' @'
+function Get-Fixture {
+    $item | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment"
+}
+'@
+
+Assert-SelectObjectProperty 'Module-qualified Select-PSFObject' @'
+function Get-Fixture {
+    $item | PSFramework\Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" -Property *, @{ Name = "Managed"; Expression = { $_.protectionLevel -eq "Standard" } }
+}
+'@ -Expected 1 @('PSUseStandardSelectObject', 'own line')
+
+$psfCombinedSource = @'
+$item | Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" -Property @{ Name = "A"; Expression = { $_.A } }, @{ Name = "B"; Expression = { $_.B } }
+'@
+$psfCombinedPath = Join-Path $fixtureRoot 'd365bap.tools/functions/Get-PsfFixture.ps1'
+[IO.File]::WriteAllText($psfCombinedPath, $psfCombinedSource)
+$psfCombinedAnalysis = Get-Ps1Analysis -Path $psfCombinedPath
+$psfCombinedDiagnostics = @(
+	Get-Ps1StandardSelectObjectDiagnostic $psfCombinedAnalysis
+	Get-Ps1ComplexArrayElementDiagnostic $psfCombinedAnalysis
+)
+if ($psfCombinedDiagnostics.Count -ne 1 -or $psfCombinedDiagnostics[0].RuleName -ne 'PSUseStandardSelectObject') {
+	throw "Select-PSFObject projection layout must have one owner: $($psfCombinedDiagnostics.RuleName -join ', ')"
+}
 
 Write-Output "Select-Object property rule checks passed: $script:caseCount cases."

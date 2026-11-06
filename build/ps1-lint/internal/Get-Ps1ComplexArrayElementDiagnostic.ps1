@@ -35,7 +35,7 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 
 	if (-not (Test-Ps1RuleScope $Analysis 'ModuleSource')) { return }
 
-	$message = 'Put each complex array element on its own line. When @(...) holds a hashtable or scriptblock, start the content on the line after @('
+	$message = 'Put each complex array element on its own line. When @(...) holds a hashtable or scriptblock, start the content on the line after @( and put the closing ) on its own line.'
 
 	$colReportedLiterals = [System.Collections.Generic.List[object]]::new()
 
@@ -83,7 +83,15 @@ function Get-Ps1ComplexArrayElementDiagnostic {
 			$contentSharesOpenLine = $true
 			break
 		}
-		if (-not $contentSharesOpenLine) { continue }
+
+		$closingSharesContentLine = $false
+		$tmpStatements = @($itemSub.SubExpression.Statements)
+		if ($tmpStatements.Count -gt 0 -and
+			$tmpStatements[-1].Extent.EndLineNumber -eq $itemSub.Extent.EndLineNumber) {
+			$closingSharesContentLine = $true
+		}
+
+		if (-not $contentSharesOpenLine -and -not $closingSharesContentLine) { continue }
 
 		New-Ps1Diagnostic $Path 'PSUseOneComplexArrayElementPerLine' $message $itemSub.Extent
 	}

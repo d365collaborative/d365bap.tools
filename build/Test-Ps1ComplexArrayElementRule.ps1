@@ -4,7 +4,8 @@
 
 .DESCRIPTION
     Checks that hashtable and scriptblock array elements start on their own
-    line, and that complex @(...) content starts on the line after @(.
+    line, that complex @(...) content starts on the line after @(, and that
+    the closing ) is on its own line.
 #>
 [CmdletBinding()]
 param()
@@ -193,6 +194,43 @@ function Get-Fixture {
         } | Select-Object -ExpandProperty roleDefinitionId
     )
     $colMatchingIds
+}
+'@
+
+Assert-ComplexArrayElement 'Closing parenthesis shares the last content line' @'
+function Get-Fixture {
+    $colEnvironments = @(
+        $colEnvironments |
+        Where-Object {
+            ($isEnvironmentId) `
+                -or ($_.id -like $EnvironmentId) `
+                -or ($_.displayName -like $EnvironmentId)
+        } | Sort-Object -Property displayName |
+        Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
+            -Property "id as PpacEnvId",
+        "id as EnvId",
+        @{ Name = "Managed"; Expression = { $_.protectionLevel -eq "Standard" } },
+        *)
+    $colEnvironments
+}
+'@ -Expected 1 @('PSUseOneComplexArrayElementPerLine', 'closing )')
+
+Assert-ComplexArrayElement 'Closing parenthesis on its own line' @'
+function Get-Fixture {
+    $colEnvironments = @(
+        $colEnvironments |
+        Where-Object {
+            ($isEnvironmentId) `
+                -or ($_.id -like $EnvironmentId) `
+                -or ($_.displayName -like $EnvironmentId)
+        } | Sort-Object -Property displayName |
+        Select-PSFObject -TypeName "D365Bap.Tools.PpacEnvironment" `
+            -Property "id as PpacEnvId",
+        "id as EnvId",
+        @{ Name = "Managed"; Expression = { $_.protectionLevel -eq "Standard" } },
+        *
+    )
+    $colEnvironments
 }
 '@
 

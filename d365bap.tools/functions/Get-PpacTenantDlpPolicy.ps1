@@ -72,11 +72,13 @@ function Get-PpacTenantDlpPolicy {
 			return
 		}
 
-		$colPolicies = @($colPolicies |
+		$colPolicies = @(
+			$colPolicies |
 			Where-Object {
 				($_.name -like $PolicyId) `
 					-or ($_.displayName -like $PolicyId)
-			})
+			}
+		)
 
 		$colPolicies = @($colPolicies |
 			Sort-Object -Property displayName, name)

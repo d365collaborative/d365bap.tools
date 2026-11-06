@@ -6,10 +6,75 @@
 	$Value.PipelineElements[0].Expression -is [Management.Automation.Language.ScriptBlockExpressionAst]
 }
 
+function Test-Ps1SelectObjectProjectionCommand {
+	param([string] $Name)
+	$Name -in @(
+		'Select-Object'
+		'Microsoft.PowerShell.Utility\Select-Object'
+		'Select-PSFObject'
+		'PSFramework\Select-PSFObject'
+	)
+}
+
+function Test-Ps1SelectObjectAllowedParameter {
+	param(
+		[string] $Parameter,
+		[string] $CommandName
+	)
+
+	$colShared = @(
+		'First'
+		'Skip'
+		'Last'
+		'ExpandProperty'
+		'ExcludeProperty'
+		'InputObject'
+		'Index'
+		'SkipLast'
+		'ErrorAction'
+		'WarningAction'
+		'InformationAction'
+		'ProgressAction'
+		'ErrorVariable'
+		'WarningVariable'
+		'InformationVariable'
+		'OutVariable'
+		'OutBuffer'
+		'PipelineVariable'
+	)
+	if ($Parameter -in $colShared) { $true; return }
+
+	$colSwitch = @('Unique', 'Wait', 'CaseInsensitive', 'Verbose', 'Debug')
+	if ($Parameter -in $colSwitch) { $true; return }
+
+	$shortName = ($CommandName -split '\\')[-1]
+	if ($shortName -eq 'Select-PSFObject') {
+		$colPsf = @('TypeName', 'KeepInputObject', 'ShowProperty', 'ShowExcludeProperty', 'ScriptMethod', 'ScriptProperty')
+		if ($Parameter -in $colPsf) { $true; return }
+	}
+
+	$false
+}
+
+function Test-Ps1SelectObjectSwitchParameter {
+	param(
+		[string] $Parameter,
+		[string] $CommandName
+	)
+
+	$colSwitch = @('Unique', 'Wait', 'CaseInsensitive', 'Verbose', 'Debug')
+	if ($Parameter -in $colSwitch) { $true; return }
+
+	$shortName = ($CommandName -split '\\')[-1]
+	if ($shortName -eq 'Select-PSFObject' -and $Parameter -eq 'KeepInputObject') { $true; return }
+
+	$false
+}
+
 function Get-Ps1SelectObjectProjection {
 	param($Command)
 	$name = $Command.GetCommandName()
-	if ($name -notin @('Select-Object', 'Microsoft.PowerShell.Utility\Select-Object')) { return }
+	if (-not (Test-Ps1SelectObjectProjectionCommand $name)) { return }
 	$colElements = @($Command.CommandElements)
 	$argument = $null; $explicit = $false; $unsupported = $false
 	for ($i = 1; $i -lt $colElements.Count; $i++) {
@@ -23,26 +88,31 @@ function Get-Ps1SelectObjectProjection {
 				elseif ($i + 1 -lt $colElements.Count -and $colElements[$i + 1] -isnot [Management.Automation.Language.CommandParameterAst]) { $i++; $argument = $colElements[$i] }
 				else { $unsupported = $true }
 			}
-			elseif ($parameter -in @('First', 'Skip', 'Last', 'ExpandProperty', 'ExcludeProperty', 'InputObject', 'Index', 'SkipLast', 'ErrorAction', 'WarningAction', 'InformationAction', 'ProgressAction', 'ErrorVariable', 'WarningVariable', 'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable')) {
-				if (-not $element.Argument) {
+			elseif (Test-Ps1SelectObjectAllowedParameter `
+					-Parameter $parameter `
+					-CommandName $name) {
+				if (-not $element.Argument -and -not (Test-Ps1SelectObjectSwitchParameter `
+							-Parameter $parameter `
+							-CommandName $name)) {
 					if ($i + 1 -lt $colElements.Count -and $colElements[$i + 1] -isnot [Management.Automation.Language.CommandParameterAst]) { $i++ }
 					else { $unsupported = $true }
 				}
 			}
-			elseif ($parameter -notin @('Unique', 'Wait', 'CaseInsensitive', 'Verbose', 'Debug')) { $unsupported = $true }
+			else { $unsupported = $true }
 		}
 		elseif ($element -is [Management.Automation.Language.VariableExpressionAst] -and $element.Splatted) { $unsupported = $true }
 		elseif ($null -eq $argument) { $argument = $element }
 		else { $unsupported = $true }
 	}
 	$properties = if ($argument -is [Management.Automation.Language.ArrayLiteralAst]) { @($argument.Elements) } elseif ($argument) { @($argument) } else { @() }
-	[pscustomobject]@{ Argument = $argument; Properties = $properties; Explicit = $explicit; Unsupported = $unsupported }
+	[pscustomobject]@{ Argument = $argument; Properties = $properties; Explicit = $explicit; Unsupported = $unsupported; CommandName = $name }
 }
 
 function Get-Ps1SelectObjectMessage {
 	param($Projection)
-	if ($Projection.Unsupported) { 'Unsupported Select-Object form. Use an explicit -Property list and named parameters without splatting.'; return }
-	if ($Projection.Argument -and -not $Projection.Explicit) { 'Use the full -Property parameter for Select-Object projections.'; return }
+	$label = if ((($Projection.CommandName -split '\\')[-1]) -eq 'Select-PSFObject') { 'Select-PSFObject' } else { 'Select-Object' }
+	if ($Projection.Unsupported) { "Unsupported $label form. Use an explicit -Property list and named parameters without splatting."; return }
+	if ($Projection.Argument -and -not $Projection.Explicit) { "Use the full -Property parameter for $label projections."; return }
 	foreach ($itemProperty in $Projection.Properties) {
 		if ($itemProperty -is [Management.Automation.Language.HashtableAst]) {
 			$tmpKeys = @($itemProperty.KeyValuePairs | ForEach-Object { $_.Item1.Value })
@@ -52,14 +122,14 @@ function Get-Ps1SelectObjectMessage {
 			}
 		}
 		elseif ($itemProperty -isnot [Management.Automation.Language.StringConstantExpressionAst]) {
-			'Unsupported Select-Object projection. Use a literal property list with -Property.'; return
+			"Unsupported $label projection. Use a literal property list with -Property."; return
 		}
 	}
 	$colProperties = @($Projection.Properties)
 	if (@($colProperties | Where-Object { $_ -is [Management.Automation.Language.HashtableAst] }).Count -eq 0) { return }
 	for ($i = 1; $i -lt $colProperties.Count; $i++) {
 		if ($colProperties[$i].Extent.StartLineNumber -le $colProperties[$i - 1].Extent.EndLineNumber) {
-			'Put each Select-Object property on its own line when using a calculated property.'; return
+			"Put each $label property on its own line when using a calculated property."; return
 		}
 	}
 }
