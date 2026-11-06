@@ -175,6 +175,11 @@ function Get-PpacEnvironmentRbacRoleAssignment {
 				-ErrorAction Stop
 		}
 		catch {
+			if (($_.Exception.Response.StatusCode -eq 404) `
+					-and ($_.ErrorDetails.Message -match '"code"\s*:\s*"RouteNotFound"')) {
+				throw [System.NotSupportedException]::new('The service does not expose the environment RBAC assignment search route for this API version. Use Get-PpacEnvironmentRbacRoleMember to list assignments; search expansion options are unavailable.', $_.Exception)
+			}
+
 			$messageString = "Failed to search environment role assignments in environment <c='em'>$EnvironmentId</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
