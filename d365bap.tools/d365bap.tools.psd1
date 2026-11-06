@@ -124,6 +124,7 @@
 		, 'Get-PpacD365Properties'
 		, 'Get-PpacD365Version'
 		, 'Get-PpacDeployLocation'
+		, 'Get-PpacEnvironment'
 		, 'Get-PpacEnvironmentAcpPolicy'
 		, 'Get-PpacEnvironmentConnection'
 		, 'Get-PpacEnvironmentConnector'
