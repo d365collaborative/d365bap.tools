@@ -29,6 +29,60 @@ function Get-FinOpsVersionCachePath {
 	Join-Path (Join-Path $base 'd365bap.tools') 'finopsversions.json'
 }
 
+function Read-FinOpsVersionCacheFile {
+	<#
+        .SYNOPSIS
+            Reads the cached version catalog without validating the active login.
+
+        .DESCRIPTION
+            Returns the catalog as stored on disk, even when it was written under a different tenant or account.
+            Local package labels use this view because the catalog only maps builds to application versions.
+            A missing or unreadable file returns nothing.
+
+        .PARAMETER Path
+            Path to the cache file. Defaults to the FinOps version cache path.
+
+        .EXAMPLE
+            PS C:\> Read-FinOpsVersionCacheFile
+
+            Returns the cached catalog without checking the active login.
+            It will use the default -Path from Get-FinOpsVersionCachePath.
+
+        .NOTES
+            Author: Mötz Jensen (@Splaxi)
+    #>
+	[CmdletBinding()]
+	[OutputType([PSCustomObject])]
+	param (
+		[string] $Path
+	)
+
+	if ([string]::IsNullOrWhiteSpace($Path)) {
+		$Path = Get-FinOpsVersionCachePath
+	}
+
+	if (-not (Test-Path -LiteralPath $Path)) { return }
+
+	try {
+		$state = Get-Content -LiteralPath $Path `
+			-Raw `
+			-Encoding utf8 `
+			-ErrorAction Stop |
+		ConvertFrom-Json -ErrorAction Stop
+	}
+	catch {
+		Write-PSFMessage -Level Verbose `
+			-Message "Ignoring unreadable FinOps version cache at $Path : $($_.Exception.Message)"
+
+		$null
+		return
+	}
+
+	if ($null -eq $state.versions) { return }
+
+	$state
+}
+
 function Get-FinOpsVersionCacheStamp {
 	<#
         .SYNOPSIS
@@ -432,9 +486,11 @@ function Get-FinOpsTrackForAppVersion {
 
 	if ([string]::IsNullOrWhiteSpace($normalized)) { $null; return }
 
-	$colByVer = @($Catalog |
+	$colByVer = @(
+		$Catalog |
 		Where-Object { $_.appVersion -eq $normalized } |
-		Select-Object -First 1)
+		Select-Object -First 1
+	)
 
 	if ($colByVer.Count -gt 0) { "$($colByVer[0].appBuild)"; return }
 
@@ -446,9 +502,11 @@ function Get-FinOpsTrackForAppVersion {
 		$normalized
 	}
 
-	$colByBuild = @($Catalog |
+	$colByBuild = @(
+		$Catalog |
 		Where-Object { $_.appBuild -eq $candidate } |
-		Select-Object -First 1)
+		Select-Object -First 1
+	)
 
 	if ($colByBuild.Count -gt 0) { "$($colByBuild[0].appBuild)"; return }
 
@@ -466,6 +524,12 @@ function Resolve-FinOpsVersionFromCache {
         .PARAMETER Build
             Full build (10.0.2790.46), track (10.0.2790) or application version (10.0.49).
 
+        .PARAMETER IgnoreStamp
+            Use the on-disk catalog even when it was written under another login.
+
+        .PARAMETER IncludePrerelease
+            Return AppVersion "Prerelease" when the build is newer than every cached catalog track.
+
         .EXAMPLE
             PS C:\> Resolve-FinOpsVersionFromCache -Build "10.0.2790.46"
 
@@ -478,7 +542,11 @@ function Resolve-FinOpsVersionFromCache {
 	[CmdletBinding()]
 	[OutputType([hashtable])]
 	param (
-		[string] $Build
+		[string] $Build,
+
+		[switch] $IgnoreStamp,
+
+		[switch] $IncludePrerelease
 	)
 
 	$normalized = "$Build".Replace('-', '.').Trim()
@@ -493,12 +561,18 @@ function Resolve-FinOpsVersionFromCache {
 		$normalized
 	}
 
-	$objCached = Get-FinOpsVersionCache -ErrorAction SilentlyContinue
+	$objCached = if ($IgnoreStamp) {
+		Read-FinOpsVersionCacheFile -ErrorAction SilentlyContinue
+	}
+	else {
+		Get-FinOpsVersionCache -ErrorAction SilentlyContinue
+	}
 
 	if (($null -eq $objCached) `
 			-or ($null -eq $objCached.versions)) { $null; return }
 
-	$colEntry = @($objCached.versions |
+	$colEntry = @(
+		$objCached.versions |
 		Where-Object {
 			$b = if (-not ($null -eq $_.AppBuild)) {
 				"$($_.AppBuild)"
@@ -508,10 +582,12 @@ function Resolve-FinOpsVersionFromCache {
 			}
 
 			$b -eq $track
-		} | Select-Object -First 1)
+		} | Select-Object -First 1
+	)
 
 	if ($colEntry.Count -eq 0) {
-		$colEntry = @($objCached.versions |
+		$colEntry = @(
+			$objCached.versions |
 			Where-Object {
 				$v = if (-not ($null -eq $_.AppVersion)) {
 					"$($_.AppVersion)"
@@ -521,9 +597,63 @@ function Resolve-FinOpsVersionFromCache {
 				}
 
 				$v -eq $normalized
-			} | Select-Object -First 1)
+			} | Select-Object -First 1
+		)
 
-		if ($colEntry.Count -eq 0) { $null; return }
+		if ($colEntry.Count -eq 0) {
+			if ($IncludePrerelease) {
+				$maxTrack = $null
+
+				foreach ($itemCacheEntry in @($objCached.versions)) {
+					$trackText = if (-not ($null -eq $itemCacheEntry.AppBuild)) {
+						"$($itemCacheEntry.AppBuild)"
+					}
+					else {
+						"$($itemCacheEntry.appBuild)"
+					}
+
+					if ([string]::IsNullOrWhiteSpace($trackText)) { continue }
+
+					try {
+						$trackVersion = [version]$trackText
+					}
+					catch {
+						continue
+					}
+
+					if (($null -eq $maxTrack) `
+							-or ($trackVersion -gt $maxTrack)) {
+						$maxTrack = $trackVersion
+					}
+				}
+
+				$buildTrack = $null
+
+				try {
+					$buildTrack = [version]$track
+				}
+				catch {
+					$buildTrack = $null
+				}
+
+				if ((-Not ($null -eq $maxTrack)) `
+						-and (-Not ($null -eq $buildTrack)) `
+						-and ($buildTrack -gt $maxTrack)) {
+					@{
+						AppVersion   = 'Prerelease'
+						AppBuild     = ''
+						PlatVersion  = ''
+						PlatBuild    = ''
+						IsPrerelease = $true
+					}
+
+					return
+				}
+			}
+
+			$null
+			return
+		}
 	}
 
 	$e = $colEntry[0]
@@ -535,9 +665,10 @@ function Resolve-FinOpsVersionFromCache {
 	}
 
 	@{
-		AppVersion  = (-not ($null -eq $e.AppVersion)) ? "$($e.AppVersion)" : "$($e.appVersion)"
-		AppBuild    = (-not ($null -eq $e.AppBuild)) ? "$($e.AppBuild)" : "$($e.appBuild)"
-		PlatVersion = (-not ($null -eq $e.PlatVersion)) ? "$($e.PlatVersion)" : "$($e.platVersion)"
-		PlatBuild   = $platBuild
+		AppVersion   = (-not ($null -eq $e.AppVersion)) ? "$($e.AppVersion)" : "$($e.appVersion)"
+		AppBuild     = (-not ($null -eq $e.AppBuild)) ? "$($e.AppBuild)" : "$($e.appBuild)"
+		PlatVersion  = (-not ($null -eq $e.PlatVersion)) ? "$($e.PlatVersion)" : "$($e.platVersion)"
+		PlatBuild    = $platBuild
+		IsPrerelease = $false
 	}
 }
