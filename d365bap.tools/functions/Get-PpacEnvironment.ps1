@@ -98,7 +98,7 @@ function Get-PpacEnvironment {
 			$errorText = "$($_.Exception.Message) $($_.Exception.InnerException.Message)"
 
 			if ($errorText -match '403|Forbidden') {
-				$messageString = "The Power Platform environment management API denied access (HTTP 403). Discovery needs the Power Platform Administrator tenant role, a license covering administration, and a login whose token carries that API area (details: Get-Help Get-PpacEnvironment -Full). Use <c='em'>Get-BapEnvironment</c> to discover environments instead."
+				$messageString = "Use Get-BapEnvironment to discover environments instead. The Power Platform environment management API denied access (HTTP 403). Discovery needs the Power Platform Administrator tenant role. For now - use Get-BapEnvironment to discover environments instead."
 				Write-PSFMessage -Level Warning `
 					-Message $messageString
 
