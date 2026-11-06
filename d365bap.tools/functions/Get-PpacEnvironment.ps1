@@ -70,24 +70,39 @@ function Get-PpacEnvironment {
 			$apiVersion
 		}
 
-		$colEnvironments = @(
-			do {
-				$result = Invoke-BapSdkRequest `
-					-Resource @{ Builder = $builderName } `
-					-Method 'GetAsync' `
-					-Token $tokenValue `
-					-RequestUrl $requestUri
+		try {
+			$colEnvironments = @(
+				do {
+					$result = Invoke-BapSdkRequest `
+						-Resource @{ Builder = $builderName } `
+						-Method 'GetAsync' `
+						-Token $tokenValue `
+						-RequestUrl $requestUri
 
-				if ($isEnvironmentId) {
-					$result
-					$requestUri = $null
-				}
-				else {
-					$result.value
-					$requestUri = $result.'@odata.nextLink'
-				}
-			} while (-not [string]::IsNullOrWhiteSpace($requestUri))
-		)
+					if ($isEnvironmentId) {
+						$result
+						$requestUri = $null
+					}
+					else {
+						$result.value
+						$requestUri = $result.'@odata.nextLink'
+					}
+				} while (-not [string]::IsNullOrWhiteSpace($requestUri))
+			)
+		}
+		catch {
+			$errorText = "$($_.Exception.Message) $($_.Exception.InnerException.Message)"
+
+			if ($errorText -match '403|Forbidden') {
+				$messageString = "The current identity is not permitted to use the Power Platform environment management API (HTTP 403). Use <c='em'>Get-BapEnvironment</c> to discover environments instead."
+				Write-PSFMessage -Level Warning `
+					-Message $messageString
+
+				return
+			}
+
+			throw
+		}
 
 		$colRes = @(
 			$colEnvironments |
