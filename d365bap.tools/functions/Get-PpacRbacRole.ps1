@@ -68,12 +68,11 @@ function Get-PpacRbacRole {
 			-Headers $hashHeaders 4> $null |
 		Select-Object -ExpandProperty value
 
-		$pathMisc = Get-PSFConfigValue -FullName 'd365bap.tools.internal.misc.path'
-		$resColRaw |
-		ConvertTo-Json -Depth 10 |
-		Set-Content -Path "$pathMisc\Ppac.Rbac.Roles.json" `
-			-Force `
-			-ErrorAction SilentlyContinue
+		try { Save-BapRbacRoleCatalog -Roles @($resColRaw) }
+		catch {
+			Write-PSFMessage -Level Verbose `
+				-Message 'Role catalog cache update skipped.'
+  }
 
 		$resCol = $resColRaw |
 		Where-Object {

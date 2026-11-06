@@ -4,149 +4,139 @@ Register-PSFTeppArgumentCompleter -Command Get-Alcohol -Parameter Type -Name d36
 #>
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-BapTenantDetail `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.tenant.details"
+	-Command Get-BapTenantDetail `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.tenant.details"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-BapTenantDetail `
-    -Parameter Upn `
-    -Name "d365bap.tools.tepp.tenant.details.upn"
+	-Command Get-BapTenantDetail `
+	-Parameter Upn `
+	-Name "d365bap.tools.tepp.tenant.details.upn"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-BapTenantDetail `
-    -Parameter TenantId `
-    -Name "d365bap.tools.tepp.tenant.details.tenantid"
+	-Command Get-BapTenantDetail `
+	-Parameter TenantId `
+	-Name "d365bap.tools.tepp.tenant.details.tenantid"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-BapTenantDetail `
-    -Parameter FriendlyName `
-    -Name "d365bap.tools.tepp.tenant.details.friendly"
+	-Command Get-BapTenantDetail `
+	-Parameter FriendlyName `
+	-Name "d365bap.tools.tepp.tenant.details.friendly"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Set-BapTenantDetail `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.tenant.details"
+	-Command Set-BapTenantDetail `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.tenant.details"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Switch-BapTenant `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.tenant.details"
+	-Command Switch-BapTenant `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.tenant.details"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Remove-BapTenantDetail `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.tenant.details"
+	-Command Remove-BapTenantDetail `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.tenant.details"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-BapTenant `
-    -Parameter Upn `
-    -Name "d365bap.tools.tepp.bap.tenant.upn"
+	-Command Get-BapTenant `
+	-Parameter Upn `
+	-Name "d365bap.tools.tepp.bap.tenant.upn"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-BapTenant `
-    -Parameter TenantId `
-    -Name "d365bap.tools.tepp.bap.tenant.tenantid"
+	-Command Get-BapTenant `
+	-Parameter TenantId `
+	-Name "d365bap.tools.tepp.bap.tenant.tenantid"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-UdeDbJitCache `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.ude.dbjit.credentials"
+	-Command Get-UdeDbJitCache `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.ude.dbjit.credentials"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Set-UdeDbJitCache `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.ude.dbjit.credentials"
+	-Command Set-UdeDbJitCache `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.ude.dbjit.credentials"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Start-UdeDbSsms `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.ude.dbjit.credentials"
+	-Command Start-UdeDbSsms `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.ude.dbjit.credentials"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Invoke-UdeDbQuery `
-    -Parameter Id `
-    -Name "d365bap.tools.tepp.ude.dbjit.credentials"
+	-Command Invoke-UdeDbQuery `
+	-Parameter Id `
+	-Name "d365bap.tools.tepp.ude.dbjit.credentials"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacDeployLocation `
-    -Parameter Name `
-    -Name "d365bap.tools.tepp.bap.locations"
+	-Command Get-PpacDeployLocation `
+	-Parameter Name `
+	-Name "d365bap.tools.tepp.bap.locations"
 
 Register-PSFTeppArgumentCompleter `
-    -Command New-UnifiedEnvironment `
-    -Parameter Location `
-    -Name "d365bap.tools.tepp.bap.locations"
+	-Command New-UnifiedEnvironment `
+	-Parameter Location `
+	-Name "d365bap.tools.tepp.bap.locations"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Invoke-PpacD365PlatformUpdate `
-    -Parameter Version `
-    -Name "d365bap.tools.tepp.env.temp.versions"
+	-Command Invoke-PpacD365PlatformUpdate `
+	-Parameter Version `
+	-Name "d365bap.tools.tepp.env.temp.versions"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Invoke-PpacD365VersionUpdate `
-    -Parameter Version `
-    -Name "d365bap.tools.tepp.env.d365.versions"
+	-Command Invoke-PpacD365VersionUpdate `
+	-Parameter Version `
+	-Name "d365bap.tools.tepp.env.d365.versions"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Add-PpacRbacRoleMember `
-    -Parameter Role `
-    -Name "d365bap.tools.tepp.ppac.rbac.roles"
+	-Command Add-PpacRbacRoleMember `
+	-Parameter Scope `
+	-Name "d365bap.tools.tepp.ppac.rbac.role.temp.scopes"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacRbacRoleMember `
-    -Parameter Role `
-    -Name "d365bap.tools.tepp.ppac.rbac.roles"
+	-Command Get-FscmRestService `
+	-Parameter TraverseTo `
+	-Name "d365bap.tools.tepp.fscm.rest.service.traverse"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Add-PpacRbacRoleMember `
-    -Parameter Scope `
-    -Name "d365bap.tools.tepp.ppac.rbac.role.temp.scopes"
+	-Command Get-PpacSecurityRole `
+	-Parameter Name `
+	-Name "d365bap.tools.tepp.ppac.security.roles"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-FscmRestService `
-    -Parameter TraverseTo `
-    -Name "d365bap.tools.tepp.fscm.rest.service.traverse"
+	-Command Get-PpacSecurityRoleTable `
+	-Parameter Role `
+	-Name "d365bap.tools.tepp.ppac.security.roles"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacSecurityRole `
-    -Parameter Name `
-    -Name "d365bap.tools.tepp.ppac.security.roles"
+	-Command Set-PpacSecurityRoleTable `
+	-Parameter Role `
+	-Name "d365bap.tools.tepp.ppac.security.roles"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacSecurityRoleTable `
-    -Parameter Role `
-    -Name "d365bap.tools.tepp.ppac.security.roles"
+	-Command Get-PpacSecurityRoleTable `
+	-Parameter Name `
+	-Name "d365bap.tools.tepp.ppac.tables"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Set-PpacSecurityRoleTable `
-    -Parameter Role `
-    -Name "d365bap.tools.tepp.ppac.security.roles"
+	-Command Set-PpacSecurityRoleTable `
+	-Parameter Table `
+	-Name "d365bap.tools.tepp.ppac.tables"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacSecurityRoleTable `
-    -Parameter Name `
-    -Name "d365bap.tools.tepp.ppac.tables"
+	-Command Get-PpacTable `
+	-Parameter Name `
+	-Name "d365bap.tools.tepp.ppac.tables"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Set-PpacSecurityRoleTable `
-    -Parameter Table `
-    -Name "d365bap.tools.tepp.ppac.tables"
+	-Command New-UnifiedEnvironmentV2 `
+	-Parameter Location `
+	-Name "d365bap.tools.tepp.provisioning.locations"
 
 Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacTable `
-    -Parameter Name `
-    -Name "d365bap.tools.tepp.ppac.tables"
-
-Register-PSFTeppArgumentCompleter `
-    -Command New-UnifiedEnvironmentV2 `
-    -Parameter Location `
-    -Name "d365bap.tools.tepp.provisioning.locations"
-
-Register-PSFTeppArgumentCompleter `
-    -Command Get-PpacTenantProvisioningDefault `
-    -Parameter Location `
-    -Name "d365bap.tools.tepp.provisioning.locations"
+	-Command Get-PpacTenantProvisioningDefault `
+	-Parameter Location `
+	-Name "d365bap.tools.tepp.provisioning.locations"
 
 # Template completion is registered natively in provisioning.templates.tepp.ps1
 # (location-aware via $fakeBoundParameters).
