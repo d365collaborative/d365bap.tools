@@ -527,9 +527,6 @@ function Resolve-FinOpsVersionFromCache {
         .PARAMETER IgnoreStamp
             Use the on-disk catalog even when it was written under another login.
 
-        .PARAMETER IncludePrerelease
-            Return AppVersion "Prerelease" when the build is newer than every cached catalog track.
-
         .EXAMPLE
             PS C:\> Resolve-FinOpsVersionFromCache -Build "10.0.2790.46"
 
@@ -544,9 +541,7 @@ function Resolve-FinOpsVersionFromCache {
 	param (
 		[string] $Build,
 
-		[switch] $IgnoreStamp,
-
-		[switch] $IncludePrerelease
+		[switch] $IgnoreStamp
 	)
 
 	$normalized = "$Build".Replace('-', '.').Trim()
@@ -601,56 +596,6 @@ function Resolve-FinOpsVersionFromCache {
 		)
 
 		if ($colEntry.Count -eq 0) {
-			if ($IncludePrerelease) {
-				$maxTrack = $null
-
-				foreach ($itemCacheEntry in @($objCached.versions)) {
-					$trackText = if (-not ($null -eq $itemCacheEntry.AppBuild)) {
-						"$($itemCacheEntry.AppBuild)"
-					}
-					else {
-						"$($itemCacheEntry.appBuild)"
-					}
-
-					if ([string]::IsNullOrWhiteSpace($trackText)) { continue }
-
-					try {
-						$trackVersion = [version]$trackText
-					}
-					catch {
-						continue
-					}
-
-					if (($null -eq $maxTrack) `
-							-or ($trackVersion -gt $maxTrack)) {
-						$maxTrack = $trackVersion
-					}
-				}
-
-				$buildTrack = $null
-
-				try {
-					$buildTrack = [version]$track
-				}
-				catch {
-					$buildTrack = $null
-				}
-
-				if ((-Not ($null -eq $maxTrack)) `
-						-and (-Not ($null -eq $buildTrack)) `
-						-and ($buildTrack -gt $maxTrack)) {
-					@{
-						AppVersion   = 'Prerelease'
-						AppBuild     = ''
-						PlatVersion  = ''
-						PlatBuild    = ''
-						IsPrerelease = $true
-					}
-
-					return
-				}
-			}
-
 			$null
 			return
 		}
@@ -665,10 +610,9 @@ function Resolve-FinOpsVersionFromCache {
 	}
 
 	@{
-		AppVersion   = (-not ($null -eq $e.AppVersion)) ? "$($e.AppVersion)" : "$($e.appVersion)"
-		AppBuild     = (-not ($null -eq $e.AppBuild)) ? "$($e.AppBuild)" : "$($e.appBuild)"
-		PlatVersion  = (-not ($null -eq $e.PlatVersion)) ? "$($e.PlatVersion)" : "$($e.platVersion)"
-		PlatBuild    = $platBuild
-		IsPrerelease = $false
+		AppVersion  = (-not ($null -eq $e.AppVersion)) ? "$($e.AppVersion)" : "$($e.appVersion)"
+		AppBuild    = (-not ($null -eq $e.AppBuild)) ? "$($e.AppBuild)" : "$($e.appBuild)"
+		PlatVersion = (-not ($null -eq $e.PlatVersion)) ? "$($e.PlatVersion)" : "$($e.platVersion)"
+		PlatBuild   = $platBuild
 	}
 }

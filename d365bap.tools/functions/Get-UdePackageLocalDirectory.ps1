@@ -3,7 +3,7 @@
         Gets local UDE PackagesLocalDirectory paths
 
     .DESCRIPTION
-        Finds installed package folders under the local Dynamics 365 developer folder. Returns each PackagesLocalDirectory path, sorted ascending, with AppVersion from the cached FinOps catalog. Newer unknown builds show Prerelease.
+        Finds installed package folders under the local Dynamics 365 developer folder. Returns each PackagesLocalDirectory path, sorted ascending, with AppVersion from the cached FinOps catalog.
 
     .PARAMETER Version
         Packages version or AppVersion (PackagesVersion) label. Supports wildcards.
@@ -73,8 +73,7 @@ function Get-UdePackageLocalDirectory {
 
 				$tmpVerInfo = Resolve-FinOpsVersionFromCache `
 					-Build $_.Name `
-					-IgnoreStamp `
-					-IncludePrerelease
+					-IgnoreStamp
 
 				[pscustomobject][ordered]@{
 					PackagesVersion        = $_.Name

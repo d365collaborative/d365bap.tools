@@ -8,8 +8,7 @@
 	Offers installed versions under %LOCALAPPDATA%\Microsoft\Dynamics365
 	where PackagesLocalDirectory exists. Displayed as
 	"AppVersion (PackagesVersion)", sorted by AppVersion ascending.
-	Builds newer than every known catalog track show as
-	"Prerelease (PackagesVersion)" and sort last.
+	Versions without a catalog entry show the plain PackagesVersion.
 	The Version parameter inserts the displayed label, quoted when needed.
 	Set-UdeConfig keeps the plain PackagesVersion for its path lookup.
 	Quoting mirrors the word being completed.
@@ -56,12 +55,6 @@ $udePackageLocalDirectoryCompleter = {
 		}
 		catch { $null = $_.Exception.Message }
 
-		$maxTrack = $null
-
-		if ($mapAppVersion.Count -gt 0) {
-			$maxTrack = ($mapAppVersion.Keys | ForEach-Object { try { [version]$_ } catch { $null } } | Where-Object { $_ } | Sort-Object | Select-Object -Last 1)
-		}
-
 		$found = @(
 			Get-ChildItem -LiteralPath $packagesRoot -Directory -ErrorAction SilentlyContinue |
 			Where-Object { $_.Name -match '^\d+(\.\d+)+$' } |
@@ -72,27 +65,17 @@ $udePackageLocalDirectoryCompleter = {
 				$track = if ($parts.Count -ge 3) { "$($parts[0]).$($parts[1]).$($parts[2])" } else { $packagesVersion }
 				$appVersion = if ($mapAppVersion.ContainsKey($track)) { $mapAppVersion[$track] } else { '' }
 
-				$trackVersion = $null
-				try { $trackVersion = [version]$track } catch { $trackVersion = $null }
-
-				$isPrerelease = $false
-				if ([string]::IsNullOrWhiteSpace($appVersion) -and $null -ne $trackVersion -and $null -ne $maxTrack -and $trackVersion -gt $maxTrack) {
-					$isPrerelease = $true
-				}
-
-				$display = if (-not [string]::IsNullOrWhiteSpace($appVersion)) { "$appVersion ($packagesVersion)" } elseif ($isPrerelease) { "Prerelease ($packagesVersion)" } else { $packagesVersion }
-				$sortVersion = if (-not [string]::IsNullOrWhiteSpace($appVersion)) { $appVersion } elseif ($isPrerelease -and $null -ne $trackVersion) { "$trackVersion" } else { '0.0.0.0' }
+				$display = if (-not [string]::IsNullOrWhiteSpace($appVersion)) { "$appVersion ($packagesVersion)" } else { $packagesVersion }
+				$sortVersion = if (-not [string]::IsNullOrWhiteSpace($appVersion)) { $appVersion } else { $packagesVersion }
 
 				[PSCustomObject]@{
 					PackagesVersion = $packagesVersion
-					AppVersion      = $appVersion
-					IsPrerelease    = $isPrerelease
 					Display         = $display
 					SortVersion     = $sortVersion
 					Path            = (Join-Path -Path $_.FullName -ChildPath 'PackagesLocalDirectory')
 				}
 			} |
-			Where-Object { $_.PackagesVersion -like "$filterWord*" -or $_.AppVersion -like "$filterWord*" -or $_.Display -like "$filterWord*" } |
+			Where-Object { $_.PackagesVersion -like "$filterWord*" -or $_.Display -like "$filterWord*" } |
 			Sort-Object { [version]$_.SortVersion }, { [version]$_.PackagesVersion }
 		)
 
