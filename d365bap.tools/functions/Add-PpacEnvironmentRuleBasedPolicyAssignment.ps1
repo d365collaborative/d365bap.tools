@@ -37,10 +37,10 @@ function Add-PpacEnvironmentRuleBasedPolicyAssignment {
 	)
 
 	process {
-		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		$objEnvironment = Resolve-PpacResourceEnvironment -EnvironmentId $EnvironmentId |
 		Select-Object -First 1
-		$routeEnvironmentId = $envObj.PpacEnvId
-		$environmentLabel = $envObj.PpacEnvName
+		$routeEnvironmentId = $objEnvironment.PpacEnvId
+		$environmentLabel = $objEnvironment.PpacEnvName
 
 		$colPolicy = @(Get-PpacTenantRuleBasedPolicy -PolicyId $PolicyId)
 		if ($colPolicy.Count -eq 0) {
