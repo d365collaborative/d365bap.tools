@@ -257,6 +257,35 @@ Assert-Output 'Qualified attached type parameter' ($singular.Replace("Select-PSF
 Write-TableFormat @()
 Assert-Output 'Attached type parameter still requires a view' ($singular.Replace("-TypeName 'D365Bap.Tools.Known'", "-TypeName:'D365Bap.Tools.Known'")) -Expected 1 @('D365Bap.Tools.Known')
 
+Write-TableFormat @()
+Assert-Output 'Exempt singleton needs no table view' @'
+function Get-Fixture {
+    [OutputType('D365Bap.Tools.FscmOdataToken')]
+    param ()
+
+    $res | Select-PSFObject -TypeName 'D365Bap.Tools.FscmOdataToken' -Property *
+}
+'@
+
+Write-TableFormat @()
+Assert-Output 'Exempt singleton with array declaration and Excel switch needs no table view' @'
+function Get-Fixture {
+    [OutputType('D365Bap.Tools.FscmEnvironmentVersion[]')]
+    param (
+        [switch] $AsExcelOutput
+    )
+
+    $resCol = @()
+
+    if ($AsExcelOutput) {
+        $resCol | Export-Excel -WorksheetName 'Get-Fixture'
+        return
+    }
+
+    $resCol | Select-PSFObject -TypeName 'D365Bap.Tools.FscmEnvironmentVersion' -Property *
+}
+'@
+
 Write-TableFormat 'D365Bap.Tools.Known'
 Assert-Output 'Declared custom type with a view' 'function Get-Fixture { [OutputType("D365Bap.Tools.Known")] param(); Get-Row }'
 

@@ -1,5 +1,15 @@
 ﻿. "$PSScriptRoot/Get-Ps1OutputModel.ps1"
 
+# Singleton custom types exempt from the table-view requirement. Table views
+# serve collections; these types are only ever emitted as single objects, so
+# their list views remain the default display.
+# - D365Bap.Tools.FscmOdataToken: Get-FscmOdataToken -AsObject returns one token object.
+# - D365Bap.Tools.FscmEnvironmentVersion: Get-FscmEnvironmentVersion returns one version object.
+$script:Ps1TableViewExemptTypes = @(
+	'D365Bap.Tools.FscmOdataToken'
+	'D365Bap.Tools.FscmEnvironmentVersion'
+)
+
 function Get-Ps1OutputTableFormatType {
 	param([string] $TableDirectory)
 
@@ -114,6 +124,7 @@ function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 	foreach ($itemType in @($model.CustomTypes)) {
 		if ($hashSeen.ContainsKey($itemType.Name)) { continue }
 		$hashSeen[$itemType.Name] = $true
+		if ($itemType.Name -in $script:Ps1TableViewExemptTypes) { continue }
 		if ($TableTypes.ContainsKey($itemType.Name)) { continue }
 		New-Ps1Diagnostic $Path 'PSUseStandardPublicOutput' "Add a table format view for '$($itemType.Name)'. Custom output requires a table view; a list view is optional." $itemType.Extent
 	}
@@ -122,7 +133,7 @@ function Get-Ps1StandardPublicOutputFunctionDiagnostic {
 		foreach ($itemArgument in @($itemAttribute.PositionalArguments)) {
 			if ($itemArgument -isnot [Management.Automation.Language.StringConstantExpressionAst]) { continue }
 			$name = $itemArgument.Value -replace '\[\]$', ''
-			if ($name -notmatch '^D365Bap\.Tools\.' -or $hashSeen.ContainsKey($name) -or $TableTypes.ContainsKey($name)) { continue }
+			if ($name -notmatch '^D365Bap\.Tools\.' -or $hashSeen.ContainsKey($name) -or $name -in $script:Ps1TableViewExemptTypes -or $TableTypes.ContainsKey($name)) { continue }
 			$hashSeen[$name] = $true
 			New-Ps1Diagnostic $Path 'PSUseStandardPublicOutput' "Add a table format view for '$name'. Custom output requires a table view; a list view is optional." $itemArgument.Extent
 		}

@@ -50,6 +50,18 @@ switch reports the complete convention in one diagnostic: add the switch, call
 Export-Excel with the full literal worksheet name, then use a bare return. The
 export block is not reported again until the switch exists.
 
+Two singleton types are exempt from the table-view requirement and keep
+their list views as the default display: `D365Bap.Tools.FscmOdataToken`
+(`Get-FscmOdataToken -AsObject` returns one token object) and
+`D365Bap.Tools.FscmEnvironmentVersion` (`Get-FscmEnvironmentVersion`
+returns one version object). Table views serve collections; nothing else
+emits these types. The exemption list lives with the rule
+(`Get-Ps1StandardPublicOutputDiagnostic.ps1`); extending it is a
+lint-internal change and needs internal-hook acceptance. An array-gated
+rule was rejected instead: `FscmEnvironmentVersion` must declare an array
+output because of `-AsExcelOutput`, so array declarations cannot tell
+singletons apart.
+
 Any function that declares the switch must declare an array or
 `System.Collections.*` output type. The switch exports a collection, so a
 singular declaration is rejected even when the command currently returns one
