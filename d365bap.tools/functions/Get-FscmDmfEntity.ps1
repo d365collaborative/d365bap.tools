@@ -1,125 +1,122 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
         Get DMF entity metadata from a Finance and Operations environment.
-        
+
     .DESCRIPTION
-        Retrieves entity metadata from the Finance and Operations /Metadata/DataEntities endpoint, returning schema information for each Data Management Framework (DMF) entity.
-        
-        Results include the entity name, public entity name, public collection name, category, and a joined list of field names.
-        
-        Supports wildcard and exact matching against the Name, PublicEntityName, and PublicCollectionName fields.
-        
+        Reads the /Metadata/DataEntities endpoint and returns one object per DMF entity. Each row carries identifiers, category, and a joined list of fields.
+
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve DMF entity metadata from.
-        
-        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-        
+        Environment name, environment GUID (PPAC), or LCS environment ID.
+
     .PARAMETER Name
-        The value to filter the results by.
-        
-        Filters against the entity Name, PublicEntityName, and PublicCollectionName fields — any match on any of the three will include the record.
-        
-        Supports wildcard characters for flexible matching.
-        
-        Default value is "*", which returns all DMF entities.
-        
+        Filter on entity, public entity, or public collection name.
+
+        Default: *
+
     .PARAMETER AsExcelOutput
-        Instructs the cmdlet to export the retrieved entity metadata to an Excel file.
-        
+        Exports the retrieved metadata to an Excel workbook.
+
     .EXAMPLE
         PS C:\> Get-FscmDmfEntity -EnvironmentId "ContosoEnv"
-        
-        This command retrieves metadata for all DMF entities in the environment "ContosoEnv".
-        
+
+        Lists every DMF entity in the environment.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+
     .EXAMPLE
         PS C:\> Get-FscmDmfEntity -EnvironmentId "ContosoEnv" -Name "CustCustomerV3Entity"
-        
-        This command retrieves metadata for the DMF entity named "CustCustomerV3Entity" from the environment "ContosoEnv".
-        
+
+        Finds one DMF entity by exact name.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Name "CustCustomerV3Entity" to match one entity.
+
     .EXAMPLE
         PS C:\> Get-FscmDmfEntity -EnvironmentId "ContosoEnv" -Name "*Customer*"
-        
-        This command retrieves metadata for all DMF entities whose Name, PublicEntityName, or PublicCollectionName contains "Customer" from the environment "ContosoEnv".
-        
+
+        Finds DMF entities with a wildcard filter.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Name "*Customer*" to match many entities.
+
     .EXAMPLE
         PS C:\> Get-FscmDmfEntity -EnvironmentId "ContosoEnv" -Name "CustomersV3"
-        
-        This command retrieves metadata for the DMF entity with the PublicCollectionName "CustomersV3" from the environment "ContosoEnv".
-        
-        The filter matches against the entity Name, PublicEntityName, and PublicCollectionName fields.
-        
+
+        Finds DMF entities by public collection name.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Name "CustomersV3" to match the collection.
+
     .EXAMPLE
         PS C:\> Get-FscmDmfEntity -EnvironmentId "ContosoEnv" -AsExcelOutput
-        
-        This command retrieves metadata for all DMF entities in the environment "ContosoEnv" and exports the results to an Excel file.
-        
+
+        Exports every DMF entity to an Excel workbook.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -AsExcelOutput to write the rows to a workbook.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmDmfEntity {
-    [CmdletBinding()]
-    [OutputType('System.Object[]')]
-    param (
-        [Parameter (Mandatory = $true)]
-        [string] $EnvironmentId,
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.FscmDmfEntity[]')]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [string] $Name = "*",
+		[SupportsWildcards()]
+		[string] $Name = "*",
 
-        [switch] $AsExcelOutput
-    )
+		[switch] $AsExcelOutput
+	)
 
-    begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
-            Select-Object -First 1
+	begin {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
-        if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+		$baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        if (Test-PSFFunctionInterrupt) { return }
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
-        $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
+		$hashHeadersFnO = @{
+			"Authorization" = "Bearer $($tokenFnoOdataValue)"
+		}
+	}
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        $headersFnO = @{
-            "Authorization" = "Bearer $($tokenFnoOdataValue)"
-        }
-    }
+		$localUri = '{0}/Metadata/DataEntities' `
+			-f $baseUri
 
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+		$colMetadataRaw = Invoke-RestMethod -Method Get `
+			-Uri $localUri `
+			-Headers $hashHeadersFnO |
+		Select-Object -ExpandProperty value
 
-        $localUri = $baseUri + '/Metadata/DataEntities'
-        $colMetadataRaw = Invoke-RestMethod -Method Get `
-            -Uri $localUri `
-            -Headers $headersFnO | Select-Object -ExpandProperty value
+		$resCol = $colMetadataRaw |
+		Where-Object {
+			($_.Name -like $Name) `
+				-or ($_.Name -eq $Name) `
+				-or ($_.PublicEntityName -like $Name) `
+				-or ($_.PublicEntityName -eq $Name) `
+				-or ($_.PublicCollectionName -like $Name) `
+				-or ($_.PublicCollectionName -eq $Name)
+		} | Sort-Object -Property 'Name' |
+		Select-PSFObject -TypeName "D365Bap.Tools.FscmDmfEntity" `
+			-ExcludeProperty "@odata.etag" `
+			-Property "Name as EntityName",
+		*
 
-        $resCol = $colMetadataRaw | Where-Object {
-            ($_.Name -like $Name -or $_.Name -eq $Name) `
-                -or ($_.PublicEntityName -like $Name -or $_.PublicEntityName -eq $Name) `
-                -or ($_.PublicCollectionName -like $Name -or $_.PublicCollectionName -eq $Name)
-        } | Sort-Object -Property 'Name' `
-        | Select-PSFObject -TypeName "D365Bap.Tools.FscmDmfEntity" `
-            -ExcludeProperty "@odata.etag" `
-            -Property "Name as EntityName",
-        *
+		if ($AsExcelOutput) {
+			$resCol |
+			Export-Excel -WorksheetName "Get-FscmDmfEntity"
+			return
+		}
 
-        if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-FscmDmfEntity"
-            return
-        }
+		$resCol
+	}
 
-        $resCol
-    }
+	end {
 
-    end {
-
-    }
+	}
 }
