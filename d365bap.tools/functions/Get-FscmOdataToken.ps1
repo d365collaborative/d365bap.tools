@@ -1,101 +1,91 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
         Get an OData access token for a Finance and Operations environment.
-        
+
     .DESCRIPTION
-        Acquires an Azure access token scoped to the Finance and Operations (FnO) OData resource of the specified environment, using the cached credentials in the local Azure PowerShell context.
-        
-        The token is returned in plain text. Handle the output accordingly.
-        
+        Reads cached credentials and returns a token for the environment resource. Handle the output as plain text.
+
     .PARAMETER EnvironmentId
-        The ID of the environment to acquire the token for.
-        
-        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-        
+        Environment name, environment GUID (PPAC), or LCS environment ID.
+
     .PARAMETER AsBearerToken
-        Output the token as a "Bearer" prefix string, ready to use in an Authorization header.
-        
+        Returns the token with a bearer prefix for header use.
+
     .PARAMETER AsObject
-        Output a typed PSCustomObject with Token and BearerToken properties.
-        
+        Returns a typed object with token details.
+
     .EXAMPLE
         PS C:\> Get-FscmOdataToken -EnvironmentId "ContosoEnv"
-        
-        This command acquires an OData access token for the environment "ContosoEnv" and returns the raw token string.
-        
+
+        Returns the raw token for the environment.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+
     .EXAMPLE
         PS C:\> Get-FscmOdataToken -EnvironmentId "ContosoEnv" -AsBearerToken
-        
-        This command acquires an OData access token for the environment "ContosoEnv" and returns it as a bearer token string, ready to use directly in an Authorization header.
-        
+
+        Returns the bearer token for header use.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -AsBearerToken to add the bearer prefix.
+
     .EXAMPLE
-        PS C:\> $token = Get-FscmOdataToken -EnvironmentId "ContosoEnv" -AsObject
-        PS C:\> Invoke-RestMethod -Uri $uri -Headers @{ Authorization = $token.BearerToken }
-        
-        This command acquires an OData access token for the environment "ContosoEnv" and returns a typed object with both Token and BearerToken properties.
-        
+        PS C:\> Get-FscmOdataToken -EnvironmentId "ContosoEnv" -AsObject
+
+        Returns the token as a typed object.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -AsObject to request the typed object.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmOdataToken {
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
-    [OutputType([System.String], ParameterSetName = 'Default')]
-    [OutputType([System.String], ParameterSetName = 'BearerToken')]
-    [OutputType([System.Management.Automation.PSObject], ParameterSetName = 'Object')]
-    param (
-        [Parameter (Mandatory = $true, ParameterSetName = 'Default')]
-        [Parameter (Mandatory = $true, ParameterSetName = 'BearerToken')]
-        [Parameter (Mandatory = $true, ParameterSetName = 'Object')]
-        [string] $EnvironmentId,
+	[CmdletBinding(DefaultParameterSetName = 'Default')]
+	[OutputType([System.String], ParameterSetName = 'Default')]
+	[OutputType([System.String], ParameterSetName = 'BearerToken')]
+	[OutputType('D365Bap.Tools.FscmOdataToken', ParameterSetName = 'Object')]
+	param (
+		[Parameter(Mandatory = $true, ParameterSetName = 'Default')]
+		[Parameter(Mandatory = $true, ParameterSetName = 'BearerToken')]
+		[Parameter(Mandatory = $true, ParameterSetName = 'Object')]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [Parameter (Mandatory = $true, ParameterSetName = 'BearerToken')]
-        [switch] $AsBearerToken,
+		[Parameter(Mandatory = $true, ParameterSetName = 'BearerToken')]
+		[switch] $AsBearerToken,
 
-        [Parameter (Mandatory = $true, ParameterSetName = 'Object')]
-        [switch] $AsObject
-    )
-    
-    begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
-            Select-Object -First 1
+		[Parameter(Mandatory = $true, ParameterSetName = 'Object')]
+		[switch] $AsObject
+	)
 
-        if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+	begin {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
-        if (Test-PSFFunctionInterrupt) { return }
+		$baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
+	}
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
-    }
-    
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        # Branch on the switch parameters so PSScriptAnalyzer sees them as used
-        # (parameter sets alone do not count as usage for PSReviewUnusedParameter).
-        if ($AsObject) {
-            [PSCustomObject]@{ Token = $tokenValue } | `
-                Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataToken" `
-                -Property "Token",
-            @{ Name = "BearerToken"; Expression = { "Bearer $($_.Token)" } }
-        }
-        elseif ($AsBearerToken) {
-            "Bearer $tokenValue"
-        }
-        else {
-            $tokenValue
-        }
-    }
-    
-    end {
-        
-    }
+		if ($AsObject) {
+			[PSCustomObject][ordered]@{ Token = $tokenValue } |
+			Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataToken" `
+				-Property `
+				"Token",
+			@{ Name = "BearerToken"; Expression = { "Bearer $($_.Token)" } }
+		}
+		elseif ($AsBearerToken) {
+			"Bearer $tokenValue"
+		}
+		else {
+			$tokenValue
+		}
+	}
+
+	end {
+
+	}
 }
