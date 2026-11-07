@@ -1,145 +1,141 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
         Get installed models from a Finance and Operations environment.
-        
+
     .DESCRIPTION
-        Retrieves the list of installed models from a Finance and Operations environment using the GetInstalledModules OData action.
-        
-        Each installed model is parsed into its Name, Version, Module, Publisher, and DisplayName parts.
-        
-        Supports wildcard and exact matching against the Name, DisplayName, and Module fields.
-        
+        Reads the installed modules action and returns one object per installed model. Each row carries display, version, module, and publisher details.
+
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve installed models from.
-        
-        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-        
+        Environment name, environment GUID (PPAC), or LCS environment ID.
+
     .PARAMETER Name
-        The value to filter the results by.
-        
-        Filters against the model Name, DisplayName, and Module fields — any match on any of the three will include the record.
-        
-        Supports wildcard characters for flexible matching.
-        
-        Default value is "*", which returns all installed models.
-        
+        Filter on display, model, or module value.
+
+        Default: *
+
     .PARAMETER AsExcelOutput
-        Instructs the cmdlet to export the retrieved installed models to an Excel file.
-        
+        Exports the retrieved metadata to an Excel workbook.
+
     .EXAMPLE
         PS C:\> Get-FscmInstalledModel -EnvironmentId "ContosoEnv"
-        
-        This command retrieves all installed models from the environment "ContosoEnv".
-        
+
+        Lists every installed model in the environment.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+
     .EXAMPLE
         PS C:\> Get-FscmInstalledModel -EnvironmentId "ContosoEnv" -Name "*Application*"
-        
-        This command retrieves all installed models whose Name, DisplayName, or Module contains "Application" from the environment "ContosoEnv".
-        
+
+        Finds installed models with a wildcard filter.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Name "*Application*" to match many models.
+
     .EXAMPLE
         PS C:\> Get-FscmInstalledModel -EnvironmentId "ContosoEnv" -Name "ApplicationSuite"
-        
-        This command retrieves installed models with the Module "ApplicationSuite" from the environment "ContosoEnv".
-        
-        The filter matches against the model Name, DisplayName, and Module fields.
-        
+
+        Finds installed models by module value.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Name "ApplicationSuite" to match the module.
+
     .EXAMPLE
         PS C:\> Get-FscmInstalledModel -EnvironmentId "ContosoEnv" -AsExcelOutput
-        
-        This command retrieves all installed models from the environment "ContosoEnv" and exports the results to an Excel file.
-        
+
+        Exports every installed model to an Excel workbook.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -AsExcelOutput to write the rows to a workbook.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmInstalledModel {
-    [CmdletBinding()]
-    [OutputType('System.Object[]')]
-    param (
-        [Parameter (Mandatory = $true)]
-        [string] $EnvironmentId,
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.FscmInstalledModel[]')]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [string] $Name = "*",
+		[SupportsWildcards()]
+		[string] $Name = "*",
 
-        [switch] $AsExcelOutput
-    )
+		[switch] $AsExcelOutput
+	)
 
-    begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
-            Select-Object -First 1
+	begin {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
-        if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+		$baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        if (Test-PSFFunctionInterrupt) { return }
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
-        $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
+		$hashHeadersFnO = @{
+			"Authorization" = "Bearer $($tokenFnoOdataValue)"
+		}
+	}
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        $headersFnO = @{
-            "Authorization" = "Bearer $($tokenFnoOdataValue)"
-        }
-    }
+		$localUri = '{0}/data/SystemNotifications/Microsoft.Dynamics.DataEntities.GetInstalledModules' `
+			-f $baseUri
 
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+		$colModulesRaw = Invoke-RestMethod -Method Post `
+			-Uri $localUri `
+			-Headers $hashHeadersFnO `
+			-ContentType 'application/json' `
+			-Body '{}' |
+		Select-Object -ExpandProperty value
 
-        $localUri = $baseUri + '/data/SystemNotifications/Microsoft.Dynamics.DataEntities.GetInstalledModules'
-        $colModulesRaw = Invoke-RestMethod -Method Post `
-            -Uri $localUri `
-            -Headers $headersFnO `
-            -ContentType 'application/json' `
-            -Body '{}' | Select-Object -ExpandProperty value
+		$colParsed = foreach ($itemEntry in $colModulesRaw) {
+			$tmpProps = @{}
 
-        $colParsed = foreach ($entry in $colModulesRaw) {
-            $props = @{}
+			foreach ($itemPart in ($itemEntry -split '\s*\|\s*')) {
+				$idx = $itemPart.IndexOf(':')
+				if ($idx -gt 0) {
+					$key = $itemPart.Substring(0, $idx).Trim()
+					$val = $itemPart.Substring($idx + 1).Trim()
+					$tmpProps[$key] = $val
+				}
+			}
 
-            foreach ($part in ($entry -split '\s*\|\s*')) {
-                $idx = $part.IndexOf(':')
-                if ($idx -gt 0) {
-                    $key = $part.Substring(0, $idx).Trim()
-                    $val = $part.Substring($idx + 1).Trim()
-                    $props[$key] = $val
-                }
-            }
+			[PSCustomObject][ordered]@{
+				DisplayName = $tmpProps['DisplayName']
+				Name        = $tmpProps['Name']
+				Version     = $tmpProps['Version']
+				Module      = $tmpProps['Module']
+				Publisher   = $tmpProps['Publisher']
+			}
+		}
 
-            [PSCustomObject]@{
-                DisplayName = $props['DisplayName']
-                Name        = $props['Name']
-                Version     = $props['Version']
-                Module      = $props['Module']
-                Publisher   = $props['Publisher']
-            }
-        }
+		$resCol = $colParsed |
+		Where-Object {
+			($_.Name -like $Name) `
+				-or ($_.Name -eq $Name) `
+				-or ($_.DisplayName -like $Name) `
+				-or ($_.DisplayName -eq $Name) `
+				-or ($_.Module -like $Name) `
+				-or ($_.Module -eq $Name)
+		} | Sort-Object -Property 'DisplayName' |
+		Select-PSFObject -TypeName "D365Bap.Tools.FscmInstalledModel" `
+			-Property `
+			DisplayName,
+		Name,
+		Version,
+		Module,
+		Publisher
 
-        $resCol = $colParsed | Where-Object {
-            ($_.Name -like $Name -or $_.Name -eq $Name) `
-                -or ($_.DisplayName -like $Name -or $_.DisplayName -eq $Name) `
-                -or ($_.Module -like $Name -or $_.Module -eq $Name)
-        } | Sort-Object -Property 'DisplayName' `
-        | Select-PSFObject -TypeName "D365Bap.Tools.FscmInstalledModel" `
-            -Property DisplayName,
-        Name,
-        Version,
-        Module,
-        Publisher
+		if ($AsExcelOutput) {
+			$resCol |
+			Export-Excel -WorksheetName "Get-FscmInstalledModel"
+			return
+		}
 
-        if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-FscmInstalledModel"
-            return
-        }
+		$resCol
+	}
 
-        $resCol
-    }
+	end {
 
-    end {
-
-    }
+	}
 }

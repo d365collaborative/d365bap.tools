@@ -1,187 +1,206 @@
-﻿
-<#
+﻿<#
     .SYNOPSIS
         Get OData action metadata from a Finance and Operations environment.
-        
+
     .DESCRIPTION
-        Retrieves action metadata from the Finance and Operations /metadata/PublicEntities endpoint, returning one object per OData action bound to an entity or an entity set.
-        
-        Results include the entity name, collection name, action name, binding kind, return type and a joined list of parameter names.
-        
+        Reads the /metadata/PublicEntities endpoint and returns one object per OData action. Each row carries identifiers, binding, return, and parameter details.
+
     .PARAMETER EnvironmentId
-        The ID of the environment to retrieve OData action metadata from.
-        
-        Can be either the environment name, the environment GUID (PPAC) or the LCS environment ID.
-        
+        Environment name, environment GUID (PPAC), or LCS environment ID.
+
     .PARAMETER Entity
-        The value to filter the results by.
-        
-        Filters against the entity Name and the CollectionName (EntitySetName) fields — any match on either will include the entity's actions.
-        
-        Supports wildcard characters for flexible matching.
-        
-        Default value is "*", which returns actions from all published OData entities.
-        
+        Filter on entity or collection value.
+
+        Default: *
+
     .PARAMETER Name
-        The value to filter the results by.
-        
-        Filters against the action Name field.
-        
-        Supports wildcard characters for flexible matching.
-        
-        Default value is "*", which returns all actions of the selected entities.
-        
+        Filter on action value.
+
+        Default: *
+
     .PARAMETER AsExcelOutput
-        Instructs the cmdlet to export the retrieved action metadata to an Excel file.
-        
+        Exports the retrieved metadata to an Excel workbook.
+
     .EXAMPLE
         PS C:\> Get-FscmOdataAction -EnvironmentId "ContosoEnv" -Entity "DataManagementEntity"
-        
-        This command retrieves all OData actions bound to the DataManagementEntity entity (GetApplicationBuildVersion, GetPlatformBuildVersion, GetApplicationVersion, query) from the environment "ContosoEnv".
-        
+
+        Lists actions bound to one entity.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity "DataManagementEntity" to pick the entity.
+
     .EXAMPLE
         PS C:\> Get-FscmOdataAction -EnvironmentId "ContosoEnv" -Entity "DataManagementEntities" -Name "*Version*"
-        
-        This command retrieves all OData actions with "Version" in the name from the DataManagementEntities collection in the environment "ContosoEnv". The Entity filter matches both the entity Name and the CollectionName.
-        
+
+        Finds actions with a wildcard filter.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity "DataManagementEntities" to pick the collection.
+        It uses -Name "*Version*" to match many actions.
+
     .EXAMPLE
         PS C:\> Get-FscmOdataAction -EnvironmentId "ContosoEnv" -Name "*Version*"
-        
-        This command retrieves every OData action with "Version" in the name across all entities in the environment "ContosoEnv".
-        
+
+        Finds actions across every entity.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Name "*Version*" to match many actions.
+
     .EXAMPLE
         PS C:\> Get-FscmOdataAction -EnvironmentId "ContosoEnv" -Entity "DataManagementEntity" -AsExcelOutput
-        
-        This command retrieves all OData actions of the DataManagementEntity entity in the environment "ContosoEnv" and exports the results to an Excel file.
-        
+
+        Exports actions for one entity to a workbook.
+        It uses -EnvironmentId to select the "ContosoEnv" environment.
+        It uses -Entity "DataManagementEntity" to pick the entity.
+        It uses -AsExcelOutput to write the rows to a workbook.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-FscmOdataAction {
-    [CmdletBinding()]
-    [OutputType('System.Object[]')]
-    param (
-        [Parameter (Mandatory = $true)]
-        [string] $EnvironmentId,
+	[CmdletBinding()]
+	[OutputType('D365Bap.Tools.FscmOdataAction[]')]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $EnvironmentId,
 
-        [string] $Entity = "*",
+		[SupportsWildcards()]
+		[string] $Entity = "*",
 
-        [string] $Name = "*",
+		[SupportsWildcards()]
+		[string] $Name = "*",
 
-        [switch] $AsExcelOutput
-    )
-    
-    begin {
-        # Make sure all *BapEnvironment* cmdlets will validate that the environment exists prior running anything.
-        $envObj = Get-BapEnvironment `
-            -EnvironmentId $EnvironmentId | `
-            Select-Object -First 1
+		[switch] $AsExcelOutput
+	)
 
-        if ($null -eq $envObj) {
-            $messageString = "The supplied EnvironmentId: <c='em'>$EnvironmentId</c> didn't return any matching environment details. Please verify that the EnvironmentId is correct - try running the <c='em'>Get-BapEnvironment</c> cmdlet."
-            Write-PSFMessage -Level Important -Message $messageString
-            Stop-PSFFunction -Message "Stopping because environment was NOT found based on the id." -Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
-        }
+	begin {
+		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		Select-Object -First 1
 
-        if (Test-PSFFunctionInterrupt) { return }
+		$baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
 
-        $baseUri = $envObj.FnOEnvUri -replace '.com/', '.com'
+		$objSecureToken = Get-BapAccessToken -ResourceUrl $baseUri
+		$tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText `
+			-SecureString $objSecureToken
 
-        $secureToken = Get-BapAccessToken -ResourceUrl $baseUri
-        $tokenFnoOdataValue = ConvertFrom-SecureString -AsPlainText -SecureString $secureToken
+		$hashHeadersFnO = @{
+			"Authorization" = "Bearer $($tokenFnoOdataValue)"
+		}
+	}
 
-        $headersFnO = @{
-            "Authorization" = "Bearer $($tokenFnoOdataValue)"
-        }
-    }
-    
-    process {
-        if (Test-PSFFunctionInterrupt) { return }
+	process {
+		if (Test-PSFFunctionInterrupt) { return }
 
-        $localUri = $baseUri + '/metadata/PublicEntities'
-        $colMetadataRaw = Invoke-RestMethod -Method Get `
-            -Uri $localUri `
-            -Headers $headersFnO | Select-Object -ExpandProperty value
+		$localUri = '{0}/metadata/PublicEntities' `
+			-f $baseUri
 
-        $colEntities = $colMetadataRaw | Where-Object {
-            ($_.Name -like $Entity -or $_.Name -eq $Entity) `
-                -or ($_.EntitySetName -like $Entity -or $_.EntitySetName -eq $Entity)
-        }
+		$colMetadataRaw = Invoke-RestMethod -Method Get `
+			-Uri $localUri `
+			-Headers $hashHeadersFnO |
+		Select-Object -ExpandProperty value
 
-        $resCol = @(foreach ($entityObj in $colEntities) {
-                $entityName = "$($entityObj.Name)"
-                $collectionName = "$($entityObj.EntitySetName)"
+		$colEntities = $colMetadataRaw |
+		Where-Object {
+			($_.Name -like $Entity) `
+				-or ($_.Name -eq $Entity) `
+				-or ($_.EntitySetName -like $Entity) `
+				-or ($_.EntitySetName -eq $Entity)
+		}
 
-                foreach ($actionObj in @($entityObj.Actions | Where-Object { $_.Name -like $Name -or $_.Name -eq $Name })) {
-                    $bindingKind = "$($actionObj.BindingKind)"
+		$colAction = @(
+			foreach ($itemEntity in $colEntities) {
+				$entityName = "$($itemEntity.Name)"
+				$collectionName = "$($itemEntity.EntitySetName)"
 
-                    $allParams = @($actionObj.Parameters | Where-Object { $null -ne $_ })
-                    # The first parameter is the binding parameter (the entity / entity collection itself).
-                    $bindingParam = $allParams | Select-Object -First 1
-                    $inputParams = @($allParams | Select-Object -Skip 1)
+				foreach ($itemAction in ($itemEntity.Actions |
+						Where-Object {
+							($_.Name -like $Name) `
+								-or ($_.Name -eq $Name)
+						})) {
+					$bindingKind = "$($itemAction.BindingKind)"
 
-                    $bindingParamName = "$($bindingParam.Name)"
-                    $namespace = "Microsoft.Dynamics.DataEntities"
+					$tmpAllParams = @(
+						$itemAction.Parameters |
+						Where-Object {
+							-Not ($null -eq $_)
+						}
+					)
+					$tmpBindingParam = $tmpAllParams |
+					Select-Object -First 1
+					$tmpInputParams = @(
+						$tmpAllParams |
+						Select-Object -Skip 1
+					)
 
-                    if (-not [string]::IsNullOrEmpty($bindingParam.Type.TypeName) -and $bindingParam.Type.TypeName.Contains('.')) {
-                        $namespace = $bindingParam.Type.TypeName.Substring(0, $bindingParam.Type.TypeName.LastIndexOf('.'))
-                    }
+					$bindingParamName = "$($tmpBindingParam.Name)"
+					$namespace = "Microsoft.Dynamics.DataEntities"
 
-                    $qualifiedAction = "$namespace.$($actionObj.Name)"
+					if ((-not [string]::IsNullOrEmpty($tmpBindingParam.Type.TypeName)) `
+							-and ($tmpBindingParam.Type.TypeName.Contains('.'))) {
+						$namespace = $tmpBindingParam.Type.TypeName.Substring(0, $tmpBindingParam.Type.TypeName.LastIndexOf('.'))
+					}
 
-                    if ($bindingKind -eq "BoundToEntityInstance") {
-                        $endpoint = "/data/$collectionName(<key>)/$qualifiedAction"
-                    }
-                    else {
-                        $endpoint = "/data/$collectionName/$qualifiedAction"
-                    }
+					$qualifiedAction = "$namespace.$($itemAction.Name)"
 
-                    $returnType = ""
-                    $returnIsCollection = $false
+					if ($bindingKind -eq "BoundToEntityInstance") {
+						$endpoint = "/data/$collectionName(<key>)/$qualifiedAction"
+					}
+					else {
+						$endpoint = "/data/$collectionName/$qualifiedAction"
+					}
 
-                    if ($null -ne $actionObj.ReturnType -and -not [string]::IsNullOrEmpty($actionObj.ReturnType.TypeName)) {
-                        $returnType = "$($actionObj.ReturnType.TypeName)"
-                        $returnIsCollection = [bool]$actionObj.ReturnType.IsCollection
-                    }
+					$returnType = ""
+					$returnIsCollection = $false
 
-                    $paramSummaries = @($inputParams | ForEach-Object {
-                            $paramType = "$($_.Type.TypeName)"
+					if ((-Not ($null -eq $itemAction.ReturnType)) `
+							-and (-not [string]::IsNullOrEmpty($itemAction.ReturnType.TypeName))) {
+						$returnType = "$($itemAction.ReturnType.TypeName)"
+						$returnIsCollection = [bool]$itemAction.ReturnType.IsCollection
+					}
 
-                            if ([bool]$_.Type.IsCollection) { $paramType = "Collection($paramType)" }
+					$tmpParamSummaries = @(
+						$tmpInputParams |
+						ForEach-Object {
+							$paramType = "$($_.Type.TypeName)"
 
-                            "$($_.Name): $paramType"
-                        } | Sort-Object)
+							if ([bool]$_.Type.IsCollection) { $paramType = "Collection($paramType)" }
 
-                    [PSCustomObject][ordered]@{
-                        EntityName         = $entityName
-                        CollectionName     = $collectionName
-                        ActionName         = "$($actionObj.Name)"
-                        BindingKind        = $bindingKind
-                        ReturnType         = $returnType
-                        ReturnIsCollection = $returnIsCollection
-                        ParameterCount     = $inputParams.Count
-                        ParametersList     = ($paramSummaries -join ", ")
-                        BindingParameter   = $bindingParamName
-                        Endpoint           = $endpoint
-                        FieldLookup        = "$($actionObj.FieldLookup)"
-                    }
-                }
-            })
+							"$($_.Name): $paramType"
+						} | Sort-Object
+					)
 
-        $resCol = @(
-            $resCol | Sort-Object -Property 'EntityName', 'ActionName' | `
-                Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataAction" -Property *
-        )
+					[PSCustomObject][ordered]@{
+						EntityName         = $entityName
+						CollectionName     = $collectionName
+						ActionName         = "$($itemAction.Name)"
+						BindingKind        = $bindingKind
+						ReturnType         = $returnType
+						ReturnIsCollection = $returnIsCollection
+						ParameterCount     = $tmpInputParams.Count
+						ParametersList     = ($tmpParamSummaries -join ", ")
+						BindingParameter   = $bindingParamName
+						Endpoint           = $endpoint
+						FieldLookup        = "$($itemAction.FieldLookup)"
+					}
+				}
+			}
+		)
 
-        if ($AsExcelOutput) {
-            $resCol | Export-Excel -WorksheetName "Get-FscmOdataAction"
-            return
-        }
+		$colAction = @(
+			$colAction |
+			Sort-Object -Property 'EntityName', 'ActionName' |
+			Select-PSFObject -TypeName "D365Bap.Tools.FscmOdataAction" `
+				-Property *
+		)
 
-        $resCol
-    }
-    
-    end {
-        
-    }
+		if ($AsExcelOutput) {
+			$colAction |
+			Export-Excel -WorksheetName "Get-FscmOdataAction"
+			return
+		}
+
+		$colAction
+	}
+
+	end {
+
+	}
 }
