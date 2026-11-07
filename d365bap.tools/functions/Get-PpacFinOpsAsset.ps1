@@ -6,14 +6,10 @@
         Resolves and downloads NuGet packages, developer files and VHD images. Any published version can be selected.
 
     .PARAMETER Build
-        Full build, track or short form. Omitted: newest.
-
-        ByBuild set; excludes -EnvironmentId.
+		Full build or track. Uses newest when no environment is selected.
 
     .PARAMETER AppVersion
-        Track selector. Omitted: from -Build, else newest.
-
-        ByBuild set; excludes -EnvironmentId.
+		Track selector. Omitted: from -Build, else newest.
 
     .PARAMETER Asset
         Names to download; "*" selects everything including VHD.
@@ -40,9 +36,7 @@
         Re-download files and re-extract folders.
 
     .PARAMETER EnvironmentId
-        Build source and auth context.
-
-        ByEnvironment set; excludes -Build and -AppVersion.
+		Authentication environment. Without a build or track, uses its provisioned build.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -107,6 +101,14 @@
         It uses the environment build with -EnvironmentId.
         It keeps downloads under the default -Path.
 
+	.EXAMPLE
+		PS C:\> Get-PpacFinOpsAsset -EnvironmentId "es-ude-motz-01" -Build "10.0.2790.46"
+
+		Resolves download URLs for the specified build using that environment for authentication.
+		It selects the version with -Build.
+		It authenticates with -EnvironmentId.
+		It keeps downloads under the default -Path.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
@@ -115,9 +117,11 @@ function Get-PpacFinOpsAsset {
 	[OutputType('D365Bap.Tools.PpacFinOpsAsset[]')]
 	param (
 		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipelineByPropertyName = $true, Position = 0)]
+		[Parameter(ParameterSetName = 'ByEnvironment', ValueFromPipelineByPropertyName = $true, Position = 0)]
 		[string] $AppVersion,
 
 		[Parameter(ParameterSetName = 'ByBuild', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
+		[Parameter(ParameterSetName = 'ByEnvironment', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true, Position = 1)]
 		[string] $Build,
 
 		[Parameter(ValueFromPipelineByPropertyName = $true, Position = 2)]
@@ -235,7 +239,9 @@ function Get-PpacFinOpsAsset {
 			$buildGiven = $false
 		}
 
-		if ($isByEnvironment) {
+		if (($isByEnvironment) `
+				-and (-not $buildGiven) `
+				-and (-not $appGiven)) {
 			$envBuild = $null
 
 			if (((-not ($null -eq $hashCtx.Env))) `
@@ -255,7 +261,7 @@ function Get-PpacFinOpsAsset {
 			}
 
 			if ([string]::IsNullOrWhiteSpace($envBuild)) {
-				$messageString = "Could not determine the provisioned application build for environment <c='em'>$EnvironmentId</c>. Use <c='em'>-Build</c> or <c='em'>-AppVersion</c> instead (without <c='em'>-EnvironmentId</c>)."
+				$messageString = "Could not determine the provisioned application build for environment <c='em'>$EnvironmentId</c>. Use <c='em'>-Build</c> or <c='em'>-AppVersion</c> instead."
 				Write-PSFMessage -Level Important `
 					-Message $messageString
 

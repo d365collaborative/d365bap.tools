@@ -79,15 +79,7 @@ function Get-PpacEnvironmentRbacRoleMember {
 
 		$hashHeaders.Add('Authorization', "Bearer $tokenValue")
 
-		$pathMisc = Get-PSFConfigValue -FullName 'd365bap.tools.internal.misc.path'
-
-		$colDefinitions = @()
-
-		if (Test-Path -Path "$pathMisc\Ppac.Rbac.Roles.json") {
-			$colDefinitions = @(Get-Content -Path "$pathMisc\Ppac.Rbac.Roles.json" `
-					-Raw |
-				ConvertFrom-Json)
-		}
+		$colDefinitions = @(Get-BapRbacRoleCatalog)
 
 		if ($colDefinitions.Count -eq 0) {
 			$apiVersionDefinitions = $script:BapApiVersions.AuthorizationPreview
@@ -184,7 +176,7 @@ function Get-PpacEnvironmentRbacRoleMember {
 			'roleDefinitionId as RoleId',
 			@{ Name = 'Role'; Expression = { $hashRoleNames[$_.roleDefinitionId] } },
 			'principalType as PrincipalType',
-			'id as RoleAssignmentId',
+			'roleAssignmentId as RoleAssignmentId',
 			'scope as Scope'
 		)
 

@@ -67,32 +67,24 @@ function Get-PpacRbacRoleMember {
 			Authorization  = "Bearer $tokenValue"
 		}
 
-		$pathMisc = Get-PSFConfigValue -FullName "d365bap.tools.internal.misc.path"
-
 		$apiVersion = $script:BapApiVersions.PowerPlatform
 		$uriDefinitions = 'https://api.powerplatform.com/authorization/roleDefinitions?api-version={0}' `
 			-f $apiVersion
 
-		$rolesCachePath = "$pathMisc\Ppac.Rbac.Roles.json"
-
-		if (Test-Path -LiteralPath $rolesCachePath) {
-			$rbacRoles = Get-Content -Path $rolesCachePath `
-				-Raw |
-			ConvertFrom-Json
-		}
-		else {
-			$rbacRoles = Invoke-RestMethod -Method Get `
+		$colRbacRoles = @(Get-BapRbacRoleCatalog)
+		if (-not $colRbacRoles.Count) {
+			$colRbacRoles = Invoke-RestMethod -Method Get `
 				-Uri $uriDefinitions `
 				-Headers $hashHeaders 4> $null |
 			Select-Object -ExpandProperty value
 		}
 
 		$hashRoleNames = @{}
-		foreach ($itemRole in @($rbacRoles)) {
+		foreach ($itemRole in @($colRbacRoles)) {
 			$hashRoleNames[$itemRole.roleDefinitionId] = $itemRole.roleDefinitionName
 		}
 
-		$colRoleIds = $rbacRoles |
+		$colRoleIds = $colRbacRoles |
 		Where-Object {
 			($_.roleDefinitionId -like $Role) `
 				-or ($_.roleDefinitionName -like $Role) `

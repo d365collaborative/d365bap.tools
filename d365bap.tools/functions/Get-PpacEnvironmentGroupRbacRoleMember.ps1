@@ -79,12 +79,7 @@ function Get-PpacEnvironmentGroupRbacRoleMember {
 			Authorization  = "Bearer $tokenValue"
 		}
 
-		$pathMisc = Get-PSFConfigValue -FullName 'd365bap.tools.internal.misc.path'
-
-		$colRbacRoles = Get-Content `
-			-Path "$pathMisc\Ppac.Rbac.Roles.json" `
-			-Raw |
-		ConvertFrom-Json
+		$colRbacRoles = @(Get-BapRbacRoleCatalog)
 
 		$hashRoleNames = @{}
 		foreach ($itemRole in $colRbacRoles) {

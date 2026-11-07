@@ -59,18 +59,15 @@ function Add-PpacRbacRoleMember {
 	)
 
 	begin {
-		$pathMisc = Get-PSFConfigValue -FullName "d365bap.tools.internal.misc.path"
 
-		$rbacRoles = Get-Content -Path "$pathMisc\Ppac.Rbac.Roles.json" `
-			-Raw |
-		ConvertFrom-Json
+		$colRbacRoles = @(Get-BapRbacRoleCatalog)
 
-		$objRole = $rbacRoles |
+		$objRole = $colRbacRoles |
 		Where-Object { $_.roleDefinitionId -eq $Role } |
 		Select-Object -First 1
 
 		if ($null -eq $objRole) {
-			$objRole = $rbacRoles |
+			$objRole = $colRbacRoles |
 			Where-Object { $_.roleDefinitionName -eq $Role } |
 			Select-Object -First 1
 		}
@@ -115,7 +112,11 @@ function Add-PpacRbacRoleMember {
 
 		$colRoleMembers = Get-PpacRbacRoleMember `
 			-ServicePrincipalId $ServicePrincipalId `
-			-Role $objRole.roleDefinitionName
+			-Role $objRole.roleDefinitionName |
+		Where-Object {
+			($_.Scope.TrimEnd('/') -eq $tmpScope.TrimEnd('/')) `
+				-and ($_.PrincipalType -eq $PrincipalType)
+		}
 
 		if (-not ($null -eq $colRoleMembers)) {
 			$colRoleMembers
@@ -153,7 +154,11 @@ function Add-PpacRbacRoleMember {
 
 		Get-PpacRbacRoleMember `
 			-ServicePrincipalId $ServicePrincipalId `
-			-Role $objRole.roleDefinitionName
+			-Role $objRole.roleDefinitionName |
+		Where-Object {
+			($_.Scope.TrimEnd('/') -eq $tmpScope.TrimEnd('/')) `
+				-and ($_.PrincipalType -eq $PrincipalType)
+		}
 	}
 
 	end {

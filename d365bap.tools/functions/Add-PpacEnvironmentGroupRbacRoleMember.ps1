@@ -76,12 +76,8 @@ function Add-PpacEnvironmentGroupRbacRoleMember {
 	)
 
 	process {
-		$pathMisc = Get-PSFConfigValue -FullName 'd365bap.tools.internal.misc.path'
 
-		$colRbacRoles = Get-Content `
-			-Path "$pathMisc\Ppac.Rbac.Roles.json" `
-			-Raw |
-		ConvertFrom-Json
+		$colRbacRoles = @(Get-BapRbacRoleCatalog)
 
 		$objMatch = $colRbacRoles |
 		Where-Object {
