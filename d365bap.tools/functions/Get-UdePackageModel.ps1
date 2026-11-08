@@ -6,9 +6,7 @@
         Lists entries from local package folders with their descriptor references.
 
     .PARAMETER Version
-        Exact release name. Label form allowed.
-
-        Default: '' (highest known release when omitted).
+        Exact release name. Label form allowed. Highest known release when omitted.
 
     .PARAMETER Model
         Model inside a package. Supports wildcards. Allows multiple.
@@ -65,7 +63,7 @@ function Get-UdePackageModel {
 	[CmdletBinding()]
 	[OutputType('D365Bap.Tools.UdePackageModel[]')]
 	param (
-		[string] $Version = '',
+		[string] $Version,
 
 		[SupportsWildcards()]
 		[string[]] $Model = '*',
@@ -82,8 +80,6 @@ function Get-UdePackageModel {
 	}
 
 	process {
-		if (Test-PSFFunctionInterrupt) { return }
-
 		$filterVersion = $Version
 
 		if ($filterVersion -match '\(([^()]+)\)\s*$') {
