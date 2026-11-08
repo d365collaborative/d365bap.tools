@@ -100,4 +100,5 @@ $udePackageLocalDirectoryCompleter = {
 }
 
 Register-ArgumentCompleter -CommandName Get-UdePackageLocalDirectory -ParameterName Version -ScriptBlock $udePackageLocalDirectoryCompleter
+Register-ArgumentCompleter -CommandName Get-UdePackageModel -ParameterName Version -ScriptBlock $udePackageLocalDirectoryCompleter
 Register-ArgumentCompleter -CommandName Set-UdeConfig -ParameterName PackagesVersion -ScriptBlock $udePackageLocalDirectoryCompleter

@@ -174,6 +174,7 @@
 		, 'Get-UdeEnvironmentModel'
 		, 'Get-UdeNuget'
 		, 'Get-UdePackageLocalDirectory'
+		, 'Get-UdePackageModel'
 		, 'Get-UdeVsPackageDeploy'
 		, 'Get-UdeVsPowerPlatformExtensionHistory'
 		, 'Get-UdeXrefDb'
