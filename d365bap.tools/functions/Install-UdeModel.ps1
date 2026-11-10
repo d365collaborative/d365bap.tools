@@ -1,10 +1,10 @@
 ﻿<#
     .SYNOPSIS
-        Installs UDE models from a package into active metadata.
+        Installs or exports UDE models from a package.
 
     .DESCRIPTION
-        Installs package modules into active metadata with platform checks.
-        Newer modules are skipped and reported while older ones install.
+        Installs package modules into active metadata or exports them to a
+        folder. Reports the platform of each model against the environment.
 
     .PARAMETER Path
         Package zip or directory to install.
@@ -14,6 +14,12 @@
 
     .PARAMETER AsExcelOutput
         Exports results to Excel instead of returning rows.
+
+    .PARAMETER OutputPath
+        Folder to export the models to.
+
+    .PARAMETER ExportOnly
+        Exports models instead of installing them.
 
     .EXAMPLE
         PS C:\> Install-UdeModel -Path "C:\Temp\Package.zip"
@@ -36,20 +42,39 @@
         It uses -Path to select the package to install.
         It uses -AsExcelOutput to export the results.
 
+    .EXAMPLE
+        PS C:\> Install-UdeModel -Path "C:\Temp\Package.zip" -ExportOnly -OutputPath "C:\Temp\Out"
+
+        Exports package modules to the output folder.
+        It uses -Path to select the package to export.
+        It uses -ExportOnly to export instead of installing.
+        It uses -OutputPath to select the export folder.
+
     .NOTES
         Author: Mötz Jensen (@Splaxi)
 #>
 function Install-UdeModel {
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium', DefaultParameterSetName = 'Install')]
 	[OutputType('D365Bap.Tools.UdeModelInstall[]')]
 	param (
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $true, ParameterSetName = 'Install')]
+		[Parameter(Mandatory = $true, ParameterSetName = 'Export')]
 		[ValidateNotNullOrEmpty()]
 		[string] $Path,
 
+		[Parameter(ParameterSetName = 'Install')]
 		[switch] $Force,
 
-		[switch] $AsExcelOutput
+		[Parameter(ParameterSetName = 'Install')]
+		[Parameter(ParameterSetName = 'Export')]
+		[switch] $AsExcelOutput,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Export')]
+		[ValidateNotNullOrEmpty()]
+		[string] $OutputPath,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Export')]
+		[switch] $ExportOnly
 	)
 
 	begin {
@@ -59,18 +84,20 @@ function Install-UdeModel {
 	process {
 		if (Test-PSFFunctionInterrupt) { return }
 
-		$objDevenv = Get-Process -Name "devenv" `
-			-ErrorAction SilentlyContinue
+		if ($PSCmdlet.ParameterSetName -ne "Export") {
+			$objDevenv = Get-Process -Name "devenv" `
+				-ErrorAction SilentlyContinue
 
-		if ($objDevenv.Count -gt 0) {
-			$messageString = "Visual Studio is running. Exit Visual Studio and run the cmdlet again."
-			Write-PSFMessage -Level Important `
-				-Message $messageString
+			if ($objDevenv.Count -gt 0) {
+				$messageString = "Visual Studio is running. Exit Visual Studio and run the cmdlet again."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
 
-			Stop-PSFFunction -Message "Stopping because of running Visual Studio." `
-				-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+				Stop-PSFFunction -Message "Stopping because of running Visual Studio." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 
-			return
+				return
+			}
 		}
 
 		if ($Path.EndsWith(".zip", [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -107,6 +134,22 @@ function Install-UdeModel {
 				-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
 
 			return
+		}
+
+		if ($PSCmdlet.ParameterSetName -eq "Export") {
+			if (-not ([System.IO.Path]::IsPathRooted($OutputPath))) {
+				$objOutputLocation = Get-Location
+				$OutputPath = Join-Path -Path $objOutputLocation `
+					-ChildPath $OutputPath
+
+				$OutputPath = [System.IO.Path]::GetFullPath($OutputPath)
+			}
+
+			if (-not (Test-Path -LiteralPath $OutputPath)) {
+				New-Item -Path $OutputPath `
+					-ItemType Directory `
+					-Force > $null
+			}
 		}
 
 		Get-ChildItem -Path $Path `
@@ -293,10 +336,27 @@ function Install-UdeModel {
 				"$($itemModule.Model)"
 			}
 		)
-		$shouldAffected = "$($objUdeConfig.Name) ($($objUdeConfig.MetadataDirectory))"
-		$shouldLabel = "Install UDE models into metadata"
 
-		if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { $colPreview; return }
+		$destinationRoot = $metadataDir
+
+		if ($PSCmdlet.ParameterSetName -eq "Export") {
+			if ($ExportOnly) {
+				$destinationRoot = $OutputPath
+			}
+		}
+
+		if ($PSCmdlet.ParameterSetName -eq "Export") {
+			$shouldAffected = "$($objUdeConfig.Name) ($OutputPath)"
+			$shouldLabel = "Export UDE models to output path"
+
+			if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { $colPreview; return }
+		}
+		else {
+			$shouldAffected = "$($objUdeConfig.Name) ($($objUdeConfig.MetadataDirectory))"
+			$shouldLabel = "Install UDE models into metadata"
+
+			if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { $colPreview; return }
+		}
 
 		$colRes = @(
 			foreach ($itemModule in $colModules) {
@@ -306,23 +366,25 @@ function Install-UdeModel {
 					-EnvPlatform $envPlatform
 
 				if ($compareState -eq "Newer") {
-					if (-not $Force) {
-						Write-PSFMessage -Level Important `
-							-Message "Skipping model with platform newer than the environment."
+					if ($PSCmdlet.ParameterSetName -ne "Export") {
+						if (-not $Force) {
+							Write-PSFMessage -Level Important `
+								-Message "Skipping model with platform newer than the environment."
 
-						[PSCustomObject][ordered]@{
-							Model             = $modelName
-							Package           = "$($itemModule.ZipName)"
-							ModelPlatform     = $modelPlatform
-							EnvPlatform       = $envPlatform
-							EnvBuild          = $envBuild
-							Status            = "SkippedNewer"
-							MetadataDirectory = $metadataDir
-							ModulePath        = ""
-							PSTypeName        = "D365Bap.Tools.UdeModelInstall"
+							[PSCustomObject][ordered]@{
+								Model             = $modelName
+								Package           = "$($itemModule.ZipName)"
+								ModelPlatform     = $modelPlatform
+								EnvPlatform       = $envPlatform
+								EnvBuild          = $envBuild
+								Status            = "SkippedNewer"
+								MetadataDirectory = $destinationRoot
+								ModulePath        = ""
+								PSTypeName        = "D365Bap.Tools.UdeModelInstall"
+							}
+
+							continue
 						}
-
-						continue
 					}
 				}
 
@@ -337,11 +399,23 @@ function Install-UdeModel {
 				}
 
 				if ($compareState -eq "Newer") {
-					Write-PSFMessage -Level Important `
-						-Message "Model platform is newer. Continuing because Force was supplied."
+					if ($PSCmdlet.ParameterSetName -eq "Export") {
+						Write-PSFMessage -Level Important `
+							-Message "Model platform is newer than the environment. Exporting anyway."
+					}
+					else {
+						Write-PSFMessage -Level Important `
+							-Message "Model platform is newer. Continuing because Force was supplied."
+					}
 				}
 
-				$moduleDir = Join-Path -Path $metadataDir `
+				$statusValue = "Installed"
+
+				if ($PSCmdlet.ParameterSetName -eq "Export") {
+					$statusValue = "Exported"
+				}
+
+				$moduleDir = Join-Path -Path $destinationRoot `
 					-ChildPath $modelName
 
 				try {
@@ -360,7 +434,7 @@ function Install-UdeModel {
 						-Force
 
 					Write-PSFMessage -Level Verbose `
-						-Message "Installed module into metadata."
+						-Message "Wrote module to destination."
 
 					[PSCustomObject][ordered]@{
 						Model             = $modelName
@@ -368,15 +442,15 @@ function Install-UdeModel {
 						ModelPlatform     = $modelPlatform
 						EnvPlatform       = $envPlatform
 						EnvBuild          = $envBuild
-						Status            = "Installed"
-						MetadataDirectory = $metadataDir
+						Status            = $statusValue
+						MetadataDirectory = $destinationRoot
 						ModulePath        = $moduleDir
 						PSTypeName        = "D365Bap.Tools.UdeModelInstall"
 					}
 				}
 				catch {
 					Write-PSFMessage -Level Important `
-						-Message "Failed installing model into metadata." `
+						-Message "Failed writing model to destination." `
 						-Exception $PSItem.Exception
 
 					[PSCustomObject][ordered]@{
@@ -386,7 +460,7 @@ function Install-UdeModel {
 						EnvPlatform       = $envPlatform
 						EnvBuild          = $envBuild
 						Status            = "Failed"
-						MetadataDirectory = $metadataDir
+						MetadataDirectory = $destinationRoot
 						ModulePath        = $moduleDir
 						PSTypeName        = "D365Bap.Tools.UdeModelInstall"
 					}
