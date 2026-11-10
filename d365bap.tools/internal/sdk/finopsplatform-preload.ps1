@@ -1,5 +1,4 @@
-﻿
-function Start-FinOpsPlatformPreload {
+﻿function Start-FinOpsPlatformPreload {
 	<#
         .SYNOPSIS
             Warms the platform map for the newest tracks.
@@ -29,33 +28,6 @@ function Start-FinOpsPlatformPreload {
 	)
 
 	try {
-		$azContext = Get-AzContext -ErrorAction SilentlyContinue
-
-		if (-not $azContext) {
-			$azCommand = Get-Command az -ErrorAction SilentlyContinue
-			$azLoggedIn = $false
-
-			if (-not ($null -eq $azCommand)) {
-				$previousExitCode = $global:LASTEXITCODE
-
-				try {
-					& az account show -o json 2>$null > $null
-
-					if ($LASTEXITCODE -eq 0) { $azLoggedIn = $true }
-				}
-				finally {
-					$global:LASTEXITCODE = $previousExitCode
-				}
-			}
-
-			if (-not $azLoggedIn) {
-				Write-PSFMessage -Level Verbose `
-					-Message 'FinOps platform preload skipped: no Az login detected.'
-
-				return
-			}
-		}
-
 		$objCatalog = Get-FinOpsVersionCache -MaxAgeHours $MaxAgeHours `
 			-ErrorAction SilentlyContinue
 
@@ -65,13 +37,10 @@ function Start-FinOpsPlatformPreload {
 			$objSource = Read-FinOpsVersionCacheFile -ErrorAction SilentlyContinue
 		}
 
-		$startJob = $false
+		$colTopTracks = @()
 
-		if (($null -eq $objSource) `
-				-or ($null -eq $objSource.versions)) {
-			$startJob = $true
-		}
-		else {
+		if ((-not ($null -eq $objSource)) `
+				-and (-not ($null -eq $objSource.versions))) {
 			$colVersionRows = [System.Collections.Generic.List[object]]::new()
 
 			foreach ($itemVersion in @($objSource.versions)) {
@@ -99,7 +68,11 @@ function Start-FinOpsPlatformPreload {
 				Select-Object -ExpandProperty Track |
 				Select-Object -First 3
 			)
+		}
 
+		$startJob = ($colTopTracks.Count -eq 0)
+
+		if (-not $startJob) {
 			foreach ($itemTrack in $colTopTracks) {
 				$objBuildEntry = $null
 
@@ -122,14 +95,26 @@ function Start-FinOpsPlatformPreload {
 
 				if ($startJob) { break }
 			}
+		}
 
-			if ((-not $startJob) `
-					-and ($null -eq $objCatalog)) {
-				$startJob = $true
-			}
+		if ((-not $startJob) `
+				-and ($null -eq $objCatalog)) {
+			$startJob = $true
 		}
 
 		if (-not $startJob) { return }
+
+		try {
+			$hashCtx = Get-DevToolsAuthContext
+		}
+		catch {
+			Write-PSFMessage -Level Verbose `
+				-Message 'FinOps platform preload skipped: no FinOps environment or login found.'
+
+			return
+		}
+
+		$hashStamp = Get-FinOpsVersionCacheStamp
 
 		$colRunningPreload = Get-Job -Name 'd365bap.tools.finopsplatform.preload' `
 			-ErrorAction SilentlyContinue |
@@ -142,117 +127,15 @@ function Start-FinOpsPlatformPreload {
 		Remove-Job -Force `
 			-ErrorAction SilentlyContinue
 
-		$authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' `
-			-Fallback 'AzAccount'
-
-		$apiVersion = $script:BapApiVersions.EnvironmentScopes
-
 		Start-Job -Name 'd365bap.tools.finopsplatform.preload' `
 			-ScriptBlock {
-			param ([string] $CachePath, [string] $AuthProvider, [string] $ApiVersion)
+			param ([string] $CachePath, [string] $EnvUri, [string] $EnvToken, [string] $TenantId, [string] $AccountId, [string[]] $TopTracks)
 
 			try {
-				if ($AuthProvider -eq 'AzCli') {
-					$probeAzCli = & az account show -o json 2>$null
-
-					if (($LASTEXITCODE -ne 0) `
-							-or ([string]::IsNullOrWhiteSpace($probeAzCli))) { return }
-				}
-				else {
-					Import-Module Az.Accounts `
-						-ErrorAction Stop
-
-					if (-not (Get-AzContext -ErrorAction SilentlyContinue)) { return }
-				}
-
-				$bapToken = $null
-				$tenantId = ''
-				$accountId = ''
-
-				if ($AuthProvider -eq 'AzCli') {
-					$tokenRaw = & az account get-access-token --resource 'https://service.powerapps.com/' --query accessToken -o tsv 2>$null
-
-					if (($LASTEXITCODE -eq 0) `
-							-and (-not [string]::IsNullOrWhiteSpace($tokenRaw))) { $bapToken = "$tokenRaw".Trim() }
-
-					$accountRaw = & az account show --query '{user:user.name, tenant:tenantId}' -o json 2>$null
-
-					if (($LASTEXITCODE -eq 0) `
-							-and (-not [string]::IsNullOrWhiteSpace($accountRaw))) {
-						$accountObj = "$accountRaw" |
-						ConvertFrom-Json -ErrorAction Stop
-
-						$accountId = "$($accountObj.user)"
-						$tenantId = "$($accountObj.tenant)"
-					}
-				}
-				else {
-					$bapTokenResult = Get-AzAccessToken -ResourceUrl 'https://service.powerapps.com/' `
-						-ErrorAction Stop
-
-					if ($bapTokenResult.Token -is [System.Security.SecureString]) {
-						$bapToken = ConvertFrom-SecureString -AsPlainText `
-							-SecureString $bapTokenResult.Token
-					}
-					else {
-						$bapToken = "$($bapTokenResult.Token)"
-					}
-
-					$jobContext = Get-AzContext -ErrorAction SilentlyContinue
-
-					if (-not ($null -eq $jobContext)) {
-						$accountId = "$($jobContext.Account.Id)"
-						$tenantId = "$($jobContext.Tenant.Id)"
-					}
-				}
-
-				if ([string]::IsNullOrWhiteSpace($bapToken)) { return }
-
-				$hashBapHeaders = @{ Authorization = "Bearer $bapToken" }
-
-				$colEnvs = Invoke-RestMethod -Method Get `
-					-Uri ('https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version={0}' `
-						-f $ApiVersion) `
-					-Headers $hashBapHeaders `
-					-ConnectionTimeoutSeconds 60 |
-				Select-Object -ExpandProperty value
-
-				$colFinopsEnvs = @(
-					$colEnvs |
-					Where-Object { -not ($null -eq $_.properties.linkedAppMetadata.type) } |
-					Sort-Object { $_.properties.displayName }
-				)
-
-				if ($colFinopsEnvs.Count -eq 0) { return }
-
-				$tmpAuthEnvUri = ("$($colFinopsEnvs[0].properties.linkedEnvironmentMetadata.instanceUrl)" -replace 'com/', 'com').TrimEnd('/') + '/'
-				$dataverseToken = $null
-
-				if ($AuthProvider -eq 'AzCli') {
-					$dvRaw = & az account get-access-token --resource $tmpAuthEnvUri --query accessToken -o tsv 2>$null
-
-					if (($LASTEXITCODE -eq 0) `
-							-and (-not [string]::IsNullOrWhiteSpace($dvRaw))) { $dataverseToken = "$dvRaw".Trim() }
-				}
-				else {
-					$dvResult = Get-AzAccessToken -ResourceUrl $tmpAuthEnvUri `
-						-ErrorAction Stop
-
-					if ($dvResult.Token -is [System.Security.SecureString]) {
-						$dataverseToken = ConvertFrom-SecureString -AsPlainText `
-							-SecureString $dvResult.Token
-					}
-					else {
-						$dataverseToken = "$($dvResult.Token)"
-					}
-				}
-
-				if ([string]::IsNullOrWhiteSpace($dataverseToken)) { return }
-
 				$hashDevHeaders = @{
 					Correlationid           = [guid]::NewGuid().ToString()
-					Dataverseenvironmenturi = $tmpAuthEnvUri.TrimEnd('/')
-					Authorization           = "Bearer $dataverseToken"
+					Dataverseenvironmenturi = $EnvUri
+					Authorization           = "Bearer $EnvToken"
 					'Odata-Maxversion'      = '4.0'
 					'Odata-Version'         = '4.0'
 					Accept                  = 'application/json'
@@ -267,7 +150,6 @@ function Start-FinOpsPlatformPreload {
 
 					$objVersionJobState = $objVersionJob |
 					Select-Object -ExpandProperty State
-
 
 					if ($objVersionJobState -contains 'Running') { return }
 				}
@@ -305,33 +187,37 @@ function Start-FinOpsPlatformPreload {
 
 				if ($colSourceVersions.Count -eq 0) { return }
 
-				$colJobRows = [System.Collections.Generic.List[object]]::new()
+				$colJobTracks = @($TopTracks)
 
-				foreach ($itemVersion in @($colSourceVersions)) {
-					if (-not ($null -eq $itemVersion.AppVersion)) {
-						$tmpAppName = "$($itemVersion.AppVersion)"
-						$tmpTrackName = "$($itemVersion.AppBuild)"
-					}
-					else {
-						$tmpAppName = "$($itemVersion.appVersion)"
-						$tmpTrackName = "$($itemVersion.appBuild)"
+				if ($colJobTracks.Count -eq 0) {
+					$colJobRows = [System.Collections.Generic.List[object]]::new()
+
+					foreach ($itemVersion in @($colSourceVersions)) {
+						if (-not ($null -eq $itemVersion.AppVersion)) {
+							$tmpAppName = "$($itemVersion.AppVersion)"
+							$tmpTrackName = "$($itemVersion.AppBuild)"
+						}
+						else {
+							$tmpAppName = "$($itemVersion.appVersion)"
+							$tmpTrackName = "$($itemVersion.appBuild)"
+						}
+
+						$tmpRow = [PsCustomObject][Ordered]@{
+							Track = $tmpTrackName
+							App   = $tmpAppName
+						}
+
+						$colJobRows.Add($tmpRow)
 					}
 
-					$tmpRow = [PsCustomObject][Ordered]@{
-						Track = $tmpTrackName
-						App   = $tmpAppName
-					}
-
-					$colJobRows.Add($tmpRow)
+					$colJobTracks = @(
+						$colJobRows |
+						Sort-Object -Property { [version]$_.App } `
+							-Descending |
+						Select-Object -ExpandProperty Track |
+						Select-Object -First 3
+					)
 				}
-
-				$colTopTracks = @(
-					$colJobRows |
-					Sort-Object -Property { [version]$_.App } `
-						-Descending |
-					Select-Object -ExpandProperty Track |
-					Select-Object -First 3
-				)
 
 				$hashBuilds = @{}
 
@@ -341,9 +227,8 @@ function Start-FinOpsPlatformPreload {
 					}
 				}
 
-				foreach ($itemTrack in $colTopTracks) {
-					if ((-not $hashBuilds.ContainsKey($itemTrack)) `
-							-or (@($hashBuilds[$itemTrack]).Count -eq 0)) {
+				foreach ($itemTrack in $colJobTracks) {
+					if (-not $hashBuilds.ContainsKey($itemTrack)) {
 						try {
 							$tmpLiveBuilds = Invoke-RestMethod -Method Get `
 								-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version={0}' `
@@ -363,9 +248,21 @@ function Start-FinOpsPlatformPreload {
 				}
 
 				$hashPlatforms = @{}
-				$keepPrior = (-not ($null -eq $objState.platforms)) -and (($null -eq $objState.tenantId) -or ("$($objState.tenantId)" -eq $tenantId))
+				$keepPrior = $false
 
-				if ($keepPrior) {
+				if (-not ($null -eq $objState)) {
+					$fileTenant = "$($objState.tenantId)"
+
+					if ([string]::IsNullOrWhiteSpace($fileTenant)) {
+						$keepPrior = $true
+					}
+					elseif ($fileTenant -eq $TenantId) {
+						$keepPrior = $true
+					}
+				}
+
+				if (($keepPrior) `
+						-and (-not ($null -eq $objState.platforms))) {
 					foreach ($itemProperty in $objState.platforms.PSObject.Properties) {
 						$hashPlatforms["$($itemProperty.Name)"] = "$($itemProperty.Value)"
 					}
@@ -373,7 +270,9 @@ function Start-FinOpsPlatformPreload {
 
 				$colMissingBuilds = [System.Collections.Generic.List[object]]::new()
 
-				foreach ($itemTrack in $colTopTracks) {
+				foreach ($itemTrack in $colJobTracks) {
+					if (-not $hashBuilds.ContainsKey($itemTrack)) { continue }
+
 					foreach ($itemBuild in @($hashBuilds[$itemTrack])) {
 						if ([string]::IsNullOrWhiteSpace($itemBuild)) { continue }
 
@@ -438,8 +337,8 @@ function Start-FinOpsPlatformPreload {
 
 				$hashPayload = [ordered]@{
 					refreshedUtc = [datetime]::UtcNow.ToString('o')
-					tenantId     = "$tenantId"
-					accountId    = "$accountId"
+					tenantId     = "$TenantId"
+					accountId    = "$AccountId"
 					versions     = $colSourceVersions
 					builds       = $hashFinalBuilds
 					platforms    = $hashPlatforms
@@ -459,7 +358,7 @@ function Start-FinOpsPlatformPreload {
 			}
 			catch { return }
 		} `
-			-ArgumentList @((Get-FinOpsVersionCachePath), $authProvider, $apiVersion) > $null
+			-ArgumentList @((Get-FinOpsVersionCachePath), $hashCtx.Env.PpacEnvUri, $hashCtx.Token, $hashStamp.TenantId, $hashStamp.AccountId, @($colTopTracks)) > $null
 	}
 	catch {
 		Write-PSFMessage -Level Verbose `
