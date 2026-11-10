@@ -65,7 +65,7 @@ function Get-PpacFinOpsPlatform {
 		[string] $Build,
 
 		[Parameter(ParameterSetName = 'ByApp', ValueFromPipelineByPropertyName = $true)]
-		[Parameter(ParameterSetName = 'ByPlatform', Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByPlatform', ValueFromPipelineByPropertyName = $true)]
 		[SupportsWildcards()]
 		[string] $PlatformVersion = '*',
 
@@ -78,6 +78,20 @@ function Get-PpacFinOpsPlatform {
 
 	process {
 		if ($PSCmdlet.ParameterSetName -eq 'ByPlatform') {
+			$platformGiven = $PSBoundParameters.ContainsKey('PlatformVersion') `
+				-and -not [string]::IsNullOrWhiteSpace($PlatformVersion)
+
+			if (-not ($platformGiven)) {
+				$messageString = "Specify <c='em'>-PlatformVersion</c> with four parts, such as <c='em'>7.0.8199.56</c>."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
+				Stop-PSFFunction -Message "Stopping because no platform version was specified." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
+				return
+			}
+
 			$tmpFilter = "$PlatformVersion".Replace("-", ".").Trim()
 
 			$colFilterParts = @("$tmpFilter" -split "\.")
@@ -234,189 +248,36 @@ function Get-PpacFinOpsPlatform {
 					$hashNewBuilds[$tmpAppBuild] = @($tmpBuildList)
 				}
 
-				$tmpSortedBuilds = @(
-					$tmpBuildList |
-					Sort-Object -Property { [version]$_ }
-				)
-
 				$tmpMatchedBuilds = [System.Collections.Generic.List[string]]::new()
-				$tmpScanNeeded = $false
-				$tmpLow = 0
-				$tmpHigh = $tmpSortedBuilds.Count - 1
-				$tmpFound = -1
-				$tmpBinaryOk = $true
 
-				while ($tmpLow -le $tmpHigh) {
-					$tmpMid = [int](($tmpLow + $tmpHigh) / 2)
-					$tmpMidBuild = "$($tmpSortedBuilds[$tmpMid])"
-
-					if (-not $hashKnownPlatforms.ContainsKey($tmpMidBuild)) {
+				foreach ($itemBuild in $tmpBuildList) {
+					if (-not $hashKnownPlatforms.ContainsKey("$itemBuild")) {
 						try {
-							$tmpMidPlatRaw = Invoke-RestMethod -Method Get `
+							$tmpFetchedPlat = Invoke-RestMethod -Method Get `
 								-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}' `
-									-f $tmpMidBuild.Replace(".", "-")) `
+									-f "$itemBuild".Replace(".", "-")) `
 								-Headers $hashHeaders
 						}
 						catch {
 							Write-PSFMessage -Level Warning `
-								-Message "Skipping build <c='em'>$tmpMidBuild</c>: the platform version could not be resolved." `
+								-Message "Skipping build <c='em'>$itemBuild</c>: the platform version could not be resolved." `
 								-ErrorRecord $_
 
-							$tmpBinaryOk = $false
-
-							break
+							continue
 						}
 
-						if ([string]::IsNullOrWhiteSpace($tmpMidPlatRaw)) {
-							$tmpBinaryOk = $false
-
-							break
+						if ([string]::IsNullOrWhiteSpace($tmpFetchedPlat)) {
+							continue
 						}
 
-						$hashKnownPlatforms[$tmpMidBuild] = "$tmpMidPlatRaw"
-						$hashNewPlatforms[$tmpMidBuild] = "$tmpMidPlatRaw"
+						$hashKnownPlatforms["$itemBuild"] = "$tmpFetchedPlat"
+						$hashNewPlatforms["$itemBuild"] = "$tmpFetchedPlat"
 					}
 
-					$tmpMidNorm = "$($hashKnownPlatforms[$tmpMidBuild])".Replace("-", ".").Trim()
+					$tmpBuildPlat = "$($hashKnownPlatforms["$itemBuild"])".Replace("-", ".").Trim()
 
-					if ("$tmpMidNorm" -eq "$tmpFilter") {
-						$tmpFound = $tmpMid
-
-						break
-					}
-					elseif ([version]$tmpMidNorm -lt [version]$tmpFilter) {
-						$tmpLow = $tmpMid + 1
-					}
-					else {
-						$tmpHigh = $tmpMid - 1
-					}
-				}
-
-				if (($tmpFound -ge 0) `
-						-and ($tmpBinaryOk)) {
-					$tmpLeft = $tmpFound
-
-					while ($tmpLeft -ge 0) {
-						$tmpLeftBuild = "$($tmpSortedBuilds[$tmpLeft])"
-
-						if (-not $hashKnownPlatforms.ContainsKey($tmpLeftBuild)) {
-							try {
-								$tmpLeftPlatRaw = Invoke-RestMethod -Method Get `
-									-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}' `
-										-f $tmpLeftBuild.Replace(".", "-")) `
-									-Headers $hashHeaders
-							}
-							catch {
-								Write-PSFMessage -Level Warning `
-									-Message "Skipping build <c='em'>$tmpLeftBuild</c>: the platform version could not be resolved." `
-									-ErrorRecord $_
-
-								break
-							}
-
-							if ([string]::IsNullOrWhiteSpace($tmpLeftPlatRaw)) {
-								break
-							}
-
-							$hashKnownPlatforms[$tmpLeftBuild] = "$tmpLeftPlatRaw"
-							$hashNewPlatforms[$tmpLeftBuild] = "$tmpLeftPlatRaw"
-						}
-
-						$tmpLeftNorm = "$($hashKnownPlatforms[$tmpLeftBuild])".Replace("-", ".").Trim()
-
-						if ("$tmpLeftNorm" -eq "$tmpFilter") {
-							$tmpMatchedBuilds.Add($tmpLeftBuild)
-						}
-						else {
-							break
-						}
-
-						$tmpLeft--
-					}
-
-					$tmpRight = $tmpFound + 1
-
-					while ($tmpRight -lt $tmpSortedBuilds.Count) {
-						$tmpRightBuild = "$($tmpSortedBuilds[$tmpRight])"
-
-						if (-not $hashKnownPlatforms.ContainsKey($tmpRightBuild)) {
-							try {
-								$tmpRightPlatRaw = Invoke-RestMethod -Method Get `
-									-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}' `
-										-f $tmpRightBuild.Replace(".", "-")) `
-									-Headers $hashHeaders
-							}
-							catch {
-								Write-PSFMessage -Level Warning `
-									-Message "Skipping build <c='em'>$tmpRightBuild</c>: the platform version could not be resolved." `
-									-ErrorRecord $_
-
-								break
-							}
-
-							if ([string]::IsNullOrWhiteSpace($tmpRightPlatRaw)) {
-								break
-							}
-
-							$hashKnownPlatforms[$tmpRightBuild] = "$tmpRightPlatRaw"
-							$hashNewPlatforms[$tmpRightBuild] = "$tmpRightPlatRaw"
-						}
-
-						$tmpRightNorm = "$($hashKnownPlatforms[$tmpRightBuild])".Replace("-", ".").Trim()
-
-						if ("$tmpRightNorm" -eq "$tmpFilter") {
-							$tmpMatchedBuilds.Add($tmpRightBuild)
-						}
-						else {
-							break
-						}
-
-						$tmpRight++
-					}
-				}
-				elseif ($tmpBinaryOk) {
-					$tmpScanNeeded = $false
-				}
-				else {
-					$tmpScanNeeded = $true
-				}
-
-				if ($tmpScanNeeded) {
-					$tmpOrderedBuilds = @(
-						$tmpSortedBuilds |
-						Sort-Object -Property { [version]$_ } `
-							-Descending
-					)
-
-					foreach ($itemBuild in $tmpOrderedBuilds) {
-						if (-not $hashKnownPlatforms.ContainsKey("$itemBuild")) {
-							try {
-								$tmpFetchedPlat = Invoke-RestMethod -Method Get `
-									-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}' `
-										-f "$itemBuild".Replace(".", "-")) `
-									-Headers $hashHeaders
-							}
-							catch {
-								Write-PSFMessage -Level Warning `
-									-Message "Skipping build <c='em'>$itemBuild</c>: the platform version could not be resolved." `
-									-ErrorRecord $_
-
-								continue
-							}
-
-							if ([string]::IsNullOrWhiteSpace($tmpFetchedPlat)) {
-								continue
-							}
-
-							$hashKnownPlatforms["$itemBuild"] = "$tmpFetchedPlat"
-							$hashNewPlatforms["$itemBuild"] = "$tmpFetchedPlat"
-						}
-
-						$tmpBuildPlat = "$($hashKnownPlatforms["$itemBuild"])".Replace("-", ".").Trim()
-
-						if ("$tmpBuildPlat" -eq "$tmpFilter") {
-							$tmpMatchedBuilds.Add("$itemBuild")
-						}
+					if ("$tmpBuildPlat" -eq "$tmpFilter") {
+						$tmpMatchedBuilds.Add("$itemBuild")
 					}
 				}
 
