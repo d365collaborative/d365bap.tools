@@ -149,9 +149,7 @@ function Get-PpacFinOpsPlatform {
 
 			if ($colCandidates.Count -eq 0) {
 				try {
-					$liveCatalog = Invoke-RestMethod -Method Get `
-						-Uri 'https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsversions' `
-						-Headers $hashHeaders
+					$liveCatalog = Get-FinOpsClientCatalog -Headers $hashHeaders
 				}
 				catch {
 					$messageString = "Failed retrieving the FinOps version catalog from the developer tools service."
@@ -231,9 +229,7 @@ function Get-PpacFinOpsPlatform {
 
 				if ($tmpBuildList.Count -eq 0) {
 					try {
-						$tmpLiveBuilds = Invoke-RestMethod -Method Get `
-							-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version={0}' `
-								-f $tmpAppBuild.Replace('.', '-')) `
+						$tmpLiveBuilds = Get-FinOpsClientBuildList -Track $tmpAppBuild `
 							-Headers $hashHeaders
 					}
 					catch {
@@ -253,9 +249,7 @@ function Get-PpacFinOpsPlatform {
 				foreach ($itemBuild in $tmpBuildList) {
 					if (-not $hashKnownPlatforms.ContainsKey("$itemBuild")) {
 						try {
-							$tmpFetchedPlat = Invoke-RestMethod -Method Get `
-								-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}' `
-									-f "$itemBuild".Replace(".", "-")) `
+							$tmpFetchedPlat = Get-FinOpsClientPlatform -Build "$itemBuild" `
 								-Headers $hashHeaders
 						}
 						catch {

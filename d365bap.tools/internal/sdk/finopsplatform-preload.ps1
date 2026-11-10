@@ -21,56 +21,41 @@
             Author: Mötz Jensen (@Splaxi)
     #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseUsingScopeModifierInNewRunspaces", "", Justification = "Start-Job binds values through ArgumentList, the using scope modifier is not supported there.")]
 	[CmdletBinding()]
 	param (
 		[int] $MaxAgeHours = 24
 	)
 
 	try {
+		$authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' `
+			-Fallback 'AzAccount'
+
+		if (-not (Test-FinOpsClientLogin -AuthProvider $authProvider)) {
+			Write-PSFMessage -Level Verbose `
+				-Message 'FinOps platform preload skipped: no login detected.'
+
+			return
+		}
+
 		$objCatalog = Get-FinOpsVersionCache -MaxAgeHours $MaxAgeHours `
 			-ErrorAction SilentlyContinue
 
 		$objSource = $objCatalog
 
 		if ($null -eq $objSource) {
-			$objSource = Read-FinOpsVersionCacheFile -ErrorAction SilentlyContinue
+			$objSource = Read-FinOpsClientCache -Path (Get-FinOpsVersionCachePath)
 		}
 
 		$colTopTracks = @()
 
 		if ((-not ($null -eq $objSource)) `
 				-and (-not ($null -eq $objSource.versions))) {
-			$colVersionRows = [System.Collections.Generic.List[object]]::new()
-
-			foreach ($itemVersion in @($objSource.versions)) {
-				if (-not ($null -eq $itemVersion.AppVersion)) {
-					$tmpAppName = "$($itemVersion.AppVersion)"
-					$tmpTrackName = "$($itemVersion.AppBuild)"
-				}
-				else {
-					$tmpAppName = "$($itemVersion.appVersion)"
-					$tmpTrackName = "$($itemVersion.appBuild)"
-				}
-
-				$tmpRow = [PsCustomObject][Ordered]@{
-					Track = $tmpTrackName
-					App   = $tmpAppName
-				}
-
-				$colVersionRows.Add($tmpRow)
-			}
-
-			$colTopTracks = @(
-				$colVersionRows |
-				Sort-Object -Property { [version]$_.App } `
-					-Descending |
-				Select-Object -ExpandProperty Track |
-				Select-Object -First 3
-			)
+			$colTopTracks = Select-FinOpsTopTrack -Versions @($objSource.versions) `
+				-Count 3
 		}
 
-		$startJob = ($colTopTracks.Count -eq 0)
+		$startJob = ($null -eq $colTopTracks) `
+			-or (@($colTopTracks).Count -eq 0)
 
 		if (-not $startJob) {
 			foreach ($itemTrack in $colTopTracks) {
@@ -104,18 +89,6 @@
 
 		if (-not $startJob) { return }
 
-		try {
-			$hashCtx = Get-DevToolsAuthContext
-		}
-		catch {
-			Write-PSFMessage -Level Verbose `
-				-Message 'FinOps platform preload skipped: no FinOps environment or login found.'
-
-			return
-		}
-
-		$hashStamp = Get-FinOpsVersionCacheStamp
-
 		$colRunningPreload = Get-Job -Name 'd365bap.tools.finopsplatform.preload' `
 			-ErrorAction SilentlyContinue |
 		Where-Object State -eq 'Running'
@@ -127,242 +100,165 @@
 		Remove-Job -Force `
 			-ErrorAction SilentlyContinue
 
+		$cachePath = Get-FinOpsVersionCachePath
+		$clientPath = Join-Path $script:ModuleRoot 'internal/sdk/finopsclient.ps1'
+		$apiVersion = $script:BapApiVersions.EnvironmentScopes
+
 		Start-Job -Name 'd365bap.tools.finopsplatform.preload' `
 			-ScriptBlock {
-			param ([string] $CachePath, [string] $EnvUri, [string] $EnvToken, [string] $TenantId, [string] $AccountId, [string[]] $TopTracks)
+			. $using:clientPath
 
-			try {
-				$hashDevHeaders = @{
-					Correlationid           = [guid]::NewGuid().ToString()
-					Dataverseenvironmenturi = $EnvUri
-					Authorization           = "Bearer $EnvToken"
-					'Odata-Maxversion'      = '4.0'
-					'Odata-Version'         = '4.0'
-					Accept                  = 'application/json'
-				}
+			if (-not (Test-FinOpsClientLogin -AuthProvider $using:authProvider)) { return }
 
-				$objVersionJob = Get-Job -Name 'd365bap.tools.finopsversion.preload' `
-					-ErrorAction SilentlyContinue
+			$hashCtx = Get-FinOpsClientAuthContext -AuthProvider $using:authProvider `
+				-ApiVersion $using:apiVersion
 
-				if (-not ($null -eq $objVersionJob)) {
-					Wait-Job -Job $objVersionJob `
-						-Timeout 600 > $null
+			if ($null -eq $hashCtx) { return }
 
-					$objVersionJobState = $objVersionJob |
-					Select-Object -ExpandProperty State
+			$objVersionJob = Get-Job -Name 'd365bap.tools.finopsversion.preload' `
+				-ErrorAction SilentlyContinue
 
-					if ($objVersionJobState -contains 'Running') { return }
-				}
+			if (-not ($null -eq $objVersionJob)) {
+				Wait-Job -Job $objVersionJob `
+					-Timeout 600 > $null
 
-				$objState = $null
+				$objVersionJobState = $objVersionJob |
+				Select-Object -ExpandProperty State
 
-				try {
-					$objState = Get-Content -LiteralPath $CachePath `
-						-Raw `
-						-Encoding utf8 `
-						-ErrorAction Stop |
-					ConvertFrom-Json -ErrorAction Stop
-				}
-				catch { return }
+				if ($objVersionJobState -contains 'Running') { return }
+			}
 
-				$colSourceVersions = @()
+			$objState = Read-FinOpsClientCache -Path $using:cachePath
 
-				if ((-not ($null -eq $objState)) `
-						-and (-not ($null -eq $objState.versions))) {
-					$colSourceVersions = @($objState.versions)
-				}
-				else {
-					try {
-						$tmpLiveVersions = Invoke-RestMethod -Method Get `
-							-Uri 'https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsversions' `
-							-Headers $hashDevHeaders `
-							-ConnectionTimeoutSeconds 60
+			$colSourceVersions = @()
+
+			if ((-not ($null -eq $objState)) `
+					-and (-not ($null -eq $objState.versions))) {
+				$colSourceVersions = @($objState.versions)
+			}
+
+			if ($colSourceVersions.Count -eq 0) {
+				$tmpLiveVersions = Get-FinOpsClientCatalog -Headers $hashCtx.Headers
+
+				if ($null -eq $tmpLiveVersions) { return }
+
+				$colSourceVersions = @($tmpLiveVersions)
+			}
+
+			if ($colSourceVersions.Count -eq 0) { return }
+
+			$colJobTracks = Select-FinOpsTopTrack -Versions $colSourceVersions `
+				-Count 3
+
+			if (($null -eq $colJobTracks) `
+					-or (@($colJobTracks).Count -eq 0)) { return }
+
+			$hashKnownPlatforms = @{}
+
+			if (-not ($null -eq $objState)) {
+				if (-not ($null -eq $objState.platforms)) {
+					foreach ($itemProperty in $objState.platforms.PSObject.Properties) {
+						$hashKnownPlatforms["$($itemProperty.Name)"] = "$($itemProperty.Value)"
 					}
-					catch { return }
-
-					if ($null -eq $tmpLiveVersions) { return }
-
-					$colSourceVersions = @($tmpLiveVersions)
 				}
+			}
 
-				if ($colSourceVersions.Count -eq 0) { return }
+			$hashBuilds = @{}
 
-				$colJobTracks = @($TopTracks)
-
-				if ($colJobTracks.Count -eq 0) {
-					$colJobRows = [System.Collections.Generic.List[object]]::new()
-
-					foreach ($itemVersion in @($colSourceVersions)) {
-						if (-not ($null -eq $itemVersion.AppVersion)) {
-							$tmpAppName = "$($itemVersion.AppVersion)"
-							$tmpTrackName = "$($itemVersion.AppBuild)"
-						}
-						else {
-							$tmpAppName = "$($itemVersion.appVersion)"
-							$tmpTrackName = "$($itemVersion.appBuild)"
-						}
-
-						$tmpRow = [PsCustomObject][Ordered]@{
-							Track = $tmpTrackName
-							App   = $tmpAppName
-						}
-
-						$colJobRows.Add($tmpRow)
-					}
-
-					$colJobTracks = @(
-						$colJobRows |
-						Sort-Object -Property { [version]$_.App } `
-							-Descending |
-						Select-Object -ExpandProperty Track |
-						Select-Object -First 3
-					)
-				}
-
-				$hashBuilds = @{}
-
+			if (-not ($null -eq $objState)) {
 				if (-not ($null -eq $objState.builds)) {
 					foreach ($itemProperty in $objState.builds.PSObject.Properties) {
 						$hashBuilds["$($itemProperty.Name)"] = @($itemProperty.Value)
 					}
 				}
+			}
 
-				foreach ($itemTrack in $colJobTracks) {
-					if (-not $hashBuilds.ContainsKey($itemTrack)) {
+			foreach ($itemTrack in @($colJobTracks)) {
+				if (-not $hashBuilds.ContainsKey($itemTrack)) {
+					$tmpLiveBuilds = Get-FinOpsClientBuildList -Track $itemTrack `
+						-Headers $hashCtx.Headers
+
+					if ($null -eq $tmpLiveBuilds) { continue }
+
+					$hashBuilds[$itemTrack] = @($tmpLiveBuilds)
+				}
+			}
+
+			$colMissingBuilds = [System.Collections.Generic.List[object]]::new()
+
+			foreach ($itemTrack in @($colJobTracks)) {
+				if (-not $hashBuilds.ContainsKey($itemTrack)) { continue }
+
+				foreach ($itemBuild in @($hashBuilds[$itemTrack])) {
+					if ([string]::IsNullOrWhiteSpace($itemBuild)) { continue }
+
+					if (-not $hashKnownPlatforms.ContainsKey("$itemBuild")) {
+						$tmpEntry = [PsCustomObject][Ordered]@{
+							Build   = "$itemBuild"
+							Headers = $hashCtx.Headers
+						}
+
+						$colMissingBuilds.Add($tmpEntry)
+					}
+				}
+			}
+
+			$hashNewPlatforms = @{}
+
+			if ($colMissingBuilds.Count -gt 0) {
+				$colPlatResults = @(
+					$colMissingBuilds |
+					ForEach-Object -Parallel {
+						$tmpEntry = $_
+						$tmpDashed = "$($tmpEntry.Build)".Replace('.', '-')
+
 						try {
-							$tmpLiveBuilds = Invoke-RestMethod -Method Get `
-								-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version={0}' `
-									-f $itemTrack.Replace('.', '-')) `
-								-Headers $hashDevHeaders `
+							$tmpPlat = Invoke-RestMethod -Method Get `
+								-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}' `
+									-f $tmpDashed) `
+								-Headers $tmpEntry.Headers `
 								-ConnectionTimeoutSeconds 60
 						}
-						catch { continue }
-
-						if ($null -eq $tmpLiveBuilds) {
-							$hashBuilds[$itemTrack] = @()
+						catch {
+							$tmpPlat = $null
 						}
-						else {
-							$hashBuilds[$itemTrack] = @($tmpLiveBuilds)
+
+						if ([string]::IsNullOrWhiteSpace($tmpPlat)) { return }
+
+						$tmpResult = [PsCustomObject][Ordered]@{
+							Build    = "$($tmpEntry.Build)"
+							Platform = "$tmpPlat"
 						}
-					}
+
+						$tmpResult
+					} -ThrottleLimit 10
+				)
+
+				foreach ($itemResult in @($colPlatResults)) {
+					if ($null -eq $itemResult) { continue }
+
+					$hashNewPlatforms["$($itemResult.Build)"] = "$($itemResult.Platform)"
 				}
-
-				$hashPlatforms = @{}
-				$keepPrior = $false
-
-				if (-not ($null -eq $objState)) {
-					$fileTenant = "$($objState.tenantId)"
-
-					if ([string]::IsNullOrWhiteSpace($fileTenant)) {
-						$keepPrior = $true
-					}
-					elseif ($fileTenant -eq $TenantId) {
-						$keepPrior = $true
-					}
-				}
-
-				if (($keepPrior) `
-						-and (-not ($null -eq $objState.platforms))) {
-					foreach ($itemProperty in $objState.platforms.PSObject.Properties) {
-						$hashPlatforms["$($itemProperty.Name)"] = "$($itemProperty.Value)"
-					}
-				}
-
-				$colMissingBuilds = [System.Collections.Generic.List[object]]::new()
-
-				foreach ($itemTrack in $colJobTracks) {
-					if (-not $hashBuilds.ContainsKey($itemTrack)) { continue }
-
-					foreach ($itemBuild in @($hashBuilds[$itemTrack])) {
-						if ([string]::IsNullOrWhiteSpace($itemBuild)) { continue }
-
-						if (-not $hashPlatforms.ContainsKey("$itemBuild")) {
-							$tmpEntry = [PsCustomObject][Ordered]@{
-								Build   = "$itemBuild"
-								Headers = $hashDevHeaders
-							}
-
-							$colMissingBuilds.Add($tmpEntry)
-						}
-					}
-				}
-
-				if ($colMissingBuilds.Count -gt 0) {
-					$colPlatResults = @(
-						$colMissingBuilds |
-						ForEach-Object -Parallel {
-							$tmpEntry = $_
-							$tmpDashed = "$($tmpEntry.Build)".Replace('.', '-')
-
-							try {
-								$tmpPlat = Invoke-RestMethod -Method Get `
-									-Uri ('https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsplatbuild?version={0}' `
-										-f $tmpDashed) `
-									-Headers $tmpEntry.Headers `
-									-ConnectionTimeoutSeconds 60
-							}
-							catch {
-								$tmpPlat = $null
-							}
-
-							if ([string]::IsNullOrWhiteSpace($tmpPlat)) { return }
-
-							$tmpResult = [PsCustomObject][Ordered]@{
-								Build    = "$($tmpEntry.Build)"
-								Platform = "$tmpPlat"
-							}
-
-							$tmpResult
-						} -ThrottleLimit 10
-					)
-
-					foreach ($itemResult in @($colPlatResults)) {
-						if ($null -eq $itemResult) { continue }
-
-						$hashPlatforms["$($itemResult.Build)"] = "$($itemResult.Platform)"
-					}
-				}
-
-				$hashFinalBuilds = @{}
-
-				if (-not ($null -eq $objState.builds)) {
-					foreach ($itemProperty in $objState.builds.PSObject.Properties) {
-						$hashFinalBuilds["$($itemProperty.Name)"] = @($itemProperty.Value)
-					}
-				}
-
-				foreach ($itemTrack in @($hashBuilds.Keys)) {
-					$hashFinalBuilds[$itemTrack] = @($hashBuilds[$itemTrack])
-				}
-
-				$hashPayload = [ordered]@{
-					refreshedUtc = [datetime]::UtcNow.ToString('o')
-					tenantId     = "$TenantId"
-					accountId    = "$AccountId"
-					versions     = $colSourceVersions
-					builds       = $hashFinalBuilds
-					platforms    = $hashPlatforms
-				}
-
-				New-Item -ItemType Directory `
-					-Path (Split-Path -Parent $CachePath) `
-					-Force `
-					-ErrorAction Stop > $null
-
-				$hashPayload |
-				ConvertTo-Json -Depth 6 `
-					-ErrorAction Stop |
-				Set-Content -LiteralPath $CachePath `
-					-Encoding utf8 `
-					-ErrorAction Stop
 			}
-			catch { return }
-		} `
-			-ArgumentList @((Get-FinOpsVersionCachePath), $hashCtx.Env.PpacEnvUri, $hashCtx.Token, $hashStamp.TenantId, $hashStamp.AccountId, @($colTopTracks)) > $null
+
+			$hashNewBuilds = @{}
+
+			foreach ($itemTrack in @($hashBuilds.Keys)) {
+				$hashNewBuilds[$itemTrack] = @($hashBuilds[$itemTrack])
+			}
+
+			Write-FinOpsClientCache -Path $using:cachePath `
+				-Versions $colSourceVersions `
+				-Builds $hashNewBuilds `
+				-Platforms $hashNewPlatforms `
+				-TenantId $hashCtx.TenantId `
+				-AccountId $hashCtx.AccountId
+		}
 	}
 	catch {
 		Write-PSFMessage -Level Verbose `
 			-Message "FinOps platform preload was skipped: $($_.Exception.Message)"
+
 	}
 }
 

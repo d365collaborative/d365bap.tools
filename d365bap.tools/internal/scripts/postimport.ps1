@@ -23,6 +23,8 @@ $moduleRoot = Split-Path (Split-Path $PSScriptRoot)
 
 "$moduleRoot\internal\sdk\token-preload.ps1"
 
+"$moduleRoot\internal\sdk\finopsclient.ps1"
+
 "$moduleRoot\internal\sdk\finopsversion-preload.ps1"
 
 "$moduleRoot\internal\sdk\finopsplatform-preload.ps1"
