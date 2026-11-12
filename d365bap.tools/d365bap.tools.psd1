@@ -200,6 +200,8 @@
 
 		, 'Invoke-UdeDbQuery'
 
+		, 'Install-UdeModel'
+
 		, 'New-PpacEnvironmentDlpPolicy'
 		, 'New-PpacSecurityRole'
 		, 'New-PpacTenantAcpPolicy'
