@@ -163,6 +163,11 @@ function Get-PpacRbacRoleAssignment {
 				-ErrorAction Stop
 		}
 		catch {
+			if (($_.Exception.Response.StatusCode -eq 404) `
+					-and ($_.ErrorDetails.Message -match '"code"\s*:\s*"RouteNotFound"')) {
+				throw [System.NotSupportedException]::new('The service does not expose the RBAC assignment search route for this API version. Use Get-PpacRbacRoleMember to list assignments; search expansion options are unavailable.', $_.Exception)
+			}
+
 			$messageString = "Failed to search tenant role assignments in scope <c='em'>$Scope</c>. $($_.Exception.Message)"
 			Write-PSFMessage -Level Important `
 				-Message $messageString `
