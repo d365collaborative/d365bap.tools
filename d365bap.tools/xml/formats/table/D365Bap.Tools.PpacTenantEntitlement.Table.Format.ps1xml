@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+            <Name>D365Bap.Tools.PpacTenantEntitlement</Name>
+            <ViewSelectedBy>
+                <TypeName>D365Bap.Tools.PpacTenantEntitlement</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader><Width>28</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>16</Width></TableColumnHeader>
+                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem><PropertyName>EntitlementId</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>Entitled</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>Consumed</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>Available</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>Status</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>LicenseCount</PropertyName></TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+  </ViewDefinitions>
+</Configuration>
