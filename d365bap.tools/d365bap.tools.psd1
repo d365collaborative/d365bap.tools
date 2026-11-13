@@ -150,8 +150,10 @@
 		, 'Get-PpacTable'
 		, 'Get-PpacTeam'
 		, 'Get-PpacTenantAcpPolicy'
+		, 'Get-PpacTenantCapacity'
 		, 'Get-PpacTenantConnector'
 		, 'Get-PpacTenantDlpPolicy'
+		, 'Get-PpacTenantEntitlement'
 		, 'Get-PpacTenantRuleBasedPolicy'
 		, 'Get-PpacUser'
 

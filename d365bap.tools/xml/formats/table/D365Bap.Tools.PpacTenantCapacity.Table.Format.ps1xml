@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>D365Bap.Tools.PpacTenantCapacity</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacTenantCapacity</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>CapacityType</Label><Width>22</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Entitled</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Consumed</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Left</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Status</Label><Width>14</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Base</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Incremental</Label><Width>11</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>AddOn</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Entitlement</Label><Width>11</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Licenses</Label><Width>8</Width></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>CapacityType</PropertyName></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.Units -eq 'MB') { $n = $_.Entitled; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.Entitled) { '' } else { '{0:N0}' -f $_.Entitled } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.Units -eq 'MB') { $n = $_.Consumed; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.Consumed) { '' } else { '{0:N0}' -f $_.Consumed } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>$t = $_.Entitled; $u = $_.Consumed; if (($null -eq $t) -or ($null -eq $u)) { '' } else { $n = $t - $u; $s = ''; if ($n -lt 0) { $s = '-'; $n = -$n }; if ($_.Units -eq 'MB') { if ($n -ge 1048576) { $s + ('{0:N1} TB' -f ($n / 1048576)) } elseif ($n -ge 1024) { $s + ('{0:N1} GB' -f ($n / 1024)) } else { $s + ('{0:N0} MB' -f $n) } } else { $s + ('{0:N0}' -f $n) } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><PropertyName>Status</PropertyName></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.Units -eq 'MB') { $n = $_.BaseCapacity; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.BaseCapacity) { '' } else { '{0:N0}' -f $_.BaseCapacity } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.Units -eq 'MB') { $n = $_.IncrementalCapacity; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.IncrementalCapacity) { '' } else { '{0:N0}' -f $_.IncrementalCapacity } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.Units -eq 'MB') { $n = $_.AddOnCapacity; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.AddOnCapacity) { '' } else { '{0:N0}' -f $_.AddOnCapacity } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><PropertyName>Entitlement</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Licenses</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>

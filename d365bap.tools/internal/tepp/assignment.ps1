@@ -138,5 +138,15 @@ Register-PSFTeppArgumentCompleter `
 	-Parameter Location `
 	-Name "d365bap.tools.tepp.provisioning.locations"
 
+Register-PSFTeppArgumentCompleter `
+	-Command Get-PpacTenantCapacity `
+	-Parameter CapacityType `
+	-Name "d365bap.tools.tepp.tenant.capacity"
+
+Register-PSFTeppArgumentCompleter `
+	-Command Get-PpacTenantEntitlement `
+	-Parameter EntitlementId `
+	-Name "d365bap.tools.tepp.tenant.entitlement"
+
 # Template completion is registered natively in provisioning.templates.tepp.ps1
 # (location-aware via $fakeBoundParameters).
