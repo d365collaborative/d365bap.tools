@@ -8,12 +8,9 @@
         capacity, pay-as-you-go usage, and backing licenses.
 
     .PARAMETER EntitlementId
-        Entitlement id filter. Wildcards are accepted.
+        Entitlement id filter. Wildcards are accepted; expansion misses skip quietly.
 
         Default: *
-
-    .PARAMETER IncludeLicenses
-        Emits one row per backing license, repeating the parent fields.
 
     .PARAMETER AsExcelOutput
         Instructs the cmdlet to output the results as an Excel file.
@@ -30,11 +27,10 @@
         It uses -EntitlementId to select the entitlement.
 
     .EXAMPLE
-        PS C:\> Get-PpacTenantEntitlement -EntitlementId "Power*" -IncludeLicenses
+        PS C:\> Get-PpacTenantEntitlement -EntitlementId "Power*"
 
-        Lists backing licenses for matching entitlements.
+        Lists entitlements matching the filter.
         It uses -EntitlementId to filter on the entitlement id.
-        It uses -IncludeLicenses to emit one row per license.
 
     .EXAMPLE
         PS C:\> Get-PpacTenantEntitlement -AsExcelOutput
@@ -47,14 +43,12 @@
 #>
 function Get-PpacTenantEntitlement {
 	[CmdletBinding()]
-	[OutputType('D365Bap.Tools.PpacTenantEntitlement[]', 'D365Bap.Tools.PpacTenantEntitlementLicense[]', [object[]])]
+	[OutputType('D365Bap.Tools.PpacTenantEntitlement[]', [object[]])]
 	param (
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[SupportsWildcards()]
 		[ValidateNotNullOrEmpty()]
 		[string[]] $EntitlementId = '*',
-
-		[switch] $IncludeLicenses,
 
 		[switch] $AsExcelOutput
 	)
@@ -149,6 +143,11 @@ function Get-PpacTenantEntitlement {
 			Sort-Object -Unique
 		)
 
+		$colExplicitIds = @(
+			$colPatterns |
+			Where-Object { -Not [Management.Automation.WildcardPattern]::ContainsWildcardCharacters($_) }
+		)
+
 		$colPayloads = @(
 			foreach ($itemTargetId in $colTargetIds) {
 				$requestUri = 'https://api.powerplatform.com/licensing/entitlements/{0}?api-version={1}' `
@@ -166,8 +165,16 @@ function Get-PpacTenantEntitlement {
 					try { $statusCode = $_.Exception.Response.StatusCode.value__ } catch { $statusCode = 0 }
 
 					if ($statusCode -eq 404) {
+						if ($itemTargetId -in $colExplicitIds) {
+							$messageString = "No licensing entitlement found for '<c='em'>$itemTargetId</c>'. Skipping."
+							Write-PSFMessage -Level Warning `
+								-Message $messageString
+
+							continue
+						}
+
 						$messageString = "No licensing entitlement found for '<c='em'>$itemTargetId</c>'. Skipping."
-						Write-PSFMessage -Level Warning `
+						Write-PSFMessage -Level Verbose `
 							-Message $messageString
 
 						continue
@@ -218,58 +225,28 @@ function Get-PpacTenantEntitlement {
 					}
 				}
 
-				if (-Not ($IncludeLicenses)) {
-					$itemPayload |
-					Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantEntitlement' `
-						-Property `
-						'entitlementId as EntitlementId',
-					'entitlement.unit as EntitlementUnit',
-					'entitlement.capacity.unit as CapacityUnit',
-					'entitlement.capacity.entitled.value as Entitled',
-					'entitlement.capacity.consumed.value as Consumed',
-					'entitlement.capacity.consumed.consumptionType as ConsumptionType',
-					'entitlement.capacity.consumed.lastUpdatedOn as LastUpdatedOn',
-					'entitlement.capacity.consumed.writeOff as WriteOff',
-					'entitlement.capacity.allocated.value as Allocated',
-					'entitlement.capacity.allocated.autoAllocated as AutoAllocated',
-					'entitlement.capacity.availableQuantity as Available',
-					@{ Name = 'Left'; Expression = { $tmpLeft } },
-					'entitlement.capacity.status as Status',
-					@{ Name = 'Licenses'; Expression = { $tmpLicenseCount } },
-					@{ Name = 'ProductCategories'; Expression = { $tmpProductCategories } },
-					'entitlement.payGo.entitled.value as PayGoEntitled',
-					'entitlement.payGo.consumed.value as PayGoConsumed',
-					'entitlement.payGo.consumed.consumptionType as PayGoConsumptionType',
-					@{ Name = 'Raw'; Expression = { $itemPayload } }
-
-					continue
-				}
-
-				foreach ($itemLicense in $tmpLicenses) {
-					$itemLicense |
-					Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantEntitlementLicense' `
-						-Property `
-					@{ Name = 'EntitlementId'; Expression = { $itemPayload.entitlementId } },
-					@{ Name = 'EntitlementUnit'; Expression = { $itemPayload.entitlement.unit } },
-					@{ Name = 'CapacityUnit'; Expression = { $itemPayload.entitlement.capacity.unit } },
-					@{ Name = 'Status'; Expression = { $itemPayload.entitlement.capacity.status } },
-					@{ Name = 'ProductCategories'; Expression = { $tmpProductCategories } },
-					'licenseId as LicenseId',
-					'licenseSource as LicenseSource',
-					'isUnlimited as IsUnlimited',
-					'skuId as SkuId',
-					'productName as ProductName',
-					'licenseQuantity as LicenseQuantity',
-					'entitled.value as LicenseEntitled',
-					'licenseTier as LicenseTier',
-					'licenseStatus as LicenseStatus',
-					'licenseQuantityDetails.enabled as LicenseEnabled',
-					'licenseQuantityDetails.warning as LicenseWarning',
-					'licenseQuantityDetails.suspended as LicenseSuspended',
-					'nextLifecycleStatus as NextLifecycleStatus',
-					'nextLifecycleDate as NextLifecycleDate',
-					@{ Name = 'Raw'; Expression = { $itemLicense } }
-				}
+				$itemPayload |
+				Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantEntitlement' `
+					-Property `
+					'entitlementId as EntitlementId',
+				'entitlement.unit as EntitlementUnit',
+				'entitlement.capacity.unit as CapacityUnit',
+				'entitlement.capacity.entitled.value as Entitled',
+				'entitlement.capacity.consumed.value as Consumed',
+				'entitlement.capacity.consumed.consumptionType as ConsumptionType',
+				'entitlement.capacity.consumed.lastUpdatedOn as LastUpdatedOn',
+				'entitlement.capacity.consumed.writeOff as WriteOff',
+				'entitlement.capacity.allocated.value as Allocated',
+				'entitlement.capacity.allocated.autoAllocated as AutoAllocated',
+				'entitlement.capacity.availableQuantity as Available',
+				@{ Name = 'Left'; Expression = { $tmpLeft } },
+				'entitlement.capacity.status as Status',
+				@{ Name = 'Licenses'; Expression = { $tmpLicenseCount } },
+				@{ Name = 'ProductCategories'; Expression = { $tmpProductCategories } },
+				'entitlement.payGo.entitled.value as PayGoEntitled',
+				'entitlement.payGo.consumed.value as PayGoConsumed',
+				'entitlement.payGo.consumed.consumptionType as PayGoConsumptionType',
+				@{ Name = 'Raw'; Expression = { $itemPayload } }
 			}
 		)
 
