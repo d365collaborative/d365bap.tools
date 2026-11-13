@@ -2,32 +2,34 @@
 <Configuration>
   <ViewDefinitions>
     <View>
-            <Name>D365Bap.Tools.PpacTenantEntitlement</Name>
-            <ViewSelectedBy>
-                <TypeName>D365Bap.Tools.PpacTenantEntitlement</TypeName>
-            </ViewSelectedBy>
-            <TableControl>
-                <TableHeaders>
-                    <TableColumnHeader><Width>28</Width></TableColumnHeader>
-                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
-                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
-                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
-                    <TableColumnHeader><Width>16</Width></TableColumnHeader>
-                    <TableColumnHeader><Width>12</Width></TableColumnHeader>
-                </TableHeaders>
-                <TableRowEntries>
-                    <TableRowEntry>
-                        <TableColumnItems>
-                            <TableColumnItem><PropertyName>EntitlementId</PropertyName></TableColumnItem>
-                            <TableColumnItem><PropertyName>Entitled</PropertyName></TableColumnItem>
-                            <TableColumnItem><PropertyName>Consumed</PropertyName></TableColumnItem>
-                            <TableColumnItem><PropertyName>Available</PropertyName></TableColumnItem>
-                            <TableColumnItem><PropertyName>Status</PropertyName></TableColumnItem>
-                            <TableColumnItem><PropertyName>LicenseCount</PropertyName></TableColumnItem>
-                        </TableColumnItems>
-                    </TableRowEntry>
-                </TableRowEntries>
-            </TableControl>
-        </View>
+      <Name>D365Bap.Tools.PpacTenantEntitlement</Name>
+      <ViewSelectedBy>
+        <TypeName>D365Bap.Tools.PpacTenantEntitlement</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>EntitlementId</Label><Width>28</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Entitled</Label><Width>12</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Consumed</Label><Width>12</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Available</Label><Width>12</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Left</Label><Width>12</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Status</Label><Width>16</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Licenses</Label><Width>8</Width></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>EntitlementId</PropertyName></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.CapacityUnit -eq 'MB') { $n = $_.Entitled; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.Entitled) { '' } else { '{0:N0}' -f $_.Entitled } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.CapacityUnit -eq 'MB') { $n = $_.Consumed; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.Consumed) { '' } else { '{0:N0}' -f $_.Consumed } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.CapacityUnit -eq 'MB') { $n = $_.Available; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.Available) { '' } else { '{0:N0}' -f $_.Available } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.CapacityUnit -eq 'MB') { $n = $_.Left; if ($null -eq $n) { '' } elseif ($n -ge 1048576) { '{0:N1} TB' -f ($n / 1048576) } elseif ($n -ge 1024) { '{0:N1} GB' -f ($n / 1024) } else { '{0:N0} MB' -f $n } } else { if ($null -eq $_.Left) { '' } else { '{0:N0}' -f $_.Left } }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><PropertyName>Status</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Licenses</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
   </ViewDefinitions>
 </Configuration>

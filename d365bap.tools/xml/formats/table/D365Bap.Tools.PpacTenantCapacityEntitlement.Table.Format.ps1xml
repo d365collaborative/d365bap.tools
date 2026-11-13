@@ -20,7 +20,7 @@
                             <TableColumnItem><PropertyName>CapacityType</PropertyName></TableColumnItem>
                             <TableColumnItem><PropertyName>CapacitySubType</PropertyName></TableColumnItem>
                             <TableColumnItem><PropertyName>TotalCapacity</PropertyName></TableColumnItem>
-                            <TableColumnItem><PropertyName>LicenseCount</PropertyName></TableColumnItem>
+                            <TableColumnItem><PropertyName>Licenses</PropertyName></TableColumnItem>
                             <TableColumnItem><PropertyName>MaxNextLifecycleDate</PropertyName></TableColumnItem>
                         </TableColumnItems>
                     </TableRowEntry>

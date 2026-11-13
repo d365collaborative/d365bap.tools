@@ -10,6 +10,7 @@
 	$hashAliases = [ordered]@{
 		'Ppac'              = 'Database, File, Log, CapacityPass, ApiCallCount'
 		'Dataverse'         = 'Database, File, Log, CapacityPass, ApiCallCount'
+		'FinOps'            = 'FinOpsDatabase, FinOpsFile'
 		'M365'              = 'M365Database, M365EnvironmentCount'
 		'Trial'             = 'TrialDatabase, TrialFile, TrialLog'
 		'SubscriptionTrial' = 'SubscriptionTrialDatabase, SubscriptionTrialFile, SubscriptionTrialLog, SubscriptionTrialEnvironmentCount'

@@ -204,6 +204,20 @@ function Get-PpacTenantEntitlement {
 				)
 				$tmpProductCategories = $tmpCategoryList -join ', '
 
+				$tmpEntitled = $itemPayload.entitlement.capacity.entitled.value
+				$tmpConsumed = $itemPayload.entitlement.capacity.consumed.value
+
+				$tmpLeft = $null
+
+				if (-Not ($null -eq $tmpEntitled)) {
+					if ($null -eq $tmpConsumed) {
+						$tmpLeft = $tmpEntitled
+					}
+					else {
+						$tmpLeft = $tmpEntitled - $tmpConsumed
+					}
+				}
+
 				if (-Not ($IncludeLicenses)) {
 					$itemPayload |
 					Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantEntitlement' `
@@ -219,13 +233,13 @@ function Get-PpacTenantEntitlement {
 					'entitlement.capacity.allocated.value as Allocated',
 					'entitlement.capacity.allocated.autoAllocated as AutoAllocated',
 					'entitlement.capacity.availableQuantity as Available',
+					@{ Name = 'Left'; Expression = { $tmpLeft } },
 					'entitlement.capacity.status as Status',
-					@{ Name = 'LicenseCount'; Expression = { $tmpLicenseCount } },
+					@{ Name = 'Licenses'; Expression = { $tmpLicenseCount } },
 					@{ Name = 'ProductCategories'; Expression = { $tmpProductCategories } },
 					'entitlement.payGo.entitled.value as PayGoEntitled',
 					'entitlement.payGo.consumed.value as PayGoConsumed',
 					'entitlement.payGo.consumed.consumptionType as PayGoConsumptionType',
-					@{ Name = 'Licenses'; Expression = { $tmpLicenses } },
 					@{ Name = 'Raw'; Expression = { $itemPayload } }
 
 					continue

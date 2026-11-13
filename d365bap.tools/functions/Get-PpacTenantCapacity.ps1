@@ -7,7 +7,7 @@
 		Retrieves Power Platform tenant capacity, including base, incremental, and add-on totals with consumption and backing licenses.
 
 	.PARAMETER CapacityType
-		Type filter. Wildcards, Ppac, Dataverse, M365, Trial, SubscriptionTrial accepted.
+		Type filter. Wildcards plus Ppac, Dataverse, FinOps, M365, Trial, SubscriptionTrial.
 
 		Default: *
 
@@ -199,6 +199,7 @@ function Get-PpacTenantCapacity {
 		$hashCapacityAliases = @{
 			'Ppac'              = @('Database', 'File', 'Log', 'CapacityPass', 'ApiCallCount')
 			'Dataverse'         = @('Database', 'File', 'Log', 'CapacityPass', 'ApiCallCount')
+			'FinOps'            = @('FinOps*')
 			'M365'              = @('M365*')
 			'Trial'             = @('Trial*')
 			'SubscriptionTrial' = @('SubscriptionTrial*')
@@ -351,8 +352,8 @@ function Get-PpacTenantCapacity {
 					@{ Name = 'BaseCapacity'; Expression = { $tmpBaseCapacity } },
 					@{ Name = 'IncrementalCapacity'; Expression = { $tmpIncrementalCapacity } },
 					@{ Name = 'AddOnCapacity'; Expression = { $tmpAddOnCapacity } },
-					@{ Name = 'EntitlementCount'; Expression = { $tmpEntitlements.Count } },
-					@{ Name = 'LicenseCount'; Expression = { $tmpLicenseCount } },
+					@{ Name = 'Entitlement'; Expression = { $tmpEntitlements.Count } },
+					@{ Name = 'Licenses'; Expression = { $tmpLicenseCount } },
 					@{ Name = 'ConsumedActual'; Expression = { $tmpConsumedActual } },
 					@{ Name = 'ConsumedRated'; Expression = { $tmpConsumedRated } },
 					@{ Name = 'ConsumedPct'; Expression = { $tmpConsumedPct } },
@@ -374,8 +375,8 @@ function Get-PpacTenantCapacity {
 				@{ Name = 'BaseCapacity'; Expression = { $tmpBaseCapacity } },
 				@{ Name = 'IncrementalCapacity'; Expression = { $tmpIncrementalCapacity } },
 				@{ Name = 'AddOnCapacity'; Expression = { $tmpAddOnCapacity } },
-				@{ Name = 'EntitlementCount'; Expression = { $tmpEntitlements.Count } },
-				@{ Name = 'LicenseCount'; Expression = { $tmpLicenseCount } },
+				@{ Name = 'Entitlement'; Expression = { $tmpEntitlements.Count } },
+				@{ Name = 'Licenses'; Expression = { $tmpLicenseCount } },
 				@{ Name = 'Raw'; Expression = { $itemCapacity } }
 			}
 		)
@@ -571,7 +572,7 @@ function Get-PpacTenantCapacity {
 							@{ Name = 'Units'; Expression = { $itemEntitlementCapacity.capacityUnits } },
 							'totalCapacity as TotalCapacity',
 							@{ Name = 'MaxNextLifecycleDate'; Expression = { $tmpMaxNextLifecycle } },
-							@{ Name = 'LicenseCount'; Expression = { $tmpEntLicenseCount } },
+							@{ Name = 'Licenses'; Expression = { $tmpEntLicenseCount } },
 							@{ Name = 'ConsumedActual'; Expression = { $tmpEntConsumedActual } },
 							@{ Name = 'ConsumedRated'; Expression = { $tmpEntConsumedRated } },
 							@{ Name = 'ConsumedPct'; Expression = { $tmpEntConsumedPct } },
@@ -590,7 +591,7 @@ function Get-PpacTenantCapacity {
 						@{ Name = 'Units'; Expression = { $itemEntitlementCapacity.capacityUnits } },
 						'totalCapacity as TotalCapacity',
 						@{ Name = 'MaxNextLifecycleDate'; Expression = { $tmpMaxNextLifecycle } },
-						@{ Name = 'LicenseCount'; Expression = { $tmpEntLicenseCount } },
+						@{ Name = 'Licenses'; Expression = { $tmpEntLicenseCount } },
 						@{ Name = 'Raw'; Expression = { $itemCapacityEntitlement } }
 					}
 				}
