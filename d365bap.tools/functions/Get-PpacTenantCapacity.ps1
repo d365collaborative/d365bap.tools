@@ -11,26 +11,11 @@
 
 		Default: *
 
-	.PARAMETER ExcludeTrial
-		Skips trial and subscription trial types.
-
-	.PARAMETER FinOpsOnly
-		Keeps FinOps database and file types only.
-
-	.PARAMETER IncludeEntitlements
-		Emits one row per backing entitlement.
-
-	.PARAMETER IncludeLicenses
-		Emits one row per backing license.
-
-	.PARAMETER IncludeConsumption
-		Adds consumed actual, rated, and percent values.
-
 	.PARAMETER AsAos
 		Emits a single AOS tier calculation row. Capacity filters are ignored.
 
 	.PARAMETER Full
-		Emits the full capacity envelope object.
+		Emits one row per backing license.
 
 	.PARAMETER AsExcelOutput
 		Instructs the cmdlet to output the results as an Excel file.
@@ -53,41 +38,22 @@
 		It uses -CapacityType to select the Ppac alias.
 
 	.EXAMPLE
-		PS C:\> Get-PpacTenantCapacity -ExcludeTrial -IncludeConsumption
-
-		Shows consumption without trial types.
-		It uses -ExcludeTrial to skip trial capacity types.
-		It uses -IncludeConsumption to add consumption details.
-
-	.EXAMPLE
-		PS C:\> Get-PpacTenantCapacity -FinOpsOnly
+		PS C:\> Get-PpacTenantCapacity -CapacityType FinOps
 
 		Shows FinOps capacity types only.
-		It uses -FinOpsOnly to select FinOps types.
+		It uses -CapacityType to select the FinOps alias.
 
 	.EXAMPLE
-		PS C:\> Get-PpacTenantCapacity -IncludeEntitlements
-
-		Lists one row per entitlement.
-		It uses -IncludeEntitlements to expand entitlement rows.
-
-	.EXAMPLE
-		PS C:\> Get-PpacTenantCapacity -IncludeLicenses
+		PS C:\> Get-PpacTenantCapacity -Full
 
 		Lists one row per backing license.
-		It uses -IncludeLicenses to expand license rows.
+		It uses -Full to expand license rows.
 
 	.EXAMPLE
 		PS C:\> Get-PpacTenantCapacity -AsAos
 
 		Shows the AOS tier calculation.
 		It uses -AsAos to emit a single AOS row.
-
-	.EXAMPLE
-		PS C:\> Get-PpacTenantCapacity -Full
-
-		Shows the full capacity envelope.
-		It uses -Full to emit the envelope object.
 
 	.EXAMPLE
 		PS C:\> Get-PpacTenantCapacity -AsExcelOutput
@@ -100,22 +66,12 @@
 #>
 function Get-PpacTenantCapacity {
 	[CmdletBinding()]
-	[OutputType('D365Bap.Tools.PpacTenantCapacity[]', 'D365Bap.Tools.PpacTenantCapacityEntitlement[]', 'D365Bap.Tools.PpacTenantCapacityLicense[]', 'D365Bap.Tools.PpacTenantCapacityAos[]', 'D365Bap.Tools.PpacTenantCapacityFull[]', [object[]])]
+	[OutputType('D365Bap.Tools.PpacTenantCapacity[]', 'D365Bap.Tools.PpacTenantCapacityLicense[]', 'D365Bap.Tools.PpacTenantCapacityAos[]', [object[]])]
 	param (
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[SupportsWildcards()]
 		[ValidateNotNullOrEmpty()]
 		[string[]] $CapacityType = '*',
-
-		[switch] $ExcludeTrial,
-
-		[switch] $FinOpsOnly,
-
-		[switch] $IncludeEntitlements,
-
-		[switch] $IncludeLicenses,
-
-		[switch] $IncludeConsumption,
 
 		[switch] $AsAos,
 
@@ -168,26 +124,6 @@ function Get-PpacTenantCapacity {
 			$objPayload.tenantCapacities |
 			Where-Object { $_ }
 		)
-
-		if ($ExcludeTrial) {
-			$colPayloadCapacities = @(
-				$colPayloadCapacities |
-				Where-Object {
-					($_.capacityType -notlike 'Trial*') `
-						-and ($_.capacityType -notlike 'SubscriptionTrial*')
-				}
-			)
-		}
-
-		if ($FinOpsOnly) {
-			$colPayloadCapacities = @(
-				$colPayloadCapacities |
-				Where-Object {
-					($_.capacityType -eq 'FinOpsDatabase') `
-						-or ($_.capacityType -eq 'FinOpsFile')
-				}
-			)
-		}
 
 		$colKnownTypes = @(
 			$colPayloadCapacities |
@@ -316,52 +252,18 @@ function Get-PpacTenantCapacity {
 				$tmpAddOnCapacity = [double]$tmpAddOnSum.Sum
 
 				$tmpTotalCapacity = $itemCapacity.totalCapacity
-				$tmpConsumedActual = $itemCapacity.consumption.actual
-				$tmpConsumedRated = $itemCapacity.consumption.rated
+				$tmpConsumed = $itemCapacity.consumption.rated
 
-				$tmpActualUpdatedOn = $itemCapacity.consumption.actualUpdatedOn
+				$tmpStatus = $null
 
-				if (($tmpActualUpdatedOn -is [datetime]) `
-						-and ($tmpActualUpdatedOn.Year -eq 1)) {
-					$tmpActualUpdatedOn = $null
-				}
-
-				$tmpRatedUpdatedOn = $itemCapacity.consumption.ratedUpdatedOn
-
-				if (($tmpRatedUpdatedOn -is [datetime]) `
-						-and ($tmpRatedUpdatedOn.Year -eq 1)) {
-					$tmpRatedUpdatedOn = $null
-				}
-
-				$tmpConsumedPct = $null
-
-				if ((-Not ($null -eq $tmpConsumedRated)) `
-						-and ($tmpTotalCapacity -gt 0)) {
-					$tmpConsumedPct = $tmpConsumedRated / $tmpTotalCapacity * 100
-				}
-
-				if ($IncludeConsumption) {
-					$itemCapacity |
-					Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantCapacity' `
-						-Property @{ Name = 'PpacTenantId'; Expression = { $tenantId } },
-					'capacityType as CapacityType',
-					'capacityUnits as Units',
-					'totalCapacity as TotalCapacity',
-					'maxCapacity as MaxCapacity',
-					'status as Status',
-					@{ Name = 'BaseCapacity'; Expression = { $tmpBaseCapacity } },
-					@{ Name = 'IncrementalCapacity'; Expression = { $tmpIncrementalCapacity } },
-					@{ Name = 'AddOnCapacity'; Expression = { $tmpAddOnCapacity } },
-					@{ Name = 'Entitlement'; Expression = { $tmpEntitlements.Count } },
-					@{ Name = 'Licenses'; Expression = { $tmpLicenseCount } },
-					@{ Name = 'ConsumedActual'; Expression = { $tmpConsumedActual } },
-					@{ Name = 'ConsumedRated'; Expression = { $tmpConsumedRated } },
-					@{ Name = 'ConsumedPct'; Expression = { $tmpConsumedPct } },
-					@{ Name = 'ConsumedActualUpdatedOn'; Expression = { $tmpActualUpdatedOn } },
-					@{ Name = 'ConsumedRatedUpdatedOn'; Expression = { $tmpRatedUpdatedOn } },
-					@{ Name = 'Raw'; Expression = { $itemCapacity } }
-
-					continue
+				if ((-Not ($null -eq $tmpTotalCapacity)) `
+						-and (-Not ($null -eq $tmpConsumed))) {
+					if (($tmpTotalCapacity - $tmpConsumed) -lt 0) {
+						$tmpStatus = 'Overage'
+					}
+					else {
+						$tmpStatus = 'WithinCapacity'
+					}
 				}
 
 				$itemCapacity |
@@ -369,9 +271,10 @@ function Get-PpacTenantCapacity {
 					-Property @{ Name = 'PpacTenantId'; Expression = { $tenantId } },
 				'capacityType as CapacityType',
 				'capacityUnits as Units',
-				'totalCapacity as TotalCapacity',
+				'totalCapacity as Entitled',
+				@{ Name = 'Consumed'; Expression = { $tmpConsumed } },
 				'maxCapacity as MaxCapacity',
-				'status as Status',
+				@{ Name = 'Status'; Expression = { $tmpStatus } },
 				@{ Name = 'BaseCapacity'; Expression = { $tmpBaseCapacity } },
 				@{ Name = 'IncrementalCapacity'; Expression = { $tmpIncrementalCapacity } },
 				@{ Name = 'AddOnCapacity'; Expression = { $tmpAddOnCapacity } },
@@ -381,23 +284,7 @@ function Get-PpacTenantCapacity {
 			}
 		)
 
-		if ($Full) {
-			$objFull = $objPayload |
-			Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantCapacityFull' `
-				-Property @{ Name = 'PpacTenantId'; Expression = { $tenantId } },
-			'licenseModelType as LicenseModelType',
-			@{ Name = 'SummaryStatus'; Expression = { $objPayload.capacitySummary.status } },
-			@{ Name = 'SummaryMessage'; Expression = { $objPayload.capacitySummary.statusMessage } },
-			@{ Name = 'FinOpsStatus'; Expression = { $objPayload.capacitySummary.finOpsStatus } },
-			@{ Name = 'FinOpsMessage'; Expression = { $objPayload.capacitySummary.finOpsStatusMessage } },
-			'legacyModelCapacity as LegacyModelCapacity',
-			'temporaryLicenseInfo as TemporaryLicenseInfo',
-			@{ Name = 'TenantCapacities'; Expression = { $colSummaryRows } },
-			@{ Name = 'Raw'; Expression = { $objPayload } }
-
-			$colRes = @($objFull)
-		}
-		elseif ($AsAos) {
+		if ($AsAos) {
 			$objApiCapacity = $colPayloadCapacities |
 			Where-Object { $_.capacityType -eq 'ApiCallCount' } |
 			Select-Object -First 1
@@ -463,7 +350,7 @@ function Get-PpacTenantCapacity {
 
 			$colRes = @($objAos)
 		}
-		elseif ($IncludeLicenses) {
+		elseif ($Full) {
 			$colRes = @(
 				foreach ($itemLicenseCapacity in $colCapacities) {
 					$tmpLicenseEntitlements = @(
@@ -514,85 +401,6 @@ function Get-PpacTenantCapacity {
 							'capabilityStatus as CapabilityStatus',
 							@{ Name = 'Raw'; Expression = { $itemLicense } }
 						}
-					}
-				}
-			)
-		}
-		elseif ($IncludeEntitlements) {
-			$colRes = @(
-				foreach ($itemEntitlementCapacity in $colCapacities) {
-					$tmpCapacityEntitlements = @(
-						$itemEntitlementCapacity.capacityEntitlements |
-						Where-Object { $_ }
-					)
-
-					foreach ($itemCapacityEntitlement in $tmpCapacityEntitlements) {
-						$tmpEntLicenseCount = @(
-							$itemCapacityEntitlement.licenses |
-							Where-Object { $_ }
-						).Count
-
-						$tmpMaxNextLifecycle = $itemCapacityEntitlement.maxNextLifecycleDate
-
-						if (($tmpMaxNextLifecycle -is [datetime]) `
-								-and ($tmpMaxNextLifecycle.Year -eq 1)) {
-							$tmpMaxNextLifecycle = $null
-						}
-
-						$tmpEntConsumedActual = $itemEntitlementCapacity.consumption.actual
-						$tmpEntConsumedRated = $itemEntitlementCapacity.consumption.rated
-
-						$tmpEntActualUpdatedOn = $itemEntitlementCapacity.consumption.actualUpdatedOn
-
-						if (($tmpEntActualUpdatedOn -is [datetime]) `
-								-and ($tmpEntActualUpdatedOn.Year -eq 1)) {
-							$tmpEntActualUpdatedOn = $null
-						}
-
-						$tmpEntRatedUpdatedOn = $itemEntitlementCapacity.consumption.ratedUpdatedOn
-
-						if (($tmpEntRatedUpdatedOn -is [datetime]) `
-								-and ($tmpEntRatedUpdatedOn.Year -eq 1)) {
-							$tmpEntRatedUpdatedOn = $null
-						}
-
-						$tmpEntConsumedPct = $null
-
-						if ((-Not ($null -eq $tmpEntConsumedRated)) `
-								-and ($itemEntitlementCapacity.totalCapacity -gt 0)) {
-							$tmpEntConsumedPct = $tmpEntConsumedRated / $itemEntitlementCapacity.totalCapacity * 100
-						}
-
-						if ($IncludeConsumption) {
-							$itemCapacityEntitlement |
-							Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantCapacityEntitlement' `
-								-Property @{ Name = 'PpacTenantId'; Expression = { $tenantId } },
-							@{ Name = 'CapacityType'; Expression = { $itemEntitlementCapacity.capacityType } },
-							'capacitySubType as CapacitySubType',
-							@{ Name = 'Units'; Expression = { $itemEntitlementCapacity.capacityUnits } },
-							'totalCapacity as TotalCapacity',
-							@{ Name = 'MaxNextLifecycleDate'; Expression = { $tmpMaxNextLifecycle } },
-							@{ Name = 'Licenses'; Expression = { $tmpEntLicenseCount } },
-							@{ Name = 'ConsumedActual'; Expression = { $tmpEntConsumedActual } },
-							@{ Name = 'ConsumedRated'; Expression = { $tmpEntConsumedRated } },
-							@{ Name = 'ConsumedPct'; Expression = { $tmpEntConsumedPct } },
-							@{ Name = 'ConsumedActualUpdatedOn'; Expression = { $tmpEntActualUpdatedOn } },
-							@{ Name = 'ConsumedRatedUpdatedOn'; Expression = { $tmpEntRatedUpdatedOn } },
-							@{ Name = 'Raw'; Expression = { $itemCapacityEntitlement } }
-
-							continue
-						}
-
-						$itemCapacityEntitlement |
-						Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantCapacityEntitlement' `
-							-Property @{ Name = 'PpacTenantId'; Expression = { $tenantId } },
-						@{ Name = 'CapacityType'; Expression = { $itemEntitlementCapacity.capacityType } },
-						'capacitySubType as CapacitySubType',
-						@{ Name = 'Units'; Expression = { $itemEntitlementCapacity.capacityUnits } },
-						'totalCapacity as TotalCapacity',
-						@{ Name = 'MaxNextLifecycleDate'; Expression = { $tmpMaxNextLifecycle } },
-						@{ Name = 'Licenses'; Expression = { $tmpEntLicenseCount } },
-						@{ Name = 'Raw'; Expression = { $itemCapacityEntitlement } }
 					}
 				}
 			)
