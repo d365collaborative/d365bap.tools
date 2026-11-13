@@ -65,17 +65,17 @@ function Get-PpacEnvironmentDlpPolicy {
 	)
 
 	process {
-		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		$objEnvironment = Resolve-PpacResourceEnvironment -EnvironmentId $EnvironmentId |
 		Select-Object -First 1
 
-		$routeEnvironmentId = $envObj.PpacEnvId
-		$routeEnvironmentName = $envObj.PpacEnvName
+		$routeEnvironmentId = $objEnvironment.PpacEnvId
+		$routeEnvironmentName = $objEnvironment.PpacEnvName
 
 		$candidateIds = @(
 			$routeEnvironmentId
-			$envObj.EnvId
-			$envObj.PpacEnvId
-			$envObj.PpacEnvName
+			$objEnvironment.EnvId
+			$objEnvironment.PpacEnvId
+			$objEnvironment.PpacEnvName
 			if ($routeEnvironmentId -like 'Default-*') {
 				$routeEnvironmentId.Substring(8)
 			}
@@ -101,9 +101,11 @@ function Get-PpacEnvironmentDlpPolicy {
 
 		$colPolicies = @(
 			foreach ($itemPolicy in $colPolicies) {
-				$tmpPolicyIds = @($itemPolicy.environments.id |
+				$tmpPolicyIds = @(
+					$itemPolicy.environments.id |
 					ForEach-Object { "$_".ToLowerInvariant() })
-				$matchesEnvironment = @($candidateIds |
+				$matchesEnvironment = @(
+					$candidateIds |
 					Where-Object { $_ -in $tmpPolicyIds }).Count -gt 0
 
 				$isEffective = switch ("$($itemPolicy.environmentType)") {
@@ -130,13 +132,15 @@ function Get-PpacEnvironmentDlpPolicy {
 			}
 		)
 
-		$colPolicies = @($colPolicies |
+		$colPolicies = @(
+			$colPolicies |
 			Where-Object {
 				($_.name -like $PolicyId) `
 					-or ($_.displayName -like $PolicyId)
 			})
 
-		$colPolicies = @($colPolicies |
+		$colPolicies = @(
+			$colPolicies |
 			Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
 			@{ Expression = { $_.displayName } },
 			@{ Expression = { $_.name } })
