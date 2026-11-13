@@ -21,7 +21,7 @@
 		'TrialDatabase', 'TrialFile', 'TrialLog',
 		'SubscriptionTrialDatabase', 'SubscriptionTrialFile', 'SubscriptionTrialLog', 'SubscriptionTrialEnvironmentCount',
 		'M365Database', 'M365EnvironmentCount',
-		'CapacityPass', 'ApiCallCount',
+		'CapacityPass', 'ApiCallCount', 'ApiCallCountAos',
 		'FinOpsDatabase', 'FinOpsFile'
 	)
 

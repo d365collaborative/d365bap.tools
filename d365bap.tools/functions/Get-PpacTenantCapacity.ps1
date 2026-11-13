@@ -11,9 +11,6 @@
 
 		Default: *
 
-	.PARAMETER AsAos
-		Emits a single AOS tier calculation row. Capacity filters are ignored.
-
 	.PARAMETER Full
 		Emits one row per backing license.
 
@@ -50,10 +47,10 @@
 		It uses -Full to expand license rows.
 
 	.EXAMPLE
-		PS C:\> Get-PpacTenantCapacity -AsAos
+		PS C:\> Get-PpacTenantCapacity -CapacityType "Api*"
 
-		Shows the AOS tier calculation.
-		It uses -AsAos to emit a single AOS row.
+		Shows PPR and computed AOS tier rows.
+		It uses -CapacityType to select ApiCallCount and ApiCallCountAos.
 
 	.EXAMPLE
 		PS C:\> Get-PpacTenantCapacity -AsExcelOutput
@@ -63,17 +60,18 @@
 
 	.NOTES
 		Author: d365bap.tools contributors
+
+	.LINK
+		https://github.com/d365collaborative/d365bap.tools/wiki/AOS-Capacity-Math
 #>
 function Get-PpacTenantCapacity {
 	[CmdletBinding()]
-	[OutputType('D365Bap.Tools.PpacTenantCapacity[]', 'D365Bap.Tools.PpacTenantCapacityLicense[]', 'D365Bap.Tools.PpacTenantCapacityAos[]', [object[]])]
+	[OutputType('D365Bap.Tools.PpacTenantCapacity[]', 'D365Bap.Tools.PpacTenantCapacityLicense[]', [object[]])]
 	param (
 		[Parameter(ValueFromPipelineByPropertyName = $true)]
 		[SupportsWildcards()]
 		[ValidateNotNullOrEmpty()]
 		[string[]] $CapacityType = '*',
-
-		[switch] $AsAos,
 
 		[switch] $Full,
 
@@ -131,6 +129,13 @@ function Get-PpacTenantCapacity {
 			Where-Object { $_ } |
 			Sort-Object -Unique
 		)
+
+		if ($colPayloadCapacities.capacityType -contains 'ApiCallCount') {
+			$colKnownTypes = @(
+				$colKnownTypes + @('ApiCallCountAos') |
+				Sort-Object -Unique
+			)
+		}
 
 		$hashCapacityAliases = @{
 			'Ppac'              = @('Database', 'File', 'Log', 'CapacityPass', 'ApiCallCount')
@@ -284,19 +289,12 @@ function Get-PpacTenantCapacity {
 			}
 		)
 
-		if ($AsAos) {
-			$objApiCapacity = $colPayloadCapacities |
-			Where-Object { $_.capacityType -eq 'ApiCallCount' } |
-			Select-Object -First 1
+		$objApiCapacity = $colPayloadCapacities |
+		Where-Object { $_.capacityType -eq 'ApiCallCount' } |
+		Select-Object -First 1
 
-			if ($null -eq $objApiCapacity) {
-				$messageString = "No ApiCallCount capacity found for '<c='em'>$tenantId</c>'. Skipping."
-				Write-PSFMessage -Level Warning `
-					-Message $messageString
-
-				return
-			}
-
+		if ((-Not ($null -eq $objApiCapacity)) `
+				-and ('ApiCallCountAos' -in $colTargetTypes)) {
 			$apiTotal = $objApiCapacity.totalCapacity
 
 			if ($null -eq $apiTotal) {
@@ -324,19 +322,26 @@ function Get-PpacTenantCapacity {
 
 			$toNextAos = ($currentAos + 1) * $perAos - $apiTotal
 			$headroomToMax = $maxAos * $perAos - $apiTotal
-			$aosStatus = $objApiCapacity.status
+			$aosStatus = 'WithinCapacity'
 
-			if ($headroomToMax -le 0) {
-				$aosStatus = 'Exceeded'
+			if (($maxAos - $currentAos) -lt 0) {
+				$aosStatus = 'Overage'
 			}
 
-			if ($null -eq $aosStatus) {
-				$aosStatus = 'Available'
-			}
-
-			$objAos = $objApiCapacity |
-			Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantCapacityAos' `
+			$objAosRow = $objApiCapacity |
+			Select-PSFObject -TypeName 'D365Bap.Tools.PpacTenantCapacity' `
 				-Property @{ Name = 'PpacTenantId'; Expression = { $tenantId } },
+			@{ Name = 'CapacityType'; Expression = { 'ApiCallCountAos' } },
+			@{ Name = 'Units'; Expression = { 'AOS' } },
+			@{ Name = 'Entitled'; Expression = { $maxAos } },
+			@{ Name = 'Consumed'; Expression = { $currentAos } },
+			@{ Name = 'MaxCapacity'; Expression = { $null } },
+			@{ Name = 'Status'; Expression = { $aosStatus } },
+			@{ Name = 'BaseCapacity'; Expression = { $minAos } },
+			@{ Name = 'IncrementalCapacity'; Expression = { $currentAos - $minAos } },
+			@{ Name = 'AddOnCapacity'; Expression = { 0 } },
+			@{ Name = 'Entitlement'; Expression = { 0 } },
+			@{ Name = 'Licenses'; Expression = { 0 } },
 			@{ Name = 'ApiCallTotal'; Expression = { $apiTotal } },
 			@{ Name = 'PerAos'; Expression = { $perAos } },
 			@{ Name = 'MinAos'; Expression = { $minAos } },
@@ -345,12 +350,24 @@ function Get-PpacTenantCapacity {
 			@{ Name = 'IntoCurrentTier'; Expression = { $intoCurrentTier } },
 			@{ Name = 'ToNextAos'; Expression = { $toNextAos } },
 			@{ Name = 'HeadroomToMax'; Expression = { $headroomToMax } },
-			@{ Name = 'Status'; Expression = { $aosStatus } },
 			@{ Name = 'Raw'; Expression = { $objApiCapacity } }
 
-			$colRes = @($objAos)
+			$colSummaryRows = @(
+				foreach ($itemRow in $colSummaryRows) {
+					$itemRow
+
+					if ($itemRow.CapacityType -eq 'ApiCallCount') {
+						$objAosRow
+					}
+				}
+			)
+
+			if ($colSummaryRows.CapacityType -notcontains 'ApiCallCount') {
+				$colSummaryRows = @($colSummaryRows) + @($objAosRow)
+			}
 		}
-		elseif ($Full) {
+
+		if ($Full) {
 			$colRes = @(
 				foreach ($itemLicenseCapacity in $colCapacities) {
 					$tmpLicenseEntitlements = @(
