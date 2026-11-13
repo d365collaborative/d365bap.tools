@@ -52,6 +52,8 @@ namespace D365Bap.Tools.PowerPlatformSdk
                 }
                 var task = (Task)method.Invoke(builder, arguments.ToArray());
                 task.GetAwaiter().GetResult();
+                if (method.ReturnType == typeof(Task))
+                    return null;
                 var result = task.GetType().GetProperty("Result").GetValue(task);
                 return result == null ? null : KiotaJsonSerializer.SerializeAsStringAsync((IParsable)result).GetAwaiter().GetResult();
             }
