@@ -309,6 +309,11 @@ jobs:
       shell: pwsh
       run: ./build/generate-parameterunittests.ps1
 
+    - name: Generate about topics for the package
+      if: steps.current.outputs.publish == 'true'
+      shell: pwsh
+      run: ./build/generate-about-topics.ps1
+
     - name: Build
       if: steps.current.outputs.publish == 'true'
       run: .\build\vsts-build.ps1 -ApiKey ${{ secrets.APIKEY }} -AutoVersion:$true -SkipPublish:$false
