@@ -30,7 +30,8 @@ $patterns = @(
 	'^d365bap\.tools/tests/functions/.*\.Tests\.ps1$',
 	'^docs/.*\.md$',
 	'^d365bap\.tools/xml/d365bap\.tools\.(Table|List)\.Format\.ps1xml$',
-	'^wiki/Namespaces\.md$'
+	'^wiki/Namespaces\.md$',
+	'^d365bap\.tools/en-us/about_.*\.help\.txt$'
 )
 
 $allowedGenerated = @(
@@ -42,14 +43,18 @@ function Test-GeneratedFile {
 	foreach ($itemPattern in $patterns) {
 		if ($File -notmatch $itemPattern) { continue }
 		foreach ($itemAllowed in $allowedGenerated) {
-			if ($File -match $itemAllowed) { return $false }
+			if ($File -match $itemAllowed) {
+				$false
+				return
+			}
 		}
-		return $true
+		$true
+		return
 	}
-	return $false
+	$false
 }
 
-$changed = @(git diff --name-only --no-renames "$BaseRef...$HeadRef" -- d365bap.tools/tests/functions docs d365bap.tools/xml/d365bap.tools.Table.Format.ps1xml d365bap.tools/xml/d365bap.tools.List.Format.ps1xml wiki/Namespaces.md)
+$changed = @(git diff --name-only --no-renames "$BaseRef...$HeadRef" -- d365bap.tools/tests/functions docs d365bap.tools/xml/d365bap.tools.Table.Format.ps1xml d365bap.tools/xml/d365bap.tools.List.Format.ps1xml wiki/Namespaces.md d365bap.tools/en-us)
 if ($LASTEXITCODE -ne 0) { throw 'Could not inspect generated files in the pull request diff.' }
 if (@($changed | Where-Object { $_.StartsWith('"') }).Count -gt 0) { throw 'Unsupported quoted generated-file path.' }
 $offenses = @($changed | Where-Object { Test-GeneratedFile $_ })

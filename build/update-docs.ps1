@@ -67,3 +67,5 @@ function Update-NamespacesArticle {
 }
 
 Update-NamespacesArticle -Path $path
+
+& (Join-Path -Path $PSScriptRoot -ChildPath 'generate-about-topics.ps1')

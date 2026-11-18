@@ -64,7 +64,9 @@ a skipped, missing, or failed required job and rejects a scope that no change
 can produce.
 
 Do not edit generated files (`d365bap.tools/tests/functions/*.Tests.ps1`,
-`docs/*.md`, consolidated format XML, or `wiki/Namespaces.md`) in a pull request.
+`docs/*.md`, consolidated format XML, `wiki/Namespaces.md`, or the about
+topics in `d365bap.tools/en-us/`) in a pull request. About topics are
+generated from `wiki/topics/*.md` by `build/generate-about-topics.ps1`.
 CI builds current runtime formats for validation and generates documentation and
 test snapshots after merge.
 
