@@ -430,7 +430,7 @@ foreach ($sourceFile in $sourceFiles) {
 
 	$wikiUrl = $WikiBaseUrl
 	if ($topicName -ne 'd365bap.tools') {
-		$wikiUrl = "$WikiBaseUrl/Topics/$($sourceFile.BaseName)"
+		$wikiUrl = "$WikiBaseUrl/$($sourceFile.BaseName)"
 	}
 	$null = $seeAlso.Add("Online: $wikiUrl")
 

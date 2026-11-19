@@ -56,4 +56,4 @@ Tab completion is available on most commands, backed by live data: environment n
 
 ## Concepts
 
-The command groups are explained in [Namespaces](Namespaces). Long-running platform work follows one pattern, described in [Operations](Operations). Every conceptual topic is also available from any PowerShell session with Get-Help about_d365bap.tools.<Topic>.
+The command groups are explained in [Namespaces](NamespacesConcept). Long-running platform work follows one pattern, described in [Operations](Operations). Every conceptual topic is also available from any PowerShell session with Get-Help about_d365bap.tools.<Topic>.
