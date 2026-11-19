@@ -1,9 +1,9 @@
 ﻿<#
     .SYNOPSIS
-        Resolves the platform version of a build.
+        Resolves the application build of a platform version.
 
     .DESCRIPTION
-        Queries the developer tools service for the platform version of one application release.
+        Queries the developer tools service for the platform version of one application release. A full platform value alone resolves the matching application track.
 
     .PARAMETER AppVersion
         Track to resolve as version, track or full build. Omitted: derived from -Build.
@@ -12,7 +12,7 @@
         Full build, track or short form. Omitted: newest build of the track.
 
     .PARAMETER PlatformVersion
-        Platform filter with wildcards. Omitted: all platforms.
+        Platform build to resolve. Standalone needs four parts.
 
         Default: "*".
 
@@ -37,11 +37,10 @@
         It uses -EnvironmentId when omitted for the first FinOps environment.
 
     .EXAMPLE
-        PS C:\> Get-PpacFinOpsPlatform -AppVersion "10.0.49" -PlatformVersion "7.0.8199.*"
+        PS C:\> Get-PpacFinOpsPlatform -PlatformVersion "7.0.8199.56"
 
-        Shows builds on 10.0.49 with a matching platform.
-        It uses -AppVersion "10.0.49" to choose the track.
-        It uses -PlatformVersion "7.0.8199.*" to filter platforms.
+        Shows the application build for that platform.
+        It uses -PlatformVersion "7.0.8199.56" to select the platform.
         It uses -EnvironmentId when omitted for the first FinOps environment.
 
     .EXAMPLE
@@ -56,16 +55,17 @@
         Author: Mötz Jensen (@Splaxi)
 #>
 function Get-PpacFinOpsPlatform {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'ByPlatform')]
 	[OutputType('D365Bap.Tools.PpacFinOpsPlatform[]')]
 	param (
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByApp', ValueFromPipelineByPropertyName = $true)]
 		[string] $AppVersion,
 
-		[Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByApp', ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[string] $Build,
 
-		[Parameter(ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByApp', ValueFromPipelineByPropertyName = $true)]
+		[Parameter(ParameterSetName = 'ByPlatform', ValueFromPipelineByPropertyName = $true)]
 		[SupportsWildcards()]
 		[string] $PlatformVersion = '*',
 
@@ -77,6 +77,252 @@ function Get-PpacFinOpsPlatform {
 	)
 
 	process {
+		if ($PSCmdlet.ParameterSetName -eq 'ByPlatform') {
+			$platformGiven = $PSBoundParameters.ContainsKey('PlatformVersion') `
+				-and -not [string]::IsNullOrWhiteSpace($PlatformVersion)
+
+			if (-not ($platformGiven)) {
+				$messageString = "Specify <c='em'>-PlatformVersion</c> with four parts, such as <c='em'>7.0.8199.56</c>."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
+				Stop-PSFFunction -Message "Stopping because no platform version was specified." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
+				return
+			}
+
+			$tmpFilter = "$PlatformVersion".Replace("-", ".").Trim()
+
+			$colFilterParts = @("$tmpFilter" -split "\.")
+
+			if (($colFilterParts.Count -ne 4) `
+					-or ("$tmpFilter" -notmatch '^\d+\.\d+\.\d+\.\d+$')) {
+				$messageString = "Specify a full platform build <c='em'>$PlatformVersion</c> with four parts, such as <c='em'>7.0.8199.56</c>. Tracks and wildcards are not supported."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
+				Stop-PSFFunction -Message "Stopping because the platform version is not a full build." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
+				return
+			}
+
+			$tmpPlatTrack = "$($colFilterParts[0]).$($colFilterParts[1]).$($colFilterParts[2])"
+
+			$hashCtx = Get-DevToolsAuthContext -EnvironmentId $EnvironmentId
+
+			if ($null -eq $hashCtx) {
+				return
+			}
+
+			$hashHeaders = @{
+				"Correlationid"           = [guid]::NewGuid().ToString()
+				"Dataverseenvironmenturi" = $hashCtx.Env.PpacEnvUri
+				"Authorization"           = "Bearer $($hashCtx.Token)"
+				"Odata-Maxversion"        = "4.0"
+				"Odata-Version"           = "4.0"
+				"Accept"                  = "application/json"
+			}
+
+			$objCache = Get-FinOpsVersionCache -ErrorAction SilentlyContinue
+
+			if ($null -eq $objCache) {
+				$objCache = Read-FinOpsVersionCacheFile -ErrorAction SilentlyContinue
+			}
+
+			$colCandidates = @()
+
+			if ((-not ($null -eq $objCache)) `
+					-and (-not ($null -eq $objCache.versions))) {
+				$colCandidates = @(
+					$objCache.versions |
+					Where-Object {
+						$tmpVerPlat = (-not ($null -eq $_.PlatBuild)) ? "$($_.PlatBuild)" : "$($_.platBuild)"
+
+						($tmpVerPlat -eq $tmpPlatTrack)
+					}
+				)
+			}
+
+			$colLiveVersions = $null
+
+			if ($colCandidates.Count -eq 0) {
+				try {
+					$liveCatalog = Get-FinOpsClientCatalog -Headers $hashHeaders
+				}
+				catch {
+					$messageString = "Failed retrieving the FinOps version catalog from the developer tools service."
+					Write-PSFMessage -Level Important `
+						-Message $messageString `
+						-ErrorRecord $_
+
+					Stop-PSFFunction -Message "Stopping because the finopsversions request failed." `
+						-ErrorRecord $_
+
+					return
+				}
+
+				$colLiveVersions = @($liveCatalog)
+
+				$colCandidates = @(
+					$liveCatalog |
+					Where-Object { $_.platBuild -eq $tmpPlatTrack }
+				)
+			}
+
+			if ($colCandidates.Count -eq 0) {
+				$colValidCatalog = @()
+
+				if (-not ($null -eq $colLiveVersions)) {
+					$colValidCatalog = @($colLiveVersions)
+				}
+				elseif ((-not ($null -eq $objCache)) `
+						-and (-not ($null -eq $objCache.versions))) {
+					$colValidCatalog = @($objCache.versions)
+				}
+
+				$colValidPlat = @(
+					$colValidCatalog |
+					ForEach-Object {
+						$tmpValidPlat = (-not ($null -eq $_.PlatBuild)) ? "$($_.PlatBuild)" : "$($_.platBuild)"
+
+						$tmpValidPlat
+					} | Sort-Object -Unique
+				)
+
+				$valid = $colValidPlat -join ", "
+				$messageString = "Unknown platform <c='em'>$PlatformVersion</c>. Valid platform tracks are: $valid."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
+				Stop-PSFFunction -Message "Stopping because the platform was not recognized." `
+					-Exception $([System.Exception]::new($($messageString -replace '<[^>]+>', '')))
+
+				return
+			}
+
+			$hashKnownPlatforms = @{}
+
+			if ((-not ($null -eq $objCache)) `
+					-and (-not ($null -eq $objCache.platforms))) {
+				foreach ($itemProp in $objCache.platforms.PSObject.Properties) {
+					$hashKnownPlatforms["$($itemProp.Name)"] = "$($itemProp.Value)"
+				}
+			}
+
+			$hashNewBuilds = @{}
+			$hashNewPlatforms = @{}
+			$colResults = [System.Collections.Generic.List[object]]::new()
+
+			foreach ($itemCandidate in $colCandidates) {
+				$tmpAppBuild = (-not ($null -eq $itemCandidate.AppBuild)) ? "$($itemCandidate.AppBuild)" : "$($itemCandidate.appBuild)"
+				$tmpAppVersion = (-not ($null -eq $itemCandidate.AppVersion)) ? "$($itemCandidate.AppVersion)" : "$($itemCandidate.appVersion)"
+
+				$tmpBuildList = @()
+
+				if ((-not ($null -eq $objCache)) `
+						-and (-not ($null -eq $objCache.builds)) `
+						-and (-not ($null -eq $objCache.builds.PSObject.Properties[$tmpAppBuild]))) {
+					$tmpBuildList = @($objCache.builds.PSObject.Properties[$tmpAppBuild].Value)
+				}
+
+				if ($tmpBuildList.Count -eq 0) {
+					try {
+						$tmpLiveBuilds = Get-FinOpsClientBuildList -Track $tmpAppBuild `
+							-Headers $hashHeaders
+					}
+					catch {
+						Write-PSFMessage -Level Warning `
+							-Message "Skipping track <c='em'>$tmpAppBuild</c>: the build list could not be retrieved." `
+							-ErrorRecord $_
+
+						continue
+					}
+
+					$tmpBuildList = @($tmpLiveBuilds)
+					$hashNewBuilds[$tmpAppBuild] = @($tmpBuildList)
+				}
+
+				$tmpMatchedBuilds = [System.Collections.Generic.List[string]]::new()
+
+				foreach ($itemBuild in $tmpBuildList) {
+					if (-not $hashKnownPlatforms.ContainsKey("$itemBuild")) {
+						try {
+							$tmpFetchedPlat = Get-FinOpsClientPlatform -Build "$itemBuild" `
+								-Headers $hashHeaders
+						}
+						catch {
+							Write-PSFMessage -Level Warning `
+								-Message "Skipping build <c='em'>$itemBuild</c>: the platform version could not be resolved." `
+								-ErrorRecord $_
+
+							continue
+						}
+
+						if ([string]::IsNullOrWhiteSpace($tmpFetchedPlat)) {
+							continue
+						}
+
+						$hashKnownPlatforms["$itemBuild"] = "$tmpFetchedPlat"
+						$hashNewPlatforms["$itemBuild"] = "$tmpFetchedPlat"
+					}
+
+					$tmpBuildPlat = "$($hashKnownPlatforms["$itemBuild"])".Replace("-", ".").Trim()
+
+					if ("$tmpBuildPlat" -eq "$tmpFilter") {
+						$tmpMatchedBuilds.Add("$itemBuild")
+					}
+				}
+
+				foreach ($itemMatch in $tmpMatchedBuilds) {
+					$tmpResult = [PsCustomObject][Ordered]@{
+						"AppVersion"      = $tmpAppVersion
+						"AppBuild"        = $tmpAppBuild
+						"Track"           = $tmpAppBuild
+						"Build"           = "$itemMatch"
+						"PlatformVersion" = "$($hashKnownPlatforms[$itemMatch])"
+					}
+
+					$colResults.Add($tmpResult)
+				}
+			}
+
+			Write-FinOpsVersionCache -Versions $colLiveVersions `
+				-Builds $hashNewBuilds `
+				-Platforms $hashNewPlatforms
+
+
+			if ($colResults.Count -eq 0) {
+				$messageString = "No builds match platform <c='em'>$PlatformVersion</c>."
+				Write-PSFMessage -Level Important `
+					-Message $messageString
+
+				return
+			}
+
+			$colOrderedResults = @(
+				$colResults |
+				Sort-Object -Property { [version]$_.Build } `
+					-Descending
+			)
+
+			$output = $colOrderedResults |
+			Select-PSFObject -TypeName "D365Bap.Tools.PpacFinOpsPlatform" `
+				-Property *
+
+			if ($AsExcelOutput) {
+				$output |
+				Export-Excel -WorksheetName "Get-PpacFinOpsPlatform" `
+					-NoNumberConversion AppVersion, AppBuild, Track, Build, PlatformVersion
+
+				return
+			}
+
+			$output
+			return
+		}
+
 		$buildGiven = $PSBoundParameters.ContainsKey('Build') `
 			-and -not [string]::IsNullOrWhiteSpace($Build)
 

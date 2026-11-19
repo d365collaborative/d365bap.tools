@@ -1,13 +1,10 @@
-﻿# Warms the FinOps version cache on import.
-# Registers the background preload for the version catalog. All failures stay silent.
-
-function Start-FinOpsVersionPreload {
+﻿function Start-FinOpsVersionPreload {
 	<#
         .SYNOPSIS
-            Warms the FinOps version cache in the background.
+            Warms the FinOps version catalog.
 
         .DESCRIPTION
-            Starts a throttled background job that fetches the catalog. Results assign directly, never wrapped, as Invoke-RestMethod emits arrays non-enumerated.
+            Starts a background job that fetches the version catalog and every published build. Stored platform versions are kept.
 
         .PARAMETER MaxAgeHours
             Maximum cache age in hours before refetching.
@@ -17,51 +14,56 @@ function Start-FinOpsVersionPreload {
         .EXAMPLE
             PS C:\> Start-FinOpsVersionPreload
 
-            Refreshes the cache when older than a day.
-            It uses -MaxAgeHours 24 to keep the cache for one day.
+            Refreshes the catalog when older than a day.
+            It uses -MaxAgeHours 24 to keep the catalog for one day.
 
         .NOTES
             Author: Mötz Jensen (@Splaxi)
     #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseUsingScopeModifierInNewRunspaces", "", Justification = "Start-Job binds values through ArgumentList, the using scope modifier is not supported there.")]
 	[CmdletBinding()]
 	param (
 		[int] $MaxAgeHours = 24
 	)
 
 	try {
-		$azContext = Get-AzContext -ErrorAction SilentlyContinue
-		if (-not $azContext) {
-			$azCommand = Get-Command az -ErrorAction SilentlyContinue
-			$azLoggedIn = $false
-			if ($null -ne $azCommand) {
-				$previousExitCode = $global:LASTEXITCODE
-				try {
-					$null = & az account show -o json 2>$null
-					if ($LASTEXITCODE -eq 0) { $azLoggedIn = $true }
-				}
-				finally {
-					$global:LASTEXITCODE = $previousExitCode
-				}
-			}
-			if (-not $azLoggedIn) {
-				Write-PSFMessage -Level Verbose -Message 'FinOps version preload skipped: no Az login detected.'
-				return
-			}
+		$authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' `
+			-Fallback 'AzAccount'
+
+		if (-not (Test-FinOpsClientLogin -AuthProvider $authProvider)) {
+			Write-PSFMessage -Level Verbose `
+				-Message 'FinOps version preload skipped: no login detected.'
+
+			return
 		}
 
-		$cachedCatalog = Get-FinOpsVersionCache -MaxAgeHours $MaxAgeHours -ErrorAction SilentlyContinue
+		$objCatalog = Get-FinOpsVersionCache -MaxAgeHours $MaxAgeHours `
+			-ErrorAction SilentlyContinue
+
 
 		$cacheComplete = $false
 
-		if ($null -ne $cachedCatalog -and $null -ne $cachedCatalog.versions -and $null -ne $cachedCatalog.builds) {
+		if ((-not ($null -eq $objCatalog)) `
+				-and (-not ($null -eq $objCatalog.versions)) `
+				-and (-not ($null -eq $objCatalog.builds))) {
 			$cacheComplete = $true
 
-			foreach ($catalogEntry in @($cachedCatalog.versions)) {
-				$entryTrack = if ($null -ne $catalogEntry.AppBuild) { "$($catalogEntry.AppBuild)" } else { "$($catalogEntry.appBuild)" }
+			foreach ($itemVersion in @($objCatalog.versions)) {
+				if (-not ($null -eq $itemVersion.AppVersion)) {
+					$tmpTrackName = "$($itemVersion.AppBuild)"
+				}
+				else {
+					$tmpTrackName = "$($itemVersion.appBuild)"
+				}
 
-				if ([string]::IsNullOrWhiteSpace($entryTrack) -or $null -eq $cachedCatalog.builds."$entryTrack" -or @($cachedCatalog.builds."$entryTrack").Count -eq 0) {
+				if ([string]::IsNullOrWhiteSpace($tmpTrackName)) {
+					$cacheComplete = $false
+					break
+				}
+
+				$objBuildEntry = $objCatalog.builds.PSObject.Properties["$tmpTrackName"]
+
+				if ($null -eq $objBuildEntry) {
 					$cacheComplete = $false
 					break
 				}
@@ -70,124 +72,69 @@ function Start-FinOpsVersionPreload {
 
 		if ($cacheComplete) { return }
 
-		$runningPreload = Get-Job -Name 'd365bap.tools.finopsversion.preload' -ErrorAction SilentlyContinue | Where-Object State -eq 'Running'
+		$colRunningPreload = Get-Job -Name 'd365bap.tools.finopsversion.preload' `
+			-ErrorAction SilentlyContinue |
+		Where-Object State -eq 'Running'
 
-		if ($runningPreload) { return }
-		Get-Job -Name 'd365bap.tools.finopsversion.preload' -ErrorAction SilentlyContinue | Remove-Job -Force -ErrorAction SilentlyContinue
+		if ($colRunningPreload) { return }
 
-		$authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+		Get-Job -Name 'd365bap.tools.finopsversion.preload' `
+			-ErrorAction SilentlyContinue |
+		Remove-Job -Force `
+			-ErrorAction SilentlyContinue
 
-		$null = Start-Job -Name 'd365bap.tools.finopsversion.preload' -ScriptBlock {
-			param ([string] $CachePath, [string] $AuthProvider)
+		$cachePath = Get-FinOpsVersionCachePath
+		$clientPath = Join-Path $script:ModuleRoot 'internal/sdk/finopsclient.ps1'
+		$apiVersion = $script:BapApiVersions.EnvironmentScopes
 
-			try {
-				if ($AuthProvider -eq 'AzCli') {
-					$probe = & az account show -o json 2>$null
-					if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace("$probe")) { return }
+		Start-Job -Name 'd365bap.tools.finopsversion.preload' `
+			-ScriptBlock {
+			. $using:clientPath
+
+			if (-not (Test-FinOpsClientLogin -AuthProvider $using:authProvider)) { return }
+
+			$hashCtx = Get-FinOpsClientAuthContext -AuthProvider $using:authProvider `
+				-ApiVersion $using:apiVersion
+
+			if ($null -eq $hashCtx) { return }
+
+			$colVersions = Get-FinOpsClientCatalog -Headers $hashCtx.Headers
+
+			if ($null -eq $colVersions) { return }
+
+			$hashBuilds = @{}
+
+			foreach ($itemVersion in @($colVersions)) {
+				if (-not ($null -eq $itemVersion.AppVersion)) {
+					$tmpTrackName = "$($itemVersion.AppBuild)"
 				}
 				else {
-					Import-Module Az.Accounts -ErrorAction Stop
-					if (-not (Get-AzContext -ErrorAction SilentlyContinue)) { return }
+					$tmpTrackName = "$($itemVersion.appBuild)"
 				}
 
-				$bapToken = $null
-				$tenantId = ''
-				$accountId = ''
+				if ([string]::IsNullOrWhiteSpace($tmpTrackName)) { continue }
 
-				if ($AuthProvider -eq 'AzCli') {
-					$tokenRaw = & az account get-access-token --resource 'https://service.powerapps.com/' --query accessToken -o tsv 2>$null
-					if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$tokenRaw")) { $bapToken = "$tokenRaw".Trim() }
-					$accountRaw = & az account show --query '{user:user.name, tenant:tenantId}' -o json 2>$null
-					if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$accountRaw")) {
-						$accountObj = "$accountRaw" | ConvertFrom-Json -ErrorAction Stop
-						$accountId = "$($accountObj.user)"
-						$tenantId = "$($accountObj.tenant)"
-					}
-				}
-				else {
-					$bapTokenResult = Get-AzAccessToken -ResourceUrl 'https://service.powerapps.com/' -ErrorAction Stop
-					$bapToken = $bapTokenResult.Token
-					$jobContext = Get-AzContext -ErrorAction SilentlyContinue
-					if ($null -ne $jobContext) {
-						$accountId = "$($jobContext.Account.Id)"
-						$tenantId = "$($jobContext.Tenant.Id)"
-					}
-				}
+				$tmpBuilds = Get-FinOpsClientBuildList -Track $tmpTrackName `
+					-Headers $hashCtx.Headers
 
-				if ([string]::IsNullOrWhiteSpace($bapToken)) { return }
 
-				$envs = Invoke-RestMethod -Method Get `
-					-Uri 'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2023-06-01' `
-					-Headers @{ Authorization = "Bearer $bapToken" } `
-					-TimeoutSeconds 60 | `
-					Select-Object -ExpandProperty value
+				if ($null -eq $tmpBuilds) { continue }
 
-				$finopsEnvs = @($envs | Where-Object { $null -ne $_.properties.linkedAppMetadata.type } | Sort-Object { $_.properties.displayName })
-
-				if ($finopsEnvs.Count -eq 0) { return }
-
-				$authEnvUri = ("$($finopsEnvs[0].properties.linkedEnvironmentMetadata.instanceUrl)" -replace 'com/', 'com').TrimEnd('/') + '/'
-
-				$dataverseToken = $null
-
-				if ($AuthProvider -eq 'AzCli') {
-					$dvRaw = & az account get-access-token --resource $authEnvUri --query accessToken -o tsv 2>$null
-					if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace("$dvRaw")) { $dataverseToken = "$dvRaw".Trim() }
-				}
-				else {
-					$dvResult = Get-AzAccessToken -ResourceUrl $authEnvUri -ErrorAction Stop
-					$dataverseToken = $dvResult.Token
-				}
-
-				if ([string]::IsNullOrWhiteSpace($dataverseToken)) { return }
-
-				$devHeaders = @{
-					Correlationid           = [guid]::NewGuid().ToString()
-					Dataverseenvironmenturi = $authEnvUri.TrimEnd('/')
-					Authorization           = "Bearer $dataverseToken"
-					'Odata-Maxversion'      = '4.0'
-					'Odata-Version'         = '4.0'
-					Accept                  = 'application/json'
-				}
-
-				$versions = Invoke-RestMethod -Method Get `
-					-Uri 'https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsversions' `
-					-Headers $devHeaders `
-					-TimeoutSeconds 60
-
-				if ($null -eq $versions -or @($versions).Count -eq 0) { return }
-
-				$builds = @{}
-
-				foreach ($entry in $versions) {
-					try {
-						$trackDashed = "$($entry.appBuild)".Replace('.', '-')
-						$trackBuilds = Invoke-RestMethod -Method Get `
-							-Uri "https://developertools.powerplatform.microsoft.com/api/clientmetadata/finopsbuilds?version=$trackDashed" `
-							-Headers $devHeaders `
-							-TimeoutSeconds 60
-
-						if ($null -ne $trackBuilds -and @($trackBuilds).Count -gt 0) { $builds["$($entry.appBuild)"] = @($trackBuilds) }
-					}
-					catch { $null = $_.Exception.Message }
-				}
-
-				$payload = [ordered]@{
-					refreshedUtc = [datetime]::UtcNow.ToString('o')
-					tenantId     = "$tenantId"
-					accountId    = "$accountId"
-					versions     = $versions
-					builds       = $builds
-					platforms    = @{}
-				}
-
-				$null = New-Item -ItemType Directory -Path (Split-Path -Parent $CachePath) -Force -ErrorAction Stop
-				$payload | ConvertTo-Json -Depth 6 -ErrorAction Stop | Set-Content -LiteralPath $CachePath -Encoding utf8 -ErrorAction Stop
+				$hashBuilds[$tmpTrackName] = @($tmpBuilds)
 			}
-			catch { $null = $_.Exception.Message }
-		} -ArgumentList @((Get-FinOpsVersionCachePath), $authProvider)
+
+			Write-FinOpsClientCache -Path $using:cachePath `
+				-Versions @($colVersions) `
+				-Builds $hashBuilds `
+				-TenantId $hashCtx.TenantId `
+				-AccountId $hashCtx.AccountId
+		}
 	}
-	catch { Write-PSFMessage -Level Verbose -Message "FinOps version preload was skipped: $($_.Exception.Message)" }
+	catch {
+		Write-PSFMessage -Level Verbose `
+			-Message "FinOps version preload was skipped: $($_.Exception.Message)"
+
+	}
 }
 
 Start-FinOpsVersionPreload
