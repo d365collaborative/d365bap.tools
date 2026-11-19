@@ -50,9 +50,9 @@ function Add-PpacEnvironmentAcpPolicyAssignment {
 		$policyName = $colPolicy[0].Name
 		if ([string]::IsNullOrWhiteSpace($policyName)) { $policyName = $colPolicy[0].PolicyId }
 
-		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		$objEnvironment = Resolve-PpacResourceEnvironment -EnvironmentId $EnvironmentId |
 		Select-Object -First 1
-		$environmentLabel = $envObj.PpacEnvName
+		$environmentLabel = $objEnvironment.PpacEnvName
 
 		$shouldAffected = $policyName
 		$shouldLabel = "Assign ACP policy to '$environmentLabel'"

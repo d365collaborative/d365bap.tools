@@ -76,11 +76,11 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 	)
 
 	process {
-		$envObj = Get-Environment -EnvironmentId $EnvironmentId |
+		$objEnvironment = Resolve-PpacResourceEnvironment -EnvironmentId $EnvironmentId |
 		Select-Object -First 1
 
-		$routeEnvironmentId = $envObj.PpacEnvId
-		$routeEnvironmentName = $envObj.PpacEnvName
+		$routeEnvironmentId = $objEnvironment.PpacEnvId
+		$routeEnvironmentName = $objEnvironment.PpacEnvName
 
 		if (Test-PSFFunctionInterrupt) { return }
 
@@ -108,13 +108,15 @@ function Get-PpacEnvironmentRuleBasedPolicy {
 				Where-Object Kind -eq 'Acp')
 		}
 
-		$colPolicies = @($colPolicies |
+		$colPolicies = @(
+			$colPolicies |
 			Where-Object {
 				($_.id -like $PolicyId) `
 					-or ($_.name -like $PolicyId)
 			})
 
-		$colPolicies = @($colPolicies |
+		$colPolicies = @(
+			$colPolicies |
 			Sort-Object -Property @{ Expression = { -not $_.IsEffective } },
 			@{ Expression = { $_.name } },
 			@{ Expression = { $_.id } })
