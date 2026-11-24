@@ -237,16 +237,16 @@ function Start-ProvisioningCatalogPreload {
         Parses the language and currency catalogs in a background worker.
 
     .DESCRIPTION
-        Keeps module import fast. A StateChanged action merges the result into module
-        scope. The action removes jobs by name, because removing by object or id from
-        inside an event action leaves the job behind.
+        Keeps import fast. A StateChanged action merges the result into module scope and
+        removes the worker by name. The event name differs from the worker name, or that
+        removal disposes the action's own job and pwsh crashes on exit.
     #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseUsingScopeModifierInNewRunspaces", "", Justification = "Start-Job binds values through ArgumentList, the using scope modifier is not supported there.")]
 	[CmdletBinding()]
 	param ()
 
-	$sourceId = 'd365bap.tools.provisioning.catalog.preload'
+	$sourceId = 'd365bap.tools.provisioning.catalog.preload.event'
 	$jobName = 'd365bap.tools.provisioning.catalog.preload'
 
 	if ($script:ProvisioningCatalogLoaded) { return }
@@ -325,7 +325,7 @@ function Start-ProvisioningCatalogPreload {
 		}
 		catch { $_.Exception.Message > $null }
 		finally {
-			Unregister-Event -SourceIdentifier 'd365bap.tools.provisioning.catalog.preload' `
+			Unregister-Event -SourceIdentifier 'd365bap.tools.provisioning.catalog.preload.event' `
 				-ErrorAction SilentlyContinue
 
 			Remove-Job -Name 'd365bap.tools.provisioning.catalog.preload' `
