@@ -1,595 +1,919 @@
-﻿<#
-    Internal runtime for Power Platform provisioning discovery data.
-
-    Location, template, language and currency catalogs change rarely and
-    carry no tenant specific values, so a trimmed snapshot ships with the
-    module (internal/sdk/provisioning-cache.json for locations and
-    templates, internal/sdk/provisioning-catalog.json for languages and
-    currencies) and is loaded into memory on import. A throttled
-    background job refreshes the snapshot on disk for the next import, so
-    tab completion and validation keep working without network access
-    while staying current.
-
-    Tenant defaults are different per tenant and account, so no default
-    flag is ever stored in the cache. The background job resolves them
-    live and writes them to a per-tenant store on disk
-    (provisioning-tenant-defaults.json), keyed by tenant and account, for
-    later use. The public Get-PpacTenantProvisioningDefault cmdlet stays
-    live only: it looks up the default locations live per call and then
-    resolves language and currency live through the bundled Power
-    Platform SDK:
-
-      GET /environmentmanagement/provisioning/locations
-      GET /environmentmanagement/provisioning/locations/{location}/languages
-      GET /environmentmanagement/provisioning/locations/{location}/currencies
-#>
-
-$script:ProvisioningCache = $null
+﻿$script:ProvisioningCache = $null
 $script:ProvisioningCatalogLoaded = $false
-
-# Templates New-UnifiedEnvironmentV2 supports. The discovery cache keeps
-# every template the API returns; this list filters what the V2 cmdlet
-# validates and completes.
 $script:ProvisioningV2TemplateFilter = @('D365_FinOps*', 'D365_DeveloperEdition')
 
 function Get-ProvisioningUserCachePath {
-    [CmdletBinding()]
-    param ()
+	<#
+    .SYNOPSIS
+        Returns the path of the user provisioning cache file.
 
-    $base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
-    Join-Path (Join-Path $base 'd365bap.tools') 'provisioning-cache.json'
+    .DESCRIPTION
+        The background refresh writes the cache there and the next import reads it.
+    #>
+	[CmdletBinding()]
+	param ()
+
+	$base = if ($env:APPDATA) {
+		$env:APPDATA
+	}
+	else {
+		Join-Path $HOME '.config'
+	}
+	Join-Path (Join-Path $base 'd365bap.tools') 'provisioning-cache.json'
 }
 
 function Get-ProvisioningTenantDefaultsPath {
-    [CmdletBinding()]
-    param ()
+	<#
+    .SYNOPSIS
+        Returns the path of the per-tenant provisioning defaults store.
 
-    $base = if ($env:APPDATA) { $env:APPDATA } else { Join-Path $HOME '.config' }
-    Join-Path (Join-Path $base 'd365bap.tools') 'provisioning-tenant-defaults.json'
+    .DESCRIPTION
+        The store is keyed by tenant and account and is written by the background refresh.
+    #>
+	[CmdletBinding()]
+	param ()
+
+	$base = if ($env:APPDATA) {
+		$env:APPDATA
+	}
+	else {
+		Join-Path $HOME '.config'
+	}
+	Join-Path (Join-Path $base 'd365bap.tools') 'provisioning-tenant-defaults.json'
 }
 
 function Import-ProvisioningCache {
-    [CmdletBinding()]
-    param ()
+	<#
+    .SYNOPSIS
+        Loads the tenant neutral provisioning discovery cache into memory.
 
-    $script:ProvisioningCache = @{ locations = @(); templates = @{} }
-    $script:ProvisioningCatalogLoaded = $false
+    .DESCRIPTION
+        Reads the shipped snapshot and overlays the user cache, which the throttled
+        background refresh keeps current. Tenant defaults are never stored here.
+    #>
+	[CmdletBinding()]
+	param ()
 
-    $shipped = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-cache.json'
-    if (Test-Path -LiteralPath $shipped) {
-        $script:ProvisioningCache = Get-Content -LiteralPath $shipped -Raw -Encoding utf8 |
-            ConvertFrom-Json -AsHashtable -ErrorAction Stop
-    }
+	$script:ProvisioningCache = @{ locations = @(); templates = @{} }
+	$script:ProvisioningCatalogLoaded = $false
 
-    $userPath = Get-ProvisioningUserCachePath
-    if (Test-Path -LiteralPath $userPath) {
-        try {
-            $overlay = Get-Content -LiteralPath $userPath -Raw -Encoding utf8 |
-                ConvertFrom-Json -AsHashtable -ErrorAction Stop
-            foreach ($key in @('locations', 'templates', 'refreshedUtc')) {
-                if ($overlay.ContainsKey($key)) { $script:ProvisioningCache[$key] = $overlay[$key] }
-            }
-        }
-        catch {
-            Write-PSFMessage -Level Verbose -Message "Ignoring unreadable provisioning cache at $userPath : $($_.Exception.Message)"
-        }
-    }
+	$shipped = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-cache.json'
+	if (Test-Path -LiteralPath $shipped) {
+		$script:ProvisioningCache = Get-Content -LiteralPath $shipped `
+			-Raw `
+			-Encoding utf8 |
+		ConvertFrom-Json -AsHashtable `
+			-ErrorAction Stop
+	}
 
-    Publish-ProvisioningCompletionData
+	$userPath = Get-ProvisioningUserCachePath
+	if (Test-Path -LiteralPath $userPath) {
+		try {
+			$overlay = Get-Content -LiteralPath $userPath `
+				-Raw `
+				-Encoding utf8 |
+			ConvertFrom-Json -AsHashtable `
+				-ErrorAction Stop
+
+			foreach ($itemKey in @('locations', 'templates', 'refreshedUtc')) {
+				if ($overlay.ContainsKey($itemKey)) { $script:ProvisioningCache[$itemKey] = $overlay[$itemKey] }
+			}
+		}
+		catch {
+			Write-PSFMessage -Level Verbose `
+				-Message "Ignoring unreadable provisioning cache at $userPath : $($_.Exception.Message)"
+		}
+	}
+
+	Publish-ProvisioningCompletionData
 }
 
 function Import-ProvisioningCatalog {
-    <#
-        Loads the tenant neutral language and currency catalogs into
-        memory. Runs on demand only, so module import stays fast.
+	<#
+    .SYNOPSIS
+        Loads the tenant neutral language and currency catalogs into memory.
+
+    .DESCRIPTION
+        Runs on demand only, so module import stays fast.
     #>
-    [CmdletBinding()]
-    param ()
+	[CmdletBinding()]
+	param ()
 
-    if ($script:ProvisioningCatalogLoaded) { return }
+	if ($script:ProvisioningCatalogLoaded) { return }
 
-    $catalog = @{ languages = @{}; currencies = @{} }
+	$hashCatalog = @{ languages = @{}; currencies = @{} }
 
-    $shipped = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json'
-    if (Test-Path -LiteralPath $shipped) {
-        try {
-            $shippedCatalog = Get-Content -LiteralPath $shipped -Raw -Encoding utf8 |
-                ConvertFrom-Json -AsHashtable -ErrorAction Stop
-            foreach ($key in @('languages', 'currencies')) {
-                if ($shippedCatalog.ContainsKey($key)) { $catalog[$key] = $shippedCatalog[$key] }
-            }
-        }
-        catch {
-            Write-PSFMessage -Level Verbose -Message "Ignoring unreadable provisioning catalog at $shipped : $($_.Exception.Message)"
-        }
-    }
+	$shipped = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json'
+	if (Test-Path -LiteralPath $shipped) {
+		try {
+			$shippedCatalog = Get-Content -LiteralPath $shipped `
+				-Raw `
+				-Encoding utf8 |
+			ConvertFrom-Json -AsHashtable `
+				-ErrorAction Stop
 
-    $userPath = Get-ProvisioningUserCachePath
-    if (Test-Path -LiteralPath $userPath) {
-        try {
-            $overlay = Get-Content -LiteralPath $userPath -Raw -Encoding utf8 |
-                ConvertFrom-Json -AsHashtable -ErrorAction Stop
-            foreach ($key in @('languages', 'currencies')) {
-                if ($overlay.ContainsKey($key)) { $catalog[$key] = $overlay[$key] }
-            }
-        }
-        catch {
-            Write-PSFMessage -Level Verbose -Message "Ignoring unreadable provisioning catalog at $userPath : $($_.Exception.Message)"
-        }
-    }
+			foreach ($itemKey in @('languages', 'currencies')) {
+				if ($shippedCatalog.ContainsKey($itemKey)) { $hashCatalog[$itemKey] = $shippedCatalog[$itemKey] }
+			}
+		}
+		catch {
+			Write-PSFMessage -Level Verbose `
+				-Message "Ignoring unreadable provisioning catalog at $shipped : $($_.Exception.Message)"
+		}
+	}
 
-    $script:ProvisioningCache['languages'] = $catalog['languages']
-    $script:ProvisioningCache['currencies'] = $catalog['currencies']
-    $script:ProvisioningCatalogLoaded = $true
-    Publish-ProvisioningCatalogData
+	$userPath = Get-ProvisioningUserCachePath
+	if (Test-Path -LiteralPath $userPath) {
+		try {
+			$overlay = Get-Content -LiteralPath $userPath `
+				-Raw `
+				-Encoding utf8 |
+			ConvertFrom-Json -AsHashtable `
+				-ErrorAction Stop
+
+			foreach ($itemKey in @('languages', 'currencies')) {
+				if ($overlay.ContainsKey($itemKey)) { $hashCatalog[$itemKey] = $overlay[$itemKey] }
+			}
+		}
+		catch {
+			Write-PSFMessage -Level Verbose `
+				-Message "Ignoring unreadable provisioning catalog at $userPath : $($_.Exception.Message)"
+		}
+	}
+
+	$script:ProvisioningCache['languages'] = $hashCatalog['languages']
+	$script:ProvisioningCache['currencies'] = $hashCatalog['currencies']
+	$script:ProvisioningCatalogLoaded = $true
+	Publish-ProvisioningCatalogData
 }
 
 function Get-ProvisioningCatalog {
-    <#
-        Returns the in-memory language and currency catalogs, loading them
-        on first use. Powers future tab completion for non-default
-        deployments.
+	<#
+    .SYNOPSIS
+        Returns the in-memory language and currency catalogs.
+
+    .DESCRIPTION
+        Loads the catalogs on first use. Powers tab completion for non-default deployments.
     #>
-    [CmdletBinding()]
-    param ()
+	[CmdletBinding()]
+	param ()
 
-    Import-ProvisioningCatalog
+	Import-ProvisioningCatalog
 
-    [pscustomobject]@{
-        Languages  = $script:ProvisioningCache['languages']
-        Currencies = $script:ProvisioningCache['currencies']
-    }
+	[pscustomobject][ordered]@{
+		Languages  = $script:ProvisioningCache['languages']
+		Currencies = $script:ProvisioningCache['currencies']
+	}
 }
 
 function Get-ProvisioningTenantDefaultCache {
-    <#
-        Reads the stored tenant default language and currency for the
-        current tenant and account. Returns $null when nothing was stored
-        yet. Written by the background refresh; consumed live callers
-        stay authoritative.
+	<#
+    .SYNOPSIS
+        Reads the stored tenant default language and currency.
+
+    .DESCRIPTION
+        Looks up the current tenant and account in the store written by the background
+        refresh. Emits $null when nothing was stored yet. Live callers stay authoritative.
     #>
-    [CmdletBinding()]
-    param ()
+	[CmdletBinding()]
+	param ()
 
-    $azContext = Get-BapContext -AllowEmpty
-    if ($null -eq $azContext) { return $null }
+	$objAzContext = Get-BapContext -AllowEmpty
+	if ($null -eq $objAzContext) {
+		$null
+		return
+	}
 
-    $storePath = Get-ProvisioningTenantDefaultsPath
-    if (-not (Test-Path -LiteralPath $storePath)) { return $null }
+	$storePath = Get-ProvisioningTenantDefaultsPath
+	if (-not (Test-Path -LiteralPath $storePath)) {
+		$null
+		return
+	}
 
-    try {
-        $store = Get-Content -LiteralPath $storePath -Raw -Encoding utf8 |
-            ConvertFrom-Json -AsHashtable -ErrorAction Stop
-        $key = "$($azContext.TenantId)/$($azContext.Upn)"
-        if ($store.ContainsKey($key)) { return $store[$key] }
-    }
-    catch {
-        Write-PSFMessage -Level Verbose -Message "Ignoring unreadable tenant defaults at $storePath : $($_.Exception.Message)"
-    }
+	try {
+		$store = Get-Content -LiteralPath $storePath `
+			-Raw `
+			-Encoding utf8 |
+		ConvertFrom-Json -AsHashtable `
+			-ErrorAction Stop
 
-    return $null
+		$key = "$($objAzContext.TenantId)/$($objAzContext.Upn)"
+		if ($store.ContainsKey($key)) {
+			$store[$key]
+			return
+		}
+	}
+	catch {
+		Write-PSFMessage -Level Verbose `
+			-Message "Ignoring unreadable tenant defaults at $storePath : $($_.Exception.Message)"
+	}
+
+	$null
 }
 
 function Publish-ProvisioningCatalogData {
-    <#
-        Publishes the in-memory language and currency catalogs for tab
-        completion. Called after the catalog is loaded, whenever that
-        happens.
-    #>
-    [CmdletBinding()]
-    param ()
+	<#
+    .SYNOPSIS
+        Publishes the in-memory language and currency catalogs for tab completion.
 
-    Set-PSFConfig -FullName 'd365bap.tools.provisioning.languages' -Value $script:ProvisioningCache['languages'] -Description 'Power Platform provisioning languages per location for tab completion.'
-    Set-PSFConfig -FullName 'd365bap.tools.provisioning.currencies' -Value $script:ProvisioningCache['currencies'] -Description 'Power Platform provisioning currencies per location for tab completion.'
+    .DESCRIPTION
+        Called after the catalog is loaded, whenever that happens.
+    #>
+	[CmdletBinding()]
+	param ()
+
+	Set-PSFConfig -FullName 'd365bap.tools.provisioning.languages' `
+		-Value $script:ProvisioningCache['languages'] `
+		-Description 'Power Platform provisioning languages per location for tab completion.'
+
+	Set-PSFConfig -FullName 'd365bap.tools.provisioning.currencies' `
+		-Value $script:ProvisioningCache['currencies'] `
+		-Description 'Power Platform provisioning currencies per location for tab completion.'
 }
 
 function Start-ProvisioningCatalogPreload {
-    <#
-        Parses the language and currency catalogs in a background worker
-        so module import stays fast. A StateChanged action merges the
-        result into module scope when the job completes. Anything that
-        needs the catalog calls Import-ProvisioningCatalog, which covers
-        the gap if the worker has not finished yet.
+	<#
+    .SYNOPSIS
+        Parses the language and currency catalogs in a background worker.
+
+    .DESCRIPTION
+        Keeps module import fast. A StateChanged action merges the result into module
+        scope. The action removes jobs by name, because removing by object or id from
+        inside an event action leaves the job behind.
     #>
-    [CmdletBinding()]
-    param ()
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseUsingScopeModifierInNewRunspaces", "", Justification = "Start-Job binds values through ArgumentList, the using scope modifier is not supported there.")]
+	[CmdletBinding()]
+	param ()
 
-    $sourceId = 'd365bap.tools.provisioning.catalog.preload'
-    $jobName = 'd365bap.tools.provisioning.catalog.preload'
+	$sourceId = 'd365bap.tools.provisioning.catalog.preload'
+	$jobName = 'd365bap.tools.provisioning.catalog.preload'
 
-    if ($script:ProvisioningCatalogLoaded) { return }
+	if ($script:ProvisioningCatalogLoaded) { return }
 
-    $runningJob = Get-Job -Name $jobName -ErrorAction SilentlyContinue | Where-Object State -eq 'Running' | Select-Object -First 1
-    if (Get-EventSubscriber -SourceIdentifier $sourceId -ErrorAction SilentlyContinue) {
-        if ($runningJob) { return }
-        Unregister-Event -SourceIdentifier $sourceId -ErrorAction SilentlyContinue
-    }
+	$objRunningJob = Get-Job -Name $jobName `
+		-ErrorAction SilentlyContinue |
+	Where-Object State -eq 'Running' |
+	Select-Object -First 1
+	$colSubscriber = @(
+		Get-EventSubscriber -SourceIdentifier $sourceId `
+			-ErrorAction SilentlyContinue
+	)
+	if ($colSubscriber) {
+		if ($objRunningJob) { return }
+		Unregister-Event -SourceIdentifier $sourceId `
+			-ErrorAction SilentlyContinue
+	}
 
-    # The module is still importing when this runs, so it is not in
-    # Get-Module yet. The session state reference is always available.
-    $module = $ExecutionContext.SessionState.Module
-    if (-not $module) { return }
+	$module = $ExecutionContext.SessionState.Module
+	if (-not $module) { return }
 
-    if (-not $runningJob) {
-        $shippedCatalogPath = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json'
-        $userPath = Get-ProvisioningUserCachePath
-        $runningJob = Start-Job -Name $jobName -ScriptBlock {
-            param ([string] $ShippedPath, [string] $UserPath)
+	if (-not $objRunningJob) {
+		$shippedCatalogPath = Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json'
+		$userPath = Get-ProvisioningUserCachePath
+		$objRunningJob = Start-Job -Name $jobName `
+			-ScriptBlock {
+			param ([string] $ShippedPath, [string] $UserPath)
 
-            $catalog = @{ languages = @{}; currencies = @{} }
-            foreach ($path in @($ShippedPath, $UserPath)) {
-                if (-not $path -or -not (Test-Path -LiteralPath $path)) { continue }
-                try {
-                    $data = Get-Content -LiteralPath $path -Raw -Encoding utf8 |
-                        ConvertFrom-Json -AsHashtable -ErrorAction Stop
-                    foreach ($key in @('languages', 'currencies')) {
-                        if ($data.ContainsKey($key)) {
-                            foreach ($locationKey in @($data[$key].Keys)) {
-                                $catalog[$key][$locationKey] = @($data[$key][$locationKey])
-                            }
-                        }
-                    }
-                }
-                catch { }
-            }
-            $catalog
-        } -ArgumentList $shippedCatalogPath, $userPath
-    }
+			$hashCatalog = @{ languages = @{}; currencies = @{} }
+			foreach ($itemPath in @($ShippedPath, $UserPath)) {
+				if ((-not $itemPath) `
+						-or (-not (Test-Path -LiteralPath $itemPath))) { continue }
 
-    $null = Register-ObjectEvent -InputObject $runningJob -EventName StateChanged -SourceIdentifier $sourceId -MessageData $module -Action {
-        try {
-            if ($Event.Sender.State -eq 'Completed') {
-                $catalog = Receive-Job -Job $Event.Sender -ErrorAction Stop
-                & $Event.MessageData {
-                    param ($loaded)
-                    if ($null -eq $loaded) { return }
-                    foreach ($key in @('languages', 'currencies')) {
-                        if ($loaded.ContainsKey($key)) { $script:ProvisioningCache[$key] = $loaded[$key] }
-                    }
-                    $script:ProvisioningCatalogLoaded = $true
-                    Publish-ProvisioningCatalogData
-                } $catalog
-            }
-        }
-        catch { }
-        finally {
-                    # NOTE: remove by name. Removing by job object or id from
-                    # inside an event action reports success but leaves the
-                    # job behind.
-                    Unregister-Event -SourceIdentifier 'd365bap.tools.provisioning.catalog.preload' -ErrorAction SilentlyContinue
-                    Remove-Job -Name 'd365bap.tools.provisioning.catalog.preload' -Force -ErrorAction SilentlyContinue
-                }
-    }
+				try {
+					$data = Get-Content -LiteralPath $itemPath `
+						-Raw `
+						-Encoding utf8 |
+					ConvertFrom-Json -AsHashtable `
+						-ErrorAction Stop
+
+					foreach ($itemKey in @('languages', 'currencies')) {
+						if ($data.ContainsKey($itemKey)) {
+							foreach ($itemLocationKey in @($data[$itemKey].Keys)) {
+								$hashCatalog[$itemKey][$itemLocationKey] = @($data[$itemKey][$itemLocationKey])
+							}
+						}
+					}
+				}
+				catch { $_.Exception.Message > $null }
+			}
+			$hashCatalog
+		} `
+			-ArgumentList $shippedCatalogPath, $userPath
+	}
+
+	Register-ObjectEvent -InputObject $objRunningJob `
+		-EventName StateChanged `
+		-SourceIdentifier $sourceId `
+		-MessageData $module `
+		-Action {
+		try {
+			if ($Event.Sender.State -eq 'Completed') {
+				$catalog = Receive-Job -Job $Event.Sender `
+					-ErrorAction Stop
+
+				& $Event.MessageData {
+					param ($loaded)
+					if ($null -eq $loaded) { return }
+					foreach ($itemKey in @('languages', 'currencies')) {
+						if ($loaded.ContainsKey($itemKey)) { $script:ProvisioningCache[$itemKey] = $loaded[$itemKey] }
+					}
+					$script:ProvisioningCatalogLoaded = $true
+					Publish-ProvisioningCatalogData
+				} $catalog
+			}
+		}
+		catch { $_.Exception.Message > $null }
+		finally {
+			Unregister-Event -SourceIdentifier 'd365bap.tools.provisioning.catalog.preload' `
+				-ErrorAction SilentlyContinue
+
+			Remove-Job -Name 'd365bap.tools.provisioning.catalog.preload' `
+				-Force `
+				-ErrorAction SilentlyContinue
+		}
+	} > $null
 }
-function Publish-ProvisioningCompletionData {
-    [CmdletBinding()]
-    param ()
 
-    $locations = @($script:ProvisioningCache.locations)
-    Set-PSFConfig -FullName 'd365bap.tools.provisioning.locations' -Value $locations -Description 'Power Platform provisioning locations for tab completion.'
-    Set-PSFConfig -FullName 'd365bap.tools.provisioning.v2TemplateFilter' -Value $script:ProvisioningV2TemplateFilter -Description 'Template allow-list for New-UnifiedEnvironmentV2 tab completion.'
-    Set-PSFConfig -FullName 'd365bap.tools.provisioning.catalogPath' -Value (Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json') -Description 'Shipped language and currency catalog for tab completion.'
-    Set-PSFConfig -FullName 'd365bap.tools.provisioning.userCachePath' -Value (Get-ProvisioningUserCachePath) -Description 'User language and currency cache for tab completion.'
-    $templateIndex = @{}
-    foreach ($locationName in @($script:ProvisioningCache.templates.Keys)) {
-        $templateIndex[$locationName] = @(
-            $script:ProvisioningCache.templates[$locationName] | ForEach-Object {
-                @{
-                    name        = $_.name
-                    displayName = $_.displayName
-                    skus        = @($_.availability | Where-Object { -not $_.isDisabled } | ForEach-Object { $_.environmentSku })
-                }
-            }
-        )
-    }
-    Set-PSFConfig -FullName 'd365bap.tools.provisioning.templates' -Value $templateIndex -Description 'Provisioning templates per location for tab completion.'
+function Publish-ProvisioningCompletionData {
+	<#
+    .SYNOPSIS
+        Publishes the provisioning discovery data for tab completion.
+
+    .DESCRIPTION
+        Includes the template allow-list that New-UnifiedEnvironmentV2 validates and
+        completes. The discovery cache keeps every template the API returns.
+    #>
+	[CmdletBinding()]
+	param ()
+
+	$colLocations = @($script:ProvisioningCache.locations)
+	Set-PSFConfig -FullName 'd365bap.tools.provisioning.locations' `
+		-Value $colLocations `
+		-Description 'Power Platform provisioning locations for tab completion.'
+
+	Set-PSFConfig -FullName 'd365bap.tools.provisioning.v2TemplateFilter' `
+		-Value $script:ProvisioningV2TemplateFilter `
+		-Description 'Template allow-list for New-UnifiedEnvironmentV2 tab completion.'
+
+	Set-PSFConfig -FullName 'd365bap.tools.provisioning.catalogPath' `
+		-Value (Join-Path $script:ModuleRoot 'internal/sdk/provisioning-catalog.json') `
+		-Description 'Shipped language and currency catalog for tab completion.'
+
+	Set-PSFConfig -FullName 'd365bap.tools.provisioning.userCachePath' `
+		-Value (Get-ProvisioningUserCachePath) `
+		-Description 'User language and currency cache for tab completion.'
+
+	$hashTemplateIndex = @{}
+	foreach ($itemLocationName in @($script:ProvisioningCache.templates.Keys)) {
+		$hashTemplateIndex[$itemLocationName] = @(
+			$script:ProvisioningCache.templates[$itemLocationName] |
+			ForEach-Object {
+				@{
+					name        = $_.name
+					displayName = $_.displayName
+					skus        = @(
+						$_.availability |
+						Where-Object { -not $_.isDisabled } |
+						ForEach-Object { $_.environmentSku }
+					)
+				}
+			}
+		)
+	}
+	Set-PSFConfig -FullName 'd365bap.tools.provisioning.templates' `
+		-Value $hashTemplateIndex `
+		-Description 'Provisioning templates per location for tab completion.'
 }
 
 function Start-ProvisioningCacheRefresh {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseUsingScopeModifierInNewRunspaces", "", Justification = "Start-Job binds values through ArgumentList, the using scope modifier is not supported there.")]
-    [CmdletBinding()]
-    param (
-        [int] $MaxAgeHours = 24
-    )
+	<#
+    .SYNOPSIS
+        Refreshes the provisioning discovery cache in a throttled background job.
 
-    try {
-        $userPath = Get-ProvisioningUserCachePath
-        if (Test-Path -LiteralPath $userPath) {
-            $age = [datetime]::UtcNow - (Get-Item -LiteralPath $userPath).LastWriteTimeUtc
-            if ($age.TotalHours -lt $MaxAgeHours) { return }
-        }
+    .DESCRIPTION
+        The job writes the tenant neutral snapshot for the next import and resolves
+        tenant defaults live into the per-tenant store. The auth provider is passed
+        in, because the job process shares no module state.
 
-        if (Get-Job -Name 'd365bap.tools.provisioning.refresh' -ErrorAction SilentlyContinue | Where-Object State -eq 'Running') { return }
-        Get-Job -Name 'd365bap.tools.provisioning.refresh' -ErrorAction SilentlyContinue | Remove-Job -Force -ErrorAction SilentlyContinue
+    .PARAMETER MaxAgeHours
+        Skips the refresh while the user cache is younger than this many hours.
 
-        $sdkRoot = Join-Path $script:ModuleRoot 'bin/PowerPlatformSdk'
-        $tenantDefaultsPath = Get-ProvisioningTenantDefaultsPath
+        Default: 24
+    #>
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseUsingScopeModifierInNewRunspaces", "", Justification = "Start-Job binds values through ArgumentList, the using scope modifier is not supported there.")]
+	[CmdletBinding()]
+	param (
+		[int] $MaxAgeHours = 24
+	)
 
-        # Provider choice cannot be read inside the job: PSFConfig and
-        # $script: module state are not shared with the job process, so
-        # pass it explicitly and let the job mint a fresh token.
-        $authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' -Fallback 'AzAccount'
+	try {
+		$userPath = Get-ProvisioningUserCachePath
+		if (Test-Path -LiteralPath $userPath) {
+			$age = [datetime]::UtcNow - (Get-Item -LiteralPath $userPath).LastWriteTimeUtc
+			if ($age.TotalHours -lt $MaxAgeHours) { return }
+		}
 
-        $null = Start-Job -Name 'd365bap.tools.provisioning.refresh' -ScriptBlock {
-            param ([string] $CachePath, [string] $SdkRoot, [string] $ApiVersion, [string] $TenantDefaultsPath, [string] $AuthProvider, [string] $ModuleRoot)
+		$runningRefresh = Get-Job -Name 'd365bap.tools.provisioning.refresh' `
+			-ErrorAction SilentlyContinue |
+		Where-Object State -eq 'Running'
+		if ($runningRefresh) { return }
+		Get-Job -Name 'd365bap.tools.provisioning.refresh' `
+			-ErrorAction SilentlyContinue |
+		Remove-Job -Force `
+			-ErrorAction SilentlyContinue
 
-            try {
-                if ($AuthProvider -eq 'AzCli') {
-                    $azShow = az account show --query '{tenant:tenantId, user:user.name}' -o json 2>$null
-                    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace("$azShow")) { return }
-                    $azIdentity = "$azShow" | ConvertFrom-Json -ErrorAction Stop
-                    $azTenantId = "$($azIdentity.tenant)"
-                    $azAccountId = "$($azIdentity.user)"
-                    if ([string]::IsNullOrWhiteSpace($azTenantId) -or [string]::IsNullOrWhiteSpace($azAccountId)) { return }
-                }
-                else {
-                    Import-Module Az.Accounts -ErrorAction Stop
-                    $azContext = Get-AzContext -ErrorAction SilentlyContinue
-                    if (-not $azContext -or [string]::IsNullOrWhiteSpace($azContext.Tenant.Id) -or [string]::IsNullOrWhiteSpace($azContext.Account.Id)) { return }
-                    $azTenantId = $azContext.Tenant.Id
-                    $azAccountId = $azContext.Account.Id
-                }
+		$sdkRoot = Join-Path $script:ModuleRoot 'bin/PowerPlatformSdk'
+		$tenantDefaultsPath = Get-ProvisioningTenantDefaultsPath
 
-                foreach ($dll in @('Microsoft.Kiota.Abstractions.dll', 'Microsoft.Kiota.Serialization.Json.dll', 'Microsoft.Kiota.Http.HttpClientLibrary.dll', 'Microsoft.PowerPlatform.Management.dll', 'D365Bap.Tools.PowerPlatformSdk.dll')) {
-                    $dllPath = Join-Path $SdkRoot $dll
-                    if (-not (Test-Path -LiteralPath $dllPath)) { return }
-                    [void][System.Reflection.Assembly]::LoadFrom($dllPath)
-                }
-                $clientType = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName -like 'D365Bap.Tools.PowerPlatformSdk,*' } | Select-Object -First 1).GetType('D365Bap.Tools.PowerPlatformSdk.SdkClient')
-                if (-not $clientType) { return }
-                $execute = $clientType.GetMethod('Execute')
+		$authProvider = Get-PSFConfigValue -FullName 'd365bap.tools.auth.provider' `
+			-Fallback 'AzAccount'
 
-                if (-not (Get-Command Get-BapAccessToken -ErrorAction SilentlyContinue)) {
-                    $helperPath = Join-Path $ModuleRoot 'internal/functions/Get-BapAccessToken.ps1'
-                    if (Test-Path -LiteralPath $helperPath) { . $helperPath }
-                    else { return }
-                }
+		Start-Job -Name 'd365bap.tools.provisioning.refresh' `
+			-ScriptBlock {
+			param ([string] $CachePath, [string] $SdkRoot, [string] $ApiVersion, [string] $TenantDefaultsPath, [string] $AuthProvider, [string] $ModuleRoot)
 
-                $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com'
-                $token = [Net.NetworkCredential]::new('', $secure).Password
-                $base = 'https://api.powerplatform.com'
+			try {
+				if ($AuthProvider -eq 'AzCli') {
+					$azShow = az account show --query '{tenant:tenantId, user:user.name}' -o json 2>$null
+					if (($LASTEXITCODE -ne 0) `
+							-or ([string]::IsNullOrWhiteSpace($azShow))) { return }
 
-                $invokeSdk = {
-                    param ([string] $Builder, [string] $RequestUrl)
-                    $json = $execute.Invoke($null, @($Builder, 'GetAsync', $null, $ApiVersion, $null, $token, $RequestUrl))
-                    if ($json) { $json | ConvertFrom-Json }
-                }
+					$azIdentity = "$azShow" |
+					ConvertFrom-Json -ErrorAction Stop
+					$azTenantId = "$($azIdentity.tenant)"
+					$azAccountId = "$($azIdentity.user)"
+					if (([string]::IsNullOrWhiteSpace($azTenantId)) `
+							-or ([string]::IsNullOrWhiteSpace($azAccountId))) { return }
+				}
+				else {
+					Import-Module Az.Accounts -ErrorAction Stop
+					$azContext = Get-AzContext -ErrorAction SilentlyContinue
+					if ((-not $azContext) `
+							-or ([string]::IsNullOrWhiteSpace($azContext.Tenant.Id)) `
+							-or ([string]::IsNullOrWhiteSpace($azContext.Account.Id))) { return }
 
-                $locations = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.LocationsRequestBuilder' "$base/environmentmanagement/provisioning/locations?api-version=$ApiVersion").collection
-                $snapshot = [ordered]@{
-                    refreshedUtc = [datetime]::UtcNow.ToString('o')
-                    apiVersion   = $ApiVersion
-                    locations    = @($locations | ForEach-Object {
-                            [ordered]@{
-                                name                                          = $_.name
-                                displayName                                   = $_.displayName
-                                code                                          = $_.code
-                                isDisabled                                    = $_.isDisabled
-                                canProvisionDatabase                          = $_.canProvisionDatabase
-                                hasFirstReleaseIslandAvailableForProvisioning = $_.hasFirstReleaseIslandAvailableForProvisioning
-                            }
-                        })
-                    templates    = [ordered]@{}
-                    languages    = [ordered]@{}
-                    currencies   = [ordered]@{}
-                }
+					$azTenantId = $azContext.Tenant.Id
+					$azAccountId = $azContext.Account.Id
+				}
 
-                $defaultLocations = @($locations | Where-Object { $_.isDefault } | ForEach-Object { $_.name })
-                $tenantDefaults = [ordered]@{}
+				foreach ($itemDll in @('Microsoft.Kiota.Abstractions.dll', 'Microsoft.Kiota.Serialization.Json.dll', 'Microsoft.Kiota.Http.HttpClientLibrary.dll', 'Microsoft.PowerPlatform.Management.dll', 'D365Bap.Tools.PowerPlatformSdk.dll')) {
+					$dllPath = Join-Path $SdkRoot $itemDll
+					if (-not (Test-Path -LiteralPath $dllPath)) { return }
+					[System.Reflection.Assembly]::LoadFrom($dllPath) > $null
+				}
+				$objSdkAssembly = [AppDomain]::CurrentDomain.GetAssemblies() |
+				Where-Object { $_.FullName -like 'D365Bap.Tools.PowerPlatformSdk,*' } |
+				Select-Object -First 1
+				$clientType = $objSdkAssembly.GetType('D365Bap.Tools.PowerPlatformSdk.SdkClient')
+				if (-not $clientType) { return }
+				$execute = $clientType.GetMethod('Execute')
 
-                foreach ($location in @($locations.name)) {
-                    try {
-                        $templates = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Templates.TemplatesRequestBuilder' "$base/environmentmanagement/provisioning/locations/$location/templates?api-version=$ApiVersion").collection
-                        $snapshot.templates[$location] = @($templates | ForEach-Object {
-                                [ordered]@{
-                                    name                           = $_.name
-                                    displayName                    = $_.displayName
-                                    isCustomerEngagement           = $_.isCustomerEngagement
-                                    isSupportedForResetOperation   = $_.isSupportedForResetOperation
-                                    availability                   = @($_.availability | ForEach-Object {
-                                            $slot = [ordered]@{ environmentSku = $_.environmentSku; isDisabled = $_.isDisabled }
-                                            if ($_.disabledReason) { $slot.disabledReason = [ordered]@{ code = $_.disabledReason.code } }
-                                            $slot
-                                        })
-                                }
-                            })
+				if (-not (Get-Command Get-BapAccessToken -ErrorAction SilentlyContinue)) {
+					$helperPath = Join-Path $ModuleRoot 'internal/functions/Get-BapAccessToken.ps1'
+					if (Test-Path -LiteralPath $helperPath) { . $helperPath }
+					else { return }
+				}
 
-                        $languages = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Languages.LanguagesRequestBuilder' "$base/environmentmanagement/provisioning/locations/$location/languages?api-version=$ApiVersion").collection
-                        $snapshot.languages[$location] = @($languages | ForEach-Object {
-                                [ordered]@{ localeId = $_.localeId; localizedName = $_.localizedName }
-                            })
+				$objSecure = Get-BapAccessToken -PowerPlatform
+				$token = [Net.NetworkCredential]::new('', $objSecure).Password
+				$base = 'https://api.powerplatform.com'
 
-                        $currencies = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Currencies.CurrenciesRequestBuilder' "$base/environmentmanagement/provisioning/locations/$location/currencies?api-version=$ApiVersion").collection
-                        $snapshot.currencies[$location] = @($currencies | ForEach-Object {
-                                [ordered]@{ code = $_.code; symbol = $_.symbol }
-                            })
+				$invokeSdk = {
+					param ([string] $Builder, [string] $RequestUrl)
+					$json = $execute.Invoke($null, @($Builder, 'GetAsync', $null, $ApiVersion, $null, $token, $RequestUrl))
+					if ($json) {
+						$json |
+						ConvertFrom-Json
+					}
+				}
 
-                        if ($location -in $defaultLocations) {
-                            $language = @($languages | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
-                            $currency = @($currencies | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
-                            if ($language -and $currency) {
-                                $tenantDefaults[$location] = [ordered]@{
-                                    locationDisplayName = ($locations | Where-Object { $_.name -eq $location } | Select-Object -First 1).displayName
-                                    language            = [ordered]@{ localeId = $language[0].localeId; localizedName = $language[0].localizedName }
-                                    currency            = [ordered]@{ code = $currency[0].code; symbol = $currency[0].symbol }
-                                }
-                            }
-                        }
-                    }
-                    catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh: skipping location '$location'." }
-                }
+				$locationsUrl = '{0}/environmentmanagement/provisioning/locations?api-version={1}' `
+					-f $base,
+				$ApiVersion
 
-                $null = New-Item -ItemType Directory -Path (Split-Path -Parent $CachePath) -Force -ErrorAction Stop
-                $snapshot | ConvertTo-Json -Depth 8 -ErrorAction Stop | Set-Content -LiteralPath $CachePath -Encoding utf8 -ErrorAction Stop
+				$locations = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.LocationsRequestBuilder' $locationsUrl).collection
+				$hashSnapshot = [ordered]@{
+					refreshedUtc = [datetime]::UtcNow.ToString('o')
+					apiVersion   = $ApiVersion
+					locations    = @(
+						$locations |
+						ForEach-Object {
+							[ordered]@{
+								name                                          = $_.name
+								displayName                                   = $_.displayName
+								code                                          = $_.code
+								isDisabled                                    = $_.isDisabled
+								canProvisionDatabase                          = $_.canProvisionDatabase
+								hasFirstReleaseIslandAvailableForProvisioning = $_.hasFirstReleaseIslandAvailableForProvisioning
+							}
+						}
+					)
+					templates    = [ordered]@{}
+					languages    = [ordered]@{}
+					currencies   = [ordered]@{}
+				}
 
-                $store = @{}
-                if (Test-Path -LiteralPath $TenantDefaultsPath) {
-                    try {
-                        $store = Get-Content -LiteralPath $TenantDefaultsPath -Raw -Encoding utf8 |
-                            ConvertFrom-Json -AsHashtable -ErrorAction Stop
-                    }
-                    catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh: starting a new tenant defaults store." }
-                }
-                $store["$azTenantId/$azAccountId"] = [ordered]@{
-                    tenantId         = $azTenantId
-                    account          = $azAccountId
-                    savedUtc         = [datetime]::UtcNow.ToString('o')
-                    apiVersion       = $ApiVersion
-                    defaultLocations = @($defaultLocations)
-                    defaults         = $tenantDefaults
-                }
-                $store | ConvertTo-Json -Depth 8 -ErrorAction Stop | Set-Content -LiteralPath $TenantDefaultsPath -Encoding utf8 -ErrorAction Stop
-            }
-            catch { Write-PSFMessage -Level Verbose -Message 'Provisioning refresh: background probe failed, keeping the previous cache.' }
-        } -ArgumentList $userPath, $sdkRoot, $script:BapSdkApiVersion, $tenantDefaultsPath, $authProvider, $script:ModuleRoot
-    }
-    catch { Write-PSFMessage -Level Verbose -Message "Provisioning refresh was skipped: $($_.Exception.Message)" }
+				$colDefaultLocations = @(
+					$locations |
+					Where-Object { $_.isDefault } |
+					ForEach-Object { $_.name }
+				)
+				$hashTenantDefaults = [ordered]@{}
+
+				foreach ($itemLocation in @($locations.name)) {
+					try {
+						$templatesUrl = '{0}/environmentmanagement/provisioning/locations/{1}/templates?api-version={2}' `
+							-f $base,
+						$itemLocation,
+						$ApiVersion
+
+						$templates = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Templates.TemplatesRequestBuilder' $templatesUrl).collection
+						$hashSnapshot.templates[$itemLocation] = @(
+							$templates |
+							ForEach-Object {
+								[ordered]@{
+									name                         = $_.name
+									displayName                  = $_.displayName
+									isCustomerEngagement         = $_.isCustomerEngagement
+									isSupportedForResetOperation = $_.isSupportedForResetOperation
+									availability                 = @(
+										$_.availability |
+										ForEach-Object {
+											$tmpSlot = [ordered]@{ environmentSku = $_.environmentSku; isDisabled = $_.isDisabled }
+											if ($_.disabledReason) { $tmpSlot.disabledReason = [ordered]@{ code = $_.disabledReason.code } }
+											$tmpSlot
+										}
+									)
+								}
+							}
+						)
+
+						$languagesUrl = '{0}/environmentmanagement/provisioning/locations/{1}/languages?api-version={2}' `
+							-f $base,
+						$itemLocation,
+						$ApiVersion
+
+						$languages = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Languages.LanguagesRequestBuilder' $languagesUrl).collection
+						$hashSnapshot.languages[$itemLocation] = @(
+							$languages |
+							ForEach-Object {
+								[ordered]@{ localeId = $_.localeId; localizedName = $_.localizedName }
+							}
+						)
+
+						$currenciesUrl = '{0}/environmentmanagement/provisioning/locations/{1}/currencies?api-version={2}' `
+							-f $base,
+						$itemLocation,
+						$ApiVersion
+
+						$currencies = (& $invokeSdk 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Currencies.CurrenciesRequestBuilder' $currenciesUrl).collection
+						$hashSnapshot.currencies[$itemLocation] = @(
+							$currencies |
+							ForEach-Object {
+								[ordered]@{ code = $_.code; symbol = $_.symbol }
+							}
+						)
+
+						if ($itemLocation -in $colDefaultLocations) {
+							$tmpLanguage = @(
+								$languages |
+								Where-Object { $_.isTenantDefault } |
+								Select-Object -First 1
+							)
+							$tmpCurrency = @(
+								$currencies |
+								Where-Object { $_.isTenantDefault } |
+								Select-Object -First 1
+							)
+							if (($tmpLanguage) `
+									-and ($tmpCurrency)) {
+								$tmpLocationEntry = $locations |
+								Where-Object { $_.name -eq $itemLocation } |
+								Select-Object -First 1
+								$hashTenantDefaults[$itemLocation] = [ordered]@{
+									locationDisplayName = $tmpLocationEntry.displayName
+									language            = [ordered]@{ localeId = $tmpLanguage[0].localeId; localizedName = $tmpLanguage[0].localizedName }
+									currency            = [ordered]@{ code = $tmpCurrency[0].code; symbol = $tmpCurrency[0].symbol }
+								}
+							}
+						}
+					}
+					catch {
+						Write-PSFMessage -Level Verbose `
+							-Message "Provisioning refresh: skipping location '$itemLocation'."
+					}
+				}
+
+				New-Item -ItemType Directory `
+					-Path (Split-Path -Parent $CachePath) `
+					-Force `
+					-ErrorAction Stop > $null
+
+				$hashSnapshot |
+				ConvertTo-Json -Depth 8 `
+					-ErrorAction Stop |
+				Set-Content -LiteralPath $CachePath `
+					-Encoding utf8 `
+					-ErrorAction Stop
+
+				$hashStore = @{}
+				if (Test-Path -LiteralPath $TenantDefaultsPath) {
+					try {
+						$hashStore = Get-Content -LiteralPath $TenantDefaultsPath `
+							-Raw `
+							-Encoding utf8 |
+						ConvertFrom-Json -AsHashtable `
+							-ErrorAction Stop
+					}
+					catch {
+						Write-PSFMessage -Level Verbose `
+							-Message 'Provisioning refresh: starting a new tenant defaults store.'
+					}
+				}
+				$hashStore["$azTenantId/$azAccountId"] = [ordered]@{
+					tenantId         = $azTenantId
+					account          = $azAccountId
+					savedUtc         = [datetime]::UtcNow.ToString('o')
+					apiVersion       = $ApiVersion
+					defaultLocations = @($colDefaultLocations)
+					defaults         = $hashTenantDefaults
+				}
+				$hashStore |
+				ConvertTo-Json -Depth 8 `
+					-ErrorAction Stop |
+				Set-Content -LiteralPath $TenantDefaultsPath `
+					-Encoding utf8 `
+					-ErrorAction Stop
+			}
+			catch {
+				Write-PSFMessage -Level Verbose `
+					-Message 'Provisioning refresh: background probe failed, keeping the previous cache.'
+			}
+		} `
+			-ArgumentList $userPath, $sdkRoot, $script:BapSdkApiVersion, $tenantDefaultsPath, $authProvider, $script:ModuleRoot > $null
+	}
+	catch {
+		Write-PSFMessage -Level Verbose `
+			-Message "Provisioning refresh was skipped: $($_.Exception.Message)"
+	}
 }
 
 function Resolve-ProvisioningLocation {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string] $Location
-    )
+	<#
+    .SYNOPSIS
+        Resolves a provisioning region by name, wildcard or display name.
 
-    $locations = @($script:ProvisioningCache.locations)
-    $match = @($locations | Where-Object { $_.name -eq $Location })
-    if (-not $match) { $match = @($locations | Where-Object { $_.name -like $Location }) }
-    if ($match.Count -eq 1) { return $match[0].name }
-    if (-not $match) { $match = @($locations | Where-Object { $_.displayName -like $Location }) }
-    if ($match.Count -eq 1) { return $match[0].name }
+    .DESCRIPTION
+        Matches the cached regions and throws with the valid values when no single match exists.
+    #>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Location
+	)
 
-    $valid = @($locations | ForEach-Object { $_.name } | Sort-Object -Unique)
-    throw "Unknown location '$Location'. Valid values: $($valid -join ', ')."
+	$colLocations = @($script:ProvisioningCache.locations)
+	$colMatch = @(
+		$colLocations |
+		Where-Object { $_.name -eq $Location }
+	)
+	if (-not $colMatch) {
+		$colMatch = @(
+			$colLocations |
+			Where-Object { $_.name -like $Location }
+		)
+	}
+	if ($colMatch.Count -eq 1) {
+		$colMatch[0].name
+		return
+	}
+	if (-not $colMatch) {
+		$colMatch = @(
+			$colLocations |
+			Where-Object { $_.displayName -like $Location }
+		)
+	}
+	if ($colMatch.Count -eq 1) {
+		$colMatch[0].name
+		return
+	}
+
+	$colValid = @(
+		$colLocations |
+		ForEach-Object { $_.name } |
+		Sort-Object -Unique
+	)
+	throw "Unknown location '$Location'. Valid values: $($colValid -join ', ')."
 }
 
 function Resolve-ProvisioningTemplate {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string] $Location,
+	<#
+    .SYNOPSIS
+        Resolves a provisioning template name for a region and SKU.
 
-        [Parameter(Mandatory = $true)]
-        [string] $Template,
+    .DESCRIPTION
+        Throws when no single match or SKU slot exists. A disabled slot only warns,
+        because availability flags have been observed to disagree across calls.
 
-        [string] $EnvironmentSku = 'Sandbox',
+    .PARAMETER Location
+        Region name as stored in the discovery cache.
 
-        [string[]] $AllowedPattern
-    )
+    .PARAMETER Template
+        Template name or wildcard pattern.
 
-    $templates = @($script:ProvisioningCache.templates[$Location])
-    if ($AllowedPattern) {
-        $templates = @($templates | Where-Object {
-                $templateName = $_.name
-                @($AllowedPattern | Where-Object { $templateName -like $_ }).Count -gt 0
-            })
-    }
-    $match = @($templates | Where-Object { $_.name -eq $Template })
-    if (-not $match) { $match = @($templates | Where-Object { $_.name -like $Template }) }
+    .PARAMETER EnvironmentSku
+        Environment SKU slot the template must offer.
 
-    if ($match.Count -ne 1) {
-        $valid = @($templates | ForEach-Object { $_.name } | Sort-Object -Unique)
-        throw "Unknown template '$Template' for location '$Location'. Supported values: $($valid -join ', ')."
-    }
+        Default: Sandbox
 
-    $slot = @($match[0].availability | Where-Object { $_.environmentSku -eq $EnvironmentSku })
-    if (-not $slot) {
-        throw "Template '$Template' has no $EnvironmentSku slot in location '$Location'."
-    }
-    if ($slot[0].isDisabled) {
-        # Advisory only: availability flags have been observed to disagree
-        # across calls, so a disabled flag warns instead of blocking.
-        $reason = $slot[0].disabledReason.code
-        Write-PSFMessage -Level Warning -Message "Template '$Template' is currently reported as disabled for $EnvironmentSku in location '$Location' (reason: $reason). Provisioning will be attempted anyway."
-    }
-    return $match[0].name
+    .PARAMETER AllowedPattern
+        Wildcard patterns that limit which templates may match.
+    #>
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Location,
+
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Template,
+
+		[string] $EnvironmentSku = 'Sandbox',
+
+		[string[]] $AllowedPattern
+	)
+
+	$colTemplates = @($script:ProvisioningCache.templates[$Location])
+	if ($AllowedPattern) {
+		$colTemplates = @(
+			$colTemplates |
+			Where-Object {
+				$templateName = $_.name
+				$colAllowed = @(
+					$AllowedPattern |
+					Where-Object { $templateName -like $_ }
+				)
+				$colAllowed.Count -gt 0
+			}
+		)
+	}
+	$colMatch = @(
+		$colTemplates |
+		Where-Object { $_.name -eq $Template }
+	)
+	if (-not $colMatch) {
+		$colMatch = @(
+			$colTemplates |
+			Where-Object { $_.name -like $Template }
+		)
+	}
+
+	if ($colMatch.Count -ne 1) {
+		$colValid = @(
+			$colTemplates |
+			ForEach-Object { $_.name } |
+			Sort-Object -Unique
+		)
+		throw "Unknown template '$Template' for location '$Location'. Supported values: $($colValid -join ', ')."
+	}
+
+	$colSlot = @(
+		$colMatch[0].availability |
+		Where-Object { $_.environmentSku -eq $EnvironmentSku }
+	)
+	if (-not $colSlot) {
+		throw "Template '$Template' has no $EnvironmentSku slot in location '$Location'."
+	}
+	if ($colSlot[0].isDisabled) {
+		$reason = $colSlot[0].disabledReason.code
+		Write-PSFMessage -Level Warning `
+			-Message "Template '$Template' is currently reported as disabled for $EnvironmentSku in location '$Location' (reason: $reason). Provisioning will be attempted anyway."
+	}
+	$colMatch[0].name
 }
 
 function Get-ProvisioningLocationDefault {
-    <#
+	<#
+    .SYNOPSIS
         Shared worker for tenant default language and currency.
 
-        Resolves live through the bundled Power Platform SDK. Tenant
-        defaults are tenant specific, so they are never read from the
-        provisioning cache.
+    .DESCRIPTION
+        Resolves live through the bundled Power Platform SDK. Tenant defaults are
+        tenant specific, so they are never read from the provisioning cache.
     #>
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string] $Location,
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Location,
 
-        [Parameter(Mandatory = $true)]
-        [string] $Token
-    )
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[string] $Token
+	)
 
-    $base = 'https://api.powerplatform.com'
-    $api = $script:BapSdkApiVersion
+	$base = 'https://api.powerplatform.com'
+	$api = $script:BapSdkApiVersion
 
-    $languageResult = Invoke-BapSdkRequest `
-        -Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Languages.LanguagesRequestBuilder' } `
-        -Method 'GetAsync' `
-        -Token $Token `
-        -RequestUrl "$base/environmentmanagement/provisioning/locations/$Location/languages?api-version=$api"
+	$languagesUrl = '{0}/environmentmanagement/provisioning/locations/{1}/languages?api-version={2}' `
+		-f $base,
+	$Location,
+	$api
 
-    $language = @($languageResult.collection | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
+	$languageResult = Invoke-BapSdkRequest `
+		-Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Languages.LanguagesRequestBuilder' } `
+		-Method 'GetAsync' `
+		-Token $Token `
+		-RequestUrl $languagesUrl
 
-    $currencyResult = Invoke-BapSdkRequest `
-        -Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Currencies.CurrenciesRequestBuilder' } `
-        -Method 'GetAsync' `
-        -Token $Token `
-        -RequestUrl "$base/environmentmanagement/provisioning/locations/$Location/currencies?api-version=$api"
+	$colLanguage = @(
+		$languageResult.collection |
+		Where-Object { $_.isTenantDefault } |
+		Select-Object -First 1
+	)
 
-    $currency = @($currencyResult.collection | Where-Object { $_.isTenantDefault } | Select-Object -First 1)
+	$currenciesUrl = '{0}/environmentmanagement/provisioning/locations/{1}/currencies?api-version={2}' `
+		-f $base,
+	$Location,
+	$api
 
-    if (-not $language -or -not $currency) {
-        Write-PSFMessage -Level Verbose -Message "No tenant default language or currency reported for location '$Location'."
-        return $null
-    }
+	$currencyResult = Invoke-BapSdkRequest `
+		-Resource @{ Builder = 'Microsoft.PowerPlatform.Management.Environmentmanagement.Provisioning.Locations.Item.Currencies.CurrenciesRequestBuilder' } `
+		-Method 'GetAsync' `
+		-Token $Token `
+		-RequestUrl $currenciesUrl
 
-    [pscustomobject]@{
-        Location       = $Location
-        BaseLanguage   = [int]$language[0].localeId
-        LanguageName   = $language[0].localizedName
-        CurrencyCode   = $currency[0].code
-        CurrencySymbol = $currency[0].symbol
-    }
+	$colCurrency = @(
+		$currencyResult.collection |
+		Where-Object { $_.isTenantDefault } |
+		Select-Object -First 1
+	)
+
+	if ((-not $colLanguage) `
+			-or (-not $colCurrency)) {
+		Write-PSFMessage -Level Verbose `
+			-Message "No tenant default language or currency reported for location '$Location'."
+
+		$null
+		return
+	}
+
+	[pscustomobject][ordered]@{
+		Location       = $Location
+		BaseLanguage   = [int]$colLanguage[0].localeId
+		LanguageName   = $colLanguage[0].localizedName
+		CurrencyCode   = $colCurrency[0].code
+		CurrencySymbol = $colCurrency[0].symbol
+	}
 }
 
 function Get-ProvisioningTenantDefault {
-    <#
+	<#
+    .SYNOPSIS
         Internal tenant default for New-UnifiedEnvironmentV2.
 
-        Always resolves live through the bundled Power Platform SDK. The
-        tenant default is tenant specific and is never served from the
-        provisioning cache.
+    .DESCRIPTION
+        Always resolves live through the bundled Power Platform SDK. The tenant default
+        is tenant specific and is never served from the provisioning cache.
+
+    .PARAMETER Location
+        Region name, wildcard or display name.
+
+        Default: europe
+
+    .PARAMETER Token
+        Power Platform access token. A new one is minted when empty.
     #>
-    [CmdletBinding()]
-    param (
-        [string] $Location = 'europe',
+	[CmdletBinding()]
+	param (
+		[string] $Location = 'europe',
 
-        [string] $Token
-    )
+		[string] $Token
+	)
 
-    if (-not $Token) {
-        $secure = Get-BapAccessToken -ResourceUrl 'https://api.powerplatform.com'
-        $Token = [Net.NetworkCredential]::new('', $secure).Password
-    }
+	if (-not $Token) {
+		$objSecure = Get-BapAccessToken -PowerPlatform
+		$Token = [Net.NetworkCredential]::new('', $objSecure).Password
+	}
 
-    $locationName = Resolve-ProvisioningLocation -Location $Location
-    $tenantDefault = Get-ProvisioningLocationDefault -Location $locationName -Token $Token
+	$locationName = Resolve-ProvisioningLocation -Location $Location
+	$tenantDefault = Get-ProvisioningLocationDefault -Location $locationName `
+		-Token $Token
 
-    if (-not $tenantDefault) {
-        throw "No tenant default language or currency reported for location '$locationName'."
-    }
+	if (-not $tenantDefault) {
+		throw "No tenant default language or currency reported for location '$locationName'."
+	}
 
-    [pscustomobject]@{
-        BaseLanguage   = $tenantDefault.BaseLanguage
-        LanguageName   = $tenantDefault.LanguageName
-        CurrencyCode   = $tenantDefault.CurrencyCode
-        CurrencySymbol = $tenantDefault.CurrencySymbol
-    }
+	[pscustomobject][ordered]@{
+		BaseLanguage   = $tenantDefault.BaseLanguage
+		LanguageName   = $tenantDefault.LanguageName
+		CurrencyCode   = $tenantDefault.CurrencyCode
+		CurrencySymbol = $tenantDefault.CurrencySymbol
+	}
 }
 
 Import-ProvisioningCache
