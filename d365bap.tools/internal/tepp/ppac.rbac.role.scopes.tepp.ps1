@@ -7,7 +7,7 @@
 		$fakeBoundParameter
 	)
 
-	$null = $commandName, $parameterName, $wordToComplete, $commandAst
+	$filterWord = "$wordToComplete".Trim("'", '"')
 
 	# Get the value of the previous parameter (-Role)
 	$roleName = $fakeBoundParameter['Role']
@@ -24,7 +24,9 @@
 		Select-Object -First 1
 
 	foreach ($item in $role.assignableScopes) {
-		New-PSFTeppCompletionResult -CompletionText $item -ToolTip $item
+		if ($item -like "$filterWord*") {
+			New-PSFTeppCompletionResult -CompletionText $item -ToolTip $item
+		}
 	}
 }
 
