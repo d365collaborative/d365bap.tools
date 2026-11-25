@@ -1,13 +1,25 @@
 ﻿$scbRestTraverse = {
-    $values = "ServiceGroup", "Service", "Operation", "Detail"
+	param (
+		$commandName,
+		$parameterName,
+		$wordToComplete,
+		$commandAst,
+		$fakeBoundParameter
+	)
 
-    # Generate completion results
-    foreach ($item in $values) {
-        New-PSFTeppCompletionResult -CompletionText $item -ToolTip $item
-    }
+	$values = "ServiceGroup", "Service", "Operation", "Detail"
+
+	$filterWord = "$wordToComplete".Trim("'", '"')
+
+	# Generate completion results
+	foreach ($item in $values) {
+		if ($item -like "$filterWord*") {
+			New-PSFTeppCompletionResult -CompletionText $item -ToolTip $item
+		}
+	}
 }
 
 Register-PSFTeppScriptblock `
-    -Name "d365bap.tools.tepp.fscm.rest.service.traverse" `
-    -ScriptBlock $scbRestTraverse `
-    -Mode Full
+	-Name "d365bap.tools.tepp.fscm.rest.service.traverse" `
+	-ScriptBlock $scbRestTraverse `
+	-Mode Full
