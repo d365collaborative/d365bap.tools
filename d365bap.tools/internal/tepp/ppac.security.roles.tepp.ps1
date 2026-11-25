@@ -1,26 +1,30 @@
 ﻿$scbPpacSecurityRoles = {
-    param (
-        $commandName,
-        $parameterName,
-        $wordToComplete,
-        $commandAst,
-        $fakeBoundParameter
-    )
+	param (
+		$commandName,
+		$parameterName,
+		$wordToComplete,
+		$commandAst,
+		$fakeBoundParameter
+	)
 
-    # Get the value of the previous parameter (-EnvironmentId)
-    $environmentId = $fakeBoundParameter['EnvironmentId']
+	$filterWord = "$wordToComplete".Trim("'", '"')
 
-    # If no environmentId is specified yet, return nothing
-    if (-not $environmentId) {
-        return
-    }
+	# Get the value of the previous parameter (-EnvironmentId)
+	$environmentId = $fakeBoundParameter['EnvironmentId']
 
-    $colRoles = Get-PpacSecurityRole -EnvironmentId $environmentId
+	# If no environmentId is specified yet, return nothing
+	if (-not $environmentId) {
+		return
+	}
 
-    # Generate completion results
-    foreach ($item in $colRoles) {
-        New-PSFTeppCompletionResult -CompletionText $item.Name -ToolTip $item.PpacRoleId
-    }
+	$colRoles = Get-PpacSecurityRole -EnvironmentId $environmentId -ErrorAction SilentlyContinue
+
+	# Generate completion results - filter by typed prefix, otherwise TAB restarts from top
+	foreach ($item in $colRoles) {
+		if ($item.Name -like "$filterWord*" -or $item.PpacRoleId -like "$filterWord*") {
+			New-PSFTeppCompletionResult -CompletionText $item.Name -ToolTip $item.PpacRoleId
+		}
+	}
 }
 
 Register-PSFTeppScriptblock -Name "d365bap.tools.tepp.ppac.security.roles" -ScriptBlock $scbPpacSecurityRoles -Mode Full
