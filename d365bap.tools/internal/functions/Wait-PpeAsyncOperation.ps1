@@ -1,4 +1,39 @@
-﻿function Wait-PpeAsyncOperation {
+﻿<#
+    .SYNOPSIS
+        Waits for a Dataverse operation to succeed.
+
+    .DESCRIPTION
+        Checks the operation until it succeeds, fails, is canceled, or runs out of time.
+
+    .PARAMETER OrganizationUrl
+        The Dataverse organization URL.
+
+    .PARAMETER OperationId
+        The Dataverse operation ID.
+
+    .PARAMETER Activity
+        The action to display in status messages.
+
+    .PARAMETER Deadline
+        The UTC time at which the wait expires.
+
+    .PARAMETER PollIntervalSeconds
+        Seconds between status checks.
+
+    .PARAMETER Silent
+        Suppresses status messages.
+
+    .EXAMPLE
+        PS C:\> Wait-PpeAsyncOperation -OrganizationUrl 'https://contoso.crm.dynamics.com' -OperationId 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' -Activity 'Import Contoso Demo' -Deadline ([datetime]::UtcNow.AddMinutes(10)) -PollIntervalSeconds 15 -Silent
+
+        It uses -OrganizationUrl to select the Contoso organization.
+        It uses -OperationId to select the operation.
+        It uses -Activity to describe the action.
+        It uses -Deadline to wait up to ten minutes.
+        It uses -PollIntervalSeconds to check every 15 seconds.
+        It uses -Silent to suppress status messages.
+#>
+function Wait-PpeAsyncOperation {
 	[CmdletBinding()]
 	[OutputType([void])]
 	param (
@@ -19,21 +54,13 @@
 		throw "$Activity did not return a Dataverse job ID."
 	}
 
-	$uri = "$OrganizationUrl/api/data/v9.2/asyncoperations($OperationId)?" + '$select=statecode,statuscode,message'
-	$hashHeaders = @{ Prefer = 'odata.include-annotations="OData.Community.Display.V1.FormattedValue"' }
-
 	do {
-		$tmpToken = Get-BapAccessToken -ResourceUrl $OrganizationUrl
-		$tmpJob = Invoke-RestMethod -Uri $uri `
-			-Authentication Bearer `
-			-Token $tmpToken `
-			-Headers $hashHeaders `
-			-ErrorAction Stop
+		$tmpJob = Get-PpeOperationRecord -OrganizationUrl $OrganizationUrl `
+			-OperationId $OperationId
 
-		$tmpStatus = $tmpJob.'statuscode@OData.Community.Display.V1.FormattedValue' ?? "Status $($tmpJob.statuscode)"
 		if (-not $Silent) {
 			Write-PSFMessage -Level Important `
-				-Message "$Activity - $tmpStatus (job $OperationId)."
+				-Message "$Activity - $($tmpJob.Status) (job $OperationId)."
 		}
 
 		if ($tmpJob.statecode -eq 3) {

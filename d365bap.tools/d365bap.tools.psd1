@@ -159,6 +159,7 @@
 
 		, 'Get-PpeOdata'
 		, 'Get-PpeOdataEntity'
+		, 'Get-PpeOperation'
 		, 'Get-PpeCustomApi'
 
 		, 'Get-PpePublisher'
