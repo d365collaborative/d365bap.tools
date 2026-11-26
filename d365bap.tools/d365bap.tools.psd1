@@ -186,6 +186,8 @@
 		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
 
+		, 'Import-PpeSolution'
+
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
 		, 'Invoke-BapInstallAzCli'
