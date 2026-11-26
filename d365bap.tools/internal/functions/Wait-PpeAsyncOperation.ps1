@@ -20,6 +20,9 @@
     .PARAMETER PollIntervalSeconds
         Seconds between status checks.
 
+    .PARAMETER ShowProgress
+        Displays status on each poll.
+
     .PARAMETER Silent
         Suppresses status messages.
 
@@ -31,6 +34,7 @@
         It uses -Activity to describe the action.
         It uses -Deadline to wait up to ten minutes.
         It uses -PollIntervalSeconds to check every 15 seconds.
+        It reports only the start and result by default when -ShowProgress is omitted.
         It uses -Silent to suppress status messages.
 #>
 function Wait-PpeAsyncOperation {
@@ -47,6 +51,8 @@ function Wait-PpeAsyncOperation {
 
 		[int] $PollIntervalSeconds,
 
+		[switch] $ShowProgress,
+
 		[switch] $Silent
 	)
 
@@ -54,20 +60,30 @@ function Wait-PpeAsyncOperation {
 		throw "$Activity did not return a Dataverse job ID."
 	}
 
+	if (-not $Silent) {
+		Write-PSFMessage -Level Important `
+			-Message "$Activity (job $OperationId)."
+	}
+
 	do {
 		$tmpJob = Get-PpeOperationRecord -OrganizationUrl $OrganizationUrl `
 			-OperationId $OperationId
-
-		if (-not $Silent) {
-			Write-PSFMessage -Level Important `
-				-Message "$Activity - $($tmpJob.Status) (job $OperationId)."
-		}
 
 		if ($tmpJob.statecode -eq 3) {
 			if ($tmpJob.statuscode -ne 30) {
 				throw "$Activity failed or was cancelled (job '$OperationId', status $($tmpJob.statuscode)). $($tmpJob.message)"
 			}
+			if (-not $Silent) {
+				Write-PSFMessage -Level Important `
+					-Message "$Activity - $($tmpJob.Status) (job $OperationId)."
+			}
 			return
+		}
+
+		if (($ShowProgress) `
+				-and (-not $Silent)) {
+			Write-PSFMessage -Level Important `
+				-Message "$Activity - $($tmpJob.Status) (job $OperationId)."
 		}
 
 		$tmpRemainingSeconds = ($Deadline - [datetime]::UtcNow).TotalSeconds

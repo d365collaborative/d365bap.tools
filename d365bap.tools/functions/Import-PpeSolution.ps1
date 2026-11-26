@@ -24,8 +24,11 @@
     .PARAMETER PublishAndWait
         Publishes all customizations and waits after a successful import.
 
+    .PARAMETER ShowProgress
+        Displays status on each poll in addition to the start and end of each job.
+
     .PARAMETER Silent
-        Suppresses status messages. The result and errors are still returned.
+        Suppresses status messages, including progress. The result and errors remain.
 
     .EXAMPLE
         PS C:\> Import-PpeSolution -EnvironmentId 'Contoso Demo' -Path '.\ContosoDemo_1_0_0_0_managed.zip' -PublishAndWait
@@ -35,6 +38,7 @@
         It checks every 15 seconds by default when -PollIntervalSeconds is omitted.
         It waits up to 60 minutes by default when -TimeoutMinutes is omitted.
         It publishes all customizations and waits using -PublishAndWait.
+        It reports each job's start and result by default when -ShowProgress is omitted.
         It displays status messages by default when -Silent is omitted.
 #>
 function Import-PpeSolution {
@@ -56,6 +60,8 @@ function Import-PpeSolution {
 		[int] $TimeoutMinutes = 60,
 
 		[switch] $PublishAndWait,
+
+		[switch] $ShowProgress,
 
 		[switch] $Silent
 	)
@@ -116,7 +122,7 @@ function Import-PpeSolution {
 	$operationId = $null
 	$importJobId = $null
 	$approved = $false
-	$status = 'Skipped'
+	$waitedForImport = $false
 	$publishDescription = $PublishAndWait ? ' and publish all customizations' : ''
 	do {
 		$hashRestParams.Token = Get-BapAccessToken -ResourceUrl $orgUrl
@@ -146,7 +152,7 @@ function Import-PpeSolution {
 				$approved = $true
 			}
 
-			$status = 'Installing'
+			$waitedForImport = $true
 			$active = (Invoke-RestMethod -Uri $activeUri @hashRestParams).value
 			if (-not $active) {
 				$importJobId = [guid]::NewGuid()
@@ -167,20 +173,23 @@ function Import-PpeSolution {
 
 				Wait-PpeAsyncOperation -OperationId $operationId `
 					-OrganizationUrl $orgUrl `
-					-Activity "Import $solutionName $version" `
+					-Activity "Installing $solutionName $version" `
 					-Deadline $deadline `
 					-PollIntervalSeconds $PollIntervalSeconds `
+					-ShowProgress:$ShowProgress `
 					-Silent:$Silent
 
 				continue
 			}
 
-			if (-not $Silent) {
+			if (($ShowProgress) `
+					-and (-not $Silent)) {
 				Write-PSFMessage -Level Important `
 					-Message "Waiting for Dataverse import job $($active.asyncoperationid) before importing $solutionName."
 			}
 		}
-		elseif (-not $Silent) {
+		elseif (($ShowProgress) `
+				-and (-not $Silent)) {
 			Write-PSFMessage -Level Important `
 				-Message "Waiting for Dataverse to show $solutionName $version."
 		}
@@ -190,7 +199,7 @@ function Import-PpeSolution {
 	} while ($true)
 
 	if (($PublishAndWait) `
-			-and ($status -eq 'Installing')) {
+			-and ($waitedForImport)) {
 		if ([datetime]::UtcNow -ge $deadline) {
 			throw "Import completed, but the timeout expired before publishing. Run Invoke-PpePublishAllCustomizations to publish."
 		}
@@ -204,9 +213,10 @@ function Import-PpeSolution {
 
 		Wait-PpeAsyncOperation -OperationId $publish.AsyncOperationId `
 			-OrganizationUrl $orgUrl `
-			-Activity "Publish all customizations in $($envObj.PpacEnvName)" `
+			-Activity "Publishing all customizations in $($envObj.PpacEnvName)" `
 			-Deadline $deadline `
 			-PollIntervalSeconds $PollIntervalSeconds `
+			-ShowProgress:$ShowProgress `
 			-Silent:$Silent
 	}
 
@@ -214,7 +224,7 @@ function Import-PpeSolution {
 		EnvironmentId    = $envObj.PpacEnvId
 		SolutionName     = $solutionName
 		InstalledVersion = $tmpInstalled.version
-		Status           = $status
+		Status           = $waitedForImport ? 'Succeeded' : 'Skipped'
 		OperationId      = $operationId
 	}
 }
