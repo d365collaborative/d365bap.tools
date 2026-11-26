@@ -160,7 +160,6 @@ function Import-PpeSolution {
 						ImportJobId                      = $importJobId
 						OverwriteUnmanagedCustomizations = $false
 						PublishWorkflows                 = $false
-						ComponentParameters              = @()
 					} | ConvertTo-Json -Compress
 
 					$response = Invoke-RestMethod @hashRestParams -Method Post `
