@@ -159,6 +159,7 @@
 
 		, 'Get-PpeOdata'
 		, 'Get-PpeOdataEntity'
+		, 'Get-PpeOperation'
 		, 'Get-PpeCustomApi'
 
 		, 'Get-PpePublisher'
@@ -185,6 +186,8 @@
 		, 'Get-UnifiedEnvironmentModule'
 		, 'Get-UnifiedEnvironmentOperationError'
 		, 'Get-UnifiedEnvironmentPackage'
+
+		, 'Import-PpeSolution'
 
 		, 'Invoke-BapEnvironmentInstallD365App'
 		, 'Invoke-BapInstallAzCopy'
