@@ -18,16 +18,24 @@
         Default: 15
 
     .PARAMETER TimeoutMinutes
-        Maximum minutes to wait for the Dataverse import and version checks.
+        Maximum minutes to wait for import, version checks, and optional publishing.
         Default: 60
 
+    .PARAMETER PublishAndWait
+        Publishes all customizations and waits after a successful import.
+
+    .PARAMETER Silent
+        Suppresses status messages. The result and errors are still returned.
+
     .EXAMPLE
-        PS C:\> Import-PpeSolution -EnvironmentId 'Contoso Demo' -Path '.\ContosoDemo_1_0_0_0_managed.zip'
+        PS C:\> Import-PpeSolution -EnvironmentId 'Contoso Demo' -Path '.\ContosoDemo_1_0_0_0_managed.zip' -PublishAndWait
 
         It targets Contoso Demo using -EnvironmentId.
         It reads the managed ZIP specified by -Path.
         It checks every 15 seconds by default when -PollIntervalSeconds is omitted.
         It waits up to 60 minutes by default when -TimeoutMinutes is omitted.
+        It publishes all customizations and waits using -PublishAndWait.
+        It displays status messages by default when -Silent is omitted.
 #>
 function Import-PpeSolution {
 	[CmdletBinding(SupportsShouldProcess)]
@@ -45,7 +53,11 @@ function Import-PpeSolution {
 		[int] $PollIntervalSeconds = 15,
 
 		[ValidateRange(1, 1440)]
-		[int] $TimeoutMinutes = 60
+		[int] $TimeoutMinutes = 60,
+
+		[switch] $PublishAndWait,
+
+		[switch] $Silent
 	)
 
 	$package = Get-Item -LiteralPath $Path `
@@ -105,82 +117,104 @@ function Import-PpeSolution {
 	$importJobId = $null
 	$approved = $false
 	$status = 'Skipped'
-	$activity = "Importing $solutionName into $($envObj.PpacEnvName)"
-	try {
-		do {
-			$hashRestParams.Token = Get-BapAccessToken -ResourceUrl $orgUrl
-			if ($operationId) {
-				$operationUri = "$apiUrl/asyncoperations($operationId)?" + '$select=statecode,statuscode,message'
-				$operation = Invoke-RestMethod -Uri $operationUri @hashRestParams
-				if (($operation.statecode -eq 3) `
-						-and ($operation.statuscode -ne 30)) {
-					throw "Import '$operationId' failed or was cancelled (status $($operation.statuscode), import job '$importJobId'). $($operation.message)"
-				}
+	$publishDescription = $PublishAndWait ? ' and publish all customizations' : ''
+	do {
+		$hashRestParams.Token = Get-BapAccessToken -ResourceUrl $orgUrl
+
+		$tmpInstalled = (Invoke-RestMethod -Uri $solutionUri @hashRestParams).value |
+		Select-Object -First 1
+		if ((-not ($null -eq $tmpInstalled)) `
+				-and (-not $tmpInstalled.ismanaged)) {
+			throw "An unmanaged solution named '$solutionName' already exists in '$($envObj.PpacEnvName)'."
+		}
+
+		if ((-not ($null -eq $tmpInstalled)) `
+				-and ([version] $tmpInstalled.version -ge $version)) {
+			break
+		}
+
+		if ([datetime]::UtcNow -ge $deadline) {
+			throw "Timed out waiting for '$solutionName' $version in '$($envObj.PpacEnvName)' (operation '$operationId', import job '$importJobId')."
+		}
+
+		if (-not $operationId) {
+			if (-not $approved) {
+				$shouldAffected = $envObj.PpacEnvName
+				$shouldLabel = "Import $solutionName $version$publishDescription"
+
+				if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
+				$approved = $true
 			}
 
-			$tmpInstalled = (Invoke-RestMethod -Uri $solutionUri @hashRestParams).value |
-			Select-Object -First 1
-			if ((-not ($null -eq $tmpInstalled)) `
-					-and (-not $tmpInstalled.ismanaged)) {
-				throw "An unmanaged solution named '$solutionName' already exists in '$($envObj.PpacEnvName)'."
+			$status = 'Installing'
+			$active = (Invoke-RestMethod -Uri $activeUri @hashRestParams).value
+			if (-not $active) {
+				$importJobId = [guid]::NewGuid()
+				$body = @{
+					CustomizationFile                = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($package.FullName))
+					ImportJobId                      = $importJobId
+					OverwriteUnmanagedCustomizations = $false
+					PublishWorkflows                 = $false
+				} | ConvertTo-Json -Compress
+
+				$response = Invoke-RestMethod @hashRestParams -Method Post `
+					-Uri "$apiUrl/ImportSolutionAsync" `
+					-ContentType 'application/json' `
+					-Body $body
+
+				$operationId = $response.AsyncOperationId
+				if (-not $operationId) { throw "Dataverse did not return an operation ID for import job '$importJobId'." }
+
+				Wait-PpeAsyncOperation -OperationId $operationId `
+					-OrganizationUrl $orgUrl `
+					-Activity "Import $solutionName $version" `
+					-Deadline $deadline `
+					-PollIntervalSeconds $PollIntervalSeconds `
+					-Silent:$Silent
+
+				continue
 			}
 
-			$jobSucceeded = (-not $operationId) -or ($operation.statuscode -eq 30)
-			if ((-not ($null -eq $tmpInstalled)) `
-					-and ([version] $tmpInstalled.version -ge $version) `
-					-and ($jobSucceeded)) {
-				[PSCustomObject][ordered]@{
-					EnvironmentId    = $envObj.PpacEnvId
-					SolutionName     = $solutionName
-					InstalledVersion = $tmpInstalled.version
-					Status           = $status
-					OperationId      = $operationId
-				}
-				return
+			if (-not $Silent) {
+				Write-PSFMessage -Level Important `
+					-Message "Waiting for Dataverse import job $($active.asyncoperationid) before importing $solutionName."
 			}
+		}
+		elseif (-not $Silent) {
+			Write-PSFMessage -Level Important `
+				-Message "Waiting for Dataverse to show $solutionName $version."
+		}
 
-			if ([datetime]::UtcNow -ge $deadline) {
-				throw "Timed out waiting for '$solutionName' $version in '$($envObj.PpacEnvName)' (operation '$operationId', import job '$importJobId')."
-			}
+		$tmpRemainingSeconds = ($deadline - [datetime]::UtcNow).TotalSeconds
+		Start-Sleep -Seconds ([Math]::Max(0, [Math]::Min($PollIntervalSeconds, $tmpRemainingSeconds)))
+	} while ($true)
 
-			if (-not $operationId) {
-				if (-not $approved) {
-					$shouldAffected = $envObj.PpacEnvName
-					$shouldLabel = "Import $solutionName $version"
+	if (($PublishAndWait) `
+			-and ($status -eq 'Installing')) {
+		if ([datetime]::UtcNow -ge $deadline) {
+			throw "Import completed, but the timeout expired before publishing. Run Invoke-PpePublishAllCustomizations to publish."
+		}
 
-					if (-not $PSCmdlet.ShouldProcess($shouldAffected, $shouldLabel)) { return }
-					$approved = $true
-				}
+		$publish = Invoke-RestMethod @hashRestParams -Method Post `
+			-Uri "$apiUrl/PublishAllXmlAsync" `
+			-ContentType 'application/json' `
+			-Body '{}'
 
-				$active = (Invoke-RestMethod -Uri $activeUri @hashRestParams).value
-				if (-not $active) {
-					$importJobId = [guid]::NewGuid()
-					$body = @{
-						CustomizationFile                = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($package.FullName))
-						ImportJobId                      = $importJobId
-						OverwriteUnmanagedCustomizations = $false
-						PublishWorkflows                 = $false
-					} | ConvertTo-Json -Compress
+		if (-not $publish.AsyncOperationId) { throw "Dataverse did not return a publish job ID." }
 
-					$response = Invoke-RestMethod @hashRestParams -Method Post `
-						-Uri "$apiUrl/ImportSolutionAsync" `
-						-ContentType 'application/json' `
-						-Body $body
-
-					$operationId = $response.AsyncOperationId
-					if (-not $operationId) { throw "Dataverse did not return an operation ID for import job '$importJobId'." }
-				}
-				$status = 'Installing'
-			}
-
-			Write-Progress -Activity $activity `
-				-Status 'Waiting for Dataverse'
-
-			Start-Sleep -Seconds $PollIntervalSeconds
-		} while ($true)
+		Wait-PpeAsyncOperation -OperationId $publish.AsyncOperationId `
+			-OrganizationUrl $orgUrl `
+			-Activity "Publish all customizations in $($envObj.PpacEnvName)" `
+			-Deadline $deadline `
+			-PollIntervalSeconds $PollIntervalSeconds `
+			-Silent:$Silent
 	}
-	finally {
-		Write-Progress -Activity $activity `
-			-Completed
+
+	[PSCustomObject][ordered]@{
+		EnvironmentId    = $envObj.PpacEnvId
+		SolutionName     = $solutionName
+		InstalledVersion = $tmpInstalled.version
+		Status           = $status
+		OperationId      = $operationId
 	}
 }
