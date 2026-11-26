@@ -204,14 +204,8 @@ function Import-PpeSolution {
 			throw "Import completed, but the timeout expired before publishing. Run Invoke-PpePublishAllCustomizations to publish."
 		}
 
-		$publish = Invoke-RestMethod @hashRestParams -Method Post `
-			-Uri "$apiUrl/PublishAllXmlAsync" `
-			-ContentType 'application/json' `
-			-Body '{}'
-
-		if (-not $publish.AsyncOperationId) { throw "Dataverse did not return a publish job ID." }
-
-		Wait-PpeAsyncOperation -OperationId $publish.AsyncOperationId `
+		$publishOperationId = Start-PpePublishOperation -OrganizationUrl $orgUrl
+		Wait-PpeAsyncOperation -OperationId $publishOperationId `
 			-OrganizationUrl $orgUrl `
 			-Activity "Publishing all customizations in $($envObj.PpacEnvName)" `
 			-Deadline $deadline `
